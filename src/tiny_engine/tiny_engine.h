@@ -15,8 +15,7 @@ struct GameState {
     Camera camera;
 };
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
@@ -54,6 +53,7 @@ bool ShouldCloseWindow() {
     // clear gl buffer
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     return glfwWindowShouldClose(glob_glfw_window);
 }
@@ -88,14 +88,13 @@ void InitWindow(u32 windowWidth, u32 windowHeight, const s8* windowName) {
     }    
 
     glViewport(0, 0, windowWidth, windowHeight);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+    
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
 
-    #if 0
     glEnable(GL_DEPTH_TEST);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    #endif
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); 
+    glfwSetCursorPosCallback(window, mouse_callback);
 
     glob_glfw_window = window;
 }

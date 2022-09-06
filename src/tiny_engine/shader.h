@@ -31,7 +31,7 @@ struct Shader {
                 return loc;
             }
             else {
-                std::cout << "Shader Uniform " << uniformName << " either isn't defined or is unused!\n";
+                //std::cout << "Shader Uniform " << uniformName << " either isn't defined or is unused!\n";
                 return -1;
             }
         }

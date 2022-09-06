@@ -11,6 +11,9 @@
 // setting up proper indices list
 // https://github.com/huamulan/OpenGL-tutorial/blob/master/common/vboindexer.cpp
 
+#include "tiny_engine/pch.h" // for types
+#include "tiny_engine/mesh.h" // for Vertex
+
 using glm::vec3;
 using glm::vec2;
 
@@ -88,9 +91,24 @@ void load_triangles(const tinyobj::shape_t & shape, std::vector<Triangle> & tria
     }
 }
 
+bool getSimilarVertexIndex_fast( 
+	Vertex& vert, 
+	std::map<Vertex, u32>& VertexToOutIndex,
+	u32& result
+){
+	std::map<Vertex, u32>::iterator it = VertexToOutIndex.find(vert);
+	if (it == VertexToOutIndex.end()){
+		return false;
+	}
+    else {
+		result = it->second;
+		return true;
+	}
+}
+
 void load_obj(
     const char* filename, const char* matsDirectory, 
-    std::vector<Vertex>& vertices, std::vector<u32> indices,
+    std::vector<Vertex>& vertices, std::vector<u32>& indices,
     std::vector<Material>& materials) {
     //load a Wavefront .obj file at 'file' and store vertex coordinates as vec3 and face_inds as uvec3 of indices
     
@@ -143,35 +161,100 @@ void load_obj(
 
     std::cout << attribVerts.size() << " " << attribNorms.size() << " " << attribTexCoords.size() << " " << attribColors.size() << "\n";
 
+    u32 maxIterations = MAX(MAX(attribVerts.size(), attribNorms.size()), MAX(attribTexCoords.size(), attribColors.size()));
+    for (u32 i = 0; i < maxIterations; i += 3) {
+        Vertex v = {};
+        if (i < attribVerts.size()) {
+            v.position = vec3(
+                attribVerts[i+0],
+                attribVerts[i+1],
+                attribVerts[i+2]
+            );
+        }
+        // TODO: is this right????
+        // since the texcoord/norm/color lists
+        // are smaller than the vert list
+        // there will be some verts that just don't
+        // have normals/texcoords/colors.... 
+        if (i < attribNorms.size()) {
+            v.normal = vec3(
+                attribNorms[i+0],
+                attribNorms[i+1],
+                attribNorms[i+2]
+            );
+        }
+        if (i < attribTexCoords.size()) {
+            v.texCoords = vec2(
+                attribTexCoords[i+0],
+                attribTexCoords[i+1]
+            );
+        }
+        if (i < attribColors.size()) {
+            v.color = vec3(
+                attribColors[i+0],
+                attribColors[i+1],
+                attribColors[i+2]
+            );
+        }
 
+        vertices.push_back(v);
+    }
     for (const auto& shape : shapes) {
-        const std::vector<tinyobj::index_t>& meshIndices = shape.mesh.indices;
-        const std::vector<s32>& materialIds = shape.mesh.material_ids;
-        // size of materialIds is size of meshIndices / 3
-        for (s32 i = 0; i < meshIndices.size(); i++) {
-            Vertex v = {};
-            vec3 vertPos = vec3(
-                attribVerts.at( meshIndices.at(i).vertex_index+0 ),
-                attribVerts.at( meshIndices.at(i).vertex_index+1 ),
-                attribVerts.at( meshIndices.at(i).vertex_index+2 )
-            );
-            v.position = vertPos;
-            vec3 norm = vec3(
-                attribNorms.at( meshIndices.at(i).normal_index+0 ),
-                attribNorms.at( meshIndices.at(i).normal_index+1 ),
-                attribNorms.at( meshIndices.at(i).normal_index+2 )
-            );
-            v.normal = norm;
-            vec2 texCoord = vec2(
-                attribTexCoords.at( meshIndices.at(i).texcoord_index+0 ),
-                attribTexCoords.at( meshIndices.at(i).texcoord_index+1 )
-            );
-            v.texCoords = texCoord;
-            vertices.push_back(v);
-            // ???? what do i do with indices here
-            indices.push_back(meshIndices.at(i).vertex_index);
+        for (u32 i = 0; i < shape.mesh.indices.size(); i++) {
+            indices.push_back(shape.mesh.indices.at(i).vertex_index);
         }
     }
+
+    #if 0
+    std::map<Vertex, u32> VertexToOutIndex;
+    for (u32 i = 0; i < attribVerts.size(); i += 3) {
+        Vertex vert = {};
+        vert.position = vec3(
+            attribVerts[i+0],
+            attribVerts[i+1],
+            attribVerts[i+2]
+        );
+        if (i < attribNorms.size()) {
+            vert.normal = vec3(
+                attribNorms[i+0],
+                attribNorms[i+1],
+                attribNorms[i+2]
+            );
+        }
+        if (i < attribTexCoords.size()) {
+            vert.texCoords = vec2(
+                attribTexCoords[i+0],
+                attribTexCoords[i+1]
+            );
+        }
+        if (i < attribColors.size()) {
+            vert.color = vec3(
+                attribColors[i+0],
+                attribColors[i+1],
+                attribColors[i+2]
+            );
+        }
+        
+        
+
+        u32 index;
+        bool found = getSimilarVertexIndex_fast(vert, VertexToOutIndex, index);
+
+        if (found) {
+            indices.push_back(index);
+        }
+        else {
+            vertices.push_back(vert);
+            u32 newindex = vertices.size()-1;
+            indices.push_back(newindex);
+            VertexToOutIndex[vert] = newindex;
+        }
+    }
+    #endif
+
+    std::cout << "Finished indexing vbo\n";
+
+
 
     /*
     //convert the vertices into our format
@@ -195,57 +278,14 @@ void load_obj(
 
     std::cout << "Loaded model " << filename << "." << std::endl;
 }
-/*
-void load_obj(
-    const char* filename, const char* matsDirectory, 
-    std::vector<vec3> &vertices, std::vector<Triangle> &triangles, 
-    std::vector<vec3> & vertnormals, std::vector<vec2>& vertuvs, 
-    std::vector<Material>& materials) {
-    //load a Wavefront .obj file at 'file' and store vertex coordinates as vec3 and face_inds as uvec3 of indices
-
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> objmaterials;
-    std::string err; std::string warn;
-    
-    //load all data in Obj file & 'triangulate'
-    bool success = tinyobj::LoadObj(&attrib, &shapes, &objmaterials, 
-        &warn, &err,
-        filename, //model to load
-        matsDirectory, //directory to search for materials
-        true, //enable triangulation
-        false
-    ); 
-
-    //boilerplate error handling
-    if (!err.empty()) {
-        std::cerr << err << std::endl;
-    }
-    if (!success) {
-        CloseGameWindow();
-    }
-
-    
-    //convert the vertices into our format
-    components_to_vec3s(attrib.vertices, vertices);
-
-    //convert the vertex normals into our format
-    components_to_vec3s(attrib.normals, vertnormals);
-
-    //convert the uv coordinates into our format
-    components_to_vec2s(attrib.texcoords, vertuvs);
-
-    //conver materials and load textures
-    load_materials(objmaterials, matsDirectory, materials);
-
-    //convert the face_inds into our format
-    //face_inds should all be triangles due to triangulate=true
-    for (auto shape : shapes) {
-        load_triangles(shape, triangles);
-    }
 
 
-    std::cout << "Loaded model " << filename << "." << std::endl;
-}*/
+
+
+
+
+
+
+
 
 #endif

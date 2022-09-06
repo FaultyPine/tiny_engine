@@ -28,9 +28,20 @@ void advanceGameSimulation(UserInput inputs, GameState& gs) {
         glm::vec3 cameraRight = glm::normalize(glm::cross(cam.cameraFront, cam.cameraUp));
         cam.cameraPos += cameraRight * cameraSpeed;
     }
+    if (inputs.isUp()) {
+        cam.cameraPos += cam.cameraUp * cameraSpeed;
+    }
+    if (inputs.isDown()) {
+        cam.cameraPos -= cam.cameraUp * cameraSpeed;
+    }
 }
 
-void Set3DMatrixUniforms(Shader& shader, const Camera& cam) {
+void Set3DMatrixUniforms(Shader& shader, Camera& cam) {
+    MouseInput& mouseInput = UserInput::GetMouse();
+
+    cam.cameraFront = mouseInput.GetNormalizedLookDir();
+
+    
     // identity matrix to start out with
     glm::mat4 model = glm::mat4(1.0f);
     // rotate it a little bit about x axis so it looks like it's laying on the floor
@@ -103,7 +114,13 @@ void initShadersAndVerts(GameState& gs) {
     load_obj(UseResPath("warrior.obj").c_str(), UseResPath().c_str(), 
             meshVerts, meshIndices, materials);
 
-    
+    //for (Vertex& v : meshVerts) {
+    //    std::cout << v.str() << "\n";
+    //}
+
+    //for (u32 idx : meshIndices) {
+    //    std::cout << "Idx " << idx << " " << meshVerts.at(idx).str() << "\n";
+    //}
 
     #else
     // raw vertex/index data
@@ -134,6 +151,7 @@ void initShadersAndVerts(GameState& gs) {
     // Shader
     Shader shader = Shader(UseResPath("shaders/default.vs").c_str(), UseResPath("shaders/default.fs").c_str());
     // Texture stuff
+    #if 0
     const char* imgPath = UseResPath("container.jpg").c_str();
     TextureProperties texProps;
     texProps.texWrapMode = GL_MIRRORED_REPEAT;
@@ -148,9 +166,10 @@ void initShadersAndVerts(GameState& gs) {
     texProps.texFormat = GL_RGBA;
     texProps.imgFormat = GL_RGBA;
     Texture texture2 = LoadTexture(imgPath, texProps, TextureMaterialType::DIFFUSE);
+    #endif
 
-    meshTexs.push_back(texture1);
-    meshTexs.push_back(texture2);
+    //meshTexs.push_back(texture1);
+    //meshTexs.push_back(texture2);
 
     gs.objs[0] = Mesh(shader, meshVerts, meshIndices, meshTexs);
 }

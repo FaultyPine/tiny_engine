@@ -10,6 +10,16 @@ struct Vertex {
     glm::vec3 normal;
     glm::vec2 texCoords;
     glm::vec3 color;
+    bool operator<(const Vertex that) const{
+		return memcmp((void*)this, (void*)&that, sizeof(Vertex))>0;
+	};
+    std::string str() {
+        std::string pos = "("  + std::to_string(position.x)  + ", " + std::to_string(position.y)  + ", " + std::to_string(position.z) + ")"; 
+        std::string norm = "(" + std::to_string(normal.x)    + ", " + std::to_string(normal.y)    + ", " + std::to_string(normal.z) + ")";
+        std::string tex = "("  + std::to_string(texCoords.x) + ", " + std::to_string(texCoords.y) + ")";
+        std::string col = "("  + std::to_string(color.x)     + ", " + std::to_string(color.y)     + ", " + std::to_string(color.z) + ")";
+        return "[Pos = " + pos + "  Normals = " + norm + "  TexCoords = " + tex + "  Colors = " + col + " ]";
+    }
 };
 struct Mesh {
     Shader cachedShader;
