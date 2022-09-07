@@ -17,18 +17,7 @@
 using glm::vec3;
 using glm::vec2;
 
-// synonymous with canmom's rasteriser
-struct Triangle {
-    vec3 vertices;
-    vec3 normals;
-    vec3 uvs;
-    u32 material;
 
-    Triangle(vec3 verts, vec3 norms, vec3 uvs, u32 mat) {
-        vertices = verts; normals = norms, this->uvs = uvs; material = mat;
-    }
-};
-// synonymous with canmom's rasteriser except with my own Texture struct
 struct Material {
     vec3 diffuseColor;
     bool hasTexture;
@@ -39,24 +28,6 @@ struct Material {
     Material(vec3 diffuseCol, const std::string& texName) { diffuseColor = diffuseCol; diffuseTexPath = texName; }
 };
 
-
- 
-// https://github.com/canmom/rasteriser
-
-void components_to_vec2s(const std::vector<f32> components, std::vector<vec2>& vecs) {
-    //convert a vector of back-to-back vertex components to a vector of vec2 objects
-    for (size_t vec_start = 0; vec_start < components.size(); vec_start+=2) {
-        vecs.push_back(vec2(components[vec_start], components[vec_start+1]));
-    }
-}
-
-void components_to_vec3s(const std::vector<f32> components, std::vector<vec3>& vecs) {
-    //convert a vector of back-to-back vertex components to a vector of vec3 objects
-    for (size_t vec_start = 0; vec_start < components.size(); vec_start+=3) {
-        vec3 x = vec3(components[vec_start], components[vec_start+1], components[vec_start+2]);
-        vecs.push_back(x);
-    }
-}
 
 void load_materials(const std::vector<tinyobj::material_t> & objmaterials, const std::string & tex_dir, std::vector<Material> & materials) {
     //extract the relevant material properties from the material_t format used by tinyobjloader
@@ -72,39 +43,6 @@ void load_materials(const std::vector<tinyobj::material_t> & objmaterials, const
     }
 }
 
-void load_triangles(const tinyobj::shape_t & shape, std::vector<Triangle> & triangles) {
-    //convert a tinyobjloader shape_t object containing indices into vertex properties and textures
-    //into a vector of Triangle objects grouping these indices
-    const std::vector<tinyobj::index_t> & indices = shape.mesh.indices;
-    const std::vector<int> & mat_ids = shape.mesh.material_ids;
-
-    std::cout << "Loading " << mat_ids.size() << " triangles..." << std::endl;
-
-    for(size_t face_ind = 0; face_ind < mat_ids.size(); face_ind++) {
-        triangles.push_back(
-            Triangle(
-                {indices[3*face_ind].vertex_index, indices[3*face_ind+1].vertex_index, indices[3*face_ind+2].vertex_index},
-                {indices[3*face_ind].normal_index, indices[3*face_ind+1].normal_index, indices[3*face_ind+2].normal_index},
-                {indices[3*face_ind].texcoord_index, indices[3*face_ind+1].texcoord_index, indices[3*face_ind+2].texcoord_index},
-                mat_ids[face_ind]
-            ));
-    }
-}
-
-bool getSimilarVertexIndex_fast( 
-	Vertex& vert, 
-	std::map<Vertex, u32>& VertexToOutIndex,
-	u32& result
-){
-	std::map<Vertex, u32>::iterator it = VertexToOutIndex.find(vert);
-	if (it == VertexToOutIndex.end()){
-		return false;
-	}
-    else {
-		result = it->second;
-		return true;
-	}
-}
 
 void load_obj(
     const char* filename, const char* matsDirectory, 
@@ -126,9 +64,11 @@ void load_obj(
         &warn, &err,
         filename, //model to load
         matsDirectory, //directory to search for materials
-        true, //enable triangulation
-        false
+        true, //enable triangulation (mesh_t::num_face_vertices will always be 3 with this on)
+        false // should fallback to white vertex colors if none are given
     ); 
+    // NOTE: keep in mind triangulation will reorder indices and such so any lists here
+    // may look different from the data in the file
 
     //boilerplate error handling
     if (!err.empty()) {
@@ -138,141 +78,59 @@ void load_obj(
         CloseGameWindow();
     }
 
+    // input data from tiny_obj_loader
+    const std::vector<tinyobj::real_t>& attribVerts = attrib.vertices; // 3 floats per vertex
+    const std::vector<tinyobj::real_t>& attribNorms = attrib.normals; // 3 floats per vertex
+    const std::vector<tinyobj::real_t>& attribTexCoords = attrib.texcoords; // 2 floats per vertex
+    const std::vector<tinyobj::real_t>& attribColors = attrib.colors; // 3 floats per vertex (optional)
 
-    // ------ data coming in
-    // attrib.
-    //  vertices - array of floats representing vertices (triangulated, so in groups of 3)
-    //  normals - same as above
-    //  colors - same as above
-    //  texcoords - same as above, but in groups of 2
-    //
-    // shape.mesh.indices
-    //  normal_index
-    //  vertex_index
-    //  texcoord_index
-    //
-    // shape.mesh.material_ids
-    //  array of s32's that represent material ids
-
-    const std::vector<tinyobj::real_t>& attribVerts = attrib.vertices;
-    const std::vector<tinyobj::real_t>& attribNorms = attrib.normals;
-    const std::vector<tinyobj::real_t>& attribTexCoords = attrib.texcoords;
-    const std::vector<tinyobj::real_t>& attribColors = attrib.colors;
-
-    std::cout << attribVerts.size() << " " << attribNorms.size() << " " << attribTexCoords.size() << " " << attribColors.size() << "\n";
-
-    u32 maxIterations = MAX(MAX(attribVerts.size(), attribNorms.size()), MAX(attribTexCoords.size(), attribColors.size()));
-    for (u32 i = 0; i < maxIterations; i += 3) {
-        Vertex v = {};
-        if (i < attribVerts.size()) {
-            v.position = vec3(
-                attribVerts[i+0],
-                attribVerts[i+1],
-                attribVerts[i+2]
-            );
-        }
-        // TODO: is this right????
-        // since the texcoord/norm/color lists
-        // are smaller than the vert list
-        // there will be some verts that just don't
-        // have normals/texcoords/colors.... 
-        if (i < attribNorms.size()) {
-            v.normal = vec3(
-                attribNorms[i+0],
-                attribNorms[i+1],
-                attribNorms[i+2]
-            );
-        }
-        if (i < attribTexCoords.size()) {
-            v.texCoords = vec2(
-                attribTexCoords[i+0],
-                attribTexCoords[i+1]
-            );
-        }
-        if (i < attribColors.size()) {
-            v.color = vec3(
-                attribColors[i+0],
-                attribColors[i+1],
-                attribColors[i+2]
-            );
-        }
-
-        vertices.push_back(v);
-    }
+    // go through all indices we got from tinyobjloader
+    // and push them into a Vertex list so we can give it to opengl
+    // in a proper VBO index buffer
     for (const auto& shape : shapes) {
         for (u32 i = 0; i < shape.mesh.indices.size(); i++) {
-            indices.push_back(shape.mesh.indices.at(i).vertex_index);
+            Vertex v = {};
+            // indexes into input data from obj file
+            const tinyobj::index_t& tinyobjIdx = shape.mesh.indices.at(i);
+            s32 vertexIndexBase = tinyobjIdx.vertex_index;
+            vec3 pos = vec3(
+                attribVerts.at( 3*vertexIndexBase+0 ),
+                attribVerts.at( 3*vertexIndexBase+1 ),
+                attribVerts.at( 3*vertexIndexBase+2 )
+            );
+            v.position = pos;
+            if (!attribNorms.empty()) {
+                s32 normalIndexBase = tinyobjIdx.normal_index;
+                vec3 norm = vec3(
+                    attribNorms.at( 3*normalIndexBase+0 ),
+                    attribNorms.at( 3*normalIndexBase+1 ),
+                    attribNorms.at( 3*normalIndexBase+2 )
+                );
+                v.normal = norm;
+            }
+            if (!attribTexCoords.empty()) {
+                s32 texcoordIndexBase = tinyobjIdx.texcoord_index;
+                vec2 texcoord = vec2(
+                    attribTexCoords.at( 2*texcoordIndexBase+0 ),
+                    attribTexCoords.at( 2*texcoordIndexBase+1 )
+                );
+                v.texCoords = texcoord;
+            }
+            if (!attribColors.empty()) {
+                s32 colorIndexBase = tinyobjIdx.vertex_index; // using vert index for vert colors
+                vec3 col = vec3(
+                    attribColors.at( 3*colorIndexBase+0 ),
+                    attribColors.at( 3*colorIndexBase+1 ),
+                    attribColors.at( 3*colorIndexBase+2 )
+                );
+                v.color = col;
+            }
+
+            vertices.push_back(v);
+            indices.push_back(indices.size());
         }
     }
-
-    #if 0
-    std::map<Vertex, u32> VertexToOutIndex;
-    for (u32 i = 0; i < attribVerts.size(); i += 3) {
-        Vertex vert = {};
-        vert.position = vec3(
-            attribVerts[i+0],
-            attribVerts[i+1],
-            attribVerts[i+2]
-        );
-        if (i < attribNorms.size()) {
-            vert.normal = vec3(
-                attribNorms[i+0],
-                attribNorms[i+1],
-                attribNorms[i+2]
-            );
-        }
-        if (i < attribTexCoords.size()) {
-            vert.texCoords = vec2(
-                attribTexCoords[i+0],
-                attribTexCoords[i+1]
-            );
-        }
-        if (i < attribColors.size()) {
-            vert.color = vec3(
-                attribColors[i+0],
-                attribColors[i+1],
-                attribColors[i+2]
-            );
-        }
-        
-        
-
-        u32 index;
-        bool found = getSimilarVertexIndex_fast(vert, VertexToOutIndex, index);
-
-        if (found) {
-            indices.push_back(index);
-        }
-        else {
-            vertices.push_back(vert);
-            u32 newindex = vertices.size()-1;
-            indices.push_back(newindex);
-            VertexToOutIndex[vert] = newindex;
-        }
-    }
-    #endif
-
-    std::cout << "Finished indexing vbo\n";
-
-
-
-    /*
-    //convert the vertices into our format
-    components_to_vec3s(attrib.vertices, vertices);
-
-    //convert the vertex normals into our format
-    components_to_vec3s(attrib.normals, vertnormals);
-
-    //convert the uv coordinates into our format
-    components_to_vec2s(attrib.texcoords, vertuvs);
-
-    //convert the face_inds into our format
-    //face_inds should all be triangles due to triangulate=true
-    for (auto shape : shapes) {
-        load_triangles(shape, triangles);
-    }
-    */
-
+    
     //conver materials and load textures
     load_materials(objmaterials, matsDirectory, materials);
 
