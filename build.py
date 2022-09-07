@@ -12,7 +12,6 @@ def run_app():
     os.chdir("..")
 def command(cmd):
     result = os.system(cmd)
-    print(result)
     if result != 0: # if not success code, stop
         exit()
 
@@ -50,9 +49,17 @@ if len(args) > 0:
     if args[0] == "run":
         run_app()
         exit()
+
+    if args[0] == "norun":
+        command(BUILD_COMMAND)
+        print("Built!")
+        exit()
+    
+    print("Unknown argument passed to build script!")
+
 else:
+    # default (no arg) behavior
     command(BUILD_COMMAND)
+    print("Built!")
+    run_app()
 
-print("Built!")
-
-run_app()
