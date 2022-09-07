@@ -114,22 +114,23 @@ void initShadersAndVerts(GameState& gs) {
 
     // Shader
     Shader shader = Shader(UseResPath("shaders/default.vs").c_str(), UseResPath("shaders/default.fs").c_str());
+    
     // Texture stuff
     #if 0
     const char* imgPath = UseResPath("container.jpg").c_str();
     TextureProperties texProps;
-    texProps.texWrapMode = GL_MIRRORED_REPEAT;
-    texProps.minFilter = GL_LINEAR_MIPMAP_LINEAR;
-    texProps.magFilter = GL_LINEAR;
-    texProps.texFormat = GL_RGB;
-    texProps.imgFormat = GL_RGB;
-    texProps.imgDataType = GL_UNSIGNED_BYTE;
-    Texture texture1 = LoadTexture(imgPath, texProps, TextureMaterialType::DIFFUSE);
+    texProps.texWrapMode = TextureProperties::TexWrapMode::MIRRORED_REPEAT;
+    texProps.minFilter = TextureProperties::TexMinFilter::LINEAR_MIPMAP_LINEAR;
+    texProps.magFilter = TextureProperties::TexMagFilter::LINEAR;
+    texProps.texFormat = TextureProperties::TexFormat::RGB;
+    texProps.imgFormat = TextureProperties::ImageFormat::RGB;
+    texProps.imgDataType = TextureProperties::ImageDataType::UNSIGNED_BYTE;
+    Texture texture1 = LoadTexture(imgPath, texProps, TextureMaterialType::DIFFUSE, true);
     
     imgPath = UseResPath("awesomeface.png").c_str();
-    texProps.texFormat = GL_RGBA;
-    texProps.imgFormat = GL_RGBA;
-    Texture texture2 = LoadTexture(imgPath, texProps, TextureMaterialType::DIFFUSE);
+    texProps.texFormat = TextureProperties::TexFormat::RGBA;
+    texProps.imgFormat = TextureProperties::ImageFormat::RGBA;
+    Texture texture2 = LoadTexture(imgPath, texProps, TextureMaterialType::DIFFUSE, true);
     
     meshTexs.push_back(texture1);
     meshTexs.push_back(texture2);
