@@ -18,6 +18,8 @@ struct MouseInput {
     f32 lastY = 300;
     f32 yaw = 0.0f;
     f32 pitch = 0.0f;
+    f32 sensitivity = 0.1f;
+    glm::vec2 mousePos = glm::vec2(0.0f, 0.0f);
     glm::vec3 GetNormalizedLookDir() {
         glm::vec3 direction;
         direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -41,25 +43,38 @@ struct UserInput {
     static MouseInput& GetMouse() {
         return mouseInput;
     }
-    bool isForward() {
+
+    
+    bool GetKeyUp(s32 key) const {
+        return GetKeyState(key, GLFW_RELEASE);
+    }
+    bool GetKeyDown(s32 key) const {
+        return GetKeyState(key, GLFW_PRESS);
+    }
+    bool GetKeyHold(s32 key) const {
+        return GetKeyState(key, GLFW_REPEAT);
+    }
+
+    // TODO: deprecate this (see msg in GetUserInput)
+    bool isForward() const {
         return stick.y > 0.0;
     }
-    bool isBackward() {
+    bool isBackward() const {
         return stick.y < 0.0;
     }
-    bool isRight() {
+    bool isRight() const {
         return stick.x > 0.0;
     }
-    bool isLeft() {
+    bool isLeft() const {
         return stick.x < 0.0;
     }
-    bool isUp() {
+    bool isUp() const {
         return buttons & ButtonValues::UP;
     }
-    bool isDown() {
+    bool isDown() const {
         return buttons & ButtonValues::DOWN;
     }
-    bool isAction() {
+    bool isAction() const {
         return buttons & ButtonValues::ACTION;
     }
 };
@@ -78,36 +93,43 @@ void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
     mouseInput.lastX = xpos;
     mouseInput.lastY = ypos;
 
-    float sensitivity = 0.1f;
+    f32 sensitivity = UserInput::GetMouse().sensitivity;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
     mouseInput.yaw   += xoffset;
     mouseInput.pitch += yoffset;
 
+    // clamp looking up/down
     if(mouseInput.pitch > 89.0f)
         mouseInput.pitch = 89.0f;
     if(mouseInput.pitch < -89.0f)
         mouseInput.pitch = -89.0f;
 }
 
+void cursor_position_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
+    mouseInput.mousePos = glm::vec2(xpos, ypos);
+}
+
 UserInput GetUserInput() {
     // making sure to zero init so we don't drift
     UserInput input = {}; 
 
+    // TODO: deprecate this... provide GetKeyState/GetAction API to user
+
     if (GetKeyState(GLFW_KEY_ESCAPE, GLFW_PRESS)) {
         CloseGameWindow();
     }
-    if (GetKeyState(GLFW_KEY_W, GLFW_PRESS)) {
+    if (GetKeyState(GLFW_KEY_W, GLFW_PRESS) || GetKeyState(GLFW_KEY_UP, GLFW_PRESS)) {
         input.stick.y = 1.0;
     }
-    if (GetKeyState(GLFW_KEY_S, GLFW_PRESS)) {
+    if (GetKeyState(GLFW_KEY_S, GLFW_PRESS) || GetKeyState(GLFW_KEY_DOWN, GLFW_PRESS)) {
         input.stick.y = -1.0;
     }
-    if (GetKeyState(GLFW_KEY_A, GLFW_PRESS)) {
+    if (GetKeyState(GLFW_KEY_A, GLFW_PRESS) || GetKeyState(GLFW_KEY_RIGHT, GLFW_PRESS)) {
         input.stick.x = -1.0;
     }
-    if (GetKeyState(GLFW_KEY_D, GLFW_PRESS)) {
+    if (GetKeyState(GLFW_KEY_D, GLFW_PRESS) || GetKeyState(GLFW_KEY_LEFT, GLFW_PRESS)) {
         input.stick.x = 1.0;
     }
     if (GetKeyState(GLFW_KEY_SPACE, GLFW_PRESS)) {

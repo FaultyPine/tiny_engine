@@ -20,7 +20,10 @@ struct Shader {
     Shader(u32 id) { ID = id; }
 
     // use/activate the shader
-    void use() { glUseProgram(ID); }
+    void use() {
+        assert("Invalid shader ID!\n" && ID);
+        glUseProgram(ID); 
+    }
     s32 getLoc(const std::string& uniformName) {
         // cache uniforms for later retrieval
         if (cachedUniformLocs[ID].count(uniformName)) return cachedUniformLocs[ID][uniformName];
@@ -154,6 +157,19 @@ struct Shader {
     DECLARE_SET_UNIFORM_FUNC4(glUniform4f, f32)
     DECLARE_SET_UNIFORM_FUNC4(glUniform4i, s32)
     DECLARE_SET_UNIFORM_FUNC4(glUniform4ui, u32)
+
+    void setUniform(const s8* uniformName, glm::vec2 vec2) {
+        s32 loc = getLoc(uniformName);
+        if (loc != -1) glUniform2f(loc, vec2.x, vec2.y);
+    }
+    void setUniform(const s8* uniformName, glm::vec3 vec3) {
+        s32 loc = getLoc(uniformName);
+        if (loc != -1) glUniform3f(loc, vec3.x, vec3.y, vec3.z);
+    }
+    void setUniform(const s8* uniformName, glm::vec4 vec4) {
+        s32 loc = getLoc(uniformName);
+        if (loc != -1) glUniform4f(loc, vec4.x, vec4.y, vec4.z, vec4.w);
+    }
 
     void setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose = false) {
         s32 loc = getLoc(uniformName);

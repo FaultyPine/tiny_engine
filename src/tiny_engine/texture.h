@@ -3,9 +3,6 @@
 
 #include "pch.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 
 enum TextureMaterialType {
     DIFFUSE = 0,
@@ -82,6 +79,8 @@ struct TextureProperties {
 struct Texture {
     u32 id;
     TextureMaterialType type;
+
+    void bind() { glBindTexture(GL_TEXTURE_2D, id); }
 };
 
 
