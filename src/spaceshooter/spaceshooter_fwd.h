@@ -1,8 +1,9 @@
 #ifndef SPACESHOOTER_FWD_H
 #define SPACESHOOTER_FWD_H
 
-#include "../tiny_engine/tiny_engine.h"
-
+#include "../tiny_engine/pch.h"
+#include "../tiny_engine/sprite.h"
+#include "../tiny_engine/math.h"
 
 struct Entity {
     Sprite sprite;

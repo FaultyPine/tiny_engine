@@ -10,8 +10,7 @@
 // to prevent uniform name collisions, but i'd like to keep the shader class as a
 // fancy wrapper on just the u32 ID
 
-//              shader id               uniform name    uniform location
-std::unordered_map<u32, std::unordered_map<std::string, s32>> cachedUniformLocs;
+
 
 struct Shader {
     u32 ID;
@@ -19,93 +18,17 @@ struct Shader {
     Shader() { ID = 0; }
     Shader(u32 id) { ID = id; }
 
+
+    Shader(const char* vertexPath, const char* fragmentPath);
+    static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
+    static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
+
     // use/activate the shader
-    void use() {
+    inline void use() {
         assert("Invalid shader ID!\n" && ID);
         glUseProgram(ID); 
     }
-    s32 getLoc(const std::string& uniformName) {
-        // cache uniforms for later retrieval
-        if (cachedUniformLocs[ID].count(uniformName)) return cachedUniformLocs[ID][uniformName];
-        else {
-            s32 loc = glGetUniformLocation(ID, uniformName.c_str());
-            if (loc != -1) {
-                cachedUniformLocs[ID][uniformName] = loc;
-                return loc;
-            }
-            else {
-                //std::cout << "Shader Uniform " << uniformName << " either isn't defined or is unused!\n";
-                return -1;
-            }
-        }
-    }
-
-    Shader(const char* vertexPath, const char* fragmentPath) {
-        // 1. retrieve the vertex/fragment source code from filePath
-        std::string vertexCode;
-        std::string fragmentCode;
-        std::ifstream vShaderFile;
-        std::ifstream fShaderFile;
-        // ensure ifstream objects can throw exceptions:
-        vShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-        fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-        try {
-            // open files
-            vShaderFile.open(vertexPath);
-            fShaderFile.open(fragmentPath);
-            std::stringstream vShaderStream, fShaderStream;
-            // read file's buffer contents into streams
-            vShaderStream << vShaderFile.rdbuf();
-            fShaderStream << fShaderFile.rdbuf();
-            // close file handlers
-            vShaderFile.close();
-            fShaderFile.close();
-            // convert stream into string
-            vertexCode   = vShaderStream.str();
-            fragmentCode = fShaderStream.str();
-        }
-        catch (std::ifstream::failure& e)
-        {
-            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
-        }
-        const char* vShaderCode = vertexCode.c_str();
-        const char * fShaderCode = fragmentCode.c_str();
-        u32 shaderProgram = CreateShaderProgFromStr(vShaderCode, fShaderCode);
-        ID = shaderProgram;
-    }
-    static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) {
-        u32 shaderID = glCreateShader(shaderType);
-        glShaderSource(shaderID, 1, &shaderSource, NULL);
-        glCompileShader(shaderID);
-        s32 successCode;
-        s8 infoLog[512];
-        glGetShaderiv(shaderID, GL_COMPILE_STATUS, &successCode);
-        if (!successCode) {
-            glGetShaderInfoLog(shaderID, 512, NULL, infoLog);
-            std::cout << "[ERR] shader compilation failed. shaderID = " << shaderID << "\n" << infoLog << "\n";
-        }
-
-        return shaderID;
-    }
-    static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource) {
-        u32 vertexShader = CreateAndCompileShader(GL_VERTEX_SHADER, vsSource);
-        u32 fragShader = CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSource);
-        u32 shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragShader);
-        glLinkProgram(shaderProgram);
-        s32 success;
-        s8 infoLog[512];
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-            std::cout << "shader linking failed. vs = " << vertexShader << " fs = " << fragShader << "\n" << infoLog << std::endl;
-        }
-        // delete vert/frag shader after we've linked them to the program object
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragShader);
-        return shaderProgram;
-    }
+    s32 getLoc(const std::string& uniformName);
 
 
     // utility uniform functions
@@ -113,25 +36,25 @@ struct Shader {
     #define SET_UNIFORM_MACRO_FUNC_NAME setUniform
 
     #define DECLARE_SET_UNIFORM_FUNC1(glFunc, type)                                                 \
-    void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val) {          \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val) {          \
         s32 loc = getLoc(uniformName);                                 \
         if (loc != -1) glFunc(loc, val);                                                            \
     }
 
     #define DECLARE_SET_UNIFORM_FUNC2(glFunc, type)                                                 \
-    void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2) {  \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2) {  \
         s32 loc = getLoc(uniformName);                                 \
         if (loc != -1) glFunc(loc, val1, val2);                                                     \
     }
 
     #define DECLARE_SET_UNIFORM_FUNC3(glFunc, type)                                                 \
-    void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3) {    \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3) {    \
         s32 loc = getLoc(uniformName);                                 \
         if (loc != -1) glFunc(loc, val1, val2, val3);                                               \
     }
 
     #define DECLARE_SET_UNIFORM_FUNC4(glFunc, type)                                                         \
-    void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3, type val4) { \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3, type val4) { \
         s32 loc = getLoc(uniformName);                                         \
         if (loc != -1) glFunc(loc, val1, val2, val3, val4);                                                 \
     }
@@ -158,20 +81,20 @@ struct Shader {
     DECLARE_SET_UNIFORM_FUNC4(glUniform4i, s32)
     DECLARE_SET_UNIFORM_FUNC4(glUniform4ui, u32)
 
-    void setUniform(const s8* uniformName, glm::vec2 vec2) {
+    inline void setUniform(const s8* uniformName, glm::vec2 vec2) {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniform2f(loc, vec2.x, vec2.y);
     }
-    void setUniform(const s8* uniformName, glm::vec3 vec3) {
+    inline void setUniform(const s8* uniformName, glm::vec3 vec3) {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniform3f(loc, vec3.x, vec3.y, vec3.z);
     }
-    void setUniform(const s8* uniformName, glm::vec4 vec4) {
+    inline void setUniform(const s8* uniformName, glm::vec4 vec4) {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniform4f(loc, vec4.x, vec4.y, vec4.z, vec4.w);
     }
 
-    void setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose = false) {
+    inline void setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose = false) {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(mat4));
     }

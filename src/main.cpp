@@ -1,9 +1,23 @@
-#include "tiny_engine/pch.h"
+// pch's have to be the first thing
+#include "pch.h"
+
+// external implementation files
+#include <glad/glad.c>
+#define STB_IMAGE_IMPLEMENTATION
+#include "tiny_engine/stb_image.h"
+#undef STB_IMAGE_IMPLEMENTATION
+
 #include "tiny_engine/tiny_engine.h"
+#include "tiny_engine/input.h"
+#include "tiny_engine/camera.h"
+#include "tiny_engine/mesh.h"
+#include "tiny_engine/tiny_fs.h"
+
 #include "ObjParser.h"
 
 #include "spaceshooter/spaceshooter.h"
 
+#define SPACESHOOTER_ON
 
 void FPS3DCamMovement(UserInput& inputs, Camera& cam) {
     // 3D fps cam movement
@@ -102,20 +116,19 @@ void initTestMesh(Mesh& mesh) {
 
 Mesh testMesh = {};
 
-
-void preLoopInit(GameState& gs) {
+void preLoopInit() {
     InitGame(800, 600, "Tiny Engine"); 
 
     #if 0
     initTestMesh(testMesh);
     #endif
-    
-    #if 1
-    Spaceshooter::initSpaceshooter(gs);
+
+    #ifdef SPACESHOOTER_ON
+    Spaceshooter::initSpaceshooter(GameState::GetGameState());
     #endif
 }
 
-void renderGame(GameState& gs) {
+void renderGame() {
     #if 0
     // draw in wireframe polygons.
     EnableWireframeDrawing();
@@ -125,37 +138,34 @@ void renderGame(GameState& gs) {
     drawTestMesh(testMesh);
     #endif
 
-    #if 1
-    Spaceshooter::drawSpaceshooter(gs);
+    #ifdef SPACESHOOTER_ON
+    Spaceshooter::drawSpaceshooter(GameState::GetGameState());
     #endif
 }
 
 
-void advanceGameSimulation(UserInput inputs, GameState& gs) {
-    Camera& cam = gs.camera;
+void advanceGameSimulation(UserInput inputs) {
     #if 0
+    Camera& cam = gs.camera;
     FPS3DCamMovement(inputs, cam);
     #endif
 
-    #if 1
-    Spaceshooter::updateSpaceshooterGame(gs, inputs);
+    #ifdef SPACESHOOTER_ON
+    Spaceshooter::updateSpaceshooterGame(GameState::GetGameState(), inputs);
     #endif
 }
 
 int main(int argc, char *argv[]) {
-
-    GameState& gs = GameState::GetGameState();
-
-    preLoopInit(gs);
+    preLoopInit();
 
     while(!ShouldCloseWindow())
     {
         // poll inputs from os layer
         UserInput inputs = GetUserInput();
         // pass inputs into game
-        advanceGameSimulation(inputs, gs);
+        advanceGameSimulation(inputs);
         // render new state of the game
-        renderGame(gs); 
+        renderGame(); 
     }
 
     TerminateGame();

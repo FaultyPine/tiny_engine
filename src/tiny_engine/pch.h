@@ -15,7 +15,6 @@
 // ----------------
 
 #include <glad/glad.h>
-#include <glad/glad.c>
 #include "GLFW/glfw3.h"
 
 #include <glm/glm.hpp>
@@ -30,11 +29,8 @@
 #define GLT_MANUAL_VIEWPORT 
 #include "gltext.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+//#include "stb_image.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
 
 template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }
 template<typename T> inline T MIN(T x, T y) { return x < y ? x : y; }

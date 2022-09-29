@@ -17,14 +17,14 @@ struct Camera {
     f32 nearClip = 0.1f;
     f32 farClip = 100.0f;
 
-    glm::mat4 GetProjectionMatrix() {
+    inline glm::mat4 GetProjectionMatrix() {
         f32 aspect = (f32)screenWidth / screenHeight;
         return glm::perspective(glm::radians(FOV), aspect, nearClip, farClip);
     }
-    glm::mat4 GetViewMatrix() {
+    inline glm::mat4 GetViewMatrix() {
         return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     }
-    static Camera& GetMainCamera() {
+    inline static Camera& GetMainCamera() {
         static Camera mainCamera;
         return mainCamera;
     }

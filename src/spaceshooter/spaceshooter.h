@@ -86,7 +86,7 @@ void drawSpaceshooter(GameState& gs) {
     
 
     // Background -----------------------------
-    gs.background.DrawSprite(gs.camera, vec2(0.0, 0.0), vec2(gs.camera.screenWidth, gs.camera.screenHeight));
+    gs.background.DrawSprite(gs.camera, glm::vec2(0.0, 0.0), glm::vec2(gs.camera.screenWidth, gs.camera.screenHeight));
     //std::cout << "----- END FRAME -----\n";
 }
 
