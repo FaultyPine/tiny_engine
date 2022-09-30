@@ -9,30 +9,30 @@ Mesh::Mesh(const Shader& shader, const std::vector<Vertex>& verts, const std::ve
     initMesh();
 }
 void Mesh::UnloadMesh() {
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    GLCall(glDeleteVertexArrays(1, &VAO));
+    GLCall(glDeleteBuffers(1, &VBO));
+    GLCall(glDeleteBuffers(1, &EBO));
 }
 
 void ConfigureVertexAttrib(u32 attributeLoc, u32 attributeSize, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
-    glVertexAttribPointer(attributeLoc, attributeSize, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset);
-    glEnableVertexAttribArray(attributeLoc);
+    GLCall(glVertexAttribPointer(attributeLoc, attributeSize, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+    GLCall(glEnableVertexAttribArray(attributeLoc));
 }
 
 void Mesh::initMesh() {
     // create buffers
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    GLCall(glGenVertexArrays(1, &VAO));
+    GLCall(glGenBuffers(1, &VBO));
+    GLCall(glGenBuffers(1, &EBO));
 
     // bind buffers
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    GLCall(glBindVertexArray(VAO));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
 
     // put data into buffers
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);  
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW);
+    GLCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));  
+    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW));
 
     // tell ogl where vertex attributes are
     ConfigureVertexAttrib( // vert positions
@@ -45,7 +45,7 @@ void Mesh::initMesh() {
         3, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
 
     // unbind vert array
-    glBindVertexArray(0);
+    GLCall(glBindVertexArray(0));
 }
 
 void Mesh::DrawMesh(Shader& shader) {
@@ -57,7 +57,7 @@ void Mesh::DrawMesh(Shader& shader) {
     for (s32 i = 0; i < textures.size(); i++) {
         const Texture& tex = textures[i];
         // before binding, activate the texture we're talking about
-        glActiveTexture(GL_TEXTURE0 + i);
+        GLCall(glActiveTexture(GL_TEXTURE0 + i));
 
         // get the string representation of our texture type
         // something like tex_diffuse or tex_normal
@@ -71,14 +71,14 @@ void Mesh::DrawMesh(Shader& shader) {
         const char* uniformName = (texName + texNum).c_str();
         // set the texture uniform to the proper texture unit
         shader.setUniform(uniformName, i);
-        glBindTexture(GL_TEXTURE_2D, tex.id);
+        GLCall(glBindTexture(GL_TEXTURE_2D, tex.id));
     }
 
     // draw mesh = bind vert array -> draw -> unbind
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    GLCall(glBindVertexArray(VAO));
+    GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
     
     // clean up
-    glBindVertexArray(0); // unbind vert array
-    glActiveTexture(GL_TEXTURE0); // reset active tex
+    GLCall(glBindVertexArray(0)); // unbind vert array
+    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
 }

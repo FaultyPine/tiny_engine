@@ -25,20 +25,20 @@ Texture LoadTexture(const char* imgPath,
     u32 texture = 0; // good default? 
     if (data) {
         std::cout << "Loaded img " << imgPath << "\n";
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        GLCall(glGenTextures(1, &texture));
+        GLCall(glBindTexture(GL_TEXTURE_2D, texture));
         // wrapping mode
         //              tex target     tex wrap axis      tex wrap mode
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (s32)props.texWrapMode);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (s32)props.texWrapMode);
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, (s32)props.texWrapMode));
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, (s32)props.texWrapMode));
         // filter mode
         //               apply taget to minified or magnified textures
         //              tex target         ^                  tex filter mode & mipmap filter mode
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (s32)props.minFilter);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (s32)props.magFilter); // don't specify mipmap filtering on upscaling, since it only happens when you downscale
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (s32)props.minFilter));
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (s32)props.magFilter)); // don't specify mipmap filtering on upscaling, since it only happens when you downscale
         // tex target, mipmap level, tex format, width, height, 0 (legacy stuff), format of src img, datatype of src img, actual img data
-        glTexImage2D(GL_TEXTURE_2D, 0, (s32)props.texFormat, width, height, 0, (s32)props.imgFormat, (s32)props.imgDataType, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
+        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, (s32)props.texFormat, width, height, 0, (s32)props.imgFormat, (s32)props.imgDataType, data));
+        GLCall(glGenerateMipmap(GL_TEXTURE_2D));
     }
     else {
         std::cout << "Failed to load texture " << imgPath << "\n";

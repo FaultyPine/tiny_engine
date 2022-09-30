@@ -4,5 +4,6 @@
 .vscode
 
 build/
+__pycache__/
 
 *.gch

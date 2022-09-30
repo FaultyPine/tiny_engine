@@ -32,6 +32,28 @@
 //#include "stb_image.h"
 
 
+
+#define PRINT_AND_EXIT() std::cout << "[ERROR] In " << __FILE__ << " on line " << __LINE__ << std::endl; exit(1)
+
+static void GLClearError() {
+    while (glGetError() != GL_NO_ERROR);
+}
+static bool GLLogCall(const char* func, const char* file, int line) {
+    while (GLenum error = glGetError()) {
+        std::cout << "OpenGL error: (" << error << "): " << file << " line: " << line << std::endl;
+        return false;
+    }
+    return true;
+}
+#define ASSERT(x) if (!(x)) PRINT_AND_EXIT()
+
+/*
+#define GLCall(x) GLClearError();\
+    x;\
+    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+*/
+#define GLCall(x) x
+
 template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }
 template<typename T> inline T MIN(T x, T y) { return x < y ? x : y; }
 #define ARRAY_SIZE(arr) ( sizeof((arr))/sizeof((arr)[0]) )
