@@ -13,7 +13,7 @@ LINKER_ARGS = var_contents("""
     -Llib/glfw -lglfw3 -lpthread -lgdi32
 """)
 COMPILER_ARGS = var_contents("""
-    -g -Iinclude -Isrc/tiny_engine -std=c++11
+    -g -Iinclude -Isrc -std=c++11
 """)
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
 BUILD_COMMAND = var_contents(f"""
@@ -43,12 +43,10 @@ def build():
     elapsed = round(time.time() - start_time, 3)
     print("Built!")
     print(f"Build took {elapsed} seconds")
-    print("")
-    run_app()
 
-def generate_ninja_build():
+def generate_ninja_build(force_overwrite=False):
     ninja_build_filename = "build.ninja"
-    if os.path.exists(ninja_build_filename):
+    if os.path.exists(ninja_build_filename) and not force_overwrite:
         return
     buildfile = open("build.ninja", "w")
     n = Writer(buildfile)
@@ -77,6 +75,7 @@ def generate_ninja_build():
     link_files = []
     # sources build
     for src_cpp in SOURCES:
+        print("Source file: " + src_cpp)
         # build src
         obj_filename = get_obj_from_src_file(src_cpp)
         n.build(f"$builddir/{obj_filename}", "compile", f"{src_cpp}")
@@ -103,12 +102,16 @@ if len(args) > 0:
         print(f"Build took {elapsed} seconds")
         exit()
 
-    if args[0] == "run":
+    elif args[0] == "regen":
+        generate_ninja_build(True)
+        exit()
+
+    elif args[0] == "run":
         run_app()
         exit()
 
-    if args[0] == "norun":
-        command(BUILD_COMMAND)
+    elif args[0] == "norun":
+        build()
         print("Built!")
         exit()
     
@@ -117,4 +120,5 @@ if len(args) > 0:
 else:
     # default (no arg) behavior
     build()
+    run_app()
 
