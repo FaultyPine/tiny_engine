@@ -19,7 +19,10 @@ inline std::string Vec2ToStr(const glm::vec2& vec) {
 
 // returns the current GLFW time
 double GetTime();
+long long GetTimeSinceEpoch();
 
+u32 GetRandom(u32 start = 0, u32 end = 1);
+long long GetCPUCycles();
 
 f32 GetDeltaTime();
 

@@ -19,16 +19,16 @@ struct Shader {
     Shader(u32 id) { ID = id; }
 
 
-    Shader(const char* vertexPath, const char* fragmentPath);
+    Shader(const std::string& vertexPath, const std::string& fragmentPath);
     static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
     static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
 
     // use/activate the shader
-    inline void use() {
+    inline void use() const {
         assert("Invalid shader ID!\n" && ID);
         glUseProgram(ID); 
     }
-    s32 getLoc(const std::string& uniformName);
+    s32 getLoc(const std::string& uniformName) const;
 
 
     // utility uniform functions
@@ -36,25 +36,25 @@ struct Shader {
     #define SET_UNIFORM_MACRO_FUNC_NAME setUniform
 
     #define DECLARE_SET_UNIFORM_FUNC1(glFunc, type)                                                 \
-    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val) {          \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val) const {          \
         s32 loc = getLoc(uniformName);                                 \
         if (loc != -1) glFunc(loc, val);                                                            \
     }
 
     #define DECLARE_SET_UNIFORM_FUNC2(glFunc, type)                                                 \
-    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2) {  \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2) const {  \
         s32 loc = getLoc(uniformName);                                 \
         if (loc != -1) glFunc(loc, val1, val2);                                                     \
     }
 
     #define DECLARE_SET_UNIFORM_FUNC3(glFunc, type)                                                 \
-    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3) {    \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3) const {    \
         s32 loc = getLoc(uniformName);                                 \
         if (loc != -1) glFunc(loc, val1, val2, val3);                                               \
     }
 
     #define DECLARE_SET_UNIFORM_FUNC4(glFunc, type)                                                         \
-    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3, type val4) { \
+    inline void SET_UNIFORM_MACRO_FUNC_NAME(const s8* uniformName, type val1, type val2, type val3, type val4) const { \
         s32 loc = getLoc(uniformName);                                         \
         if (loc != -1) glFunc(loc, val1, val2, val3, val4);                                                 \
     }
@@ -81,20 +81,20 @@ struct Shader {
     DECLARE_SET_UNIFORM_FUNC4(glUniform4i, s32)
     DECLARE_SET_UNIFORM_FUNC4(glUniform4ui, u32)
 
-    inline void setUniform(const s8* uniformName, glm::vec2 vec2) {
+    inline void setUniform(const s8* uniformName, glm::vec2 vec2) const {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniform2f(loc, vec2.x, vec2.y);
     }
-    inline void setUniform(const s8* uniformName, glm::vec3 vec3) {
+    inline void setUniform(const s8* uniformName, glm::vec3 vec3) const {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniform3f(loc, vec3.x, vec3.y, vec3.z);
     }
-    inline void setUniform(const s8* uniformName, glm::vec4 vec4) {
+    inline void setUniform(const s8* uniformName, glm::vec4 vec4) const {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniform4f(loc, vec4.x, vec4.y, vec4.z, vec4.w);
     }
 
-    inline void setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose = false) {
+    inline void setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose = false) const {
         s32 loc = getLoc(uniformName);
         if (loc != -1) glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(mat4));
     }

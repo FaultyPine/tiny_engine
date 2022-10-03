@@ -14,6 +14,10 @@ void DrawText(GLTtext* text, f32 x, f32 y, f32 scale, f32 r, f32 g, f32 b, f32 a
     gltEndDraw();
 }
 
+void SetText(GLTtext* text, const std::string& msg) {
+    gltSetText(text, msg.c_str());
+}
+
 void UnloadText(GLTtext* txt) {
     gltDeleteText(txt);
 }

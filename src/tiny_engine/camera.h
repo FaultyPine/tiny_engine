@@ -28,6 +28,8 @@ struct Camera {
         static Camera mainCamera;
         return mainCamera;
     }
+    inline static u32 GetScreenWidth()  { return GetMainCamera().screenWidth; }
+    inline static u32 GetScreenHeight() { return GetMainCamera().screenHeight; }
 };
 
 

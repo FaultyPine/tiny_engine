@@ -9,6 +9,13 @@
 #include "sprite.h"
 #include "math.h"
 
+// for rdtsc for rand
+#ifdef _MSC_VER
+#include <intrin.h>
+#else
+#include <x86intrin.h>
+#endif
+
 static f32 deltaTime = 0.0f;
 static f32 lastFrameTime = 0.0f;
 static u32 frameCount = 0;
@@ -22,9 +29,21 @@ void TerminateGame() {
     gltTerminate();
     glfwTerminate();
 }
+u32 GetRandom(u32 start, u32 end) {
+    long long cpucycles = GetCPUCycles();
+    srand(cpucycles);
+    return start + (rand() % end);
+}
+long long GetCPUCycles() {
+    return __rdtsc();
+}
+
 // returns the current GLFW time
 double GetTime() {
     return glfwGetTime();
+}
+long long GetTimeSinceEpoch() {
+    return std::chrono::high_resolution_clock::now().time_since_epoch().count();
 }
 void CloseGameWindow() {
     glfwSetWindowShouldClose(glob_glfw_window, true);
@@ -34,11 +53,7 @@ f32 GetDeltaTime() {
 }
 u32 GetFrameCount() { return frameCount; }
 
-/// Game loop should be while(!ShouldCloseWindow())
-bool ShouldCloseWindow() {
-    glfwSwapBuffers(glob_glfw_window);
-    glfwPollEvents();
-
+void EngineLoop() {
     // update deltatime
     f32 currentTime = GetTime();
     deltaTime = currentTime - lastFrameTime;
@@ -48,8 +63,15 @@ bool ShouldCloseWindow() {
 
     // clear gl buffer
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
+}
+
+/// Game loop should be while(!ShouldCloseWindow())
+bool ShouldCloseWindow() {
+    glfwSwapBuffers(glob_glfw_window);
+    glfwPollEvents();
+    EngineLoop();
     return glfwWindowShouldClose(glob_glfw_window);
 }
 
@@ -89,7 +111,15 @@ void InitGame(u32 windowWidth, u32 windowHeight, const s8* windowName) {
     
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
 
-    glEnable(GL_DEPTH_TEST);
+    // For 2D games, don't depth test so that the order they are drawn in makes sense
+    // (subsequent draws overwrite previous draws)
+    glDepthFunc(GL_NEVER);
+    // comment out above line and comment in below line for proper 3D depth testing
+    //glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_STENCIL_TEST);  
+   
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

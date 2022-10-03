@@ -1,7 +1,7 @@
 #include "shader.h"
 
 
-s32 Shader::getLoc(const std::string& uniformName) {
+s32 Shader::getLoc(const std::string& uniformName) const {
     //              shader id               uniform name    uniform location
     static std::unordered_map<u32, std::unordered_map<std::string, s32>> cachedUniformLocs;
 
@@ -20,7 +20,7 @@ s32 Shader::getLoc(const std::string& uniformName) {
     }
 }
 
-Shader::Shader(const char* vertexPath, const char* fragmentPath) {
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) {
     // 1. retrieve the vertex/fragment source code from filePath
     std::string vertexCode;
     std::string fragmentCode;

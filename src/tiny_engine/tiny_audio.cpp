@@ -4,7 +4,10 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
+namespace Audio {
+
 static ma_engine globalAudioEngine;
+static bool isMuted = false;
 
 void InitAudioEngine() {
     ma_result result;
@@ -14,5 +17,15 @@ void InitAudioEngine() {
     }
 }
 void PlayAudio(const char* file)  {
-    ma_engine_play_sound(&globalAudioEngine, file, NULL);
+    if (!isMuted) {
+        ma_engine_play_sound(&globalAudioEngine, file, NULL);
+    }
 }
+
+void SetMute(bool mute) {
+    isMuted = mute;
+}
+
+
+
+} // namespace Audio

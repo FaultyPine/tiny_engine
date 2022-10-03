@@ -13,7 +13,7 @@ LINKER_ARGS = var_contents("""
     -Llib/glfw -lglfw3 -lpthread -lgdi32
 """)
 COMPILER_ARGS = var_contents("""
-    -g -Iinclude -Isrc -std=c++11
+    -ggdb -Iinclude -Isrc -std=c++11 -O0
 """)
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
 BUILD_COMMAND = var_contents(f"""

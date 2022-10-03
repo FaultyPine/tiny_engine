@@ -48,13 +48,13 @@ struct UserInput {
         return mouseInput;
     }
     
-    bool GetKeyUp(s32 key) const {
+    static bool GetKeyUp(s32 key) {
         return GetKeyState(key, GLFW_RELEASE);
     }
-    bool GetKeyDown(s32 key) const {
+    static bool GetKeyDown(s32 key) {
         return GetKeyState(key, GLFW_PRESS);
     }
-    bool GetKeyHold(s32 key) const {
+    static bool GetKeyHold(s32 key) {
         return GetKeyState(key, GLFW_REPEAT);
     }
 

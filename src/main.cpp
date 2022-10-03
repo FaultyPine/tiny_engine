@@ -1,5 +1,5 @@
-// pch's have to be the first thing
-#include "pch.h"
+// pch's have to be the first thing. If this errors, rebuild again.
+#include "tiny_engine/pch.h"
 
 // external implementation files
 #include <glad/glad.c>
@@ -15,9 +15,13 @@
 
 #include "ObjParser.h"
 
-#include "spaceshooter/spaceshooter.h"
+// game toggles
+//#define SPACESHOOTER_ON
+#define POTP_ON
 
-#define SPACESHOOTER_ON
+// game includes
+//#include "spaceshooter/spaceshooter.h"
+#include "PartOfThePack/potp_main.h"
 
 void FPS3DCamMovement(UserInput& inputs, Camera& cam) {
     // 3D fps cam movement
@@ -126,6 +130,10 @@ void preLoopInit() {
     #ifdef SPACESHOOTER_ON
     Spaceshooter::initSpaceshooter(GameState::GetGameState());
     #endif
+
+    #ifdef POTP_ON
+    Potp::MainInit();
+    #endif
 }
 
 void renderGame() {
@@ -141,6 +149,10 @@ void renderGame() {
     #ifdef SPACESHOOTER_ON
     Spaceshooter::drawSpaceshooter(GameState::GetGameState());
     #endif
+
+    #ifdef POTP_ON
+    Potp::MainDraw();
+    #endif
 }
 
 
@@ -152,6 +164,10 @@ void advanceGameSimulation(UserInput inputs) {
 
     #ifdef SPACESHOOTER_ON
     Spaceshooter::updateSpaceshooterGame(GameState::GetGameState(), inputs);
+    #endif
+
+    #ifdef POTP_ON
+    Potp::MainUpdate(inputs);
     #endif
 }
 

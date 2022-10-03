@@ -19,6 +19,9 @@ bool isOverlappingRect2D(const glm::vec2& pos1, const glm::vec2& size1, const gl
     return true;
 }
 
+bool isPositionNear(const glm::vec2& pos1, const glm::vec2& pos2, f32 dist) {
+    return glm::distance(pos1, pos2) <= dist;
+}
 
 
 }

@@ -1,14 +1,55 @@
 #include "sprite.h"
 
 
-Sprite::Sprite(Texture& mainTex) {
+Sprite::Sprite(const Texture& mainTex) {
     this->mainTex = mainTex;
     this->shader = Shader(UseResPath("shaders/default_sprite.vs").c_str(), UseResPath("shaders/default_sprite.fs").c_str());
     initRenderData();
 }
 
+void Sprite::LoadSpritesFromSpriteSheet(const char* spritesheetPath, Sprite* resultTextures, u32 numRows, u32 numCols, TextureProperties props) {
+    // load spritesheet
+    s32 width, height, numChannels;
+    u8* imgData = LoadImageData(spritesheetPath, &width, &height, &numChannels);
+
+    // determine how to iterate through the image
+    s32 singleSpriteWidth = width / numCols;
+    s32 singleSpriteHeight = height / numRows;
+
+    // iterate through each sprite img
+    for (s32 row = 0; row < numRows; row++) {
+        for (s32 col = 0; col < numCols; col++) {
+            // get sprite position
+            f32 spriteY = row * singleSpriteHeight;
+            f32 spriteX = col * singleSpriteWidth;
+            ASSERT(spriteY >= 0 && spriteY <= height);
+            ASSERT(spriteX >= 0 && spriteX <= width);
+
+            SetPixelReadSettings(width, singleSpriteWidth*col, singleSpriteHeight*row, 4);
+            // NOTE: using glPixelStorei to tell opengl to skip pixels so that I can just use the x,y,width,height to
+            // read the relevant part of the spritesheet
+            Texture thisTex = GenTextureFromImg(imgData, singleSpriteWidth, singleSpriteHeight, props);
+            
+            s32 resultTexturesIdx = col + (row*numCols);
+            resultTextures[resultTexturesIdx] = Sprite(thisTex);
+            
+        }
+    }
+
+    // back to defaults
+    SetPixelReadSettings(0, 0, 0, 4);
+
+    free(imgData);
+}
+
+
 void Sprite::DrawSprite(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 color) {
+                glm::vec2 size, f32 rotate, glm::vec3 color) const {
+    if (!isValid()) {
+        std::cout << "Tried to draw invalid sprite!\n";
+        exit(1);
+        return;
+    }
     shader.use();
     // set up transform of the actual sprite
     glm::mat4 model = glm::mat4(1.0f);

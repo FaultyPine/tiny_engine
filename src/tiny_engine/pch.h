@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <assert.h>
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <chrono>
+#include <random>
 // ----------------
 
 #include <glad/glad.h>
@@ -31,37 +35,7 @@
 
 //#include "stb_image.h"
 
-
-
-#define PRINT_AND_EXIT() std::cout << "[ERROR] In " << __FILE__ << " on line " << __LINE__ << std::endl; exit(1)
-
-static void GLClearError() {
-    while (glGetError() != GL_NO_ERROR);
-}
-static bool GLLogCall(const char* func, const char* file, int line) {
-    while (GLenum error = glGetError()) {
-        std::cout << "OpenGL error: (" << error << "): " << file << " line: " << line << std::endl;
-        return false;
-    }
-    return true;
-}
-#define ASSERT(x) if (!(x)) PRINT_AND_EXIT()
-
-/*
-#define GLCall(x) GLClearError();\
-    x;\
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-*/
-#define GLCall(x) x
-
-template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }
-template<typename T> inline T MIN(T x, T y) { return x < y ? x : y; }
-#define ARRAY_SIZE(arr) ( sizeof((arr))/sizeof((arr)[0]) )
-
-template <typename T> T CLAMP(const T& value, const T& low, const T& high) {
-    return value < low ? low : (value > high ? high : value); 
-}
-
+// types
 typedef unsigned char u8;
 typedef char s8;
 typedef unsigned short u16;
@@ -72,6 +46,42 @@ typedef unsigned long u64;
 typedef long s64;
 typedef float f32;
 typedef double f64;
+
+// debug
+inline void PrintAndExitDBG(const char* file, s32 line) {
+    std::cout << "[ERROR] In " << file << " on line " << line << std::endl; 
+    exit(1);
+}
+#define ASSERT(x) if (!(x)) PrintAndExitDBG(__FILE__, __LINE__)
+
+// OpenGL error handling
+static void GLClearError() {
+    while (glGetError() != GL_NO_ERROR);
+}
+static bool GLLogCall(const char* func, const char* file, int line) {
+    while (GLenum error = glGetError()) {
+        std::cout << "OpenGL error: (" << error << "): " << file << " line: " << line << std::endl;
+        return false;
+    }
+    return true;
+}
+/*
+#define GLCall(x) GLClearError();\
+    x;\
+    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+*/
+#define GLCall(x) x
+
+
+// Utils
+template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }
+template<typename T> inline T MIN(T x, T y) { return x < y ? x : y; }
+
+#define ARRAY_SIZE(arr) ( sizeof((arr))/sizeof((arr)[0]) )
+
+template <typename T> void CLAMP(T& value, const T& low, const T& high) {
+    value = value < low ? low : (value > high ? high : value); 
+}
 
 
 #endif

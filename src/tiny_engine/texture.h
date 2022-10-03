@@ -63,13 +63,28 @@ struct TextureProperties {
     TexFormat texFormat;
     ImageFormat imgFormat;
     ImageDataType imgDataType;
+
+    /// DEFAULTS: Wrap = mirrored repeat Min = lin_mip_lin Mag = lin TexFormat = RGBA ImgFormat = RGBA ImgData = UnsignedByte
+    static TextureProperties Default() {
+        TextureProperties texProps;
+        // defaults
+        texProps.texWrapMode = TextureProperties::TexWrapMode::MIRRORED_REPEAT;
+        texProps.minFilter = TextureProperties::TexMinFilter::LINEAR_MIPMAP_LINEAR;
+        texProps.magFilter = TextureProperties::TexMagFilter::LINEAR;
+        texProps.texFormat = TextureProperties::TexFormat::RGBA;
+        texProps.imgFormat = TextureProperties::ImageFormat::RGBA;
+        texProps.imgDataType = TextureProperties::ImageDataType::UNSIGNED_BYTE;
+        return texProps;
+    }
 };
 
 struct Texture {
-    u32 id;
-    TextureMaterialType type;
+    u32 id = 0;
+    f32 width, height = 0.0;
+    TextureMaterialType type = TextureMaterialType::DIFFUSE;
 
-    void bind() { glBindTexture(GL_TEXTURE_2D, id); }
+    Texture() { id = 0; type = TextureMaterialType::DIFFUSE; width = 0.0; height = 0.0; }
+    void bind() const { glBindTexture(GL_TEXTURE_2D, id); }
 };
 
 struct Material {
@@ -82,10 +97,15 @@ struct Material {
     Material(glm::vec3 diffuseCol, const std::string& texName) { diffuseColor = diffuseCol; diffuseTexPath = texName; }
 };
 
+void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment);
 
-Texture LoadTexture(const char* imgPath, 
+u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);
+
+Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props, 
                     TextureMaterialType texType = TextureMaterialType::OTHER, 
                     bool flipVertically = false);
+Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, 
+                    TextureProperties props, TextureMaterialType texType = TextureMaterialType::DIFFUSE);
 
 #endif
