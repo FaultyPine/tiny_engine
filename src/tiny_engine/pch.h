@@ -84,4 +84,36 @@ template <typename T> void CLAMP(T& value, const T& low, const T& high) {
 }
 
 
+inline uint32_t hash(const char* message, size_t message_length)
+{
+    auto mix = [](uint32_t message_block, uint32_t internal_state){
+        return (internal_state * message_block) ^
+          ((internal_state << 3) + (message_block >> 2));
+    };
+
+   uint32_t internal_state = 0xA5A5A5A5; // IV: A magic number
+   uint32_t message_block = 0;
+
+   // Loop over the message 32-bits at-a-time
+   while (message_length >= 4)
+   {
+      memcpy(&message_block, message, sizeof(uint32_t));
+
+      internal_state = mix(message_block, internal_state);
+
+      message_length -= sizeof(uint32_t);
+      message        += sizeof(uint32_t);
+   }
+
+   // Are there any remaining bytes?
+   if (message_length)
+   {
+      memcpy(&message_block, message, message_length);
+      internal_state = mix(message_block, internal_state);
+   }
+
+   return internal_state;
+}
+
+
 #endif

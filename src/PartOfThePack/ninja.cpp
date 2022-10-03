@@ -108,6 +108,7 @@ void ProcessPlayerInput(Ninja* playerNinjas, u32 numPlayerNinjas) {
 
 void UpdateNinjaAI(Ninja& aiNinja) {
     const glm::vec2& pos = aiNinja.entity.position;
+    // if we're within a reasonable distance of our goal
     if (glm::distance(aiNinja.aiDesiredPos, pos) < 1.0f) {
         // if we are at our ai's desired spot, wait and then regenerate desired spot
         if (aiNinja.positionIdleFrames >= aiNinja.positionIdleFramesMax) {
@@ -125,7 +126,7 @@ void UpdateNinjaAI(Ninja& aiNinja) {
     }
 }
 
-void UpdateNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
+void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
     for (int i = 0; i < numAINinjas; i++) {
         Ninja& aiNinja = aiNinjas[i];
         UpdateNinjaAI(aiNinja);

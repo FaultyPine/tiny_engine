@@ -26,6 +26,9 @@ void SetMute(bool mute) {
     isMuted = mute;
 }
 
+void SetVolume(f32 volume) {
+    ma_engine_set_volume(&globalAudioEngine.pDevice, volume);
+}
 
 
 } // namespace Audio

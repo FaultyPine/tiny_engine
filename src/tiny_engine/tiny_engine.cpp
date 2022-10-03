@@ -20,6 +20,7 @@ static f32 deltaTime = 0.0f;
 static f32 lastFrameTime = 0.0f;
 static u32 frameCount = 0;
 GLFWwindow* glob_glfw_window = nullptr;
+static u64 randomSeed = 0;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     gltViewport(width, height);
@@ -30,8 +31,14 @@ void TerminateGame() {
     glfwTerminate();
 }
 u32 GetRandom(u32 start, u32 end) {
-    long long cpucycles = GetCPUCycles();
-    srand(cpucycles);
+    // lazy init random seed
+    if (randomSeed == 0) {
+        // truly random initial seed. Subsequent random calls simply increment the seed deterministically
+        randomSeed = GetCPUCycles();
+        std::cout << "Initial random seed = " << randomSeed << "\n";
+    }
+    srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
+    randomSeed++; // deterministic random
     return start + (rand() % end);
 }
 long long GetCPUCycles() {

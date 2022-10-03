@@ -45,7 +45,7 @@ void PotpUpdate(GameState& gs, UserInput inputs) {
         Audio::PlayAudio(UseResPath("potp/hit.wav").c_str());
     }
 
-    UpdateNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, MAX_NUM_PLAYER_NINJAS);
+    UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, MAX_NUM_PLAYER_NINJAS);
 }
 
 void PotpDraw(const GameState& gs) {
