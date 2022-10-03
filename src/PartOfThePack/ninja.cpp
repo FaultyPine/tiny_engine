@@ -58,7 +58,7 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     }
 }
 
-void ProcessPlayerInput(Ninja* playerNinjas, u32 numPlayerNinjas) {
+void ProcessPlayerInput(UserInput inputs, Ninja* playerNinjas, u32 numPlayerNinjas) {
     u32 screenWidth = Camera::GetScreenWidth();
     u32 screenHeight = Camera::GetScreenHeight();
     for (int i = 0; i < numPlayerNinjas; i++) {
@@ -66,32 +66,16 @@ void ProcessPlayerInput(Ninja* playerNinjas, u32 numPlayerNinjas) {
         glm::vec2& ninjaPos = playerNinja.entity.position;
         glm::vec2 inputDir = glm::vec2(0.0f, 0.0f); // range 0-1
 
-        // default player 1 (0 idx)
-        s32 upKey = GLFW_KEY_W;
-        s32 downKey = GLFW_KEY_S;
-        s32 rightKey = GLFW_KEY_D;
-        s32 leftKey = GLFW_KEY_A;
-        if (i == 1) {
-            upKey = GLFW_KEY_UP;
-            downKey = GLFW_KEY_DOWN;
-            rightKey = GLFW_KEY_RIGHT;
-            leftKey = GLFW_KEY_LEFT;
-        }
-        // bad input architecture here... better to pass in inputs 
-        // from top-level update so we can support replays and stuff like that
-        // this also makes us have to do awkward checks to see what player input to poll
-        // Ninjas shouldn't have to care about input polling logistics, they should just take input
-        // and operate on it
-        if (UserInput::GetKeyDown(upKey)) {
+        if (inputs.isUp()) {
             inputDir.y -= 1.0f;
         }
-        if (UserInput::GetKeyDown(downKey)) {
+        if (inputs.isDown()) {
             inputDir.y += 1.0f;
         }
-        if (UserInput::GetKeyDown(leftKey)) {
+        if (inputs.isLeft()) {
             inputDir.x -= 1.0f;
         }
-        if (UserInput::GetKeyDown(rightKey)) {
+        if (inputs.isRight()) {
             inputDir.x += 1.0f;
         }
         if (inputDir.x != 0.0 && inputDir.y != 0) {
@@ -131,7 +115,7 @@ void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* pla
         Ninja& aiNinja = aiNinjas[i];
         UpdateNinjaAI(aiNinja);
     }
-    ProcessPlayerInput(playerNinjas, numPlayerNinjas);
+    ProcessPlayerInput(inputs, playerNinjas, numPlayerNinjas);
 }
 
 void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinjas, u32 numPlayerNinjas) {

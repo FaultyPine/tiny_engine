@@ -6,30 +6,21 @@ UserInput GetUserInput() {
     // making sure to zero init so we don't drift
     UserInput input = {}; 
 
-    // TODO: deprecate this... provide GetKeyState/GetAction API to user
-
     if (GetKeyState(GLFW_KEY_ESCAPE, GLFW_PRESS)) {
         CloseGameWindow();
     }
-    if (GetKeyState(GLFW_KEY_W, GLFW_PRESS) || GetKeyState(GLFW_KEY_UP, GLFW_PRESS)) {
-        input.stick.y = 1.0;
-    }
-    if (GetKeyState(GLFW_KEY_S, GLFW_PRESS) || GetKeyState(GLFW_KEY_DOWN, GLFW_PRESS)) {
-        input.stick.y = -1.0;
-    }
-    if (GetKeyState(GLFW_KEY_A, GLFW_PRESS) || GetKeyState(GLFW_KEY_RIGHT, GLFW_PRESS)) {
-        input.stick.x = -1.0;
-    }
-    if (GetKeyState(GLFW_KEY_D, GLFW_PRESS) || GetKeyState(GLFW_KEY_LEFT, GLFW_PRESS)) {
-        input.stick.x = 1.0;
-    }
-    if (GetKeyState(GLFW_KEY_SPACE, GLFW_PRESS)) {
+    if (GetKeyState(GLFW_KEY_W, GLFW_PRESS)) {
         input.buttons |= UserInput::ButtonValues::UP;
     }
-    if (GetKeyState(GLFW_KEY_LEFT_SHIFT, GLFW_PRESS)) {
+    if (GetKeyState(GLFW_KEY_S, GLFW_PRESS)) {
         input.buttons |= UserInput::ButtonValues::DOWN;
     }
-    
+    if (GetKeyState(GLFW_KEY_A, GLFW_PRESS)) {
+        input.buttons |= UserInput::ButtonValues::LEFT;
+    }
+    if (GetKeyState(GLFW_KEY_D, GLFW_PRESS)) {
+        input.buttons |= UserInput::ButtonValues::RIGHT;
+    }
     
     return input;
 }

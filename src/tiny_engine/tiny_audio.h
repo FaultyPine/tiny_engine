@@ -1,6 +1,8 @@
 #ifndef TINY_AUDIO_H
 #define TINY_AUDIO_H
 
+#include "pch.h"
+
 namespace Audio {
 
 void InitAudioEngine();

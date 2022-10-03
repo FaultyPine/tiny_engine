@@ -23,6 +23,8 @@
 //#include "spaceshooter/spaceshooter.h"
 #include "PartOfThePack/potp_main.h"
 
+/*
+// 3D FPS TESTING CODE
 void FPS3DCamMovement(UserInput& inputs, Camera& cam) {
     // 3D fps cam movement
     f32 cameraSpeed = cam.speed * GetDeltaTime();
@@ -117,8 +119,8 @@ void initTestMesh(Mesh& mesh) {
     mesh = Mesh(shader, meshVerts, meshIndices, meshTexs);
 }
 
-
 Mesh testMesh = {};
+*/
 
 void preLoopInit() {
     InitGame(800, 600, "Tiny Engine"); 

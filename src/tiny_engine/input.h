@@ -36,18 +36,35 @@ struct MouseInput {
 struct UserInput {
     enum ButtonValues {
         NONE = 0,
-        UP = 2,
-        DOWN = 4,
-        ACTION = 8,
+        UP = 1 << 0,
+        DOWN = 1 << 1,
+        LEFT = 1 << 2,
+        RIGHT = 1 << 3,
+        ACTION = 1 << 4,
     };
-    glm::vec2 stick;
     u32 buttons;
 
+    bool isUp() const {
+        return buttons & ButtonValues::UP;
+    }
+    bool isDown() const {
+        return buttons & ButtonValues::DOWN;
+    }
+    bool isLeft() const {
+        return buttons & ButtonValues::LEFT;
+    }
+    bool isRight() const {
+        return buttons & ButtonValues::RIGHT;
+    }
+    bool isAction() const {
+        return buttons & ButtonValues::ACTION;
+    }
+
+    // static input getters
     static MouseInput& GetMouse() {
         static MouseInput mouseInput;
         return mouseInput;
     }
-    
     static bool GetKeyUp(s32 key) {
         return GetKeyState(key, GLFW_RELEASE);
     }
@@ -56,29 +73,6 @@ struct UserInput {
     }
     static bool GetKeyHold(s32 key) {
         return GetKeyState(key, GLFW_REPEAT);
-    }
-
-    // TODO: deprecate this (see msg in GetUserInput)
-    bool isForward() const {
-        return stick.y > 0.0;
-    }
-    bool isBackward() const {
-        return stick.y < 0.0;
-    }
-    bool isRight() const {
-        return stick.x > 0.0;
-    }
-    bool isLeft() const {
-        return stick.x < 0.0;
-    }
-    bool isUp() const {
-        return buttons & ButtonValues::UP;
-    }
-    bool isDown() const {
-        return buttons & ButtonValues::DOWN;
-    }
-    bool isAction() const {
-        return buttons & ButtonValues::ACTION;
     }
 };
 

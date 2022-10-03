@@ -6,8 +6,22 @@
 
 # tiny_engine
 
+## Info
 
-# TODO
+Libraries Used:
+- OpenGL
+- GLAD
+- GLFW
+- miniaudio
+- (GLtext)[https://github.com/vallentin/glText] by Christian Vallentin 
+- (PoissonGenerator)[https://github.com/corporateshark/poisson-disk-generator] by Sergey Kosarevsky
+
+Features:
+- deterministic randomness
+- custom spritesheet parsing
+- 
+
+## TODO
 - UI
 - raycasts
 - animation

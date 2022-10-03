@@ -1,6 +1,5 @@
 #include "tiny_audio.h"
 
-#include "pch.h"
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
@@ -27,7 +26,7 @@ void SetMute(bool mute) {
 }
 
 void SetVolume(f32 volume) {
-    ma_engine_set_volume(&globalAudioEngine.pDevice, volume);
+    ma_engine_set_volume(&globalAudioEngine, volume);
 }
 
 
