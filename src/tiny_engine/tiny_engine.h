@@ -4,7 +4,6 @@
 #include "pch.h"
 
 
-
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 void CloseGameWindow();
@@ -21,6 +20,7 @@ inline std::string Vec2ToStr(const glm::vec2& vec) {
 double GetTime();
 long long GetTimeSinceEpoch();
 
+void InitializeRandomSeed(u64 seed);
 u32 GetRandom(u32 start = 0, u32 end = 1);
 long long GetCPUCycles();
 

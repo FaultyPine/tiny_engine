@@ -40,24 +40,31 @@ struct UserInput {
         DOWN = 1 << 1,
         LEFT = 1 << 2,
         RIGHT = 1 << 3,
-        ACTION = 1 << 4,
+        ACTION1 = 1 << 4, // punch
+        ACTION2 = 1 << 5, // smoke
     };
-    u32 buttons;
+    #define MAX_NUM_PLAYERS 4
+    // 1 bitfield of buttons pressed for each player
+    u32 buttons[MAX_NUM_PLAYERS];
 
-    bool isUp() const {
-        return buttons & ButtonValues::UP;
+    u32 getButtons(u32 playerIdx) const { return buttons[playerIdx]; }
+    bool isUp(u32 playerIdx) const {
+        return getButtons(playerIdx) & ButtonValues::UP;
     }
-    bool isDown() const {
-        return buttons & ButtonValues::DOWN;
+    bool isDown(u32 playerIdx) const {
+        return getButtons(playerIdx) & ButtonValues::DOWN;
     }
-    bool isLeft() const {
-        return buttons & ButtonValues::LEFT;
+    bool isLeft(u32 playerIdx) const {
+        return getButtons(playerIdx) & ButtonValues::LEFT;
     }
-    bool isRight() const {
-        return buttons & ButtonValues::RIGHT;
+    bool isRight(u32 playerIdx) const {
+        return getButtons(playerIdx) & ButtonValues::RIGHT;
     }
-    bool isAction() const {
-        return buttons & ButtonValues::ACTION;
+    bool isAction1(u32 playerIdx) const {
+        return getButtons(playerIdx) & ButtonValues::ACTION1;
+    }
+    bool isAction2(u32 playerIdx) const {
+        return getButtons(playerIdx) & ButtonValues::ACTION2;
     }
 
     // static input getters

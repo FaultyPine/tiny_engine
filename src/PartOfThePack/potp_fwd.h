@@ -27,7 +27,7 @@ struct Entity {
 
     inline void Draw() const {
         Camera& cam = Camera::GetMainCamera();
-        sprite.DrawSprite(cam, glm::vec2(position.x, position.y), size, rotation, color);
+        sprite.DrawSprite(cam, glm::vec2(position.x, position.y), size, rotation, glm::vec3(0.0, 0.0, 1.0), color);
     }
     inline bool isCollidingWith(const Entity& other) const {
         return Math::isOverlappingRect2D(this->position, this->size, other.position, other.size);

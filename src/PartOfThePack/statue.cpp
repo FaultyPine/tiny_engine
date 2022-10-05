@@ -1,4 +1,5 @@
 #include "statue.h"
+#include "tiny_engine/tiny_fs.h"
 
 static Sprite activatedStatueSprite;
 static Sprite deactivatedStatueSprite;

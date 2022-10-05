@@ -5,8 +5,17 @@
 #include "tiny_engine/tiny_engine.h"
 #include "tiny_engine/framebuffer.h"
 #include "tiny_engine/tiny_text.h"
+#include "tiny_engine/tiny_fs.h"
+
+// this is the number of actual players in the session
+const u32 numPlayers = 2; // TEMP, FOR DEBUGGING
+static_assert(numPlayers <= MAX_NUM_PLAYERS);
 
 void PotpInit(GameState& gs) {
+    // manually init random seed so we can serialize it (with the rest of gamestate) if need be
+    gs.initialRandomSeed = GetCPUCycles();
+    InitializeRandomSeed(gs.initialRandomSeed);
+
     Audio::SetMute(true);
 
     // SFX
@@ -37,7 +46,7 @@ void PotpInit(GameState& gs) {
     }
 
     // ninjas
-    InitializeNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, MAX_NUM_PLAYER_NINJAS);
+    InitializeNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, numPlayers);
 }
 
 void PotpUpdate(GameState& gs, UserInput inputs) {
@@ -45,7 +54,7 @@ void PotpUpdate(GameState& gs, UserInput inputs) {
         Audio::PlayAudio(UseResPath("potp/hit.wav").c_str());
     }
 
-    UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, MAX_NUM_PLAYER_NINJAS);
+    UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, numPlayers);
 }
 
 void PotpDraw(const GameState& gs) {
@@ -57,7 +66,7 @@ void PotpDraw(const GameState& gs) {
         statue.Draw();
     }
 
-    DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, MAX_NUM_PLAYER_NINJAS);
+    DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, numPlayers);
 }
 
 

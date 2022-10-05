@@ -30,6 +30,9 @@ void TerminateGame() {
     gltTerminate();
     glfwTerminate();
 }
+void InitializeRandomSeed(u64 seed) {
+    randomSeed = seed;
+}
 u32 GetRandom(u32 start, u32 end) {
     // lazy init random seed
     if (randomSeed == 0) {
@@ -90,6 +93,10 @@ void InitGame(u32 windowWidth, u32 windowHeight, const s8* windowName) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+#ifdef TINY_DEBUG
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif

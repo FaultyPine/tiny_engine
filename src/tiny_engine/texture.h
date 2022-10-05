@@ -97,7 +97,7 @@ struct Material {
     Material(glm::vec3 diffuseCol, const std::string& texName) { diffuseColor = diffuseCol; diffuseTexPath = texName; }
 };
 
-void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment);
+void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4);
 
 u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);
 

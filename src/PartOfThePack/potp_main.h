@@ -14,6 +14,9 @@ void MainDraw();
 }
 
 struct GameState {
+    /// storing initial seed for possible replay functionality later
+    u64 initialRandomSeed;
+
     Sprite background;
 
     #define NUM_STATUES 5
@@ -21,8 +24,7 @@ struct GameState {
 
     #define MAX_NUM_AI_NINJAS 35
     Ninja aiNinjas[MAX_NUM_AI_NINJAS];
-    #define MAX_NUM_PLAYER_NINJAS 2
-    Ninja playerNinjas[MAX_NUM_PLAYER_NINJAS];
+    Ninja playerNinjas[MAX_NUM_PLAYERS];
 };
 
 #endif

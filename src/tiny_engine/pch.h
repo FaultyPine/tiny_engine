@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <chrono>
 #include <random>
+#include <map>
 // ----------------
 
 #include <glad/glad.h>
@@ -34,6 +35,8 @@
 #include "gltext.h"
 
 //#include "stb_image.h"
+
+#define TINY_DEBUG
 
 // types
 typedef unsigned char u8;
@@ -65,12 +68,14 @@ static bool GLLogCall(const char* func, const char* file, int line) {
     }
     return true;
 }
-/*
-#define GLCall(x) GLClearError();\
-    x;\
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-*/
-#define GLCall(x) x
+
+#ifdef TINY_DEBUG
+    #define GLCall(x) GLClearError();\
+        x;\
+        ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+#else
+    #define GLCall(x) x
+#endif
 
 
 // Utils
