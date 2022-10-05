@@ -99,8 +99,11 @@ void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
     if (glm::length(inputDir) > 0) {
         // we're moving, switch to walking anim
         playerNinja.spritesheet.SetAnimation(NinjaAnimStates::WALK);
-        bool isInputLeft = glm::dot(inputDir, glm::vec2(1.0, 0.0)) < 0.0;
-        playerNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
+
+        f32 inputDotProduct = glm::dot(inputDir, glm::vec2(1.0, 0.0));
+        bool isInputLeft = inputDotProduct < 0.0;
+        if (isInputLeft != playerNinja.isSpriteFlipped && inputDotProduct != 0.0)
+            playerNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
     }
     else {
         playerNinja.spritesheet.SetAnimation(NinjaAnimStates::IDLE);
@@ -133,8 +136,10 @@ void UpdateNinjaAI(Ninja& aiNinja) {
         aiNinja.entity.position += posDelta;
 
         aiNinja.spritesheet.SetAnimation(NinjaAnimStates::WALK);
-        bool isInputLeft = glm::dot(dir, glm::vec2(1.0, 0.0)) < 0.0;
-        aiNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
+        f32 inputDotProduct = glm::dot(dir, glm::vec2(1.0, 0.0));
+        bool isInputLeft = inputDotProduct < 0.0;
+        if (isInputLeft != aiNinja.isSpriteFlipped && inputDotProduct != 0.0)
+            aiNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
     }
 }
 void UpdateNinjaDefault(Ninja& ninja) {

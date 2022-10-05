@@ -20,7 +20,7 @@ void PotpInit(GameState& gs) {
 
     // SFX
     Audio::InitAudioEngine();
-    Audio::PlayAudio(UseResPath("potp/backgroundMusic.mp3").c_str());
+    Audio::PlayAudio(UseResPath("potp/clarkPapple_Song.mp3").c_str());
 
     // textures
     TextureProperties texProps = TextureProperties::Default();
