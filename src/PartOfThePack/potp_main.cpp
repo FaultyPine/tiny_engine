@@ -6,6 +6,7 @@
 #include "tiny_engine/framebuffer.h"
 #include "tiny_engine/tiny_text.h"
 #include "tiny_engine/tiny_fs.h"
+#include "tiny_engine/shapes.h"
 
 // this is the number of actual players in the session
 const u32 numPlayers = 2; // TEMP, FOR DEBUGGING
@@ -57,6 +58,13 @@ void PotpUpdate(GameState& gs, UserInput inputs) {
     UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, numPlayers);
 }
 
+void test() {
+    glm::vec2 pos = {50.0, 50.0};
+    glm::vec4 color = {0.0, 1.0, 0.0, 1.0};
+    //Shapes::DrawCircle(pos, 75.0, color, true);
+    Shapes::DrawSquare(pos, {50.0, 40.0}, 0.0, glm::vec3(0.0, 0.0, 1.0), color, true);
+}
+
 void PotpDraw(const GameState& gs) {
     const Camera& cam = Camera::GetMainCamera();
     gs.background.DrawSprite(cam, glm::vec2(0.0f, 0.0f), glm::vec2(cam.screenWidth, cam.screenHeight));
@@ -67,6 +75,8 @@ void PotpDraw(const GameState& gs) {
     }
 
     DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, numPlayers);
+    
+    test();
 }
 
 

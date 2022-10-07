@@ -15,7 +15,6 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
         exit(1);
         return;
     }
-    shader.use();
     // set up transform of the actual sprite
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(position, 0.0f));  
@@ -27,7 +26,8 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
     model = glm::scale(model, glm::vec3(size, 1.0f)); 
     
     glm::mat4 projection = glm::ortho(0.0f, (f32)cam.screenWidth, (f32)cam.screenHeight, 0.0f, -1.0f, 1.0f);  
-
+    
+    shader.use();
     shader.setUniform("model", model);
     shader.setUniform("spriteColor", color);
     shader.setUniform("projection", projection);

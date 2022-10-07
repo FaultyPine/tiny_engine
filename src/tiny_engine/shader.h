@@ -20,12 +20,13 @@ struct Shader {
 
 
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
+    void Unload() { glDeleteProgram(ID); }
     static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
     static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
 
     // use/activate the shader
     inline void use() const {
-        assert("Invalid shader ID!\n" && ID);
+        ASSERT("Invalid shader ID!\n" && ID);
         glUseProgram(ID); 
     }
     s32 getLoc(const std::string& uniformName) const;

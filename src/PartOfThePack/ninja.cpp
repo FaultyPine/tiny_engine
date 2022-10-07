@@ -2,9 +2,9 @@
 
 #include "PoissonGenerator.h"
 #include "tiny_engine/tiny_engine.h"
-#include "tiny_engine/shapes.h"
 #include "tiny_engine/tiny_engine.h"
 #include "tiny_engine/sprite.h"
+#include "tiny_engine/tiny_fs.h"
 
 glm::vec2 GetRandomAIDesiredPos() {
     u32 screenWidth = Camera::GetScreenWidth();
@@ -42,7 +42,7 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     Texture ninjaDefaultTex = LoadTexture(UseResPath("potp/ninja_sprites/tile000.png").c_str(), texProps);
 
     Spritesheet ninjaSpritesheet = Spritesheet(UseResPath("potp/ninja_spritesheet_32x32.png").c_str(), 12, 7, texProps);
-    ninjaSpritesheet.SetFPS(15);
+    ninjaSpritesheet.SetFPS(24);
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::IDLE, {0});
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::WALK, {1,1,1,8,8,8,15,15,15,22,22,22});
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::PUNCH, {29,29,29,29,45,45,45,45,45,45,45});
@@ -90,10 +90,11 @@ glm::vec2 GetPlayerInputDir(UserInput inputs, u32 playerIdx) {
     }
     return inputDir;
 }
+glm::vec2 GetAIInputDir(Ninja& aiNinja) {
+    return glm::normalize(aiNinja.aiDesiredPos - aiNinja.entity.position);
+}
 
 void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
-    if (!playerNinja.entity.active) return;
-
     glm::vec2& ninjaPos = playerNinja.entity.position;
     glm::vec2 inputDir = GetPlayerInputDir(inputs, playerIdx);
     if (glm::length(inputDir) > 0) {
@@ -131,7 +132,7 @@ void UpdateNinjaAI(Ninja& aiNinja) {
     }
     else {
         // not at desired spot, move towards
-        glm::vec2 dir = glm::normalize(aiNinja.aiDesiredPos - pos);
+        glm::vec2 dir = GetAIInputDir(aiNinja);
         glm::vec2 posDelta = dir * aiNinja.ninjaSpeed * GetDeltaTime();
         aiNinja.entity.position += posDelta;
 
@@ -156,8 +157,10 @@ void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* pla
     }
     for (u32 i = 0; i < numPlayerNinjas; i++) {
         Ninja& playerNinja = playerNinjas[i];
-        UpdateNinjaDefault(playerNinja);
-        ProcessPlayerInput(inputs, playerNinja, i);
+        if (playerNinja.entity.active) {
+            UpdateNinjaDefault(playerNinja);
+            ProcessPlayerInput(inputs, playerNinja, i);
+        }
     }
 }
 
