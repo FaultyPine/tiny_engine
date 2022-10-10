@@ -24,25 +24,27 @@ static s32 inputMap[MAX_NUM_PLAYERS][NUM_BUTTONS] = {
     {-1,-1,-1,-1,-1,-1}, // -1 is GLFW_KEY_UNKNOWN
 };
 
+void UserInput::UpdateUserInput(UserInput& input) {
+    // when we update user input, first thing we do is update prev buttons and blank out current inputs
+    memcpy(&input.prevButtons, &input.buttons, sizeof(input.buttons));
+    for (u32& buttons : input.buttons) buttons = 0;
 
-UserInput GetUserInput() {
-    // making sure to zero init so we don't drift
-    UserInput input = {}; 
-    
     if (GetKeyState(GLFW_KEY_ESCAPE, GLFW_PRESS)) {
         CloseGameWindow();
     }
 
     for (u32 playerIdx = 0; playerIdx < MAX_NUM_PLAYERS; playerIdx++) {
         u32& playerButtons = input.buttons[playerIdx];
+        u32& prevPlayerButtons = input.prevButtons[playerIdx];
         for (u32 buttonIdx = 0; buttonIdx < NUM_BUTTONS; buttonIdx++) {
-            if (GetKeyState(inputMap[playerIdx][buttonIdx], GLFW_PRESS)) {
-                playerButtons |= inorderButtonMappings[buttonIdx];
+            s32 inputKey = inputMap[playerIdx][buttonIdx];
+            if (GetKeyState(inputKey, GLFW_PRESS)) {
+                ButtonValues button = inorderButtonMappings[buttonIdx];
+                playerButtons |= button;
             }
         }
     }
     
-    return input;
 }
 
 

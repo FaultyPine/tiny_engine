@@ -46,25 +46,52 @@ struct UserInput {
     #define MAX_NUM_PLAYERS 4
     // 1 bitfield of buttons pressed for each player
     u32 buttons[MAX_NUM_PLAYERS];
+    u32 prevButtons[MAX_NUM_PLAYERS];
 
     u32 getButtons(u32 playerIdx) const { return buttons[playerIdx]; }
+    u32 getPrevButtons(u32 playerIdx) const { return prevButtons[playerIdx]; }
+    inline bool isButton(u32 playerIdx, ButtonValues button) const { return getButtons(playerIdx) & button; }
+    inline bool isPrevButton(u32 playerIdx, ButtonValues button) const { return getPrevButtons(playerIdx) & button; }
+    inline bool isButtonJustPressed(u32 playerIdx, ButtonValues button) const { return isButton(playerIdx, button) && !isPrevButton(playerIdx, button); }
+    inline bool isButtonJustReleased(u32 playerIdx, ButtonValues button) const { return !isButton(playerIdx, button) && isPrevButton(playerIdx, button); }
+
+
     bool isUp(u32 playerIdx) const {
-        return getButtons(playerIdx) & ButtonValues::UP;
+        return isButton(playerIdx, ButtonValues::UP);
     }
     bool isDown(u32 playerIdx) const {
-        return getButtons(playerIdx) & ButtonValues::DOWN;
+        return isButton(playerIdx, ButtonValues::DOWN);
     }
     bool isLeft(u32 playerIdx) const {
-        return getButtons(playerIdx) & ButtonValues::LEFT;
+        return isButton(playerIdx, ButtonValues::LEFT);
     }
     bool isRight(u32 playerIdx) const {
-        return getButtons(playerIdx) & ButtonValues::RIGHT;
+        return isButton(playerIdx, ButtonValues::RIGHT);
     }
     bool isAction1(u32 playerIdx) const {
-        return getButtons(playerIdx) & ButtonValues::ACTION1;
+        return isButton(playerIdx, ButtonValues::ACTION1);
     }
     bool isAction2(u32 playerIdx) const {
-        return getButtons(playerIdx) & ButtonValues::ACTION2;
+        return isButton(playerIdx, ButtonValues::ACTION2);
+    }
+
+    bool isUpPressed(u32 playerIdx) const {
+        return isButtonJustPressed(playerIdx, ButtonValues::UP);
+    }
+    bool isDownPressed(u32 playerIdx) const {
+        return isButtonJustPressed(playerIdx, ButtonValues::DOWN);
+    }
+    bool isLeftPressed(u32 playerIdx) const {
+        return isButtonJustPressed(playerIdx, ButtonValues::LEFT);
+    }
+    bool isRightPressed(u32 playerIdx) const {
+        return isButtonJustPressed(playerIdx, ButtonValues::RIGHT);
+    }
+    bool isAction1Pressed(u32 playerIdx) const {
+        return isButtonJustPressed(playerIdx, ButtonValues::ACTION1);
+    }
+    bool isAction2Pressed(u32 playerIdx) const {
+        return isButtonJustPressed(playerIdx, ButtonValues::ACTION2);
     }
 
     // static input getters
@@ -72,18 +99,9 @@ struct UserInput {
         static MouseInput mouseInput;
         return mouseInput;
     }
-    static bool GetKeyUp(s32 key) {
-        return GetKeyState(key, GLFW_RELEASE);
-    }
-    static bool GetKeyDown(s32 key) {
-        return GetKeyState(key, GLFW_PRESS);
-    }
-    static bool GetKeyHold(s32 key) {
-        return GetKeyState(key, GLFW_REPEAT);
-    }
+    static void UpdateUserInput(UserInput& input);
 };
 
-UserInput GetUserInput();
 
 
 #endif

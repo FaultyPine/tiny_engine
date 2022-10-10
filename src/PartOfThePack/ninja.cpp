@@ -5,6 +5,7 @@
 #include "tiny_engine/tiny_engine.h"
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/tiny_fs.h"
+#include "tiny_engine/shapes.h"
 
 glm::vec2 GetRandomAIDesiredPos() {
     u32 screenWidth = Camera::GetScreenWidth();
@@ -50,7 +51,7 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::DEAD, {26});
     ninjaSpritesheet.SetAnimation(NinjaAnimStates::IDLE);
 
-    PoissonGenerator::DefaultPRNG poissonRNG;
+    PoissonGenerator::DefaultPRNG poissonRNG(GetRandomSeed());
     // points is a vector of xyz in the range 0-1
 	const auto Points = PoissonGenerator::generatePoissonPoints(totalNinjas, poissonRNG, false);
 
@@ -97,20 +98,35 @@ glm::vec2 GetAIInputDir(Ninja& aiNinja) {
 void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
     glm::vec2& ninjaPos = playerNinja.entity.position;
     glm::vec2 inputDir = GetPlayerInputDir(inputs, playerIdx);
-    if (glm::length(inputDir) > 0) {
-        // we're moving, switch to walking anim
-        playerNinja.spritesheet.SetAnimation(NinjaAnimStates::WALK);
+    // if player is trying to punch
+    if (inputs.isAction1Pressed(playerIdx)) {
+        if (!playerNinja.isPunching) {
+            playerNinja.isPunching = true;
+            playerNinja.spritesheet.SetAnimation(NinjaAnimStates::PUNCH, false, NinjaAnimStates::IDLE);
+        }
+    }
+    else if (playerNinja.isPunching && playerNinja.spritesheet.GetCurrentAnimation().animKey == NinjaAnimStates::IDLE) {
+        playerNinja.isPunching = false;
+    }
 
-        f32 inputDotProduct = glm::dot(inputDir, glm::vec2(1.0, 0.0));
-        bool isInputLeft = inputDotProduct < 0.0;
-        if (isInputLeft != playerNinja.isSpriteFlipped && inputDotProduct != 0.0)
-            playerNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
+
+    if (!playerNinja.isPunching) {
+        // not trying to punch, and is trying to move
+        if (glm::length(inputDir) > 0) {
+            // we're moving, switch to walking anim
+            playerNinja.spritesheet.SetAnimation(NinjaAnimStates::WALK);
+
+            f32 inputDotProduct = glm::dot(inputDir, glm::vec2(1.0, 0.0));
+            bool isInputLeft = inputDotProduct < 0.0;
+            if (isInputLeft != playerNinja.isSpriteFlipped && inputDotProduct != 0.0)
+                playerNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
+        }
+        else {
+            playerNinja.spritesheet.SetAnimation(NinjaAnimStates::IDLE);
+        }
+        glm::vec2 posDelta = inputDir * playerNinja.ninjaSpeed;
+        ninjaPos += posDelta * GetDeltaTime();
     }
-    else {
-        playerNinja.spritesheet.SetAnimation(NinjaAnimStates::IDLE);
-    }
-    glm::vec2 posDelta = inputDir * playerNinja.ninjaSpeed;
-    ninjaPos += posDelta * GetDeltaTime();
 
     CLAMP(ninjaPos.x, 0.0f, (f32)Camera::GetScreenWidth() - NINJA_SPRITE_SIZE);
     CLAMP(ninjaPos.y, 0.0f, (f32)Camera::GetScreenHeight() - NINJA_SPRITE_SIZE);
@@ -161,6 +177,7 @@ void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* pla
             UpdateNinjaDefault(playerNinja);
             ProcessPlayerInput(inputs, playerNinja, i);
         }
+        break;
     }
 }
 

@@ -21,6 +21,7 @@ double GetTime();
 long long GetTimeSinceEpoch();
 
 void InitializeRandomSeed(u64 seed);
+u64 GetRandomSeed();
 u32 GetRandom(u32 start = 0, u32 end = 1);
 long long GetCPUCycles();
 

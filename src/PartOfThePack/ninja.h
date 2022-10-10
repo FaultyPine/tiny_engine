@@ -22,6 +22,7 @@ struct Ninja {
     f32 ninjaSpeed = 50.0;
     bool isDead = false;
     bool isSpriteFlipped = false;
+    bool isPunching = false;
     Spritesheet spritesheet;
 
     // Player

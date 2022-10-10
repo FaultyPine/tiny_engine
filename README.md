@@ -19,12 +19,14 @@ Libraries Used:
 Features:
 - deterministic randomness
 - custom spritesheet parsing
-- 
+- vector shape drawing
 
 ## TODO
+- ninja punch & death
+- statue activation
+- win conditions
+
 - UI
-- raycasts
-- animation
 
 
 ## Notes

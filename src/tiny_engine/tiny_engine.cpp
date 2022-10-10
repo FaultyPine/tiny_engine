@@ -33,6 +33,7 @@ void TerminateGame() {
 void InitializeRandomSeed(u64 seed) {
     randomSeed = seed;
 }
+u64 GetRandomSeed() { return randomSeed; }
 u32 GetRandom(u32 start, u32 end) {
     // lazy init random seed
     if (randomSeed == 0) {

@@ -175,11 +175,13 @@ void advanceGameSimulation(UserInput inputs) {
 
 int main(int argc, char *argv[]) {
     preLoopInit();
+    // game init ^ shouldn't need user input
+    UserInput inputs = {};
 
     while(!ShouldCloseWindow())
     {
         // poll inputs from os layer
-        UserInput inputs = GetUserInput();
+        UserInput::UpdateUserInput(inputs);
         // pass inputs into game
         advanceGameSimulation(inputs);
         // render new state of the game

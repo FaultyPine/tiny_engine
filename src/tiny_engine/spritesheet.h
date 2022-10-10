@@ -10,11 +10,18 @@
 // gonna not do that for now for the sake of getting things done
 
 struct Spritesheet {
+    struct Animation {
+        u32 animKey = -1;
+        u32 frame = 0;
+        bool isLoop = true;
+        s32 nonLoopNextAnim = -1;
+    };
     Spritesheet(){}
     Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, TextureProperties props);
 
+    Animation GetCurrentAnimation() { return animation; } 
     void SetAnimationIndices(u32 animKey, const std::vector<u32>& indices);
-    void SetAnimation(u32 animKey);
+    void SetAnimation(u32 animKey, bool isLoop = true, s32 nonLoopNextAnim = -1);
     void Tick();
     void Draw(const Camera& cam, glm::vec2 position, 
                 glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec3 color) const;
@@ -24,8 +31,8 @@ private:
     // animation
     u32 framerate = 60;
     u32 framerateEnforcer = 0;
-    u32 animationFrame = 0;
-    u32 animation = 0;
+    Animation animation;
+    // map of anim key -> list of indexes into the sprites list for the individual textures our "animation" should go through
     std::map<u32, std::vector<u32>> animationIndicesMap = {};
     
 };
