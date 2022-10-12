@@ -2,6 +2,7 @@
 #define NINJA_H
 
 #include "potp_fwd.h"
+#include "potp_input.h"
 #include "tiny_engine/spritesheet.h"
 
 #define NINJA_MAX_SMOKE_GRENADES 2

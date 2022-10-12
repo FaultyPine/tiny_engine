@@ -175,10 +175,13 @@ void UpdateNinjaAI(Ninja& aiNinja) {
         if (isInputLeft != aiNinja.isSpriteFlipped && inputDotProduct != 0.0)
             aiNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
     }
-    CLAMP(pos.x, 0.0f, (f32)Camera::GetScreenWidth() - NINJA_SPRITE_SIZE);
-    CLAMP(pos.y, 0.0f, (f32)Camera::GetScreenHeight() - NINJA_SPRITE_SIZE);
 }
 void UpdateNinjaDefault(Ninja& ninja) {
+    f32 basePunchHitboxX = ninja.entity.size.x/2.0; // reliant on punch hitbox being initialized to this + some offset
+    f32 punchHitboxOffset = 5.0;
+    f32 punchHitBoxX = ninja.isSpriteFlipped ? 
+            basePunchHitboxX - punchHitboxOffset - ninja.punchHitbox.size.x : basePunchHitboxX + punchHitboxOffset;
+    ninja.punchHitbox.pos = {punchHitBoxX, ninja.punchHitbox.pos.y};
     ninja.spritesheet.Tick();
 }
 
@@ -231,7 +234,6 @@ void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* pla
             UpdateNinjaDefault(playerNinja);
             ProcessPlayerInput(inputs, playerNinja, i);
         }
-        break; // NOTE: FOR DEBUGGING SO I ONLY CONTROL 1 PLAYER, REMOVE LATER
     }
 }
 

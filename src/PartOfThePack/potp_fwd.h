@@ -5,16 +5,6 @@
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/math.h"
 
-struct Point2D {
-    f32 x = 0.0;
-    f32 y = 0.0;
-};
-struct Color {
-    f32 r = 0.0;
-    f32 g = 0.0;
-    f32 b = 0.0;
-};
-
 
 struct CollisionBox {
     glm::vec2 pos;

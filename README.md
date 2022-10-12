@@ -8,7 +8,8 @@ ____ for miniaudio
 Christian Vallentin for GLText
 Sergey Kosarevsky for PoissonGenerator
 TDingle for statue sprites and music
-
+Sebastian Belalcazar for keyboard icon
+Good Ware for controller icon
 
 # tiny_engine
 
@@ -30,7 +31,15 @@ Features:
 ## TODO
 
 # CURRENT TASK:
-- ensure multiple player input is clean and working to get MVP
+- INPUT REFACTOR!!!
+    - move game-specific code into game, generalize tiny_engine input api
+    - create abstraction layers for an 'input device' and make an array of 4 of those
+    - connected controllers will be the 'later' players.. 
+        I.E. if 1 controller connected and player count is set to 2, keyboard is p1 and controller is p2
+        if 2 controllers connected and player count is 4, keyboard is p1/p2, and controllers are p3/p4
+        This is so keyboard can always have a max of two players since only two people can realistically use one keyboard at once
+    - if implemented properly, game code shouldn't have to change. We still just check the button of a player idx
+https://www.glfw.org/docs/latest/input_guide.html
 
 ### MVP
 - clip ninja behind statue when it's base y is greater than statues base y
