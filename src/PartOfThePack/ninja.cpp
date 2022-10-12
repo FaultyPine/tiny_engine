@@ -30,6 +30,8 @@ void InitNinjaDefault(Ninja& ninja, Texture ninjaTex, glm::vec2 pos) {
     ninja.entity.size = glm::vec2(ninjaSpriteSize, ninjaSpriteSize);
     // initial idle is between 30-180 frames
     ninja.positionIdleFramesMax = GetRandom(30, 180);
+    ninja.punchHitbox.pos = {(ninjaSpriteSize/2)+5.0, 20.0};
+    ninja.punchHitbox.size = {20.0, 20.0};
 }
 
 void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
@@ -95,18 +97,33 @@ glm::vec2 GetAIInputDir(Ninja& aiNinja) {
     return glm::normalize(aiNinja.aiDesiredPos - aiNinja.entity.position);
 }
 
+void NinjaInitPunch(Ninja& ninja) {
+    ninja.spritesheet.SetAnimation(NinjaAnimStates::PUNCH, false, NinjaAnimStates::IDLE);
+}
+void NinjaEndPunch(Ninja& ninja) {
+
+}
+void NinjaUpdatePunch(Ninja& ninja) {
+
+}
+
 void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
+    if (playerNinja.isDead) return;
     glm::vec2& ninjaPos = playerNinja.entity.position;
     glm::vec2 inputDir = GetPlayerInputDir(inputs, playerIdx);
     // if player is trying to punch
     if (inputs.isAction1Pressed(playerIdx)) {
         if (!playerNinja.isPunching) {
             playerNinja.isPunching = true;
-            playerNinja.spritesheet.SetAnimation(NinjaAnimStates::PUNCH, false, NinjaAnimStates::IDLE);
+            NinjaInitPunch(playerNinja);
         }
     }
     else if (playerNinja.isPunching && playerNinja.spritesheet.GetCurrentAnimation().animKey == NinjaAnimStates::IDLE) {
         playerNinja.isPunching = false;
+        NinjaEndPunch(playerNinja);
+    }
+    else if (playerNinja.isPunching) {
+        NinjaUpdatePunch(playerNinja);
     }
 
 
@@ -134,7 +151,7 @@ void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
 
 void UpdateNinjaAI(Ninja& aiNinja) {
     if (aiNinja.isDead) return;
-    const glm::vec2& pos = aiNinja.entity.position;
+    glm::vec2& pos = aiNinja.entity.position;
     // if we're within a reasonable distance of our goal
     if (glm::distance(aiNinja.aiDesiredPos, pos) < 1.0f) {
         aiNinja.spritesheet.SetAnimation(NinjaAnimStates::IDLE);
@@ -158,12 +175,49 @@ void UpdateNinjaAI(Ninja& aiNinja) {
         if (isInputLeft != aiNinja.isSpriteFlipped && inputDotProduct != 0.0)
             aiNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
     }
+    CLAMP(pos.x, 0.0f, (f32)Camera::GetScreenWidth() - NINJA_SPRITE_SIZE);
+    CLAMP(pos.y, 0.0f, (f32)Camera::GetScreenHeight() - NINJA_SPRITE_SIZE);
 }
 void UpdateNinjaDefault(Ninja& ninja) {
     ninja.spritesheet.Tick();
 }
 
+void Ninja::PunchedOtherNinja(Ninja& punchedNinja) {
+    if (!punchedNinja.isDead) {
+        punchedNinja.spritesheet.SetAnimation(NinjaAnimStates::DEAD);
+        punchedNinja.isDead = true;
+    }
+}
+// checks if ninjaToCheck is being hit by ninja
+bool NinjaHitboxCheck(const Ninja& ninja, const Ninja& ninjaToCheck) {
+    return Math::isOverlappingRect2D(ninja.punchHitbox.pos + ninja.entity.position, ninja.punchHitbox.size, 
+                ninjaToCheck.entity.position, ninjaToCheck.entity.size);
+}
+// is there a better way to do this? of course... but for the scope of this project, I don't need anything more complex
+void CalculateNinjaCollisions(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
+    // check if any players are punching, and if so check their hitbox collision
+    for (s32 i = 0; i < numPlayerNinjas; i++) {
+        Ninja& playerNinja = playerNinjas[i];
+        if (playerNinja.isPunching) {
+
+            // loop through AI and player ninjas and check hitbox collisions
+            for (s32 aiNinjaIdx = 0; aiNinjaIdx < numAINinjas; aiNinjaIdx++) {
+                if (NinjaHitboxCheck(playerNinja, aiNinjas[aiNinjaIdx])) {
+                    playerNinja.PunchedOtherNinja(aiNinjas[aiNinjaIdx]);
+                }
+            }
+            for (s32 playerNinjaIdx = 0; playerNinjaIdx < numAINinjas; playerNinjaIdx++) {
+                if (playerNinjaIdx != i && NinjaHitboxCheck(playerNinja, playerNinjas[playerNinjaIdx])) {
+                    playerNinja.PunchedOtherNinja(playerNinjas[playerNinjaIdx]);
+                }
+            }
+
+        }
+    }
+}
+
 void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
+    CalculateNinjaCollisions(aiNinjas, numAINinjas, playerNinjas, numPlayerNinjas);
     for (u32 i = 0; i < numAINinjas; i++) {
         Ninja& aiNinja = aiNinjas[i];
         if (aiNinja.entity.active) {
@@ -177,16 +231,21 @@ void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* pla
             UpdateNinjaDefault(playerNinja);
             ProcessPlayerInput(inputs, playerNinja, i);
         }
-        break;
+        break; // NOTE: FOR DEBUGGING SO I ONLY CONTROL 1 PLAYER, REMOVE LATER
     }
 }
 
-void DrawNinja(const Ninja& ninja, bool horzFlip) {
+void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
     f32 rotation = ninja.entity.rotation;
     if (horzFlip) rotation = 180.0;
     
     ninja.spritesheet.Draw(Camera::GetMainCamera(), 
             ninja.entity.position, ninja.entity.size, rotation, glm::vec3(0.0, 1.0, 0.0), ninja.entity.color);
+
+    // NOTE: FOR DEBUGGING
+    glm::vec4 col = isPlayer ? glm::vec4(0.0, 1.0, 0.0, 1.0) : glm::vec4(1.0, 0.0, 0.0, 1.0);
+    Shapes::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
+    Shapes::DrawSquare(ninja.entity.position + ninja.punchHitbox.pos, ninja.punchHitbox.size, 0.0, {0.0, 0.0, 1.0}, col, true);
 }
 
 void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinjas, u32 numPlayerNinjas) {
@@ -196,13 +255,13 @@ void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinja
         // put deactivated ones in a "deactivated" array.
         // That'd be a lot better for the cache
         if (ninja.entity.active) {
-            DrawNinja(ninja, ninja.isSpriteFlipped);
+            DrawNinja(ninja, ninja.isSpriteFlipped, false);
         }
     }
     for (int i = 0; i < numPlayerNinjas; i++) {
         const Ninja& ninja = playerNinjas[i];
         if (ninja.entity.active) {
-            DrawNinja(ninja, ninja.isSpriteFlipped);
+            DrawNinja(ninja, ninja.isSpriteFlipped, true);
         }
     }
 }

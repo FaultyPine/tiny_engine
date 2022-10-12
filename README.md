@@ -1,7 +1,13 @@
 # POTP
 
-- clip ninja behind statue when it's base y is greater than statues base y
-
+## Credits:
+Khronos Group for OpenGL
+____ for GLAD
+___ for GLFW
+____ for miniaudio
+Christian Vallentin for GLText
+Sergey Kosarevsky for PoissonGenerator
+TDingle for statue sprites and music
 
 
 # tiny_engine
@@ -13,8 +19,8 @@ Libraries Used:
 - GLAD
 - GLFW
 - miniaudio
-- (GLtext)[https://github.com/vallentin/glText] by Christian Vallentin 
-- (PoissonGenerator)[https://github.com/corporateshark/poisson-disk-generator] by Sergey Kosarevsky
+- [GLtext](https://github.com/vallentin/glText) by Christian Vallentin 
+- [PoissonGenerator](https://github.com/corporateshark/poisson-disk-generator) by Sergey Kosarevsky
 
 Features:
 - deterministic randomness
@@ -22,11 +28,23 @@ Features:
 - vector shape drawing
 
 ## TODO
-- ninja punch & death
-- statue activation
-- win conditions
 
-- UI
+# CURRENT TASK:
+- ensure multiple player input is clean and working to get MVP
+
+### MVP
+- clip ninja behind statue when it's base y is greater than statues base y
+
+### More...
+- Controller support
+- statue activation/win conditions
+
+### Stretch Goals
+- intro screen w/visuals for how to play/controls like in og game
+- vfx for statues/ninjas
+- Main Menu
+- Settings
+- Controls menu
 
 
 ## Notes

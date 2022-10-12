@@ -22,6 +22,7 @@ struct Spritesheet {
     Animation GetCurrentAnimation() { return animation; } 
     void SetAnimationIndices(u32 animKey, const std::vector<u32>& indices);
     void SetAnimation(u32 animKey, bool isLoop = true, s32 nonLoopNextAnim = -1);
+    void ResetAnim();
     void Tick();
     void Draw(const Camera& cam, glm::vec2 position, 
                 glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec3 color) const;

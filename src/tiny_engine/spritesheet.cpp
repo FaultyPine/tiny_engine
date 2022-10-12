@@ -40,7 +40,7 @@ void Spritesheet::SetAnimationIndices(u32 animKey, const std::vector<u32>& indic
     this->animationIndicesMap[animKey] = indices;
 }
 void Spritesheet::SetAnimation(u32 animKey, bool isLoop, s32 nonLoopNextAnim) {
-    if (this->animation.animKey != animKey) {
+    if (this->animation.animKey != animKey) { // don't reset anim if we're requesting same one
         Animation anim;
         anim.animKey = animKey;
         anim.isLoop = isLoop;
@@ -48,6 +48,9 @@ void Spritesheet::SetAnimation(u32 animKey, bool isLoop, s32 nonLoopNextAnim) {
         anim.nonLoopNextAnim = nonLoopNextAnim;
         this->animation = anim;
     }
+}
+void Spritesheet::ResetAnim() {
+    this->animation.frame = 0;
 }
 void Spritesheet::Tick() {
     ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");

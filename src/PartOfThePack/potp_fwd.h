@@ -15,6 +15,12 @@ struct Color {
     f32 b = 0.0;
 };
 
+
+struct CollisionBox {
+    glm::vec2 pos;
+    glm::vec2 size;
+};
+
 struct Entity {
     Sprite sprite = {};
     glm::vec2 position = glm::vec2(0.0f, 0.0f);

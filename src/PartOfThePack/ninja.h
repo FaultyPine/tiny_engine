@@ -32,6 +32,9 @@ struct Ninja {
     u32 positionIdleFrames = 0; // number of frames we've idled for
     u32 positionIdleFramesMax = 60; // number of frames TO idle for
     glm::vec2 aiDesiredPos;
+
+    CollisionBox punchHitbox;
+    void PunchedOtherNinja(Ninja& punchedNinja);
 };
 
 // doing init/updating in here so we can jump around the ninjas array to look at others
@@ -39,5 +42,6 @@ struct Ninja {
 void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas);
 void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas);
 void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinjas, u32 numPlayerNinjas);
+
 
 #endif
