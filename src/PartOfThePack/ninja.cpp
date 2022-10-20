@@ -25,7 +25,7 @@ void InitNinjaDefault(Ninja& ninja, Texture ninjaTex, glm::vec2 pos) {
     ninja.isSpriteFlipped = false;
     const f32 ninjaSpriteSize = NINJA_SPRITE_SIZE;
     ninja.entity.sprite = Sprite(ninjaTex);
-    ninja.numSmokeGrenadesLeft = NINJA_MAX_SMOKE_GRENADES;
+    ninja.smokeGrenade.numLeft = NINJA_MAX_SMOKE_GRENADES;
     ninja.entity.position = glm::vec3(pos.x, pos.y, 0.0);
     ninja.entity.size = glm::vec2(ninjaSpriteSize, ninjaSpriteSize);
     // initial idle is between 30-180 frames
@@ -45,13 +45,21 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     Texture ninjaDefaultTex = LoadTexture(UseResPath("potp/ninja_sprites/tile000.png").c_str(), texProps);
 
     Spritesheet ninjaSpritesheet = Spritesheet(UseResPath("potp/ninja_spritesheet_32x32.png").c_str(), 12, 7, texProps);
-    ninjaSpritesheet.SetFPS(24);
+    ninjaSpritesheet.SetDefaultFramerate(24);
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::IDLE, {0});
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::WALK, {1,1,1,8,8,8,15,15,15,22,22,22});
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::PUNCH, {29,29,29,29,45,45,45,45,45,45,45});
-    ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::SMOKE, {16,16,16,16,16,16,17,17,17,17,17});
+    //ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::SMOKE, {16,16,16,16,16,16,17,17,17,17,17});
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::DEAD, {26});
-    ninjaSpritesheet.SetAnimation(NinjaAnimStates::IDLE);
+    Spritesheet::Animation anim = {};
+    anim.animKey = NinjaAnimStates::IDLE;
+    ninjaSpritesheet.SetAnimation(anim);
+    Spritesheet smokeGrenade = Spritesheet(UseResPath("potp/SmokeCloud.png").c_str(), 1, 1, texProps);
+    smokeGrenade.SetDefaultFramerate(24);
+    smokeGrenade.SetAnimationIndices(0, {0});
+    anim = {};
+    anim.animKey = 0;
+    smokeGrenade.SetAnimation(anim);
 
     PoissonGenerator::DefaultPRNG poissonRNG(GetRandomSeed());
     // points is a vector of xyz in the range 0-1
@@ -69,12 +77,13 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     for (int i = 0; i < numPlayerNinjas; i++) {
         Ninja& ninja = playerNinjas[i];
         ninja.spritesheet = ninjaSpritesheet;
+        ninja.smokeGrenade.sprite = smokeGrenade;
         glm::vec2 ninjaPos = glm::vec2(Points[numAINinjas+i].x*screenWidth, Points[numAINinjas+i].y*screenHeight);
         InitNinjaDefault(ninja, ninjaDefaultTex, ninjaPos);
     }
 }
 
-glm::vec2 GetPlayerInputDir(UserInput inputs, u32 playerIdx) {
+glm::vec2 GetPlayerInputDir(const UserInput& inputs, u32 playerIdx) {
     glm::vec2 inputDir = glm::vec2(0.0f, 0.0f); // range [-1, -1]
     if (inputs.isUp(playerIdx)) {
         inputDir.y -= 1.0f;
@@ -94,11 +103,25 @@ glm::vec2 GetPlayerInputDir(UserInput inputs, u32 playerIdx) {
     return inputDir;
 }
 glm::vec2 GetAIInputDir(Ninja& aiNinja) {
-    return glm::normalize(aiNinja.aiDesiredPos - aiNinja.entity.position);
+    glm::vec2 desiredDirection = glm::normalize(aiNinja.aiDesiredPos - aiNinja.entity.position);
+    glm::vec2 resultDir = glm::vec2(0.0, 0.0);
+    if (abs(desiredDirection.x) > abs(desiredDirection.y)) {
+        resultDir.x = 1 * (signof(desiredDirection.x));
+        resultDir.y = 0;
+    }
+    else if (abs(desiredDirection.x) < abs(desiredDirection.y)) {
+        resultDir.x = 0;
+        resultDir.y = 1 * (signof(desiredDirection.y));
+    }
+    return resultDir;
 }
 
 void NinjaInitPunch(Ninja& ninja) {
-    ninja.spritesheet.SetAnimation(NinjaAnimStates::PUNCH, false, NinjaAnimStates::IDLE);
+    Spritesheet::Animation anim = {};
+    anim.animKey = NinjaAnimStates::PUNCH;
+    anim.isLoop = false;
+    anim.nonLoopNextAnim = NinjaAnimStates::IDLE;
+    ninja.spritesheet.SetAnimation(anim);
 }
 void NinjaEndPunch(Ninja& ninja) {
 
@@ -107,7 +130,31 @@ void NinjaUpdatePunch(Ninja& ninja) {
 
 }
 
-void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
+void NinjaSmokeBombProcedure(const UserInput& inputs, Ninja& ninja, u32 playerIdx) {
+
+    if (ninja.smokeGrenade.life > 0) {
+        ninja.smokeGrenade.sprite.Tick();
+        ninja.smokeGrenade.life--;
+    }
+
+    // if we're punching or dead or already in smoke anim or have no bombs left, can't use smoke bomb
+    bool canActivateSmokeBomb = 
+                    !ninja.isPunching &&
+                    !ninja.isDead &&
+                    ninja.smokeGrenade.numLeft > 0;
+    if (canActivateSmokeBomb && inputs.isAction2Pressed(playerIdx)) {
+        ninja.smokeGrenade.numLeft--;
+        // spawn smoke grenade
+        glm::vec2 ninjaPos = ninja.entity.position;
+        f32 ninjaSize = NINJA_SPRITE_SIZE;
+        f32 smokePosDiagonalOffset = (sqrt(2)*(ninja.smokeGrenade.size.y - ninjaSize))/2.0;
+        ninja.smokeGrenade.pos = (ninjaPos - smokePosDiagonalOffset);
+        ninja.smokeGrenade.pos += (ninjaSize/2.0);
+        ninja.smokeGrenade.life = NINJA_SMOKE_GRENADE_LIFETIME;
+    }
+}
+
+void ProcessPlayerInput(const UserInput& inputs, Ninja& playerNinja, u32 playerIdx) {
     if (playerNinja.isDead) return;
     glm::vec2& ninjaPos = playerNinja.entity.position;
     glm::vec2 inputDir = GetPlayerInputDir(inputs, playerIdx);
@@ -126,12 +173,13 @@ void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
         NinjaUpdatePunch(playerNinja);
     }
 
-
     if (!playerNinja.isPunching) {
         // not trying to punch, and is trying to move
+        Spritesheet::Animation anim = {};
         if (glm::length(inputDir) > 0) {
             // we're moving, switch to walking anim
-            playerNinja.spritesheet.SetAnimation(NinjaAnimStates::WALK);
+            anim.animKey = NinjaAnimStates::WALK;
+            playerNinja.spritesheet.SetAnimation(anim);
 
             f32 inputDotProduct = glm::dot(inputDir, glm::vec2(1.0, 0.0));
             bool isInputLeft = inputDotProduct < 0.0;
@@ -139,11 +187,14 @@ void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
                 playerNinja.isSpriteFlipped = isInputLeft; // if we're going left, flip sprite
         }
         else {
-            playerNinja.spritesheet.SetAnimation(NinjaAnimStates::IDLE);
+            anim.animKey = NinjaAnimStates::IDLE;
+            playerNinja.spritesheet.SetAnimation(anim);
         }
         glm::vec2 posDelta = inputDir * playerNinja.ninjaSpeed;
         ninjaPos += posDelta * GetDeltaTime();
     }
+
+    NinjaSmokeBombProcedure(inputs, playerNinja, playerIdx);
 
     CLAMP(ninjaPos.x, 0.0f, (f32)Camera::GetScreenWidth() - NINJA_SPRITE_SIZE);
     CLAMP(ninjaPos.y, 0.0f, (f32)Camera::GetScreenHeight() - NINJA_SPRITE_SIZE);
@@ -152,9 +203,11 @@ void ProcessPlayerInput(UserInput inputs, Ninja& playerNinja, u32 playerIdx) {
 void UpdateNinjaAI(Ninja& aiNinja) {
     if (aiNinja.isDead) return;
     glm::vec2& pos = aiNinja.entity.position;
+    Spritesheet::Animation anim = {};
     // if we're within a reasonable distance of our goal
     if (glm::distance(aiNinja.aiDesiredPos, pos) < 1.0f) {
-        aiNinja.spritesheet.SetAnimation(NinjaAnimStates::IDLE);
+        anim.animKey = NinjaAnimStates::IDLE;
+        aiNinja.spritesheet.SetAnimation(anim);
         // if we are at our ai's desired spot, wait and then regenerate desired spot
         if (aiNinja.positionIdleFrames >= aiNinja.positionIdleFramesMax) {
             aiNinja.aiDesiredPos = GetRandomAIDesiredPos();
@@ -168,8 +221,8 @@ void UpdateNinjaAI(Ninja& aiNinja) {
         glm::vec2 dir = GetAIInputDir(aiNinja);
         glm::vec2 posDelta = dir * aiNinja.ninjaSpeed * GetDeltaTime();
         aiNinja.entity.position += posDelta;
-
-        aiNinja.spritesheet.SetAnimation(NinjaAnimStates::WALK);
+        anim.animKey = NinjaAnimStates::WALK;
+        aiNinja.spritesheet.SetAnimation(anim);
         f32 inputDotProduct = glm::dot(dir, glm::vec2(1.0, 0.0));
         bool isInputLeft = inputDotProduct < 0.0;
         if (isInputLeft != aiNinja.isSpriteFlipped && inputDotProduct != 0.0)
@@ -187,7 +240,9 @@ void UpdateNinjaDefault(Ninja& ninja) {
 
 void Ninja::PunchedOtherNinja(Ninja& punchedNinja) {
     if (!punchedNinja.isDead) {
-        punchedNinja.spritesheet.SetAnimation(NinjaAnimStates::DEAD);
+        Spritesheet::Animation anim = {};
+        anim.animKey = NinjaAnimStates::DEAD;
+        punchedNinja.spritesheet.SetAnimation(anim);
         punchedNinja.isDead = true;
     }
 }
@@ -202,7 +257,6 @@ void CalculateNinjaCollisions(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNin
     for (s32 i = 0; i < numPlayerNinjas; i++) {
         Ninja& playerNinja = playerNinjas[i];
         if (playerNinja.isPunching) {
-
             // loop through AI and player ninjas and check hitbox collisions
             for (s32 aiNinjaIdx = 0; aiNinjaIdx < numAINinjas; aiNinjaIdx++) {
                 if (NinjaHitboxCheck(playerNinja, aiNinjas[aiNinjaIdx])) {
@@ -214,12 +268,11 @@ void CalculateNinjaCollisions(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNin
                     playerNinja.PunchedOtherNinja(playerNinjas[playerNinjaIdx]);
                 }
             }
-
         }
     }
 }
 
-void UpdateNinjas(UserInput inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
+void UpdateNinjas(const UserInput& inputs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
     CalculateNinjaCollisions(aiNinjas, numAINinjas, playerNinjas, numPlayerNinjas);
     for (u32 i = 0; i < numAINinjas; i++) {
         Ninja& aiNinja = aiNinjas[i];
@@ -243,19 +296,28 @@ void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
     
     ninja.spritesheet.Draw(Camera::GetMainCamera(), 
             ninja.entity.position, ninja.entity.size, rotation, glm::vec3(0.0, 1.0, 0.0), ninja.entity.color);
+    if (ninja.smokeGrenade.life) {
+        glm::vec2 smokeSpriteSize = ninja.smokeGrenade.size;
+        smokeSpriteSize += sin((f32)GetTime()*2.0)*8.0;
+        f32 smokeSpriteRotation = (f32)GetTime()*15.0;
+        ninja.smokeGrenade.sprite.Draw(Camera::GetMainCamera(),
+                ninja.smokeGrenade.pos, smokeSpriteSize, 
+                smokeSpriteRotation, {0.0, 0.0, 1.0}, 
+                {1.0, 1.0, 1.0, 1.0}
+        );
+        //Shapes::DrawSquare(ninja.smokeGrenade.pos, ninja.smokeGrenade.size, 0.0, {0.0, 0.0, 1.0}, {1.0,1.0,1.0,1.0}, true);
+    }
+    
 
     // NOTE: FOR DEBUGGING
     glm::vec4 col = isPlayer ? glm::vec4(0.0, 1.0, 0.0, 1.0) : glm::vec4(1.0, 0.0, 0.0, 1.0);
-    Shapes::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
-    Shapes::DrawSquare(ninja.entity.position + ninja.punchHitbox.pos, ninja.punchHitbox.size, 0.0, {0.0, 0.0, 1.0}, col, true);
+    //Shapes::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
+    //Shapes::DrawSquare(ninja.entity.position + ninja.punchHitbox.pos, ninja.punchHitbox.size, 0.0, {0.0, 0.0, 1.0}, col, true);
 }
 
 void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinjas, u32 numPlayerNinjas) {
     for (int i = 0; i < numAINinjas; i++) {
         const Ninja& ninja = aiNinjas[i];
-        // would be better to keep two lists of ninjas and
-        // put deactivated ones in a "deactivated" array.
-        // That'd be a lot better for the cache
         if (ninja.entity.active) {
             DrawNinja(ninja, ninja.isSpriteFlipped, false);
         }

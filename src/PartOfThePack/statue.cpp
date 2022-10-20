@@ -13,8 +13,8 @@ void Statue::Initialize(glm::vec2 pos) {
     if (!activatedStatueSprite.isValid()) activatedStatueSprite = Sprite(LoadTexture(UseResPath("potp/statue.png"), texProps));
     if (!deactivatedStatueSprite.isValid()) deactivatedStatueSprite = Sprite(LoadTexture(UseResPath("potp/statue.png"), texProps));
     entity.sprite = deactivatedStatueSprite;
-    f32 spriteWidth, spriteHeight;
-    entity.sprite.GetTextureDimensions(spriteWidth, spriteHeight);
+    f32 spriteWidth = entity.sprite.GetTextureWidth();
+    f32 spriteHeight = entity.sprite.GetTextureHeight();
     f32 statueSpriteSize = 50.0;
     f32 statueAspectRatio = spriteHeight/spriteWidth;
 

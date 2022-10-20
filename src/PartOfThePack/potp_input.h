@@ -1,20 +1,38 @@
 #ifndef POTP_INPUT_H
 #define POTP_INPUT_H
 
-
 #include "tiny_engine/pch.h"
 
+enum ControllerType {
+    NO_CONTROLLER = 0,
+    KEYBOARD,
+    CONTROLLER,
+};
+struct InputDevice {
+    ControllerType type = ControllerType::NO_CONTROLLER;
+    s32 port = -1;
+};
+
+enum ButtonValues {
+    NONE = 0,
+    UP = 1 << 0,
+    DOWN = 1 << 1,
+    LEFT = 1 << 2,
+    RIGHT = 1 << 3,
+    ACTION1 = 1 << 4, // punch
+    ACTION2 = 1 << 5, // smoke
+    START = 1 << 6,
+
+    NUM_BUTTONS = 7,
+};
+
+s32 GetGamepadBinding(ButtonValues button);
+s32 GetKeyboardBinding(ButtonValues button, u32 playerIdx);
+
 struct UserInput {
-    enum ButtonValues {
-        NONE = 0,
-        UP = 1 << 0,
-        DOWN = 1 << 1,
-        LEFT = 1 << 2,
-        RIGHT = 1 << 3,
-        ACTION1 = 1 << 4, // punch
-        ACTION2 = 1 << 5, // smoke
-    };
+    UserInput();
     #define MAX_NUM_PLAYERS 4
+    InputDevice controllers[MAX_NUM_PLAYERS];
     // 1 bitfield of buttons pressed for each player
     u32 buttons[MAX_NUM_PLAYERS];
     u32 prevButtons[MAX_NUM_PLAYERS];
@@ -45,6 +63,9 @@ struct UserInput {
     bool isAction2(u32 playerIdx) const {
         return isButton(playerIdx, ButtonValues::ACTION2);
     }
+    bool isStart(u32 playerIdx) const {
+        return isButton(playerIdx, ButtonValues::START);
+    }
 
     bool isUpPressed(u32 playerIdx) const {
         return isButtonJustPressed(playerIdx, ButtonValues::UP);
@@ -63,6 +84,9 @@ struct UserInput {
     }
     bool isAction2Pressed(u32 playerIdx) const {
         return isButtonJustPressed(playerIdx, ButtonValues::ACTION2);
+    }
+    bool isStartPressed(u32 playerIdx) const {
+        return isButtonJustPressed(playerIdx, ButtonValues::START);
     }
 
     static void UpdateUserInput(UserInput& input);

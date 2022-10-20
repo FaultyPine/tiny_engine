@@ -16,30 +16,20 @@ Good Ware for controller icon
 ## Info
 
 Libraries Used:
-- OpenGL
-- GLAD
-- GLFW
-- miniaudio
+- [OpenGL](https://www.opengl.org/) by Khronos Group
+- [GLAD](https://glad.dav1d.de/) by David Herberth
+- [GLFW](https://www.glfw.org/)
+- [miniaudio](https://github.com/mackron/miniaudio) by David Reid
 - [GLtext](https://github.com/vallentin/glText) by Christian Vallentin 
 - [PoissonGenerator](https://github.com/corporateshark/poisson-disk-generator) by Sergey Kosarevsky
+- [tiny_obj_loader](https://github.com/tinyobjloader/tinyobjloader)
 
 Features:
 - deterministic randomness
 - custom spritesheet parsing
 - vector shape drawing
+- .obj file parsing
 
-## TODO
-
-# CURRENT TASK:
-- INPUT REFACTOR!!!
-    - move game-specific code into game, generalize tiny_engine input api
-    - create abstraction layers for an 'input device' and make an array of 4 of those
-    - connected controllers will be the 'later' players.. 
-        I.E. if 1 controller connected and player count is set to 2, keyboard is p1 and controller is p2
-        if 2 controllers connected and player count is 4, keyboard is p1/p2, and controllers are p3/p4
-        This is so keyboard can always have a max of two players since only two people can realistically use one keyboard at once
-    - if implemented properly, game code shouldn't have to change. We still just check the button of a player idx
-https://www.glfw.org/docs/latest/input_guide.html
 
 ### MVP
 - clip ninja behind statue when it's base y is greater than statues base y

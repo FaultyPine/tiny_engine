@@ -8,12 +8,30 @@
 namespace Potp {
 
 void MainInit();
-void MainUpdate(UserInput inputs);
-void MainDraw();
+void MainUpdate();
 
 }
 
+enum PotpScene {
+    NO_SCENE,
+    CONTROLLER_SETUP,
+    ASSASSIN,
+};
+
 struct GameState {
+    PotpScene scene = PotpScene::NO_SCENE;
+    
+    // ----- controller setup -----
+    bool isReady[MAX_NUM_PLAYERS];
+    u32 numPlayers = 0;
+    Sprite keyboardSprite;
+    Sprite controllerSprite;
+    Sprite playerTextSprite;
+    Sprite oneSprite, twoSprite, threeSprite, fourSprite;
+
+
+    // ----- ingame -----
+
     /// storing initial seed for possible replay functionality later
     u64 initialRandomSeed;
 
@@ -22,7 +40,7 @@ struct GameState {
     #define NUM_STATUES 5
     Statue statues[NUM_STATUES];
 
-    #define MAX_NUM_AI_NINJAS 35
+    #define MAX_NUM_AI_NINJAS 45
     Ninja aiNinjas[MAX_NUM_AI_NINJAS];
     Ninja playerNinjas[MAX_NUM_PLAYERS];
 };

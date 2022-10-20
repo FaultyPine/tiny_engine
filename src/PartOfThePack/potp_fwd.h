@@ -16,7 +16,7 @@ struct Entity {
     glm::vec2 position = glm::vec2(0.0f, 0.0f);
     glm::vec2 size = glm::vec2(50.0f, 50.0f);
     f32 rotation = 0.0f;
-    glm::vec3 color = glm::vec3(1.0f);
+    glm::vec4 color = glm::vec4(1.0f);
     bool active = true;
     std::string name = "";
     u32 zIndex = 0;
