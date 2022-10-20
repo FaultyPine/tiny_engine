@@ -27,15 +27,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define GLT_DEBUG
-#define GLT_DEBUG_PRINT
-#define GLT_IMPLEMENTATION
-// because this is defined, make sure to call gltViewport(width, height) when the screen is resized
-// this optimizes away a call to glGetIntegerv
-#define GLT_MANUAL_VIEWPORT 
-#include "glText.h"
-
-//#include "stb_image.h"
 
 #define TINY_DEBUG
 

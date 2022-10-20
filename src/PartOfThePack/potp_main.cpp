@@ -17,16 +17,12 @@ void PotpInitControllerSetupMenu(GameState& gs) {
         gs.keyboardSprite = Sprite(LoadTexture(UseResPath("potp/keyboard.png").c_str(), texProps));
     if (!gs.controllerSprite.isValid()) 
         gs.controllerSprite = Sprite(LoadTexture(UseResPath("potp/controller.png").c_str(), texProps));
-    if (!gs.playerTextSprite.isValid()) 
-        gs.playerTextSprite = Sprite(LoadTexture(UseResPath("potp/player_txt.png").c_str(), texProps));
-    if (!gs.oneSprite.isValid()) 
-        gs.oneSprite = Sprite(LoadTexture(UseResPath("potp/1.png").c_str(), texProps));
-    if (!gs.twoSprite.isValid()) 
-        gs.twoSprite = Sprite(LoadTexture(UseResPath("potp/2.png").c_str(), texProps));
-    if (!gs.threeSprite.isValid()) 
-        gs.threeSprite = Sprite(LoadTexture(UseResPath("potp/3.png").c_str(), texProps));
-    if (!gs.fourSprite.isValid()) 
-        gs.fourSprite = Sprite(LoadTexture(UseResPath("potp/4.png").c_str(), texProps));
+    for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
+        if (!gs.playerTexts[i]) {
+            const char* playerText = ("Player " + std::to_string(i+1)).c_str();
+            gs.playerTexts[i] = CreateText(playerText);
+        }
+    }
 }
 
 void PotpInitAssassinScene(GameState& gs) {
@@ -162,18 +158,16 @@ void DrawUI(const GameState& gs) {
     // draw player indicators at bottom of screen
     // "player indicators" here refers to the UI that shows what players are ingame (1-4) and if they are using keyboard/controller
     const f32 playerIndicatorsSize = 100.0;
+    const f32 playerTextSize = 2.0;
     const glm::vec2 playerIndicatorsSizeVec = {playerIndicatorsSize, playerIndicatorsSize};
     const f32 playerIndicatorsY = (f32)Camera::GetScreenHeight()/2.0 + (playerIndicatorsSizeVec.y/2.0);
     const f32 playerIndicatorsStartX = (f32)Camera::GetScreenWidth()/playerIndicatorsSizeVec.x;
     const f32 playerIndicatorsXSpacing = playerIndicatorsSize + (f32)Camera::GetScreenWidth()/8.0;
     const f32 indicatorAlpha = 0.6;
-    const f32 playerTextYOffset = -75.0;
+    const f32 playerTextYOffset = -30.0;
 
     glm::vec3 rotationAxis = {0.0, 0.0, 1.0};
     glm::vec4 color = {1.0, 1.0, 1.0, indicatorAlpha};
-    const Sprite* playerNumberSprites[MAX_NUM_PLAYERS] = {
-        &gs.oneSprite, &gs.twoSprite, &gs.threeSprite, &gs.fourSprite
-    };
 
     for (s32 playerIdx = 0; playerIdx < MAX_NUM_PLAYERS; playerIdx++) {
         glm::vec2 pos = {playerIndicatorsStartX + playerIndicatorsXSpacing * playerIdx, playerIndicatorsY};
@@ -182,11 +176,7 @@ void DrawUI(const GameState& gs) {
         Sprite inputDeviceSprite = isGamepadPresent(playerIdx) ? gs.controllerSprite : gs.keyboardSprite;
         inputDeviceSprite.DrawSprite(cam, pos, playerIndicatorsSizeVec, 0.0, rotationAxis, color);
 
-        gs.playerTextSprite.DrawSprite(cam, {pos.x, pos.y + playerTextYOffset}, 
-                                playerIndicatorsSizeVec, 0.0, rotationAxis, color);
-        Sprite playerNumberSprite = *playerNumberSprites[playerIdx];
-        playerNumberSprite.DrawSprite(cam, {pos.x + playerIndicatorsSize, pos.y + playerTextYOffset}, 
-                            {playerNumberSprite.GetTextureWidth(), playerNumberSprite.GetTextureHeight()}, 0.0, rotationAxis, color);
+        DrawText(gs.playerTexts[playerIdx], pos.x, pos.y + playerTextYOffset, playerTextSize, color.r, color.b, color.g, color.a);
     }
 
 }

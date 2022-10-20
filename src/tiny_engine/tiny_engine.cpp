@@ -1,6 +1,7 @@
 #include "tiny_engine.h"
 
 #include "tiny_fs.h"
+#include "tiny_text.h"
 #include "shader.h"
 #include "camera.h"
 #include "mesh.h"
@@ -22,12 +23,12 @@ static u32 frameCount = 0;
 GLFWwindow* glob_glfw_window = nullptr;
 static u64 randomSeed = 0;
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    gltViewport(width, height);
+void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
+    UpdateGLTViewport(width, height);
     glViewport(0, 0, width, height);
 }
 void TerminateGame() {
-    gltTerminate();
+    GLTTerminate();
     glfwTerminate();
 }
 void InitializeRandomSeed(u64 seed) {
@@ -116,10 +117,12 @@ void InitGame(u32 windowWidth, u32 windowHeight, const s8* windowName) {
     }    
 
     // Initialize glText
-    gltInit();
+    if (!GLTInitialize()) {
+        std::cout << "[ERROR] Failed to initialize GLtext!\n";
+    }
 
     glViewport(0, 0, windowWidth, windowHeight);
-    gltViewport(windowWidth, windowHeight);
+    UpdateGLTViewport(windowWidth, windowHeight);
     
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  

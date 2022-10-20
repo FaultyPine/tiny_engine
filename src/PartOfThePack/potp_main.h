@@ -4,6 +4,7 @@
 #include "tiny_engine/input.h"
 #include "statue.h"
 #include "ninja.h"
+#include "tiny_engine/tiny_text.h"
 
 namespace Potp {
 
@@ -26,8 +27,7 @@ struct GameState {
     u32 numPlayers = 0;
     Sprite keyboardSprite;
     Sprite controllerSprite;
-    Sprite playerTextSprite;
-    Sprite oneSprite, twoSprite, threeSprite, fourSprite;
+    GLTtext* playerTexts[MAX_NUM_PLAYERS];
 
 
     // ----- ingame -----

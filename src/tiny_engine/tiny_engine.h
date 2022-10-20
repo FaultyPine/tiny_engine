@@ -4,7 +4,7 @@
 #include "pch.h"
 
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height);
 
 void CloseGameWindow();
 
