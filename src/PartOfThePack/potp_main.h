@@ -24,10 +24,15 @@ struct GameState {
     
     // ----- controller setup -----
     bool isReady[MAX_NUM_PLAYERS];
+    #define ASSASSIN_ALL_READY_COUNTDOWN_FRAMES ((60)*7)
+    u32 allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
     u32 numPlayers = 0;
     Sprite keyboardSprite;
     Sprite controllerSprite;
+    Sprite blankControllerSprite;
     GLTtext* playerTexts[MAX_NUM_PLAYERS];
+    GLTtext* instructionsText;
+    GLTtext* countdownText;
 
 
     // ----- ingame -----

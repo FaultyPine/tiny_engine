@@ -10,6 +10,7 @@ Sergey Kosarevsky for PoissonGenerator
 TDingle for statue sprites and music
 Sebastian Belalcazar for keyboard icon
 Good Ware for controller icon
+joalfa for X icon
 
 # tiny_engine
 
