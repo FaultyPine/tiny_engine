@@ -10,12 +10,6 @@
 #include "sprite.h"
 #include "math.h"
 
-// for rdtsc for rand
-#ifdef _MSC_VER
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
 
 static f32 deltaTime = 0.0f;
 static f32 lastFrameTime = 0.0f;
@@ -39,19 +33,18 @@ u32 GetRandom(u32 start, u32 end) {
     // lazy init random seed
     if (randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
-        randomSeed = GetCPUCycles();
+        double time = GetTime();
+        randomSeed = hash((const char*)&time, sizeof(double));
         std::cout << "Initial random seed = " << randomSeed << "\n";
     }
     srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
     randomSeed++; // deterministic random
     return start + (rand() % end);
 }
-long long GetCPUCycles() {
-    return __rdtsc();
-}
+
 
 // returns the current GLFW time (in seconds)
-double GetTime() {
+f64 GetTime() {
     return glfwGetTime();
 }
 void CloseGameWindow() {
@@ -69,6 +62,14 @@ void EngineLoop() {
     lastFrameTime = currentTime;
 
     frameCount++;
+
+    {
+        static f64 lastframe = GetTime();
+        while (GetTime() < lastframe + 1.0/TARGET_FPS) {
+            // TODO: Put the thread to sleep, yield, or simply do nothing
+        }
+        lastframe += 1.0/TARGET_FPS;
+    }
 
     // clear gl buffer
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);

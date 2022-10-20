@@ -29,6 +29,7 @@
 
 
 #define TINY_DEBUG
+#define TARGET_FPS 60
 
 // types
 typedef unsigned char u8;

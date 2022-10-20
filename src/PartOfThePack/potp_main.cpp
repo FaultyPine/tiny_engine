@@ -26,15 +26,18 @@ void PotpInitControllerSetupMenu(GameState& gs) {
             gs.playerTexts[i] = CreateText(playerText);
         }
     }
-    gs.instructionsText = CreateText("Press start to join\nPress action1 when ready");
+    gs.instructionsText = CreateText("Press start to join\nPress start again when ready");
     gs.countdownText = CreateText("Starting in ...");
 }
 
-void PotpInitAssassinScene(GameState& gs) {
+void PotpInitAssassinScene(GameState& gs, UserInput& inputs) {
     // TODO: Remove after I get controller setup scene working
     if (gs.numPlayers < 1) {
-        std::cout << "[WARNING] Num players was less than 1, setting to 2 by default.\n";
+        std::cout << "[WARNING] Num players was less than 1, setting to 2 keyboards by default.\n";
         gs.numPlayers = 2;
+        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
+            inputs.controllers[i].type = ControllerType::KEYBOARD;
+        }
     }
 
     ASSERT(gs.numPlayers > 1);
@@ -58,9 +61,10 @@ void PotpInitAssassinScene(GameState& gs) {
     InitializeNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
 }
 
-void PotpInit(GameState& gs) {
+void PotpInit(GameState& gs, UserInput& inputs) {
     // manually init random seed so we can serialize it (with the rest of gamestate) if need be
-    gs.initialRandomSeed = GetCPUCycles();
+    f64 time = GetTime();
+    gs.initialRandomSeed = hash((const char*)&time, sizeof(double));
     InitializeRandomSeed(gs.initialRandomSeed);
 
     Audio::SetMute(true);
@@ -78,8 +82,8 @@ void PotpInit(GameState& gs) {
     gs.background = Sprite(backgroundTex);
 
     // init game to controller setup menu
-    PotpInitControllerSetupMenu(gs);
-    //PotpInitAssassinScene(gs);
+    //PotpInitControllerSetupMenu(gs);
+    PotpInitAssassinScene(gs, inputs);
 }
 
 
@@ -133,7 +137,7 @@ void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
         }
         else {
             // already bound slot, poll for if they're ready
-            if (inputs.isAction1Pressed(playerIdx) && !gs.isReady[playerIdx]) {
+            if (inputs.isStartPressed(playerIdx) && !gs.isReady[playerIdx]) {
                 std::cout << "Player " << playerIdx << " is ready.\n";
                 gs.isReady[playerIdx] = true;
             }
@@ -150,7 +154,7 @@ void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
         // check against 1 to avoid collision with check above for 0
         if (gs.allReadyCountdown == 0) { 
             gs.scene = PotpScene::ASSASSIN;
-            PotpInitAssassinScene(gs);
+            PotpInitAssassinScene(gs, inputs);
         }
     }
     // if we're not all ready, but countdown already started, restart countdown
@@ -202,7 +206,7 @@ void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
     if (gs.allReadyCountdown != ASSASSIN_ALL_READY_COUNTDOWN_FRAMES)
         DrawText(gs.countdownText, 10.0, 10.0, 1.5, 1.0, 1.0, 1.0, 1.0);
 
-    DrawText(gs.instructionsText, Camera::GetScreenWidth()/2.0 - 50.0, 30.0, 2.0,    1.0, 1.0, 1.0, 1.0);
+    DrawText(gs.instructionsText, Camera::GetScreenWidth()/2.0 - 50.0, 30.0, 1.5,    1.0, 1.0, 1.0, 1.0);
 }
 
 
@@ -247,7 +251,7 @@ GameState gs = {};
 UserInput inputs = {};
 
 void MainInit() {
-    PotpInit(gs);
+    PotpInit(gs, inputs);
 }
 void MainUpdate() {
     // poll inputs
