@@ -89,6 +89,10 @@ template <typename T> int signof(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
+template <typename T> bool isInRange(T x, T min, T max) {
+    return min <= x && x <= max;
+}
+
 inline uint32_t hash(const char* message, size_t message_length)
 {
     auto mix = [](uint32_t message_block, uint32_t internal_state){

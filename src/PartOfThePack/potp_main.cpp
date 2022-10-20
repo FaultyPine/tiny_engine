@@ -31,6 +31,7 @@ void PotpInitControllerSetupMenu(GameState& gs) {
 }
 
 void PotpInitAssassinScene(GameState& gs, UserInput& inputs) {
+    #ifdef TINY_DEBUG
     // TODO: Remove after I get controller setup scene working
     if (gs.numPlayers < 1) {
         std::cout << "[WARNING] Num players was less than 1, setting to 2 keyboards by default.\n";
@@ -39,6 +40,7 @@ void PotpInitAssassinScene(GameState& gs, UserInput& inputs) {
             inputs.controllers[i].type = ControllerType::KEYBOARD;
         }
     }
+    #endif
 
     ASSERT(gs.numPlayers > 1);
     gs.scene = PotpScene::ASSASSIN;

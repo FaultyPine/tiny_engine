@@ -66,7 +66,7 @@ void EngineLoop() {
     {
         static f64 lastframe = GetTime();
         while (GetTime() < lastframe + 1.0/TARGET_FPS) {
-            // TODO: Put the thread to sleep, yield, or simply do nothing
+            // zzzzzz
         }
         lastframe += 1.0/TARGET_FPS;
     }

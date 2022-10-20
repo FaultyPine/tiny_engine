@@ -103,16 +103,22 @@ glm::vec2 GetPlayerInputDir(const UserInput& inputs, u32 playerIdx) {
     return inputDir;
 }
 glm::vec2 GetAIInputDir(Ninja& aiNinja) {
-    glm::vec2 desiredDirection = glm::normalize(aiNinja.aiDesiredPos - aiNinja.entity.position);
-    glm::vec2 resultDir = glm::vec2(0.0, 0.0);
-    if (abs(desiredDirection.x) > abs(desiredDirection.y)) {
-        resultDir.x = 1 * (signof(desiredDirection.x));
-        resultDir.y = 0;
+    glm::vec2 desiredPosition = aiNinja.aiDesiredPos;
+    glm::vec2 ninjaPosition = aiNinja.entity.position;
+    glm::vec2 desiredDirection = glm::normalize(desiredPosition - ninjaPosition);
+
+    glm::vec2 resultDir = glm::vec2(0, 0);
+    const f32 rangeLeniency = 3.0;
+    if (!isInRange(ninjaPosition.x, desiredPosition.x-rangeLeniency, desiredPosition.x+rangeLeniency)) {
+        resultDir.x = signof(desiredDirection.x);
     }
-    else if (abs(desiredDirection.x) < abs(desiredDirection.y)) {
-        resultDir.x = 0;
-        resultDir.y = 1 * (signof(desiredDirection.y));
+    if (!isInRange(ninjaPosition.y, desiredPosition.y-rangeLeniency, desiredPosition.y+rangeLeniency)) {
+        resultDir.y = signof(desiredDirection.y);
     }
+    if (resultDir.x != 0 && resultDir.y != 0) {
+        resultDir = glm::normalize(resultDir);
+    }
+
     return resultDir;
 }
 
@@ -190,8 +196,8 @@ void ProcessPlayerInput(const UserInput& inputs, Ninja& playerNinja, u32 playerI
             anim.animKey = NinjaAnimStates::IDLE;
             playerNinja.spritesheet.SetAnimation(anim);
         }
-        glm::vec2 posDelta = inputDir * playerNinja.ninjaSpeed;
-        ninjaPos += posDelta * GetDeltaTime();
+        glm::vec2 posDelta = inputDir * playerNinja.ninjaSpeed * GetDeltaTime();
+        ninjaPos += posDelta;
     }
 
     NinjaSmokeBombProcedure(inputs, playerNinja, playerIdx);
@@ -205,7 +211,7 @@ void UpdateNinjaAI(Ninja& aiNinja) {
     glm::vec2& pos = aiNinja.entity.position;
     Spritesheet::Animation anim = {};
     // if we're within a reasonable distance of our goal
-    if (glm::distance(aiNinja.aiDesiredPos, pos) < 1.0f) {
+    if (glm::distance(aiNinja.aiDesiredPos, pos) < 10.0f) {
         anim.animKey = NinjaAnimStates::IDLE;
         aiNinja.spritesheet.SetAnimation(anim);
         // if we are at our ai's desired spot, wait and then regenerate desired spot
