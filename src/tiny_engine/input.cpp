@@ -1,5 +1,24 @@
 #include "input.h"
 
+// gamepad
+
+bool GetGamepadState(u32 playerIdx, Gamepad& gamepad) {
+    GLFWgamepadstate state;
+    glfwGetGamepadState(playerIdx, &state);
+    memcpy(gamepad.buttons, state.buttons, sizeof(gamepad.buttons));
+    memcpy(gamepad.axes, state.axes, sizeof(gamepad.axes));
+    bool isPresent = isGamepadPresent(playerIdx);
+    if (isPresent) {
+        gamepad.name = glfwGetGamepadName(playerIdx);
+    }
+    return isPresent;
+}
+
+bool isGamepadPresent(u32 playerIdx) {
+    return glfwJoystickPresent(playerIdx);
+}
+
+
 // mouse callbacks
 void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
     MouseInput& mouseInput = MouseInput::GetMouse();

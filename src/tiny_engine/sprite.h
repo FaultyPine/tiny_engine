@@ -16,13 +16,11 @@ struct Sprite {
     void DrawSprite(const Camera& cam, glm::vec2 position, 
                     glm::vec2 size = glm::vec2(10.0f, 10.0f), f32 rotate = 0.0f, 
                     glm::vec3 rotationAxis = glm::vec3(0.0, 0.0, 1.0),
-                    glm::vec3 color = glm::vec3(1.0f)) const;
+                    glm::vec4 color = glm::vec4(1.0f)) const;
 
     bool isValid() const { return mainTex.id != 0; }
-    void GetTextureDimensions(f32& width, f32& height) {
-        width = mainTex.width;
-        height = mainTex.height;
-    }
+    inline f32 GetTextureWidth() const { return mainTex.width; }
+    inline f32 GetTextureHeight() const { return mainTex.height; }
     
 private:
     Texture mainTex;

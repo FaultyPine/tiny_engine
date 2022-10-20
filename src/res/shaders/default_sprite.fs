@@ -5,11 +5,11 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D image;
-uniform vec3 spriteColor;
+uniform vec4 spriteColor;
 
 void main()
 {
-    FragColor = vec4(spriteColor, 1.0) * texture(image, TexCoords);
+    FragColor = spriteColor * texture(image, TexCoords);
     if (FragColor.a == 0) {
         discard;
     }

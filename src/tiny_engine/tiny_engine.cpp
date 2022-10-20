@@ -49,12 +49,9 @@ long long GetCPUCycles() {
     return __rdtsc();
 }
 
-// returns the current GLFW time
+// returns the current GLFW time (in seconds)
 double GetTime() {
     return glfwGetTime();
-}
-long long GetTimeSinceEpoch() {
-    return std::chrono::high_resolution_clock::now().time_since_epoch().count();
 }
 void CloseGameWindow() {
     glfwSetWindowShouldClose(glob_glfw_window, true);
@@ -124,7 +121,8 @@ void InitGame(u32 windowWidth, u32 windowHeight, const s8* windowName) {
     glViewport(0, 0, windowWidth, windowHeight);
     gltViewport(windowWidth, windowHeight);
     
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
 
     // For 2D games, don't depth test so that the order they are drawn in makes sense
     // (subsequent draws overwrite previous draws)

@@ -9,7 +9,7 @@ Sprite::Sprite(const Texture& mainTex) {
 
 
 void Sprite::DrawSprite(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec3 color) const {
+                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color) const {
     if (!isValid()) {
         std::cout << "Tried to draw invalid sprite!\n";
         exit(1);

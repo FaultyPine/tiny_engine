@@ -14,6 +14,14 @@ namespace Shapes {
 if (shaderName.ID == 0) \
     shaderName = Shader(UseResPath(vertShaderPath).c_str(), UseResPath(fragShaderPath).c_str())
 
+// this definitely needs work. Line changes width based on how long it is
+void DrawLine(const glm::vec2 origin, const glm::vec2& dest, const glm::vec4& color, f32 width) {
+    SHAPE_SHADER(shader, "shaders/shapes/shape.vs", "shaders/shapes/line.fs");
+    shader.use();
+    shader.setUniform("lineWidth", width);
+    f32 lineRotation = 0.0;
+    Shapes::DrawShape(origin, dest-origin, lineRotation, {0.0, 0.0, 1.0}, color, shader);
+}
 
 void DrawSquare(const glm::vec2& pos, const glm::vec2& size, 
             f32 rotation, const glm::vec3& rotationAxis, 

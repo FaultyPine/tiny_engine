@@ -68,9 +68,8 @@ void Mesh::DrawMesh(Shader& shader) {
         // tex_<texture type><number>   I.E. tex_diffuse1
         std::string texNum = std::to_string(numOfEachTexType[tex.type]++);
         
-        const char* uniformName = (texName + texNum).c_str();
         // set the texture uniform to the proper texture unit
-        shader.setUniform(uniformName, i);
+        shader.setUniform((texName + texNum).c_str(), i);
         GLCall(glBindTexture(GL_TEXTURE_2D, tex.id));
     }
 

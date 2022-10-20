@@ -39,13 +39,11 @@ Spritesheet::Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, 
 void Spritesheet::SetAnimationIndices(u32 animKey, const std::vector<u32>& indices) {
     this->animationIndicesMap[animKey] = indices;
 }
-void Spritesheet::SetAnimation(u32 animKey, bool isLoop, s32 nonLoopNextAnim) {
-    if (this->animation.animKey != animKey) { // don't reset anim if we're requesting same one
-        Animation anim;
-        anim.animKey = animKey;
-        anim.isLoop = isLoop;
-        anim.frame = 0;
-        anim.nonLoopNextAnim = nonLoopNextAnim;
+void Spritesheet::SetAnimation(Animation anim) {
+    if (this->animation.animKey != anim.animKey) { // don't reset anim if we're requesting same one
+        if (anim.framerate == 0) {
+            anim.framerate = this->defaultFramerate;
+        }
         this->animation = anim;
     }
 }
@@ -55,7 +53,7 @@ void Spritesheet::ResetAnim() {
 void Spritesheet::Tick() {
     ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
     // if we should move to the next spritesheet frame
-    if (this->framerateEnforcer % (60/this->framerate) == 0) {
+    if (this->framerateEnforcer % (60/this->animation.framerate) == 0) {
         if (!this->animation.isLoop) {
             // if we're NOT looping, set animation to the "next anim" after this one is done
             this->animation.frame++;
@@ -63,18 +61,20 @@ void Spritesheet::Tick() {
             if (this->animation.frame >= this->animationIndicesMap.at(this->animation.animKey).size()) {
                 // IMPORTANT/TODO: Using the "next animation" will always set it to looping
                 // you should be able to provide another animation which also has looping/next anim options
-                this->SetAnimation(this->animation.nonLoopNextAnim);
+                Animation nextAnim = {};
+                nextAnim.animKey = this->animation.nonLoopNextAnim;
+                this->SetAnimation(nextAnim);
             }
         }
         else {
             this->animation.frame = (this->animation.frame+1) % this->animationIndicesMap.at(this->animation.animKey).size();
         }
     }
-    this->framerateEnforcer = (this->framerateEnforcer+1) % this->framerate;
+    this->framerateEnforcer = (this->framerateEnforcer+1) % this->animation.framerate;
 }
 
 void Spritesheet::Draw(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec3 color) const {
+                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color) const {
     ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
     const auto& indices = this->animationIndicesMap.at(this->animation.animKey);
     ASSERT(indices.size() > this->animation.frame);

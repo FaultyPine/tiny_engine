@@ -18,7 +18,6 @@ inline std::string Vec2ToStr(const glm::vec2& vec) {
 
 // returns the current GLFW time
 double GetTime();
-long long GetTimeSinceEpoch();
 
 void InitializeRandomSeed(u64 seed);
 u64 GetRandomSeed();

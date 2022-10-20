@@ -6,13 +6,47 @@
 
 extern GLFWwindow* glob_glfw_window;
 
+// gamepad
+
+// https://www.glfw.org/docs/latest/input_guide.html
+
+struct Gamepad {
+    /*! The states of each [gamepad button](@ref gamepad_buttons), `GLFW_PRESS`
+     *  or `GLFW_RELEASE`.
+     */
+    u8 buttons[15];
+    /*! The states of each [gamepad axis](@ref gamepad_axes), in the range -1.0
+     *  to 1.0 inclusive.
+     */
+    f32 axes[6];
+    const char* name = 0;
+
+    inline bool isButtonPressed(s32 glfwButton) {
+        return buttons[glfwButton] == GLFW_PRESS;
+    }
+};
+
+// gamepad api:
+bool GetGamepadState(u32 playerIdx, Gamepad& gamepad);
+bool isGamepadPresent(u32 playerIdx);
+// getting axis (for player idx)
+// getting buttons (for player idx)
 
 
-inline s32 GetKeyState(s32 key, s32 keyState) {
+// keyboard
+namespace Keyboard {
+
+inline bool GetKeyState(s32 key, s32 keyState) {
     return glfwGetKey(glob_glfw_window, key) == keyState;
 }
+inline bool isKeyPressed(s32 key) {
+    return GetKeyState(key, GLFW_PRESS);
+}
+inline bool isKeyReleased(s32 key) {
+    return GetKeyState(key, GLFW_RELEASE);
+}
 
-
+}
 // Mouse
 
 void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos);

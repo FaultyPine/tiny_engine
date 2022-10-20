@@ -17,6 +17,7 @@
 #include <chrono>
 #include <random>
 #include <map>
+#include <math.h>
 // ----------------
 
 #include <glad/glad.h>
@@ -32,7 +33,7 @@
 // because this is defined, make sure to call gltViewport(width, height) when the screen is resized
 // this optimizes away a call to glGetIntegerv
 #define GLT_MANUAL_VIEWPORT 
-#include "gltext.h"
+#include "glText.h"
 
 //#include "stb_image.h"
 
@@ -51,11 +52,15 @@ typedef float f32;
 typedef double f64;
 
 // debug
-inline void PrintAndExitDBG(const char* file, s32 line) {
-    std::cout << "[ERROR] In " << file << " on line " << line << std::endl; 
+inline void PrintAndExitDBG(const char* file, s32 line, const char* msg) {
+    std::cout << "[ERROR] In " << file << " on line " << line << "\n" << msg << std::endl; 
     exit(1);
 }
-#define ASSERT(x) if (!(x)) PrintAndExitDBG(__FILE__, __LINE__)
+#ifdef TINY_DEBUG
+#define ASSERT(x) if (!(x)) PrintAndExitDBG(__FILE__, __LINE__, #x)
+#else
+#define ASSERT(x)
+#endif
 
 // OpenGL error handling
 static void GLClearError() {
@@ -88,6 +93,9 @@ template <typename T> void CLAMP(T& value, const T& low, const T& high) {
     value = value < low ? low : (value > high ? high : value); 
 }
 
+template <typename T> int signof(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 inline uint32_t hash(const char* message, size_t message_length)
 {
@@ -120,5 +128,8 @@ inline uint32_t hash(const char* message, size_t message_length)
    return internal_state;
 }
 
+inline u32 countLeadingZeroes(u32 n) {
+    return n == 0 ? 0 : log2(n & -n);
+}
 
 #endif
