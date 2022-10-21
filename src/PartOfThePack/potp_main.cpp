@@ -38,6 +38,7 @@ void PotpInitAssassinScene(GameState& gs, UserInput& inputs) {
         gs.numPlayers = 2;
         for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
             inputs.controllers[i].type = ControllerType::KEYBOARD;
+            inputs.controllers[i].port = i;
         }
     }
     #endif
