@@ -246,11 +246,14 @@ void UpdateNinjaDefault(Ninja& ninja) {
 
 void Ninja::PunchedOtherNinja(Ninja& punchedNinja) {
     if (!punchedNinja.isDead) {
-        Spritesheet::Animation anim = {};
-        anim.animKey = NinjaAnimStates::DEAD;
-        punchedNinja.spritesheet.SetAnimation(anim);
-        punchedNinja.isDead = true;
+        punchedNinja.Die();
     }
+}
+void Ninja::Die() {
+    Spritesheet::Animation anim = {};
+    anim.animKey = NinjaAnimStates::DEAD;
+    this->spritesheet.SetAnimation(anim);
+    this->isDead = true;
 }
 // checks if ninjaToCheck is being hit by ninja
 bool NinjaHitboxCheck(const Ninja& ninja, const Ninja& ninjaToCheck) {

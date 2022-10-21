@@ -33,12 +33,16 @@ Features:
 
 
 ### MVP
-- clip ninja behind statue when it's base y is greater than statues base y
+- win conditions
+    - win when all other ninjas are dead
 
 ### More...
-- Controller support
+- statue activation/win condition
+- title screen
 - clean up debug line drawing
-- statue activation/win conditions
+- Implement Z indexing
+    - have a list of entity pointers and iterate through them in our main draw function calling draw and using the entity's z index to draw in the correct order
+    - clip ninja behind statue when it's base y is greater than statues base y
 
 ### Stretch Goals
 - intro screen w/visuals for how to play/controls like in og game

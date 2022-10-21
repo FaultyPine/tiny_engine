@@ -25,26 +25,16 @@ void PotpInitControllerSetupMenu(GameState& gs) {
             const char* playerText = ("Player " + std::to_string(i+1)).c_str();
             gs.playerTexts[i] = CreateText(playerText);
         }
+        gs.isReady[i] = false;
     }
     gs.instructionsText = CreateText("Press start to join\nPress start again when ready");
     gs.countdownText = CreateText("Starting in ...");
 }
 
-void PotpInitAssassinScene(GameState& gs, UserInput& inputs) {
-    #ifdef TINY_DEBUG
-    // TODO: Remove after I get controller setup scene working
-    if (gs.numPlayers < 1) {
-        std::cout << "[WARNING] Num players was less than 1, setting to 2 keyboards by default.\n";
-        gs.numPlayers = 2;
-        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
-            inputs.controllers[i].type = ControllerType::KEYBOARD;
-            inputs.controllers[i].port = i;
-        }
-    }
-    #endif
-
+void PotpInitAssassinScene(GameState& gs) {
     ASSERT(gs.numPlayers > 1);
     gs.scene = PotpScene::ASSASSIN;
+    gs.winningPlayer = -1;
     // statues
     u32 screenWidth = Camera::GetMainCamera().screenWidth;
     u32 screenHeight = Camera::GetMainCamera().screenHeight;
@@ -59,6 +49,7 @@ void PotpInitAssassinScene(GameState& gs, UserInput& inputs) {
     for (u32 i = 0; i < NUM_STATUES; i++) {
         gs.statues[i].Initialize(statuePositions[i]);
     }
+    gs.playerWonText = CreateText("Winner!");
 
     // ninjas
     InitializeNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
@@ -84,9 +75,22 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // Sprites
     gs.background = Sprite(backgroundTex);
 
+    #ifdef TINY_DEBUG 
+    // This is for debugging - when I boot directly into the gameplay scene without controller setup
+    // just setup controls with two keyboard players by default
+    if (gs.numPlayers < 1) {
+        std::cout << "[WARNING] Num players was less than 1, setting to 2 keyboards by default.\n";
+        gs.numPlayers = 2;
+        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
+            inputs.controllers[i].type = ControllerType::KEYBOARD;
+            inputs.controllers[i].port = i;
+        }
+    }
+    #endif
+
     // init game to controller setup menu
-    PotpInitControllerSetupMenu(gs);
-    //PotpInitAssassinScene(gs, inputs);
+    //PotpInitControllerSetupMenu(gs);
+    PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
 }
 
 void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
@@ -104,12 +108,65 @@ void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
         // check against 1 to avoid collision with check above for 0
         if (gs.allReadyCountdown == 0) { 
             gs.scene = PotpScene::ASSASSIN;
-            PotpInitAssassinScene(gs, inputs);
+            PotpInitAssassinScene(gs);
         }
     }
     // if we're not all ready, but countdown already started, restart countdown
     else if (gs.allReadyCountdown != ASSASSIN_ALL_READY_COUNTDOWN_FRAMES) {
         gs.allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
+    }
+}
+
+// return -1 if more than 1 player is alive, return playeridx of player if only one is alive
+s32 getOnePlayerAliveOrNone(Ninja* playerNinjas, u32 numPlayerNinjas) {
+    u32 numPlayersAlive = 0;
+    s32 playerIdx = -1;
+    for (s32 playerNinjaIdx = 0; playerNinjaIdx < numPlayerNinjas; playerNinjaIdx++) {
+        Ninja& playerNinja = playerNinjas[playerNinjaIdx];
+        if (!playerNinja.isDead) {
+            numPlayersAlive++;
+            playerIdx = playerNinjaIdx;
+        }
+    }
+    return numPlayersAlive == 1 ? playerIdx : -1;
+}
+
+void onPlayerWon(GameState& gs) { // called once when player wins
+    SetText(gs.playerWonText, ("Player " + std::to_string(gs.winningPlayer) + " wins!").c_str());
+}
+void playerWonTick(GameState& gs) {
+    gs.playerWonTimer--;
+    if (gs.playerWonTimer <= 0) {
+        gs.playerWonTimer = PLAYER_WON_MAX_TIMER;
+        PotpInitControllerSetupMenu(gs);
+    }
+}
+
+void CheckWinConditions(GameState& gs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
+    if (gs.winningPlayer == -1) {
+        // player has won if all other players are dead
+        s32 playerIdxWon = getOnePlayerAliveOrNone(playerNinjas, numPlayerNinjas);
+
+        if (playerIdxWon != -1) {
+            // kill all ninjas that are not our winning player
+            for (s32 aiNinjaIdx = 0; aiNinjaIdx < numAINinjas; aiNinjaIdx++) {
+                Ninja& aiNinja = aiNinjas[aiNinjaIdx];
+                aiNinja.Die();
+            }
+            for (s32 playerNinjaIdx = 0; playerNinjaIdx < numPlayerNinjas; playerNinjaIdx++) {
+                Ninja& playerNinja = playerNinjas[playerNinjaIdx];
+                if (playerNinjaIdx != playerIdxWon) {
+                    playerNinja.Die();
+                }
+            }
+            // player won!
+            gs.winningPlayer = playerIdxWon;
+            onPlayerWon(gs);
+            std::cout << "Player " << playerIdxWon << " wins!\n";
+        }
+    }
+    else {
+        playerWonTick(gs);
     }
 }
 
@@ -119,6 +176,7 @@ void PotpUpdate(GameState& gs, UserInput& inputs) {
     }
     else if (gs.scene == PotpScene::ASSASSIN) {
         UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
+        CheckWinConditions(gs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
     }
 }
 
@@ -183,7 +241,9 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
                 statue.Draw();
             }
             DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
-            
+            if (gs.winningPlayer != -1) {
+                DrawText(gs.playerWonText, 15.0, 15.0, 2.0, 1.0, 1.0, 1.0, 1.0);
+            }
 
         } break;
     }

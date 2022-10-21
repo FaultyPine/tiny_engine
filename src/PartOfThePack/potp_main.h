@@ -48,6 +48,10 @@ struct GameState {
     #define MAX_NUM_AI_NINJAS 45
     Ninja aiNinjas[MAX_NUM_AI_NINJAS];
     Ninja playerNinjas[MAX_NUM_PLAYERS];
+    s32 winningPlayer = -1;
+    GLTtext* playerWonText;
+    #define PLAYER_WON_MAX_TIMER (60*5)
+    u32 playerWonTimer = PLAYER_WON_MAX_TIMER;
 };
 
 #endif

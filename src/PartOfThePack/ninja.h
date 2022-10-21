@@ -46,6 +46,7 @@ struct Ninja {
 
     CollisionBox punchHitbox;
     void PunchedOtherNinja(Ninja& punchedNinja);
+    void Die();
 };
 
 // doing init/updating in here so we can jump around the ninjas array to look at others
