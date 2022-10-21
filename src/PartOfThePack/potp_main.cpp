@@ -126,7 +126,7 @@ void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
     // draw player indicators at bottom of screen
     // "player indicators" here refers to the UI that shows what players are ingame (1-4) and if they are using keyboard/controller
     const f32 playerIndicatorsSize = 100.0;
-    const f32 playerTextSize = 2.0;
+    const f32 playerTextSize = 1.0;
     const glm::vec2 playerIndicatorsSizeVec = {playerIndicatorsSize, playerIndicatorsSize};
     const f32 playerIndicatorsY = (f32)Camera::GetScreenHeight()/2.0 + (playerIndicatorsSizeVec.y/2.0);
     const f32 playerIndicatorsStartX = (f32)Camera::GetScreenWidth()/playerIndicatorsSizeVec.x+20.0;
@@ -149,6 +149,8 @@ void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
 
         inputDeviceSprite.DrawSprite(cam, pos, playerIndicatorsSizeVec, 0.0, rotationAxis, color);
 
+        const char* playerText = ("Player " + std::to_string(playerIdx+1) + " [" + std::string(isReady ? "" : "NOT ") + "READY]").c_str();
+        SetText(gs.playerTexts[playerIdx], playerText);
         DrawText(gs.playerTexts[playerIdx], pos.x, pos.y + playerTextYOffset, playerTextSize, color.r, color.b, color.g, color.a);
     }
 

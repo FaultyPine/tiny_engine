@@ -64,7 +64,6 @@ bool pollStartButton(u32 playerIdx, ControllerType type) {
 bool AttemptBindInputDeviceToPort(UserInput& inputs, s32 portToBind) {
     // portToBind is the playerIdx we are trying to bind some input device to
 
-
     // iterating *ports* which represent the 4 possible gamepad/keyboard input devices
     for (s32 port = 0; port < MAX_NUM_PLAYERS; port++) {
 
