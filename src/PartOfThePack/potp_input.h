@@ -89,6 +89,7 @@ struct UserInput {
         return isButtonJustPressed(playerIdx, ButtonValues::START);
     }
 
+    void SetupControllersTick(u32& numPlayers, bool isReady[MAX_NUM_PLAYERS]);
     static void UpdateUserInput(UserInput& input);
 };
 

@@ -18,6 +18,38 @@ bool isGamepadPresent(u32 playerIdx) {
     return glfwJoystickPresent(playerIdx);
 }
 
+// keyboard
+namespace Keyboard {
+static std::unordered_map<s32, bool> keyboardButtonStates = {};
+
+bool GetKeyState(s32 key, s32 keyState) {
+    return glfwGetKey(glob_glfw_window, key) == keyState;
+}
+// returns true on the frame the specified key is pressed
+bool isKeyPressed(s32 key) {
+    // initialize to false so next computation works on first press
+    if (!keyboardButtonStates.count(key)) {
+        keyboardButtonStates[key] = false;
+    }
+    bool isPressed = GetKeyState(key, GLFW_PRESS);
+    bool isJustPressed = isPressed && !keyboardButtonStates.at(key);
+    keyboardButtonStates[key] = isPressed;
+    return isJustPressed;
+}
+// returns true on the frame the specified key is released
+bool isKeyReleased(s32 key) {
+    // initialize to false so next computation works on first press
+    if (!keyboardButtonStates.count(key)) {
+        keyboardButtonStates[key] = false;
+    }
+    bool isPressed = GetKeyState(key, GLFW_PRESS);
+    bool isJustReleased = !isPressed && keyboardButtonStates.at(key);
+    keyboardButtonStates[key] = isPressed;
+    return isJustReleased;
+}
+
+
+}
 
 // mouse callbacks
 void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {

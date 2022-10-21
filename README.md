@@ -37,6 +37,7 @@ Features:
 
 ### More...
 - Controller support
+- clean up debug line drawing
 - statue activation/win conditions
 
 ### Stretch Goals

@@ -45,6 +45,64 @@ s32 GetKeyboardBinding(ButtonValues button, u32 playerIdx) {
 }
 
 
+bool isPlayerslotAlreadyBound(UserInput& inputs, u32 playerIdx) {
+    for (const InputDevice& ID : inputs.controllers) {
+        if (ID.port == playerIdx) return true;
+    }
+    return false;
+}
+
+bool AttemptBindInputDeviceToPort(s32 portToBind, UserInput& inputs) {
+    // NOTE: Not going to account for the situation where two players
+    // push start on the same frame
+    bool isSuccessfulBind = false;
+    // iterating *ports* which represent the 4 possible gamepad/keyboard input devices
+    for (s32 port = 0; port < MAX_NUM_PLAYERS; port++) {
+        bool isStartPressed = false;
+        ControllerType controllerType = ControllerType::NO_CONTROLLER;
+        if (isGamepadPresent(port)) {
+            Gamepad pad;
+            GetGamepadState(port, pad);
+            isStartPressed = pad.isButtonPressed(GetGamepadBinding(ButtonValues::START));
+            controllerType = ControllerType::CONTROLLER;
+        }
+        else {
+            isStartPressed = Keyboard::isKeyPressed(GetKeyboardBinding(ButtonValues::START, port));
+            controllerType = ControllerType::KEYBOARD;
+        }
+        bool shouldBind = isStartPressed && inputs.controllers[port].type == ControllerType::NO_CONTROLLER;
+        if (shouldBind) {
+            const char* inputType = controllerType == ControllerType::CONTROLLER ? "Controller" : "Keyboard";
+            std::cout << "Bound " << inputType << " in 'port' " << port << " to playerIdx " << portToBind << "\n";
+            inputs.controllers[port].type = controllerType;
+            inputs.controllers[port].port = portToBind;
+            isSuccessfulBind = true;
+        }
+    }
+    return isSuccessfulBind;
+}
+
+
+
+void UserInput::SetupControllersTick(u32& numPlayers, bool isReady[MAX_NUM_PLAYERS]) {
+    // iterating *player slots*, which represents player 1-4
+    for (s32 playerIdx = 0; playerIdx < MAX_NUM_PLAYERS; playerIdx++) {
+        if (isPlayerslotAlreadyBound(*this, playerIdx)) {
+            if (Keyboard::isKeyPressed(GetKeyboardBinding(ButtonValues::START, playerIdx)) && !isReady[playerIdx]) {
+                std::cout << "Player " << playerIdx << " is ready.\n";
+                isReady[playerIdx] = true;
+            }
+        }
+        else {
+            // already bound slot, poll for if they're ready
+            if (AttemptBindInputDeviceToPort(playerIdx, *this)) {
+                numPlayers++;
+            }
+        }
+    }
+}
+
+
 void UserInput::UpdateUserInput(UserInput& input) {
     // when we update user input, first thing we do is update prev buttons and blank out current inputs
     memcpy(&input.prevButtons, &input.buttons, sizeof(input.buttons));

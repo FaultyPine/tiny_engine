@@ -38,7 +38,7 @@ struct GameState {
     // ----- ingame -----
 
     /// storing initial seed for possible replay functionality later
-    u64 initialRandomSeed;
+    u64 initialRandomSeed = 0;
 
     Sprite background;
 

@@ -36,15 +36,9 @@ bool isGamepadPresent(u32 playerIdx);
 // keyboard
 namespace Keyboard {
 
-inline bool GetKeyState(s32 key, s32 keyState) {
-    return glfwGetKey(glob_glfw_window, key) == keyState;
-}
-inline bool isKeyPressed(s32 key) {
-    return GetKeyState(key, GLFW_PRESS);
-}
-inline bool isKeyReleased(s32 key) {
-    return GetKeyState(key, GLFW_RELEASE);
-}
+bool GetKeyState(s32 key, s32 keyState);
+bool isKeyPressed(s32 key);
+bool isKeyReleased(s32 key);
 
 }
 // Mouse

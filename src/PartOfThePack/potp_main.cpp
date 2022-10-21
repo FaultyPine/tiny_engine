@@ -84,67 +84,14 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     gs.background = Sprite(backgroundTex);
 
     // init game to controller setup menu
-    //PotpInitControllerSetupMenu(gs);
-    PotpInitAssassinScene(gs, inputs);
+    PotpInitControllerSetupMenu(gs);
+    //PotpInitAssassinScene(gs, inputs);
 }
-
-
-bool isPlayerslotAlreadyBound(UserInput& inputs, u32 playerIdx) {
-    for (const InputDevice& ID : inputs.controllers) {
-        if (ID.port == playerIdx) return true;
-    }
-    return false;
-}
-
-bool AttemptBindInputDeviceToPort(s32 portToBind, UserInput& inputs) {    
-    // NOTE: Not going to account for the situation where two players
-    // push start on the same frame
-    bool isSuccessfulBind = false;
-    // iterating *ports* which represent the 4 possible gamepad/keyboard input devices
-    for (s32 port = 0; port < MAX_NUM_PLAYERS; port++) {
-        bool isStartPressed = false;
-        ControllerType controllerType = ControllerType::NO_CONTROLLER;
-        if (isGamepadPresent(port)) {
-            Gamepad pad;
-            GetGamepadState(port, pad);
-            isStartPressed = pad.isButtonPressed(GetGamepadBinding(ButtonValues::START));
-            controllerType = ControllerType::CONTROLLER;
-        }
-        else {
-            isStartPressed = Keyboard::isKeyPressed(GetKeyboardBinding(ButtonValues::START, port));
-            controllerType = ControllerType::KEYBOARD;
-        }
-        bool shouldBind = isStartPressed && inputs.controllers[port].type == ControllerType::NO_CONTROLLER;
-        if (shouldBind) {
-            const char* inputType = controllerType == ControllerType::CONTROLLER ? "Controller" : "Keyboard";
-            std::cout << "Bound " << inputType << " in 'port' " << port << " to playerIdx " << portToBind << "\n";
-            inputs.controllers[port].type = controllerType;
-            inputs.controllers[port].port = portToBind;
-            isSuccessfulBind = true;
-        }
-    }
-    return isSuccessfulBind;
-}
-
 
 void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
     SetText(gs.countdownText, ("Starting in " + std::to_string(gs.allReadyCountdown/60) + " seconds...").c_str());
 
-    // iterating *player slots*, which represents player 1-4
-    for (s32 playerIdx = 0; playerIdx < MAX_NUM_PLAYERS; playerIdx++) {
-        if (!isPlayerslotAlreadyBound(inputs, playerIdx)) {
-            if (AttemptBindInputDeviceToPort(playerIdx, inputs)) {
-                gs.numPlayers++;
-            }
-        }
-        else {
-            // already bound slot, poll for if they're ready
-            if (inputs.isStartPressed(playerIdx) && !gs.isReady[playerIdx]) {
-                std::cout << "Player " << playerIdx << " is ready.\n";
-                gs.isReady[playerIdx] = true;
-            }
-        }
-    }
+    inputs.SetupControllersTick(gs.numPlayers, gs.isReady);
 
     s32 numReady = 0;
     for (bool isReady : gs.isReady) {
