@@ -46,40 +46,54 @@ s32 GetKeyboardBinding(ButtonValues button, u32 playerIdx) {
 
 
 bool isPlayerslotAlreadyBound(UserInput& inputs, u32 playerIdx) {
-    for (const InputDevice& ID : inputs.controllers) {
-        if (ID.port == playerIdx) return true;
+    return inputs.controllers[playerIdx].type != ControllerType::NO_CONTROLLER;
+}
+
+bool pollStartButton(u32 playerIdx, ControllerType type) {
+    if (type == ControllerType::CONTROLLER) {
+        Gamepad pad;
+        GetGamepadState(playerIdx, pad);
+        return pad.isButtonPressed(GetGamepadBinding(ButtonValues::START));
+    }
+    else if (type == ControllerType::KEYBOARD) {
+        return Keyboard::isKeyPressed(GetKeyboardBinding(ButtonValues::START, playerIdx));
     }
     return false;
 }
 
-bool AttemptBindInputDeviceToPort(s32 portToBind, UserInput& inputs) {
-    // NOTE: Not going to account for the situation where two players
-    // push start on the same frame
-    bool isSuccessfulBind = false;
+bool AttemptBindInputDeviceToPort(UserInput& inputs, s32 portToBind) {
+    // portToBind is the playerIdx we are trying to bind some input device to
+
+
     // iterating *ports* which represent the 4 possible gamepad/keyboard input devices
     for (s32 port = 0; port < MAX_NUM_PLAYERS; port++) {
-        bool isStartPressed = false;
+
+        bool controllerStartPressed = isGamepadPresent(port) && pollStartButton(port, ControllerType::CONTROLLER);
+        bool keyboardStartPressed = pollStartButton(port, ControllerType::KEYBOARD);
+
+        bool shouldBind = false;
         ControllerType controllerType = ControllerType::NO_CONTROLLER;
-        if (isGamepadPresent(port)) {
-            Gamepad pad;
-            GetGamepadState(port, pad);
-            isStartPressed = pad.isButtonPressed(GetGamepadBinding(ButtonValues::START));
+
+        if (controllerStartPressed) {
+            shouldBind = true;
             controllerType = ControllerType::CONTROLLER;
         }
-        else {
-            isStartPressed = Keyboard::isKeyPressed(GetKeyboardBinding(ButtonValues::START, port));
+        // NOTE: Not going to account for the situation where two players
+        // push start on the same frame
+        else if (keyboardStartPressed) {
+            shouldBind = true;
             controllerType = ControllerType::KEYBOARD;
         }
-        bool shouldBind = isStartPressed && inputs.controllers[port].type == ControllerType::NO_CONTROLLER;
+        
         if (shouldBind) {
             const char* inputType = controllerType == ControllerType::CONTROLLER ? "Controller" : "Keyboard";
             std::cout << "Bound " << inputType << " in 'port' " << port << " to playerIdx " << portToBind << "\n";
-            inputs.controllers[port].type = controllerType;
-            inputs.controllers[port].port = portToBind;
-            isSuccessfulBind = true;
+            inputs.controllers[portToBind].type = controllerType;
+            inputs.controllers[portToBind].port = port;
+            return true;
         }
     }
-    return isSuccessfulBind;
+    return false;
 }
 
 
@@ -88,14 +102,14 @@ void UserInput::SetupControllersTick(u32& numPlayers, bool isReady[MAX_NUM_PLAYE
     // iterating *player slots*, which represents player 1-4
     for (s32 playerIdx = 0; playerIdx < MAX_NUM_PLAYERS; playerIdx++) {
         if (isPlayerslotAlreadyBound(*this, playerIdx)) {
-            if (Keyboard::isKeyPressed(GetKeyboardBinding(ButtonValues::START, playerIdx)) && !isReady[playerIdx]) {
+            if (pollStartButton(this->controllers[playerIdx].port, this->controllers[playerIdx].type) && !isReady[playerIdx]) {
                 std::cout << "Player " << playerIdx << " is ready.\n";
                 isReady[playerIdx] = true;
             }
         }
         else {
             // already bound slot, poll for if they're ready
-            if (AttemptBindInputDeviceToPort(playerIdx, *this)) {
+            if (AttemptBindInputDeviceToPort(*this, playerIdx)) {
                 numPlayers++;
             }
         }
@@ -114,14 +128,15 @@ void UserInput::UpdateUserInput(UserInput& input) {
         for (u32 buttonIdx = 0; buttonIdx < ButtonValues::NUM_BUTTONS; buttonIdx++) {
             bool isButtonPressed = false;
             ControllerType controllerType = input.controllers[playerIdx].type;
+            s32 controllerIdx = input.controllers[playerIdx].port;
 
             if (controllerType == ControllerType::KEYBOARD) {
-                s32 inputKey = keyboardInputMap[playerIdx][buttonIdx];
+                s32 inputKey = keyboardInputMap[controllerIdx][buttonIdx];
                 isButtonPressed = Keyboard::GetKeyState(inputKey, GLFW_PRESS);
             }
             else if (controllerType == ControllerType::CONTROLLER) {
                 Gamepad pad;
-                GetGamepadState(playerIdx, pad);
+                GetGamepadState(controllerIdx, pad);
                 isButtonPressed = pad.buttons[gamepadInputMap[buttonIdx]] == GLFW_PRESS;
             }
 

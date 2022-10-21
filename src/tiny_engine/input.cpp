@@ -2,20 +2,39 @@
 
 // gamepad
 
-bool GetGamepadState(u32 playerIdx, Gamepad& gamepad) {
+bool GetGamepadState(u32 port, Gamepad& gamepad) {
     GLFWgamepadstate state;
-    glfwGetGamepadState(playerIdx, &state);
+    glfwGetGamepadState(port, &state);
     memcpy(gamepad.buttons, state.buttons, sizeof(gamepad.buttons));
     memcpy(gamepad.axes, state.axes, sizeof(gamepad.axes));
-    bool isPresent = isGamepadPresent(playerIdx);
+    bool isPresent = isGamepadPresent(port);
     if (isPresent) {
-        gamepad.name = glfwGetGamepadName(playerIdx);
+        gamepad.name = glfwGetGamepadName(port);
     }
     return isPresent;
 }
+Gamepad FetchCurrentGamepadState(u32 port) {
+    Gamepad pad;
+    GetGamepadState(port, pad);
+    return pad;
+}
+
 
 bool isGamepadPresent(u32 playerIdx) {
     return glfwJoystickPresent(playerIdx);
+}
+
+static std::unordered_map<s32, bool> gamepadButtonStates;
+bool Gamepad::isButtonPressed(s32 glfwButton) {
+    // initialize to false so next computation works on first press
+    if (!gamepadButtonStates.count(glfwButton)) {
+        gamepadButtonStates[glfwButton] = false;
+    }
+
+    bool isPressed = buttons[glfwButton] == GLFW_PRESS;
+    bool isJustPressed = isPressed && !gamepadButtonStates.at(glfwButton);
+    gamepadButtonStates[glfwButton] = isPressed;
+    return isJustPressed;
 }
 
 // keyboard

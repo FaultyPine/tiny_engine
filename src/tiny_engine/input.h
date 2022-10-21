@@ -21,14 +21,13 @@ struct Gamepad {
     f32 axes[6];
     const char* name = 0;
 
-    inline bool isButtonPressed(s32 glfwButton) {
-        return buttons[glfwButton] == GLFW_PRESS;
-    }
+    bool isButtonPressed(s32 glfwButton);
 };
 
 // gamepad api:
-bool GetGamepadState(u32 playerIdx, Gamepad& gamepad);
-bool isGamepadPresent(u32 playerIdx);
+bool GetGamepadState(u32 port, Gamepad& gamepad);
+Gamepad FetchCurrentGamepadState(u32 port);
+bool isGamepadPresent(u32 port);
 // getting axis (for player idx)
 // getting buttons (for player idx)
 
