@@ -28,6 +28,7 @@ enum ButtonValues {
 
 s32 GetGamepadBinding(ButtonValues button);
 s32 GetKeyboardBinding(ButtonValues button, u32 playerIdx);
+bool pollRawInput(u32 playerIdx, ControllerType type, ButtonValues button);
 
 struct UserInput {
     UserInput();

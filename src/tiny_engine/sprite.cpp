@@ -57,17 +57,24 @@ void Sprite::initRenderData() {
         1.0f, 0.0f, 1.0f, 0.0f
     };
 
+    // generate ogl buffers on gpu
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &VBO);
     
+    // bind vbo to the ARRAY_BUFFER buffer
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // put vert data into whatever buffer is bound to ARRAY_BUFFER
     glBufferData(GL_ARRAY_BUFFER, sizeof(tex_quad), tex_quad, GL_STATIC_DRAW);
 
+    // using this vert attribute object, tell ogl how to parse vert data
     glBindVertexArray(quadVAO);
     // vec2 position, vec2 texcoords, all contained in a vec4
     glEnableVertexAttribArray(0);
+    // inherently binds these options to the whatever VBO is bound to GL_ARRAY_BUFFER
+    // since this inherently binds to our VBO above, our "quadVAO" also has some sort of reference to this VBO
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
     
+    // unbind once done
     glBindBuffer(GL_ARRAY_BUFFER, 0);  
     glBindVertexArray(0);
 }

@@ -31,14 +31,11 @@ Features:
 - vector shape drawing
 - .obj file parsing
 
+### Current Task
 
-### MVP
-- win conditions
-    - win when all other ninjas are dead
 
-### More...
+### TODO
 - statue activation/win condition
-- title screen
 - clean up debug line drawing
 - Implement Z indexing
     - have a list of entity pointers and iterate through them in our main draw function calling draw and using the entity's z index to draw in the correct order

@@ -13,6 +13,8 @@ void PotpInitTitleScreenScene(GameState& gs) {
     if (!gs.titleScreenSplash.isValid()) {
         TextureProperties texProps = TextureProperties::Default();
         texProps.imgFormat = TextureProperties::ImageFormat::RGB;
+        texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
+        texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
         gs.titleScreenSplash = Sprite(LoadTexture(UseResPath("potp/title_screen.jpg").c_str(), texProps));
     }
 
@@ -25,6 +27,8 @@ void PotpInitControllerSetupMenu(GameState& gs) {
     gs.allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
 
     TextureProperties texProps = TextureProperties::Default();
+    texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
+    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
     // init keyboard/controller sprites
     if (!gs.keyboardSprite.isValid()) 
         gs.keyboardSprite = Sprite(LoadTexture(UseResPath("potp/keyboard.png").c_str(), texProps));
@@ -82,27 +86,30 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // textures
     TextureProperties texProps = TextureProperties::Default();
     texProps.imgFormat = TextureProperties::ImageFormat::RGB;
+    texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
+    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
     
     Texture backgroundTex = LoadTexture(UseResPath("potp/background.jpg").c_str(), texProps);
     // Sprites
     gs.background = Sprite(backgroundTex);
 
-    #ifdef TINY_DEBUG 
-    // This is for debugging - when I boot directly into the gameplay scene without controller setup
-    // just setup controls with two keyboard players by default
-    if (gs.numPlayers < 1) {
-        std::cout << "[WARNING] Num players was less than 1, setting to 2 keyboards by default.\n";
-        gs.numPlayers = 2;
-        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
-            inputs.controllers[i].type = ControllerType::KEYBOARD;
-            inputs.controllers[i].port = i;
+    /*{ // for debugging, init directly to other scenes
+        #ifdef TINY_DEBUG 
+        // This is for debugging - when I boot directly into the gameplay scene without controller setup
+        // just setup controls with two keyboard players by default
+        if (gs.numPlayers < 1) {
+            std::cout << "[WARNING] Num players was less than 1, setting to 2 keyboards by default.\n";
+            gs.numPlayers = 2;
+            for (s32 i = 0; i < gs.numPlayers; i++) {
+                inputs.controllers[i].type = ControllerType::KEYBOARD;
+                inputs.controllers[i].port = i;
+            }
         }
-    }
-    #endif
-
-    // init game to controller setup menu
-    //PotpInitControllerSetupMenu(gs);
-    //PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
+        #endif
+        //PotpInitControllerSetupMenu(gs);
+        //PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
+    }*/
+    // init game to title screen
     PotpInitTitleScreenScene(gs);
 }
 
@@ -193,8 +200,8 @@ void PotpUpdate(GameState& gs, UserInput& inputs) {
     }
     else if (gs.scene == PotpScene::TITLE) {
         for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
-            if (inputs.isStartPressed(i)) {
-                std::cout << "Title screen -> controller setup\n";
+            bool isStartPressed = pollRawInput(i, ControllerType::KEYBOARD, ButtonValues::START) || pollRawInput(i, ControllerType::CONTROLLER, ButtonValues::START);
+            if (isStartPressed) {
                 PotpInitControllerSetupMenu(gs);
             }
         }

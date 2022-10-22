@@ -49,14 +49,14 @@ bool isPlayerslotAlreadyBound(UserInput& inputs, u32 playerIdx) {
     return inputs.controllers[playerIdx].type != ControllerType::NO_CONTROLLER;
 }
 
-bool pollStartButton(u32 playerIdx, ControllerType type) {
+bool pollRawInput(u32 playerIdx, ControllerType type, ButtonValues button) {
     if (type == ControllerType::CONTROLLER) {
         Gamepad pad;
         GetGamepadState(playerIdx, pad);
-        return pad.isButtonPressed(GetGamepadBinding(ButtonValues::START));
+        return pad.isButtonPressed(GetGamepadBinding(button));
     }
     else if (type == ControllerType::KEYBOARD) {
-        return Keyboard::isKeyPressed(GetKeyboardBinding(ButtonValues::START, playerIdx));
+        return Keyboard::isKeyPressed(GetKeyboardBinding(button, playerIdx));
     }
     return false;
 }
@@ -67,8 +67,8 @@ bool AttemptBindInputDeviceToPort(UserInput& inputs, s32 portToBind) {
     // iterating *ports* which represent the 4 possible gamepad/keyboard input devices
     for (s32 port = 0; port < MAX_NUM_PLAYERS; port++) {
 
-        bool controllerStartPressed = isGamepadPresent(port) && pollStartButton(port, ControllerType::CONTROLLER);
-        bool keyboardStartPressed = pollStartButton(port, ControllerType::KEYBOARD);
+        bool controllerStartPressed = isGamepadPresent(port) && pollRawInput(port, ControllerType::CONTROLLER, ButtonValues::START);
+        bool keyboardStartPressed = pollRawInput(port, ControllerType::KEYBOARD, ButtonValues::START);
 
         bool shouldBind = false;
         ControllerType controllerType = ControllerType::NO_CONTROLLER;
@@ -101,7 +101,7 @@ void UserInput::SetupControllersTick(u32& numPlayers, bool isReady[MAX_NUM_PLAYE
     // iterating *player slots*, which represents player 1-4
     for (s32 playerIdx = 0; playerIdx < MAX_NUM_PLAYERS; playerIdx++) {
         if (isPlayerslotAlreadyBound(*this, playerIdx)) {
-            if (pollStartButton(this->controllers[playerIdx].port, this->controllers[playerIdx].type) && !isReady[playerIdx]) {
+            if (pollRawInput(this->controllers[playerIdx].port, this->controllers[playerIdx].type, ButtonValues::START) && !isReady[playerIdx]) {
                 std::cout << "Player " << playerIdx << " is ready.\n";
                 isReady[playerIdx] = true;
             }
