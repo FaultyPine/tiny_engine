@@ -17,11 +17,16 @@ enum PotpScene {
     NO_SCENE,
     CONTROLLER_SETUP,
     ASSASSIN,
+    TITLE,
 };
 
 struct GameState {
     PotpScene scene = PotpScene::NO_SCENE;
     
+    // ----- Title screen -----
+    Sprite titleScreenSplash;
+    GLTtext* titleScreenText;
+
     // ----- controller setup -----
     bool isReady[MAX_NUM_PLAYERS];
     #define ASSASSIN_ALL_READY_COUNTDOWN_FRAMES ((60)*7)

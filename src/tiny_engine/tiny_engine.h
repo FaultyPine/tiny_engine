@@ -32,7 +32,7 @@ bool ShouldCloseWindow();
 
 void TerminateGame();
 
-void InitGame(u32 windowWidth, u32 windowHeight, const s8* windowName);
+void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName);
 
 
 void EnableWireframeDrawing();

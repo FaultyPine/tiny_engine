@@ -85,7 +85,7 @@ bool ShouldCloseWindow() {
     return glfwWindowShouldClose(glob_glfw_window);
 }
 
-void InitGame(u32 windowWidth, u32 windowHeight, const s8* windowName) {
+void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName) {
     s8 cwd[PATH_MAX];
     std::cout << "CWD: " << getcwd(cwd, PATH_MAX) << "\n";
 
@@ -127,6 +127,8 @@ void InitGame(u32 windowWidth, u32 windowHeight, const s8* windowName) {
     
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+
+    glfwSetWindowAspectRatio(window, aspectRatioW, aspectRatioH);
 
     // For 2D games, don't depth test so that the order they are drawn in makes sense
     // (subsequent draws overwrite previous draws)

@@ -8,6 +8,18 @@
 #include "tiny_engine/tiny_fs.h"
 #include "tiny_engine/shapes.h"
 
+void PotpInitTitleScreenScene(GameState& gs) {
+    gs.scene = PotpScene::TITLE;
+    if (!gs.titleScreenSplash.isValid()) {
+        TextureProperties texProps = TextureProperties::Default();
+        texProps.imgFormat = TextureProperties::ImageFormat::RGB;
+        gs.titleScreenSplash = Sprite(LoadTexture(UseResPath("potp/title_screen.jpg").c_str(), texProps));
+    }
+
+    if (!gs.titleScreenText)
+        gs.titleScreenText = CreateText("Press start to play");
+}
+
 void PotpInitControllerSetupMenu(GameState& gs) {
     gs.scene = PotpScene::CONTROLLER_SETUP;
     gs.allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
@@ -90,7 +102,8 @@ void PotpInit(GameState& gs, UserInput& inputs) {
 
     // init game to controller setup menu
     //PotpInitControllerSetupMenu(gs);
-    PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
+    //PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
+    PotpInitTitleScreenScene(gs);
 }
 
 void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
@@ -178,6 +191,14 @@ void PotpUpdate(GameState& gs, UserInput& inputs) {
         UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
         CheckWinConditions(gs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
     }
+    else if (gs.scene == PotpScene::TITLE) {
+        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
+            if (inputs.isStartPressed(i)) {
+                std::cout << "Title screen -> controller setup\n";
+                PotpInitControllerSetupMenu(gs);
+            }
+        }
+    }
 }
 
 void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
@@ -241,10 +262,16 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
                 statue.Draw();
             }
             DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
+
             if (gs.winningPlayer != -1) {
                 DrawText(gs.playerWonText, 15.0, 15.0, 2.0, 1.0, 1.0, 1.0, 1.0);
             }
 
+        } break;
+        case PotpScene::TITLE:
+        {
+            gs.titleScreenSplash.DrawSprite(cam, {0.0, 0.0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}, 0.0, {0.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0});
+            DrawText(gs.titleScreenText, Camera::GetScreenWidth() / 4.0, 5.0, 1.5, 1.0, 1.0, 1.0, 1.0);
         } break;
     }
 }
