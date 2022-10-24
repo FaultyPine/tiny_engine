@@ -11,19 +11,31 @@
 
 struct Spritesheet {
     struct Animation {
-        u32 animKey = -1;
-        u32 frame = 0;
-        u32 framerate = 0;
+        s32 animKey = -1;
+        s32 frame = 0;
+        s32 framerate = -1;
         bool isLoop = true;
         s32 nonLoopNextAnim = -1;
+        Animation(s32 animKey) {
+            this->animKey = animKey;
+            frame = 0;
+            framerate = -1;
+            isLoop = true;
+            nonLoopNextAnim = -1;
+        }
+        Animation() {
+            Animation(-1);
+        }
     };
     Spritesheet(){}
     Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, TextureProperties props);
 
     Animation GetCurrentAnimation() { return animation; } 
-    void SetAnimationIndices(u32 animKey, const std::vector<u32>& indices);
-    void SetAnimation(Animation anim);
+    Sprite GetCurrentSprite() const;
+    void SetAnimationIndices(s32 animKey, const std::vector<u32>& indices);
+    void SetAnimation(Animation anim, bool forceOverride = false);
     void ResetAnim();
+    void SetFrame(s32 frame);
     inline void SetDefaultFramerate(u32 defaultFramerate) { this->defaultFramerate = defaultFramerate; }
     void Tick();
     void Draw(const Camera& cam, glm::vec2 position, 

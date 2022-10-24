@@ -36,12 +36,12 @@ Spritesheet::Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, 
     free(imgData);
 }
 
-void Spritesheet::SetAnimationIndices(u32 animKey, const std::vector<u32>& indices) {
+void Spritesheet::SetAnimationIndices(s32 animKey, const std::vector<u32>& indices) {
     this->animationIndicesMap[animKey] = indices;
 }
-void Spritesheet::SetAnimation(Animation anim) {
-    if (this->animation.animKey != anim.animKey) { // don't reset anim if we're requesting same one
-        if (anim.framerate == 0) {
+void Spritesheet::SetAnimation(Animation anim, bool forceOverride) {
+    if (this->animation.animKey != anim.animKey || forceOverride) { // don't reset anim if we're requesting same one
+        if (anim.framerate == -1) {
             anim.framerate = this->defaultFramerate;
         }
         this->animation = anim;
@@ -50,10 +50,13 @@ void Spritesheet::SetAnimation(Animation anim) {
 void Spritesheet::ResetAnim() {
     this->animation.frame = 0;
 }
+void Spritesheet::SetFrame(s32 frame) {
+    this->animation.frame = frame;
+}
 void Spritesheet::Tick() {
     ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
     // if we should move to the next spritesheet frame
-    if (this->framerateEnforcer % (60/this->animation.framerate) == 0) {
+    if (this->animation.framerate > 0 && this->framerateEnforcer % (TARGET_FPS/this->animation.framerate) == 0) {
         if (!this->animation.isLoop) {
             // if we're NOT looping, set animation to the "next anim" after this one is done
             this->animation.frame++;
@@ -70,14 +73,19 @@ void Spritesheet::Tick() {
             this->animation.frame = (this->animation.frame+1) % this->animationIndicesMap.at(this->animation.animKey).size();
         }
     }
-    this->framerateEnforcer = (this->framerateEnforcer+1) % this->animation.framerate;
+    this->framerateEnforcer = (this->framerateEnforcer+1) % TARGET_FPS;
+}
+
+Sprite Spritesheet::GetCurrentSprite() const {
+    ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
+    ASSERT(this->animation.animKey != -1);
+    const auto& indices = this->animationIndicesMap.at(this->animation.animKey);
+    ASSERT(indices.size() > this->animation.frame);
+    u32 spritesheetIdx = indices.at(this->animation.frame);
+    return this->sprites.at(spritesheetIdx);
 }
 
 void Spritesheet::Draw(const Camera& cam, glm::vec2 position, 
                 glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color) const {
-    ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
-    const auto& indices = this->animationIndicesMap.at(this->animation.animKey);
-    ASSERT(indices.size() > this->animation.frame);
-    u32 spritesheetIdx = indices.at(this->animation.frame);
-    this->sprites.at(spritesheetIdx).DrawSprite(cam, position, size, rotate, rotationAxis, color);
+    this->GetCurrentSprite().DrawSprite(cam, position, size, rotate, rotationAxis, color);
 }

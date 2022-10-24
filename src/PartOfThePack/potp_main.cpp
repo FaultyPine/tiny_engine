@@ -93,7 +93,8 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // Sprites
     gs.background = Sprite(backgroundTex);
 
-    /*{ // for debugging, init directly to other scenes
+    #if 1
+    { // for debugging, init directly to other scenes
         #ifdef TINY_DEBUG 
         // This is for debugging - when I boot directly into the gameplay scene without controller setup
         // just setup controls with two keyboard players by default
@@ -107,10 +108,12 @@ void PotpInit(GameState& gs, UserInput& inputs) {
         }
         #endif
         //PotpInitControllerSetupMenu(gs);
-        //PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
-    }*/
+        PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
+    }
+    #else
     // init game to title screen
     PotpInitTitleScreenScene(gs);
+    #endif
 }
 
 void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
@@ -279,7 +282,7 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
         case PotpScene::TITLE:
         {
             gs.titleScreenSplash.DrawSprite(cam, {0.0, 0.0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}, 0.0, {0.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0});
-            DrawText(gs.titleScreenText, Camera::GetScreenWidth() / 4.0, 5.0, 1.5, 1.0, 1.0, 1.0, 1.0);
+            DrawText(gs.titleScreenText, Camera::GetScreenWidth() - 250.0, Camera::GetScreenHeight() -50.0, 1.5, 1.0, 1.0, 1.0, 1.0);
         } break;
     }
 }
@@ -306,7 +309,22 @@ void MainUpdate() {
     // update gamestate
     PotpUpdate(gs, inputs);
     // render gamestate
+
+    // render game to framebuffer
+    static FullscreenFrameBuffer fb;
+    static Shader postProcessingShader;
+    if (!fb.isValid()) {
+        fb = FullscreenFrameBuffer({Camera::GetScreenWidth(), Camera::GetScreenHeight()});
+    }
+    if (!postProcessingShader.isValid()) {
+        postProcessingShader = Shader(UseResPath("shaders/screen_texture.vs").c_str(), UseResPath("shaders/screen_texture.fs").c_str());
+    }
+    fb.Bind();
+    fb.ClearColor();
     PotpDraw(gs, inputs);
+
+    // draw framebuffer to screen with post processing shader
+    fb.DrawToScreen(postProcessingShader);
 }
 
 } // namespace Potp
