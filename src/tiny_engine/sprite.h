@@ -21,6 +21,13 @@ struct Sprite {
     bool isValid() const { return mainTex.id != 0; }
     inline f32 GetTextureWidth() const { return mainTex.width; }
     inline f32 GetTextureHeight() const { return mainTex.height; }
+    void OverrideSpriteShader(Shader shader) {
+        this->shader = shader;
+    }
+    template<typename T>
+    void setShaderUniform(const char* name, T val) {
+        shader.setUniform(name, val);
+    }
     
 private:
     Texture mainTex;

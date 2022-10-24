@@ -197,6 +197,7 @@ void PotpUpdate(GameState& gs, UserInput& inputs) {
     else if (gs.scene == PotpScene::ASSASSIN) {
         UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
         CheckWinConditions(gs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
+        UpdateStatues(gs.statues, ARRAY_SIZE(gs.statues), gs.playerNinjas, gs.numPlayers);
     }
     else if (gs.scene == PotpScene::TITLE) {
         for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {

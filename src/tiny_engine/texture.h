@@ -79,11 +79,12 @@ struct TextureProperties {
 };
 
 struct Texture {
-    u32 id = 0;
+    u32 id = 0; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
     f32 width, height = 0.0;
     TextureMaterialType type = TextureMaterialType::DIFFUSE;
 
     Texture() { id = 0; type = TextureMaterialType::DIFFUSE; width = 0.0; height = 0.0; }
+    Texture(u32 id) { Texture(); this->id = id; }
     void bind() const { glBindTexture(GL_TEXTURE_2D, id); }
 };
 

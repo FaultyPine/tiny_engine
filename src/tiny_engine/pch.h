@@ -128,4 +128,13 @@ inline u32 countLeadingZeroes(u32 n) {
     return n == 0 ? 0 : log2(n & -n);
 }
 
+
+
+inline std::string Vec3ToStr(const glm::vec3& vec) {
+    return std::to_string(vec.x) + " " + std::to_string(vec.y) + " " + std::to_string(vec.z);
+}
+inline std::string Vec2ToStr(const glm::vec2& vec) {
+    return std::to_string(vec.x) + " " + std::to_string(vec.y);
+}
+
 #endif

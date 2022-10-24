@@ -21,6 +21,7 @@ struct Shader {
 
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
     void Unload() { glDeleteProgram(ID); }
+    bool isValid() { return ID != 0; }
     static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
     static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
 

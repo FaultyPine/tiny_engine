@@ -33,7 +33,7 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
     shader.setUniform("projection", projection);
     shader.setUniform("image", mainTex.id);
 
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0); // not technically necessary since we're just using one texture in sprite frag shader
     mainTex.bind();
 
     glBindVertexArray(quadVAO);

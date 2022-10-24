@@ -8,14 +8,6 @@ void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height);
 
 void CloseGameWindow();
 
-
-inline std::string Vec3ToStr(const glm::vec3& vec) {
-    return std::to_string(vec.x) + " " + std::to_string(vec.y) + " " + std::to_string(vec.z);
-}
-inline std::string Vec2ToStr(const glm::vec2& vec) {
-    return std::to_string(vec.x) + " " + std::to_string(vec.y);
-}
-
 // returns the current GLFW time
 f64 GetTime();
 
@@ -33,7 +25,8 @@ bool ShouldCloseWindow();
 void TerminateGame();
 
 void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName);
-
+void ClearGLBuffers();
+void ClearGLColorBuffer();
 
 void EnableWireframeDrawing();
 

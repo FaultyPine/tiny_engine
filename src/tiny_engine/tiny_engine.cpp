@@ -55,6 +55,16 @@ f32 GetDeltaTime() {
 }
 u32 GetFrameCount() { return frameCount; }
 
+void ClearGLBuffers() {
+    // clear gl buffer
+    ClearGLColorBuffer();
+    glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+}
+void ClearGLColorBuffer() {
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
 void EngineLoop() {
     // update deltatime
     f32 currentTime = GetTime();
@@ -70,10 +80,6 @@ void EngineLoop() {
         }
         lastframe += 1.0/TARGET_FPS;
     }
-
-    // clear gl buffer
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 }
 
