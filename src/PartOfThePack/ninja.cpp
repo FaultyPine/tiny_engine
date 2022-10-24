@@ -23,6 +23,7 @@ glm::vec2 GetRandomAIDesiredPos() {
 void InitNinjaDefault(Ninja& ninja, Texture ninjaTex, glm::vec2 pos) {
     ninja.isDead = false;
     ninja.isSpriteFlipped = false;
+    ninja.numStatuesActivated = 0;
     const f32 ninjaSpriteSize = NINJA_SPRITE_SIZE;
     ninja.entity.sprite = Sprite(ninjaTex);
     ninja.smokeGrenade.numLeft = NINJA_MAX_SMOKE_GRENADES;
@@ -329,6 +330,7 @@ void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinja
         const Ninja& ninja = aiNinjas[i];
         if (ninja.entity.active) {
             DrawNinja(ninja, ninja.isSpriteFlipped, false);
+            Shapes::DrawLine(ninja.entity.position, ninja.aiDesiredPos, {1.0, 0.0, 0.0, 1.0}, 5.0);
         }
     }
     for (int i = 0; i < numPlayerNinjas; i++) {

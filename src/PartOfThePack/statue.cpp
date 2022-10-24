@@ -34,6 +34,10 @@ void Statue::Initialize(glm::vec2 pos) {
 
     entity.size = glm::vec2(statueSpriteSize*statueAspectRatio, statueSpriteSize*statueAspectRatio);
     entity.position = glm::vec3(pos.x - (entity.size.x/2.0), pos.y - (entity.size.y/2.0), 0.0);
+
+    isActivated = false;
+    memset(playersActivated, 0, sizeof(playersActivated));
+    activationTimer = STATUE_ACTIVATION_TIMER_MAX;
 }
 
 void Statue::Toggle() {

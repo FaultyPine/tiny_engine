@@ -29,7 +29,7 @@ struct GameState {
 
     // ----- controller setup -----
     bool isReady[MAX_NUM_PLAYERS];
-    #define ASSASSIN_ALL_READY_COUNTDOWN_FRAMES ((60)*7)
+    #define ASSASSIN_ALL_READY_COUNTDOWN_FRAMES ((60)*5)
     u32 allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
     u32 numPlayers = 0;
     Sprite keyboardSprite;
@@ -50,7 +50,7 @@ struct GameState {
     #define NUM_STATUES 5
     Statue statues[NUM_STATUES];
 
-    #define MAX_NUM_AI_NINJAS 45
+    #define MAX_NUM_AI_NINJAS 80
     Ninja aiNinjas[MAX_NUM_AI_NINJAS];
     Ninja playerNinjas[MAX_NUM_PLAYERS];
     s32 winningPlayer = -1;
