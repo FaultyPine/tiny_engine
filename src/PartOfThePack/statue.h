@@ -9,6 +9,7 @@ struct Ninja;
 struct Statue {
     Entity entity;
     bool isActivated;
+    bool playersActivated[MAX_NUM_PLAYERS]; // track which players activated this statue
     Spritesheet spritesheet;
     #define STATUE_ACTIVATION_TIMER_MAX (60*4)
     s32 activationTimer = STATUE_ACTIVATION_TIMER_MAX;

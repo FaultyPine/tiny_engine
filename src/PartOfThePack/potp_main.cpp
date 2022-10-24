@@ -66,6 +66,13 @@ void PotpInitAssassinScene(GameState& gs) {
         gs.statues[i].Initialize(statuePositions[i]);
     }
     gs.playerWonText = CreateText("Winner!");
+    std::string playerScoresTextStr = "";
+    for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
+        const char* playerScore = ("Player " + std::to_string(i+1) + ": 0        ").c_str();
+        playerScoresTextStr.append(playerScore);
+    }
+    std::cout << playerScoresTextStr;
+    gs.playerScoresText = CreateText(playerScoresTextStr.c_str());
 
     // ninjas
     InitializeNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
@@ -165,10 +172,26 @@ void playerWonTick(GameState& gs) {
     }
 }
 
+
+s32 CheckNinjaActivatedAllStatues(Ninja* playerNinjas, u32 numPlayerNinjas) {
+    for (s32 playerNinjaIdx = 0; playerNinjaIdx < numPlayerNinjas; playerNinjaIdx++) {
+        Ninja& playerNinja = playerNinjas[playerNinjaIdx];
+        if (!playerNinja.isDead && playerNinja.numStatuesActivated >= NUM_STATUES) {
+            return playerNinjaIdx;
+        }
+    }
+    return -1;
+}
+
 void CheckWinConditions(GameState& gs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
     if (gs.winningPlayer == -1) {
         // player has won if all other players are dead
         s32 playerIdxWon = getOnePlayerAliveOrNone(playerNinjas, numPlayerNinjas);
+        if (playerIdxWon == -1) {
+            // or if someone activated all statues
+            playerIdxWon = CheckNinjaActivatedAllStatues(playerNinjas, numPlayerNinjas);
+        }
+
 
         if (playerIdxWon != -1) {
             // kill all ninjas that are not our winning player
@@ -201,6 +224,13 @@ void PotpUpdate(GameState& gs, UserInput& inputs) {
         UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
         CheckWinConditions(gs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
         UpdateStatues(gs.statues, ARRAY_SIZE(gs.statues), gs.playerNinjas, gs.numPlayers);
+        std::string playerScores = "";
+        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
+            Ninja& playerNinja = gs.playerNinjas[i];
+            const char* playerScore = ("Player " + std::to_string(i+1) + ": " + std::to_string(playerNinja.numStatuesActivated) + "        ").c_str();
+            playerScores.append(playerScore);
+        }
+        SetText(gs.playerScoresText, playerScores);
     }
     else if (gs.scene == PotpScene::TITLE) {
         for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
@@ -273,6 +303,7 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
                 statue.Draw();
             }
             DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
+            DrawText(gs.playerScoresText, 5.0, 5.0, 1.0);
 
             if (gs.winningPlayer != -1) {
                 DrawText(gs.playerWonText, 15.0, 15.0, 2.0, 1.0, 1.0, 1.0, 1.0);

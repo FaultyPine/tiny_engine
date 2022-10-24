@@ -22,6 +22,7 @@ struct Ninja {
     bool isDead = false;
     bool isSpriteFlipped = false;
     bool isPunching = false;
+    u32 numStatuesActivated = 0;
     Spritesheet spritesheet;
 
     // Player

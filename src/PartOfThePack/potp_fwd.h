@@ -5,6 +5,7 @@
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/math.h"
 
+#define MAX_NUM_PLAYERS 4
 
 struct CollisionBox {
     glm::vec2 pos;

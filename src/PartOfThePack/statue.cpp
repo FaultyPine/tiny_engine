@@ -127,8 +127,10 @@ void CheckNinjaStatueCollisions(Statue* statues, u32 numStatues, Ninja* playerNi
             Statue& statue = statues[s];
             Ninja& ninja = playerNinjas[n];
             if (Math::isOverlappingRect2D(statue.entity.position, statue.entity.size, ninja.entity.position, ninja.entity.size)) {
-                if (!statue.isActivated) {
+                if (!statue.isActivated && !statue.playersActivated[n]) {
                     statue.ActivateByNinja(&ninja);
+                    statue.playersActivated[n] = true;
+                    ninja.numStatuesActivated++;
                 }
             }
         }

@@ -2,6 +2,7 @@
 #define POTP_INPUT_H
 
 #include "tiny_engine/pch.h"
+#include "potp_fwd.h"
 
 enum ControllerType {
     NO_CONTROLLER = 0,
@@ -32,7 +33,6 @@ bool pollRawInput(u32 playerIdx, ControllerType type, ButtonValues button);
 
 struct UserInput {
     UserInput();
-    #define MAX_NUM_PLAYERS 4
     InputDevice controllers[MAX_NUM_PLAYERS];
     // 1 bitfield of buttons pressed for each player
     u32 buttons[MAX_NUM_PLAYERS];

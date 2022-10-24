@@ -57,6 +57,7 @@ struct GameState {
     GLTtext* playerWonText;
     #define PLAYER_WON_MAX_TIMER (60*5)
     u32 playerWonTimer = PLAYER_WON_MAX_TIMER;
+    GLTtext* playerScoresText;
 };
 
 #endif
