@@ -7,6 +7,26 @@
 
 #define MAX_NUM_PLAYERS 4
 
+#define MIN_WIDTH 800
+#define MIN_HEIGHT 600
+#define MAX_WIDTH 1300
+#define MAX_HEIGHT 975
+
+/// returns the width of the window - minimum width of the window
+inline f32 GetWindowAdditionalWidth() {
+    f32 width = Camera::GetScreenWidth();
+    return width - MIN_WIDTH;
+}
+/// returns the height of the window - minimum height of the window
+inline f32 GetWindowAdditionalHeight() {
+    f32 height = Camera::GetScreenHeight();
+    return height - MIN_HEIGHT;
+}
+inline f32 GetWindowWidthScale01() {
+    f32 width = Camera::GetScreenWidth();
+    return width / MIN_WIDTH;
+}
+
 struct CollisionBox {
     glm::vec2 pos;
     glm::vec2 size;

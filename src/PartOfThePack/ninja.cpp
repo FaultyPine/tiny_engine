@@ -6,6 +6,7 @@
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/tiny_fs.h"
 #include "tiny_engine/shapes.h"
+#include "tiny_engine/tiny_audio.h"
 
 glm::vec2 GetRandomAIDesiredPos() {
     u32 screenWidth = Camera::GetScreenWidth();
@@ -129,6 +130,7 @@ void NinjaInitPunch(Ninja& ninja) {
     anim.isLoop = false;
     anim.nonLoopNextAnim = NinjaAnimStates::IDLE;
     ninja.spritesheet.SetAnimation(anim);
+    Audio::PlayAudio(UseResPath("potp/hit.wav").c_str()); // TODO: can we preload this? This probably reads the file in every time...
 }
 void NinjaEndPunch(Ninja& ninja) {
 
@@ -306,6 +308,14 @@ void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
     
     ninja.spritesheet.Draw(Camera::GetMainCamera(), 
             ninja.entity.position, ninja.entity.size, rotation, glm::vec3(0.0, 1.0, 0.0), ninja.entity.color);
+    
+    // NOTE: FOR DEBUGGING
+    glm::vec4 col = isPlayer ? glm::vec4(0.0, 1.0, 0.0, 1.0) : glm::vec4(1.0, 0.0, 0.0, 1.0);
+    //Shapes::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
+    //Shapes::DrawSquare(ninja.entity.position + ninja.punchHitbox.pos, ninja.punchHitbox.size, 0.0, {0.0, 0.0, 1.0}, col, true);
+}
+
+void DrawSmokeGrenade(const Ninja& ninja) {
     if (ninja.smokeGrenade.life) {
         glm::vec2 smokeSpriteSize = ninja.smokeGrenade.size;
         smokeSpriteSize += sin((f32)GetTime()*2.0)*8.0;
@@ -315,28 +325,28 @@ void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
                 smokeSpriteRotation, {0.0, 0.0, 1.0}, 
                 {1.0, 1.0, 1.0, 1.0}
         );
-        //Shapes::DrawSquare(ninja.smokeGrenade.pos, ninja.smokeGrenade.size, 0.0, {0.0, 0.0, 1.0}, {1.0,1.0,1.0,1.0}, true);
     }
-    
-
-    // NOTE: FOR DEBUGGING
-    glm::vec4 col = isPlayer ? glm::vec4(0.0, 1.0, 0.0, 1.0) : glm::vec4(1.0, 0.0, 0.0, 1.0);
-    //Shapes::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
-    //Shapes::DrawSquare(ninja.entity.position + ninja.punchHitbox.pos, ninja.punchHitbox.size, 0.0, {0.0, 0.0, 1.0}, col, true);
 }
 
 void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinjas, u32 numPlayerNinjas) {
-    for (int i = 0; i < numAINinjas; i++) {
+    for (s32 i = 0; i < numAINinjas; i++) {
         const Ninja& ninja = aiNinjas[i];
         if (ninja.entity.active) {
             DrawNinja(ninja, ninja.isSpriteFlipped, false);
-            Shapes::DrawLine(ninja.entity.position, ninja.aiDesiredPos, {1.0, 0.0, 0.0, 1.0}, 5.0);
+            //Shapes::DrawLine(ninja.entity.position, ninja.aiDesiredPos, {1.0, 0.0, 0.0, 1.0}, 5.0);
         }
     }
-    for (int i = 0; i < numPlayerNinjas; i++) {
+    for (s32 i = 0; i < numPlayerNinjas; i++) {
         const Ninja& ninja = playerNinjas[i];
         if (ninja.entity.active) {
             DrawNinja(ninja, ninja.isSpriteFlipped, true);
+        }
+    }
+    // draw smoke grenades on top of ninjas
+    for (s32 i = 0; i < numPlayerNinjas; i++) {
+        const Ninja& ninja = playerNinjas[i];
+        if (ninja.entity.active) {
+            DrawSmokeGrenade(ninja);
         }
     }
 }

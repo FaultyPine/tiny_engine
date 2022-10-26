@@ -3,8 +3,10 @@
 
 
 // by default this framebuffer is just for the whole screen
-FullscreenFrameBuffer::FullscreenFrameBuffer(glm::vec2 framebufferSize) {
+FullscreenFrameBuffer::FullscreenFrameBuffer(Shader shader, glm::vec2 framebufferSize) {
     this->size = framebufferSize;
+    this->framebufferShader = shader;
+
     // generate and bind a framebuffer object
     glGenFramebuffers(1, &framebufferID);
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);    
@@ -29,15 +31,13 @@ FullscreenFrameBuffer::FullscreenFrameBuffer(glm::vec2 framebufferSize) {
     glBindRenderbuffer(GL_RENDERBUFFER, renderBufferObjectID); 
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x, size.y);  
     glBindRenderbuffer(GL_RENDERBUFFER, 0); // should this go after the glFramebufferRenderbuffer?
-
     // attach the renderbuffer object to the depth and stencil attachment of the framebuffer
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferObjectID);
-
+    
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 
 
     fullscreenSprite = Sprite(Texture(textureColorBufferID));
-
 }

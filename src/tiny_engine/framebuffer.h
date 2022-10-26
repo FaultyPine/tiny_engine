@@ -8,7 +8,7 @@
 // if not using a fullscreen buffer, make sure to set glViewport to prevent stretching/weird stuff happening with the rendered texture
 
 struct FullscreenFrameBuffer {
-    FullscreenFrameBuffer(glm::vec2 size);
+    FullscreenFrameBuffer(Shader shader, glm::vec2 size);
     FullscreenFrameBuffer() {}
 
     inline bool isValid() { return framebufferID != 0; }
@@ -18,16 +18,19 @@ struct FullscreenFrameBuffer {
         glDeleteFramebuffers(1, &framebufferID);
         glDeleteTextures(1, &textureColorBufferID);
         glDeleteRenderbuffers(1, &renderBufferObjectID);
-    }
-    void ClearColor() { 
-        ClearGLColorBuffer();
+        fullscreenSprite.UnloadSprite();
+        framebufferID, textureColorBufferID, renderBufferObjectID = 0;
     }
     void ClearDepth() { glClear(GL_DEPTH_BUFFER_BIT); }
     void ClearStencil() { glClear(GL_STENCIL_BUFFER_BIT); }
     void DrawToScreen(const Shader& shader) {
+        if (!shader.isValid()) {
+            std::cout << "[ERROR] Attempted to draw framebuffer with invalid shader!\n";
+            exit(1);
+        }
         fullscreenSprite.OverrideSpriteShader(shader);
         BindDefaultFrameBuffer();
-        ClearColor();
+        ClearGLColorBuffer();
         shader.use();
         shader.setUniform("screenWidth", Camera::GetScreenWidth());
         shader.setUniform("screenHeight", Camera::GetScreenHeight());
@@ -36,10 +39,16 @@ struct FullscreenFrameBuffer {
             Camera::GetMainCamera(), 
             {0,0}, size);
     }
+    void DrawToScreen() {
+        DrawToScreen(framebufferShader);
+    }
+
+    glm::vec2 GetSize() { return size; }
 
 private:
     glm::vec2 size = {0.0, 0.0};
     Sprite fullscreenSprite;
+    Shader framebufferShader;
     u32 framebufferID = 0;
     u32 textureColorBufferID = 0;
     u32 renderBufferObjectID = 0;

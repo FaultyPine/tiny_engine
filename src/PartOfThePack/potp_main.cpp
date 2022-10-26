@@ -36,6 +36,8 @@ void PotpInitControllerSetupMenu(GameState& gs) {
         gs.controllerSprite = Sprite(LoadTexture(UseResPath("potp/controller.png").c_str(), texProps));
     if (!gs.blankControllerSprite.isValid()) 
         gs.blankControllerSprite = Sprite(LoadTexture(UseResPath("potp/x.png").c_str(), texProps));
+    if (!gs.howToPlayBackgroundSprite.isValid())
+        gs.howToPlayBackgroundSprite = Sprite(LoadTexture(UseResPath("potp/howtoplay.png").c_str(), texProps));
     for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
         if (!gs.playerTexts[i]) {
             const char* playerText = ("Player " + std::to_string(i+1)).c_str();
@@ -43,7 +45,7 @@ void PotpInitControllerSetupMenu(GameState& gs) {
         }
         gs.isReady[i] = false;
     }
-    gs.instructionsText = CreateText("Press start to join\nPress start again when ready");
+    gs.instructionsText = CreateText("Press start to join     Press start again when ready");
     gs.countdownText = CreateText("Starting in ...");
 }
 
@@ -71,7 +73,6 @@ void PotpInitAssassinScene(GameState& gs) {
         const char* playerScore = ("Player " + std::to_string(i+1) + ": 0        ").c_str();
         playerScoresTextStr.append(playerScore);
     }
-    std::cout << playerScoresTextStr;
     gs.playerScoresText = CreateText(playerScoresTextStr.c_str());
 
     // ninjas
@@ -79,16 +80,18 @@ void PotpInitAssassinScene(GameState& gs) {
 }
 
 void PotpInit(GameState& gs, UserInput& inputs) {
+    SetMinAndMaxWindowSize(MIN_WIDTH, MIN_HEIGHT, MAX_WIDTH, MAX_HEIGHT);
     // manually init random seed so we can serialize it (with the rest of gamestate) if need be
     f64 time = GetTime();
-    gs.initialRandomSeed = hash((const char*)&time, sizeof(double));
+    gs.initialRandomSeed = hash((const char*)&time, sizeof(f64));
     InitializeRandomSeed(gs.initialRandomSeed);
-
-    Audio::SetMute(true);
 
     // SFX
     Audio::InitAudioEngine();
+    Audio::SetMute(true);
     Audio::PlayAudio(UseResPath("potp/clarkPapple_Song.mp3").c_str());
+
+    //Audio::SetVolume(2.0);
 
     // textures
     TextureProperties texProps = TextureProperties::Default();
@@ -244,12 +247,13 @@ void PotpUpdate(GameState& gs, UserInput& inputs) {
 
 void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
     Camera& cam = Camera::GetMainCamera();
+    gs.howToPlayBackgroundSprite.DrawSprite(cam, glm::vec2(0.0f, 0.0f), glm::vec2(cam.screenWidth, cam.screenHeight));
     // draw player indicators at bottom of screen
     // "player indicators" here refers to the UI that shows what players are ingame (1-4) and if they are using keyboard/controller
-    const f32 playerIndicatorsSize = 100.0;
-    const f32 playerTextSize = 1.0;
+    const f32 playerIndicatorsSize = 80.0 * GetWindowWidthScale01();
+    const f32 playerTextSize = 1.0 * GetWindowWidthScale01();
     const glm::vec2 playerIndicatorsSizeVec = {playerIndicatorsSize, playerIndicatorsSize};
-    const f32 playerIndicatorsY = (f32)Camera::GetScreenHeight()/2.0 + (playerIndicatorsSizeVec.y/2.0);
+    const f32 playerIndicatorsY = 45.0 + (playerIndicatorsSizeVec.y/2.0);
     const f32 playerIndicatorsStartX = (f32)Camera::GetScreenWidth()/playerIndicatorsSizeVec.x+20.0;
     const f32 playerIndicatorsXSpacing = playerIndicatorsSize + (f32)Camera::GetScreenWidth()/8.0;
     const f32 playerTextYOffset = -30.0;
@@ -276,15 +280,14 @@ void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
     }
 
     if (gs.allReadyCountdown != ASSASSIN_ALL_READY_COUNTDOWN_FRAMES)
-        DrawText(gs.countdownText, 10.0, 10.0, 1.5, 1.0, 1.0, 1.0, 1.0);
+        DrawText(gs.countdownText, 10.0, 10.0, 1.3, 1.0, 1.0, 1.0, 1.0);
 
-    DrawText(gs.instructionsText, Camera::GetScreenWidth()/2.0 - 50.0, 30.0, 1.5,    1.0, 1.0, 1.0, 1.0);
+    DrawText(gs.instructionsText, Camera::GetScreenWidth()/2.0 - 100.0, 15.0,   1.2,    1.0, 1.0, 1.0, 1.0);
 }
 
 
 void PotpDraw(const GameState& gs, const UserInput& inputs) {
     const Camera& cam = Camera::GetMainCamera();
-    gs.background.DrawSprite(cam, glm::vec2(0.0f, 0.0f), glm::vec2(cam.screenWidth, cam.screenHeight));
 
     switch (gs.scene) {
 
@@ -298,15 +301,15 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
         } break;
         case PotpScene::ASSASSIN:
         {
-
+            gs.background.DrawSprite(cam, glm::vec2(0.0f, 0.0f), glm::vec2(cam.screenWidth, cam.screenHeight));
             for (const Statue& statue : gs.statues) {
                 statue.Draw();
             }
             DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
-            DrawText(gs.playerScoresText, 5.0, 5.0, 1.0);
 
+            DrawText(gs.playerScoresText, 5.0, 5.0, 1.0 * GetWindowWidthScale01());
             if (gs.winningPlayer != -1) {
-                DrawText(gs.playerWonText, 15.0, 15.0, 2.0, 1.0, 1.0, 1.0, 1.0);
+                DrawText(gs.playerWonText, 15.0, 15.0, 2.0 * GetWindowWidthScale01(), 1.0, 1.0, 1.0, 1.0);
             }
 
         } break;
@@ -342,20 +345,26 @@ void MainUpdate() {
     // render gamestate
 
     // render game to framebuffer
+    glm::vec2 screenDimensions = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
     static FullscreenFrameBuffer fb;
     static Shader postProcessingShader;
-    if (!fb.isValid()) {
-        fb = FullscreenFrameBuffer({Camera::GetScreenWidth(), Camera::GetScreenHeight()});
-    }
     if (!postProcessingShader.isValid()) {
         postProcessingShader = Shader(UseResPath("shaders/screen_texture.vs").c_str(), UseResPath("shaders/screen_texture.fs").c_str());
     }
+    if (!fb.isValid()) {
+        fb = FullscreenFrameBuffer(postProcessingShader, {screenDimensions.x, screenDimensions.y});
+    }
+
+    if (fb.GetSize().x != screenDimensions.x && fb.GetSize().y != screenDimensions.y) {
+        fb.Delete();
+        fb = FullscreenFrameBuffer(postProcessingShader, screenDimensions);
+    }
     fb.Bind();
-    fb.ClearColor();
+    ClearGLColorBuffer();
     PotpDraw(gs, inputs);
 
     // draw framebuffer to screen with post processing shader
-    fb.DrawToScreen(postProcessingShader);
+    fb.DrawToScreen();
 }
 
 } // namespace Potp

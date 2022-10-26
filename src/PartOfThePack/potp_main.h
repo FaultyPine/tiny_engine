@@ -35,6 +35,7 @@ struct GameState {
     Sprite keyboardSprite;
     Sprite controllerSprite;
     Sprite blankControllerSprite;
+    Sprite howToPlayBackgroundSprite;
     GLTtext* playerTexts[MAX_NUM_PLAYERS];
     GLTtext* instructionsText;
     GLTtext* countdownText;

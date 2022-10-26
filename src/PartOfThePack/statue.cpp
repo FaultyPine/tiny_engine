@@ -2,6 +2,7 @@
 #include "tiny_engine/tiny_fs.h"
 #include "ninja.h"
 #include "tiny_engine/shapes.h"
+#include "tiny_engine/tiny_audio.h"
 
 enum StatueFacingDir {
     NEUTRAL = 0,
@@ -40,11 +41,16 @@ void Statue::Initialize(glm::vec2 pos) {
     activationTimer = STATUE_ACTIVATION_TIMER_MAX;
 }
 
+void OnStatueActivated(Statue& statue) {
+    Audio::PlayAudio(UseResPath("potp/statue_activate.wav").c_str());
+}
+
 void Statue::Toggle() {
     isActivated = !isActivated;
     Spritesheet::Animation anim = Spritesheet::Animation(isActivated ? 1 : 0);
     if (isActivated) {
         anim.framerate = 0; // stay on that frame
+        OnStatueActivated(*this);
     }
     spritesheet.SetAnimation(anim);
     activationTimer = STATUE_ACTIVATION_TIMER_MAX;
