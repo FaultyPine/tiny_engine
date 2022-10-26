@@ -20,6 +20,14 @@ BUILD_COMMAND = var_contents(f"""
     g++ -o build/{APP_NAME}.exe {COMPILER_ARGS} {" ".join(SOURCES)} {LINKER_ARGS}
 """)
 
+def get_ninja_command():
+    platform = sys.platform
+    if platform == "linux" or platform == "linux2": # linux
+        return "./ninja-linux"
+    elif platform == "darwin": # mac
+        return "./ninja-mac"
+    elif platform == "win32" or platform == "cygwin": # windows
+        return "ninja"
 
 
 def run_app():
@@ -39,7 +47,7 @@ def build():
     generate_ninja_build()
     start_time = time.time()
     #command(BUILD_COMMAND)
-    command("ninja")
+    command(get_ninja_command())
     elapsed = round(time.time() - start_time, 3)
     print("Built!")
     print(f"Build took {elapsed} seconds")
