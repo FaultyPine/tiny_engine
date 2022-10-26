@@ -20,6 +20,8 @@ static u64 randomSeed = 0;
 void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
     UpdateGLTViewport(width, height);
     glViewport(0, 0, width, height);
+    Camera::GetMainCamera().screenWidth = width;
+    Camera::GetMainCamera().screenHeight = height;
 }
 void TerminateGame() {
     GLTTerminate();
@@ -33,8 +35,8 @@ u32 GetRandom(u32 start, u32 end) {
     // lazy init random seed
     if (randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
-        double time = GetTime();
-        randomSeed = hash((const char*)&time, sizeof(double));
+        f64 time = GetTime();
+        randomSeed = hash((const char*)&time, sizeof(f64));
         std::cout << "Initial random seed = " << randomSeed << "\n";
     }
     srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
@@ -63,6 +65,10 @@ void ClearGLBuffers() {
 void ClearGLColorBuffer() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 maxHeight) {
+    glfwSetWindowSizeLimits(glob_glfw_window, minWidth, minHeight, maxWidth, maxHeight);
 }
 
 void EngineLoop() {

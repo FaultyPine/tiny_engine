@@ -24,6 +24,9 @@ struct Shader {
     bool isValid() { return ID != 0; }
     static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
     static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
+    static Shader CreateShaderFromSources(const s8* vsSource, const s8* fsSource) {
+        return Shader(CreateShaderProgFromStr(vsSource, fsSource));
+    }
 
     // use/activate the shader
     inline void use() const {

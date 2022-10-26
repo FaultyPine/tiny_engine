@@ -81,8 +81,8 @@ void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
         firstMouse = false;
     }
   
-    float xoffset = xpos - mouseInput.lastX;
-    float yoffset = mouseInput.lastY - ypos; 
+    f32 xoffset = xpos - mouseInput.lastX;
+    f32 yoffset = mouseInput.lastY - ypos; 
     mouseInput.lastX = xpos;
     mouseInput.lastY = ypos;
 

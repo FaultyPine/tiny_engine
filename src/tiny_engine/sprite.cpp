@@ -46,7 +46,7 @@ void Sprite::initRenderData() {
     // configure VAO/VBO
     u32 VBO;
 
-    const float tex_quad[] = { 
+    const f32 tex_quad[] = { 
         // pos      // tex
         0.0f, 1.0f, 0.0f, 1.0f,
         1.0f, 0.0f, 1.0f, 0.0f,
@@ -72,7 +72,7 @@ void Sprite::initRenderData() {
     glEnableVertexAttribArray(0);
     // inherently binds these options to the whatever VBO is bound to GL_ARRAY_BUFFER
     // since this inherently binds to our VBO above, our "quadVAO" also has some sort of reference to this VBO
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)0);
     
     // unbind once done
     glBindBuffer(GL_ARRAY_BUFFER, 0);  

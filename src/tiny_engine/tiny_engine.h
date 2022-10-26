@@ -27,6 +27,7 @@ void TerminateGame();
 void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName);
 void ClearGLBuffers();
 void ClearGLColorBuffer();
+void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 maxHeight);
 
 void EnableWireframeDrawing();
 
