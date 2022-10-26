@@ -24,4 +24,16 @@ bool isPositionNear(const glm::vec2& pos1, const glm::vec2& pos2, f32 dist) {
 }
 
 
+f32 Lerp(f32 a, f32 b, f32 t) {
+    return (1.0f - t) * a + b * t;
+}
+f32 InvLerp(f32 a, f32 b, f32 v) {
+    return (v - a) / (b - a);
+}
+f32 Remap(f32 iMin, f32 iMax, f32 oMin, f32 oMax, f32 v) {
+    f32 t = InvLerp(iMin, iMax, v);
+    return Lerp(oMin, oMax, t);
+}
+
+
 }
