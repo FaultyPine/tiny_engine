@@ -36,7 +36,15 @@ struct Ninja {
         u32 cooldown = NINJA_SMOKE_GRENADE_COOLDOWN;
         u32 life = 0; 
         glm::vec2 size = glm::vec2(NINJA_SMOKE_GRENADE_SPRITE_SIZE, NINJA_SMOKE_GRENADE_SPRITE_SIZE);
-        glm::vec2 pos;
+        glm::vec2 pos = glm::vec2(0, 0);
+
+        void Reset() {
+            numLeft = NINJA_MAX_SMOKE_GRENADES;
+            cooldown = NINJA_SMOKE_GRENADE_COOLDOWN;
+            life = 0;
+            size = glm::vec2(NINJA_SMOKE_GRENADE_SPRITE_SIZE, NINJA_SMOKE_GRENADE_SPRITE_SIZE);
+            pos = glm::vec2(0, 0);
+        }
     };
     SmokeGrenade smokeGrenade;
     

@@ -56,15 +56,18 @@ void Statue::Toggle() {
     activationTimer = STATUE_ACTIVATION_TIMER_MAX;
 }
 
-void Statue::ActivateByNinja(Ninja* ninja) {
+void Statue::ActivateByNinja(Ninja& ninja, u32 playerIdx) {
+    this->playersActivated[playerIdx] = true;
+    ninja.numStatuesActivated++;
     Toggle();
-    glm::vec2 centeredPosNinja = ninja->entity.position + (ninja->entity.size/2.0f);
+    glm::vec2 centeredPosNinja = ninja.entity.position + (ninja.entity.size/2.0f);
     glm::vec2 centeredPosStatue = entity.position + (entity.size/2.0f);
     glm::vec2 statueToNinjaDir = glm::normalize(centeredPosNinja - centeredPosStatue);
 
     std::vector<s32> lookingDirectionSpritesheetIndices = {};
 
     // TODO: just doing tons of range checks is icky... whats a better way to do this?
+    // maybe dot product & an signof(statueToNinjaDir.x) check? ..... would still result in a lot of branching.. is it unavoidable?
 
     // if we are to the left of the statue's center
     if (isInRange(statueToNinjaDir.x, -1.0f, -0.3f)) {
@@ -138,9 +141,7 @@ void CheckNinjaStatueCollisions(Statue* statues, u32 numStatues, Ninja* playerNi
             Ninja& ninja = playerNinjas[n];
             if (Math::isOverlappingRect2D(statue.entity.position, statue.entity.size, ninja.entity.position, ninja.entity.size)) {
                 if (!statue.isActivated && !statue.playersActivated[n]) {
-                    statue.ActivateByNinja(&ninja);
-                    statue.playersActivated[n] = true;
-                    ninja.numStatuesActivated++;
+                    statue.ActivateByNinja(ninja, n);
                 }
             }
         }

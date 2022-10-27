@@ -17,7 +17,7 @@ struct Statue {
     Statue(){}
     void Initialize(glm::vec2 pos);
     void Toggle();
-    void ActivateByNinja(Ninja* ninja);
+    void ActivateByNinja(Ninja& ninja, u32 playerIdx);
     void Tick();
     void Draw() const;
 };

@@ -25,9 +25,9 @@ void InitNinjaDefault(Ninja& ninja, Texture ninjaTex, glm::vec2 pos) {
     ninja.isDead = false;
     ninja.isSpriteFlipped = false;
     ninja.numStatuesActivated = 0;
+    ninja.smokeGrenade.Reset();
     const f32 ninjaSpriteSize = NINJA_SPRITE_SIZE;
     ninja.entity.sprite = Sprite(ninjaTex);
-    ninja.smokeGrenade.numLeft = NINJA_MAX_SMOKE_GRENADES;
     ninja.entity.position = glm::vec3(pos.x, pos.y, 0.0);
     ninja.entity.size = glm::vec2(ninjaSpriteSize, ninjaSpriteSize);
     // initial idle is between 30-180 frames
