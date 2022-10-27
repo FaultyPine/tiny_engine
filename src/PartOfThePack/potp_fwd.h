@@ -7,6 +7,18 @@
 
 #define MAX_NUM_PLAYERS 4
 
+// Technically ... can't match zero macro arguments, so MAKE_FUNCTION_TYPE(myFunc, int) is officially invalid. But most compilers allow it anyway
+#define MAKE_FUNCTION_TYPE(name, ret, ...) typedef ret (*name)(__VA_ARGS__)
+
+struct GameState;
+struct UserInput;
+MAKE_FUNCTION_TYPE(SceneInit, void, GameState&);
+MAKE_FUNCTION_TYPE(SceneTick, void, GameState&, UserInput&);
+MAKE_FUNCTION_TYPE(SceneDraw, void, const GameState&, const UserInput&);
+MAKE_FUNCTION_TYPE(SceneEnd, void, GameState&, UserInput&);
+
+
+// for text rendering - allows text to scale as window resizes
 inline f32 GetWindowWidthScaleFactor() {
     f32 width = Camera::GetScreenWidth();
     return width / Camera::GetMainCamera().GetMinScreenDimensions().x;

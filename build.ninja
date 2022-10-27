@@ -16,10 +16,15 @@ rule pch
 build src/tiny_engine/pch.h.gch: pch src/tiny_engine/pch.h
 build $builddir/main.o: compile src/main.cpp
 build $builddir/ObjParser.o: compile src/ObjParser.cpp
+build $builddir/assassin_scene.o: compile src/PartOfThePack/assassin_scene.cpp
+build $builddir/controller_setup_scene.o: compile $
+    src/PartOfThePack/controller_setup_scene.cpp
 build $builddir/ninja.o: compile src/PartOfThePack/ninja.cpp
 build $builddir/potp_input.o: compile src/PartOfThePack/potp_input.cpp
 build $builddir/potp_main.o: compile src/PartOfThePack/potp_main.cpp
 build $builddir/statue.o: compile src/PartOfThePack/statue.cpp
+build $builddir/title_screen_scene.o: compile $
+    src/PartOfThePack/title_screen_scene.cpp
 build $builddir/framebuffer.o: compile src/tiny_engine/framebuffer.cpp
 build $builddir/input.o: compile src/tiny_engine/input.cpp
 build $builddir/math.o: compile src/tiny_engine/math.cpp
@@ -34,9 +39,11 @@ build $builddir/tiny_engine.o: compile src/tiny_engine/tiny_engine.cpp
 build $builddir/tiny_fs.o: compile src/tiny_engine/tiny_fs.cpp
 build $builddir/tiny_text.o: compile src/tiny_engine/tiny_text.cpp
 build $builddir/app.exe: link $builddir/main.o $builddir/ObjParser.o $
+    $builddir/assassin_scene.o $builddir/controller_setup_scene.o $
     $builddir/ninja.o $builddir/potp_input.o $builddir/potp_main.o $
-    $builddir/statue.o $builddir/framebuffer.o $builddir/input.o $
-    $builddir/math.o $builddir/mesh.o $builddir/shader.o $builddir/shapes.o $
+    $builddir/statue.o $builddir/title_screen_scene.o $
+    $builddir/framebuffer.o $builddir/input.o $builddir/math.o $
+    $builddir/mesh.o $builddir/shader.o $builddir/shapes.o $
     $builddir/sprite.o $builddir/spritesheet.o $builddir/texture.o $
     $builddir/tiny_audio.o $builddir/tiny_engine.o $builddir/tiny_fs.o $
     $builddir/tiny_text.o

@@ -4,80 +4,12 @@
 #include "tiny_engine/tiny_audio.h"
 #include "tiny_engine/tiny_engine.h"
 #include "tiny_engine/framebuffer.h"
-#include "tiny_engine/tiny_text.h"
 #include "tiny_engine/tiny_fs.h"
-#include "tiny_engine/shapes.h"
 
-void PotpInitTitleScreenScene(GameState& gs) {
-    gs.scene = PotpScene::TITLE;
-    if (!gs.titleScreenSplash.isValid()) {
-        TextureProperties texProps = TextureProperties::Default();
-        texProps.imgFormat = TextureProperties::ImageFormat::RGB;
-        texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-        texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
-        gs.titleScreenSplash = Sprite(LoadTexture(UseResPath("potp/title_screen.jpg").c_str(), texProps));
-    }
+#include "assassin_scene.h"
+#include "controller_setup_scene.h"
+#include "title_screen_scene.h"
 
-    if (!gs.titleScreenText)
-        gs.titleScreenText = CreateText("Press start to play");
-}
-
-void PotpInitControllerSetupMenu(GameState& gs) {
-    gs.scene = PotpScene::CONTROLLER_SETUP;
-    gs.allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
-
-    TextureProperties texProps = TextureProperties::Default();
-    texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
-    // init keyboard/controller sprites
-    if (!gs.keyboardSprite.isValid()) 
-        gs.keyboardSprite = Sprite(LoadTexture(UseResPath("potp/keyboard.png").c_str(), texProps));
-    if (!gs.controllerSprite.isValid()) 
-        gs.controllerSprite = Sprite(LoadTexture(UseResPath("potp/controller.png").c_str(), texProps));
-    if (!gs.blankControllerSprite.isValid()) 
-        gs.blankControllerSprite = Sprite(LoadTexture(UseResPath("potp/x.png").c_str(), texProps));
-    if (!gs.howToPlayBackgroundSprite.isValid())
-        gs.howToPlayBackgroundSprite = Sprite(LoadTexture(UseResPath("potp/howtoplay.png").c_str(), texProps));
-    for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
-        if (!gs.playerTexts[i]) {
-            const char* playerText = ("Player " + std::to_string(i+1)).c_str();
-            gs.playerTexts[i] = CreateText(playerText);
-        }
-        gs.isReady[i] = false;
-    }
-    gs.instructionsText = CreateText("Press start to join     Press start again when ready");
-    gs.countdownText = CreateText("Starting in ...");
-}
-
-void PotpInitAssassinScene(GameState& gs) {
-    ASSERT(gs.numPlayers > 1);
-    gs.scene = PotpScene::ASSASSIN;
-    gs.winningPlayer = -1;
-    // statues
-    u32 screenWidth = Camera::GetMainCamera().screenWidth;
-    u32 screenHeight = Camera::GetMainCamera().screenHeight;
-    f32 screenMargin = 80.0;
-    glm::vec2 statuePositions[NUM_STATUES] = {
-        glm::vec2(screenMargin, screenMargin),
-        glm::vec2(screenWidth-screenMargin, screenMargin),
-        glm::vec2(screenMargin, screenHeight-screenMargin),
-        glm::vec2(screenWidth-screenMargin, screenHeight-screenMargin),
-        glm::vec2(screenWidth/2, screenHeight/2)
-    };
-    for (u32 i = 0; i < NUM_STATUES; i++) {
-        gs.statues[i].Initialize(statuePositions[i]);
-    }
-    gs.playerWonText = CreateText("Winner!");
-    std::string playerScoresTextStr = "";
-    for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
-        const char* playerScore = ("Player " + std::to_string(i+1) + ": 0        ").c_str();
-        playerScoresTextStr.append(playerScore);
-    }
-    gs.playerScoresText = CreateText(playerScoresTextStr.c_str());
-
-    // ninjas
-    InitializeNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
-}
 
 void PotpInit(GameState& gs, UserInput& inputs) {
     Camera& cam = Camera::GetMainCamera();
@@ -119,173 +51,28 @@ void PotpInit(GameState& gs, UserInput& inputs) {
             }
         }
         #endif
-        //PotpInitControllerSetupMenu(gs);
-        PotpInitAssassinScene(gs); // using this for debugging to boot directly into gameplay
+        //ControllerSetupSceneInit(gs);
+        AssassinSceneInit(gs); // using this for debugging to boot directly into gameplay
     }
     #else
     // init game to title screen
-    PotpInitTitleScreenScene(gs);
+    TitleScreenSceneInit(gs);
     #endif
 }
 
-void PotpControllerSetupTick(GameState& gs, UserInput& inputs) {
-    SetText(gs.countdownText, ("Starting in " + std::to_string(gs.allReadyCountdown/60) + " seconds...").c_str());
-
-    inputs.SetupControllersTick(gs.numPlayers, gs.isReady);
-
-    s32 numReady = 0;
-    for (bool isReady : gs.isReady) {
-        if (isReady) numReady++;
-    }
-    bool isAllReady = gs.numPlayers > 1 && numReady == gs.numPlayers;
-    if (isAllReady) {
-        gs.allReadyCountdown--;
-        // check against 1 to avoid collision with check above for 0
-        if (gs.allReadyCountdown == 0) { 
-            gs.scene = PotpScene::ASSASSIN;
-            PotpInitAssassinScene(gs);
-        }
-    }
-    // if we're not all ready, but countdown already started, restart countdown
-    else if (gs.allReadyCountdown != ASSASSIN_ALL_READY_COUNTDOWN_FRAMES) {
-        gs.allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
-    }
-}
-
-// return -1 if more than 1 player is alive, return playeridx of player if only one is alive
-s32 getOnePlayerAliveOrNone(Ninja* playerNinjas, u32 numPlayerNinjas) {
-    u32 numPlayersAlive = 0;
-    s32 playerIdx = -1;
-    for (s32 playerNinjaIdx = 0; playerNinjaIdx < numPlayerNinjas; playerNinjaIdx++) {
-        Ninja& playerNinja = playerNinjas[playerNinjaIdx];
-        if (!playerNinja.isDead) {
-            numPlayersAlive++;
-            playerIdx = playerNinjaIdx;
-        }
-    }
-    return numPlayersAlive == 1 ? playerIdx : -1;
-}
-
-void onPlayerWon(GameState& gs) { // called once when player wins
-    SetText(gs.playerWonText, ("Player " + std::to_string(gs.winningPlayer) + " wins!").c_str());
-}
-void playerWonTick(GameState& gs) {
-    gs.playerWonTimer--;
-    if (gs.playerWonTimer <= 0) {
-        gs.playerWonTimer = PLAYER_WON_MAX_TIMER;
-        PotpInitControllerSetupMenu(gs);
-    }
-}
-
-
-s32 CheckNinjaActivatedAllStatues(Ninja* playerNinjas, u32 numPlayerNinjas) {
-    for (s32 playerNinjaIdx = 0; playerNinjaIdx < numPlayerNinjas; playerNinjaIdx++) {
-        Ninja& playerNinja = playerNinjas[playerNinjaIdx];
-        if (!playerNinja.isDead && playerNinja.numStatuesActivated >= NUM_STATUES) {
-            return playerNinjaIdx;
-        }
-    }
-    return -1;
-}
-
-void CheckWinConditions(GameState& gs, Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
-    if (gs.winningPlayer == -1) {
-        // player has won if all other players are dead
-        s32 playerIdxWon = getOnePlayerAliveOrNone(playerNinjas, numPlayerNinjas);
-        if (playerIdxWon == -1) {
-            // or if someone activated all statues
-            playerIdxWon = CheckNinjaActivatedAllStatues(playerNinjas, numPlayerNinjas);
-        }
-
-
-        if (playerIdxWon != -1) {
-            // kill all ninjas that are not our winning player
-            for (s32 aiNinjaIdx = 0; aiNinjaIdx < numAINinjas; aiNinjaIdx++) {
-                Ninja& aiNinja = aiNinjas[aiNinjaIdx];
-                aiNinja.Die();
-            }
-            for (s32 playerNinjaIdx = 0; playerNinjaIdx < numPlayerNinjas; playerNinjaIdx++) {
-                Ninja& playerNinja = playerNinjas[playerNinjaIdx];
-                if (playerNinjaIdx != playerIdxWon) {
-                    playerNinja.Die();
-                }
-            }
-            // player won!
-            gs.winningPlayer = playerIdxWon;
-            onPlayerWon(gs);
-            std::cout << "Player " << playerIdxWon << " wins!\n";
-        }
-    }
-    else {
-        playerWonTick(gs);
-    }
-}
 
 void PotpUpdate(GameState& gs, UserInput& inputs) {
     if (gs.scene == PotpScene::CONTROLLER_SETUP) {
-        PotpControllerSetupTick(gs, inputs);
+        ControllerSetupSceneTick(gs, inputs);
     }
     else if (gs.scene == PotpScene::ASSASSIN) {
-        UpdateNinjas(inputs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
-        CheckWinConditions(gs, gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
-        UpdateStatues(gs.statues, ARRAY_SIZE(gs.statues), gs.playerNinjas, gs.numPlayers);
-        std::string playerScores = "";
-        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
-            Ninja& playerNinja = gs.playerNinjas[i];
-            const char* playerScore = ("Player " + std::to_string(i+1) + ": " + std::to_string(playerNinja.numStatuesActivated) + "        ").c_str();
-            playerScores.append(playerScore);
-        }
-        SetText(gs.playerScoresText, playerScores);
+        AssassinSceneTick(gs, inputs);
     }
     else if (gs.scene == PotpScene::TITLE) {
-        for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
-            bool isStartPressed = pollRawInput(i, ControllerType::KEYBOARD, ButtonValues::START) || pollRawInput(i, ControllerType::CONTROLLER, ButtonValues::START);
-            if (isStartPressed) {
-                PotpInitControllerSetupMenu(gs);
-            }
-        }
+        TitleScreenSceneTick(gs, inputs);
     }
 }
 
-void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
-    Camera& cam = Camera::GetMainCamera();
-    gs.howToPlayBackgroundSprite.DrawSprite(cam, glm::vec2(0.0f, 0.0f), glm::vec2(cam.screenWidth, cam.screenHeight));
-    // draw player indicators at bottom of screen
-    // "player indicators" here refers to the UI that shows what players are ingame (1-4) and if they are using keyboard/controller
-    const f32 playerIndicatorsSize = 80.0 * GetWindowWidthScaleFactor();
-    const f32 playerTextSize = 1.0 * GetWindowWidthScaleFactor();
-    const glm::vec2 playerIndicatorsSizeVec = {playerIndicatorsSize, playerIndicatorsSize};
-    const f32 playerIndicatorsY = 45.0 + (playerIndicatorsSizeVec.y/2.0);
-    const f32 playerIndicatorsStartX = (f32)Camera::GetScreenWidth()/playerIndicatorsSizeVec.x+20.0;
-    const f32 playerIndicatorsXSpacing = playerIndicatorsSize + (f32)Camera::GetScreenWidth()/8.0;
-    const f32 playerTextYOffset = -30.0;
-
-    glm::vec3 rotationAxis = {0.0, 0.0, 1.0};
-    glm::vec4 color = {1.0, 1.0, 1.0, 1.0};
-
-    for (s32 playerIdx = 0; playerIdx < MAX_NUM_PLAYERS; playerIdx++) {
-        bool isReady = gs.isReady[playerIdx];
-        color.a = isReady ? 1.0 : 0.3;
-        glm::vec2 pos = {playerIndicatorsStartX + playerIndicatorsXSpacing * playerIdx, playerIndicatorsY};
-        Shapes::DrawSquare(pos, playerIndicatorsSizeVec, sin(GetTime())*50.0, rotationAxis, color);
-
-        ControllerType controllerType = inputs.controllers[playerIdx].type;
-        Sprite inputDeviceSprite;
-        inputDeviceSprite = controllerType == ControllerType::CONTROLLER ? 
-                gs.controllerSprite : controllerType == ControllerType::KEYBOARD ? gs.keyboardSprite : gs.blankControllerSprite;
-
-        inputDeviceSprite.DrawSprite(cam, pos, playerIndicatorsSizeVec, 0.0, rotationAxis, color);
-
-        const char* playerText = ("Player " + std::to_string(playerIdx+1) + " [" + std::string(isReady ? "" : "NOT ") + "READY]").c_str();
-        SetText(gs.playerTexts[playerIdx], playerText);
-        DrawText(gs.playerTexts[playerIdx], pos.x, pos.y + playerTextYOffset, playerTextSize, color.r, color.b, color.g, color.a);
-    }
-
-    if (gs.allReadyCountdown != ASSASSIN_ALL_READY_COUNTDOWN_FRAMES)
-        DrawText(gs.countdownText, 10.0, 10.0, 1.3, 1.0, 1.0, 1.0, 1.0);
-
-    DrawText(gs.instructionsText, Camera::GetScreenWidth()/2.0 - 100.0, 15.0,   1.2,    1.0, 1.0, 1.0, 1.0);
-}
 
 
 void PotpDraw(const GameState& gs, const UserInput& inputs) {
@@ -299,26 +86,15 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
         } break;
         case PotpScene::CONTROLLER_SETUP:
         {
-            DrawControllerSetupScene(gs, inputs);
+            ControllerSetupSceneDraw(gs, inputs);
         } break;
         case PotpScene::ASSASSIN:
         {
-            gs.background.DrawSprite(cam, glm::vec2(0.0f, 0.0f), glm::vec2(cam.screenWidth, cam.screenHeight));
-            for (const Statue& statue : gs.statues) {
-                statue.Draw();
-            }
-            DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
-
-            DrawText(gs.playerScoresText, 5.0, 5.0, 1.0 * GetWindowWidthScaleFactor());
-            if (gs.winningPlayer != -1) {
-                DrawText(gs.playerWonText, 15.0, 15.0, 2.0 * GetWindowWidthScaleFactor(), 1.0, 1.0, 1.0, 1.0);
-            }
-
+            AssassinSceneDraw(gs, inputs);
         } break;
         case PotpScene::TITLE:
         {
-            gs.titleScreenSplash.DrawSprite(cam, {0.0, 0.0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}, 0.0, {0.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0});
-            DrawText(gs.titleScreenText, Camera::GetScreenWidth() - 250.0, Camera::GetScreenHeight() -50.0, 1.5, 1.0, 1.0, 1.0, 1.0);
+            TitleScreenSceneDraw(gs, inputs);
         } break;
     }
 }
