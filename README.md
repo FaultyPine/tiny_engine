@@ -64,6 +64,11 @@ Goal-setting for milestone
 #### Project submission
 - ~~intro screen w/visuals for how to play/controls like in og game~~
 
+#### Extra
+- Clean up scene code
+    - use function pointers to generalize scene ticks
+    - swap function pointers on scene change (scene init, scene tick, scene end)
+    - seperate scene functions into different files
 
 ### Stretch Goals
 - Implement Z indexing
