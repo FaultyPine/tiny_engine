@@ -56,9 +56,9 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     Spritesheet::Animation anim = {};
     anim.animKey = NinjaAnimStates::IDLE;
     ninjaSpritesheet.SetAnimation(anim);
-    Spritesheet smokeGrenade = Spritesheet(UseResPath("potp/SmokeCloud.png").c_str(), 1, 1, texProps);
-    smokeGrenade.SetDefaultFramerate(24);
-    smokeGrenade.SetAnimationIndices(0, {0});
+    Spritesheet smokeGrenade = Spritesheet(UseResPath("potp/tdingle_smoke.png").c_str(), 3, 2, texProps);
+    smokeGrenade.SetDefaultFramerate(12);
+    smokeGrenade.SetAnimationIndices(0, {0,1,2,3,4});
     anim = {};
     anim.animKey = 0;
     smokeGrenade.SetAnimation(anim);
