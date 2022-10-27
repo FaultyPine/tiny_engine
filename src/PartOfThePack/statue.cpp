@@ -158,5 +158,5 @@ void UpdateStatues(Statue* statues, u32 numStatues, Ninja* playerNinjas, u32 num
 }
 
 void Statue::Draw() const {
-    spritesheet.Draw(Camera::GetMainCamera(), entity.position, entity.size, 0.0, {0.0,0.0,1.0}, {1.0,1.0,1.0,1.0});
+    spritesheet.Draw(Camera::GetMainCamera(), entity.position, entity.size, 0.0, {0.0,0.0,1.0}, {1.0,1.0,1.0,1.0}, true);
 }

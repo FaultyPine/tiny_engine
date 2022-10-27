@@ -1,5 +1,6 @@
 #include "sprite.h"
 #include "tiny_engine/tiny_fs.h"
+#include "tiny_engine/math.h"
 
 Sprite::Sprite(const Texture& mainTex) {
     this->mainTex = mainTex;
@@ -9,12 +10,21 @@ Sprite::Sprite(const Texture& mainTex) {
 
 
 void Sprite::DrawSprite(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color) const {
+                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize) const {
     if (!isValid()) {
         std::cout << "Tried to draw invalid sprite!\n";
         exit(1);
         return;
     }
+
+    if (adjustToScreensize) {
+        glm::vec2 screenMin = cam.GetMinScreenDimensions();
+        size.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), size.x) /1.1;
+        size.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), size.y) /1.1;
+        position.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), position.x);
+        position.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), position.y);
+    }
+
     // set up transform of the actual sprite
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(position, 0.0f));  

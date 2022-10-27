@@ -86,6 +86,6 @@ Sprite Spritesheet::GetCurrentSprite() const {
 }
 
 void Spritesheet::Draw(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color) const {
-    this->GetCurrentSprite().DrawSprite(cam, position, size, rotate, rotationAxis, color);
+                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize) const {
+    this->GetCurrentSprite().DrawSprite(cam, position, size, rotate, rotationAxis, color, adjustToScreensize);
 }

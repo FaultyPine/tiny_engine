@@ -7,24 +7,9 @@
 
 #define MAX_NUM_PLAYERS 4
 
-#define MIN_WIDTH 800
-#define MIN_HEIGHT 600
-#define MAX_WIDTH 1300
-#define MAX_HEIGHT 975
-
-/// returns the width of the window - minimum width of the window
-inline f32 GetWindowAdditionalWidth() {
+inline f32 GetWindowWidthScaleFactor() {
     f32 width = Camera::GetScreenWidth();
-    return width - MIN_WIDTH;
-}
-/// returns the height of the window - minimum height of the window
-inline f32 GetWindowAdditionalHeight() {
-    f32 height = Camera::GetScreenHeight();
-    return height - MIN_HEIGHT;
-}
-inline f32 GetWindowWidthScale01() {
-    f32 width = Camera::GetScreenWidth();
-    return width / MIN_WIDTH;
+    return width / Camera::GetMainCamera().GetMinScreenDimensions().x;
 }
 
 struct CollisionBox {
@@ -44,7 +29,7 @@ struct Entity {
 
     inline void Draw() const {
         Camera& cam = Camera::GetMainCamera();
-        sprite.DrawSprite(cam, glm::vec2(position.x, position.y), size, rotation, glm::vec3(0.0, 0.0, 1.0), color);
+        sprite.DrawSprite(cam, position, size, rotation, glm::vec3(0.0, 0.0, 1.0), color);
     }
     inline bool isCollidingWith(const Entity& other) const {
         return Math::isOverlappingRect2D(this->position, this->size, other.position, other.size);

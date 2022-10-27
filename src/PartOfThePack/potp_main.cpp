@@ -80,7 +80,9 @@ void PotpInitAssassinScene(GameState& gs) {
 }
 
 void PotpInit(GameState& gs, UserInput& inputs) {
-    SetMinAndMaxWindowSize(MIN_WIDTH, MIN_HEIGHT, MAX_WIDTH, MAX_HEIGHT);
+    Camera& cam = Camera::GetMainCamera();
+    SetMinAndMaxWindowSize(cam.GetMinScreenDimensions().x, cam.GetMinScreenDimensions().y, 
+                            cam.GetMaxScreenDimensions().x, cam.GetMaxScreenDimensions().y);
     // manually init random seed so we can serialize it (with the rest of gamestate) if need be
     f64 time = GetTime();
     gs.initialRandomSeed = hash((const char*)&time, sizeof(f64));
@@ -103,7 +105,7 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // Sprites
     gs.background = Sprite(backgroundTex);
 
-    #if 1
+    #if 0
     { // for debugging, init directly to other scenes
         #ifdef TINY_DEBUG 
         // This is for debugging - when I boot directly into the gameplay scene without controller setup
@@ -250,8 +252,8 @@ void DrawControllerSetupScene(const GameState& gs, const UserInput& inputs) {
     gs.howToPlayBackgroundSprite.DrawSprite(cam, glm::vec2(0.0f, 0.0f), glm::vec2(cam.screenWidth, cam.screenHeight));
     // draw player indicators at bottom of screen
     // "player indicators" here refers to the UI that shows what players are ingame (1-4) and if they are using keyboard/controller
-    const f32 playerIndicatorsSize = 80.0 * GetWindowWidthScale01();
-    const f32 playerTextSize = 1.0 * GetWindowWidthScale01();
+    const f32 playerIndicatorsSize = 80.0 * GetWindowWidthScaleFactor();
+    const f32 playerTextSize = 1.0 * GetWindowWidthScaleFactor();
     const glm::vec2 playerIndicatorsSizeVec = {playerIndicatorsSize, playerIndicatorsSize};
     const f32 playerIndicatorsY = 45.0 + (playerIndicatorsSizeVec.y/2.0);
     const f32 playerIndicatorsStartX = (f32)Camera::GetScreenWidth()/playerIndicatorsSizeVec.x+20.0;
@@ -307,9 +309,9 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
             }
             DrawNinjas(gs.aiNinjas, MAX_NUM_AI_NINJAS, gs.playerNinjas, gs.numPlayers);
 
-            DrawText(gs.playerScoresText, 5.0, 5.0, 1.0 * GetWindowWidthScale01());
+            DrawText(gs.playerScoresText, 5.0, 5.0, 1.0 * GetWindowWidthScaleFactor());
             if (gs.winningPlayer != -1) {
-                DrawText(gs.playerWonText, 15.0, 15.0, 2.0 * GetWindowWidthScale01(), 1.0, 1.0, 1.0, 1.0);
+                DrawText(gs.playerWonText, 15.0, 15.0, 2.0 * GetWindowWidthScaleFactor(), 1.0, 1.0, 1.0, 1.0);
             }
 
         } break;

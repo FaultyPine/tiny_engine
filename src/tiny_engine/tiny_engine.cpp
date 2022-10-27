@@ -69,6 +69,11 @@ void ClearGLColorBuffer() {
 
 void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 maxHeight) {
     glfwSetWindowSizeLimits(glob_glfw_window, minWidth, minHeight, maxWidth, maxHeight);
+    Camera& cam = Camera::GetMainCamera();
+    cam.minScreenWidth = minWidth;
+    cam.minScreenHeight = minHeight;
+    cam.maxScreenWidth = maxWidth;
+    cam.maxScreenHeight = maxHeight;
 }
 
 void EngineLoop() {

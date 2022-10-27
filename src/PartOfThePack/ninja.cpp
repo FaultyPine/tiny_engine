@@ -9,8 +9,8 @@
 #include "tiny_engine/tiny_audio.h"
 
 glm::vec2 GetRandomAIDesiredPos() {
-    u32 screenWidth = Camera::GetScreenWidth();
-    u32 screenHeight = Camera::GetScreenHeight();
+    u32 screenWidth = Camera::GetMainCamera().GetMinScreenDimensions().x;
+    u32 screenHeight = Camera::GetMainCamera().GetMinScreenDimensions().y;
     
     u32 randXPos = GetRandom(0, screenWidth);
     u32 randYPos = GetRandom(0, screenHeight);
@@ -307,7 +307,7 @@ void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
     if (horzFlip) rotation = 180.0;
     
     ninja.spritesheet.Draw(Camera::GetMainCamera(), 
-            ninja.entity.position, ninja.entity.size, rotation, glm::vec3(0.0, 1.0, 0.0), ninja.entity.color);
+            ninja.entity.position, ninja.entity.size, rotation, glm::vec3(0.0, 1.0, 0.0), ninja.entity.color, true);
     
     // NOTE: FOR DEBUGGING
     glm::vec4 col = isPlayer ? glm::vec4(0.0, 1.0, 0.0, 1.0) : glm::vec4(1.0, 0.0, 0.0, 1.0);
@@ -323,7 +323,7 @@ void DrawSmokeGrenade(const Ninja& ninja) {
         ninja.smokeGrenade.sprite.Draw(Camera::GetMainCamera(),
                 ninja.smokeGrenade.pos, smokeSpriteSize, 
                 smokeSpriteRotation, {0.0, 0.0, 1.0}, 
-                {1.0, 1.0, 1.0, 1.0}
+                {1.0, 1.0, 1.0, 1.0}, true
         );
     }
 }
