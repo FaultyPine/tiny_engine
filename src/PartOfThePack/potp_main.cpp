@@ -10,6 +10,36 @@
 #include "controller_setup_scene.h"
 #include "title_screen_scene.h"
 
+static const SceneInit initScenes[] = {
+    NoSceneInit,
+    ControllerSetupSceneInit,
+    AssassinSceneInit,
+    TitleScreenSceneInit
+};
+static const SceneTick tickScenes[] = {
+    NoSceneTick,
+    ControllerSetupSceneTick,
+    AssassinSceneTick,
+    TitleScreenSceneTick
+};
+static const SceneDraw drawScenes[] = {
+    NoSceneDraw,
+    ControllerSetupSceneDraw,
+    AssassinSceneDraw,
+    TitleScreenSceneDraw
+};
+static const SceneEnd endScenes[] = {
+    NoSceneEnd,
+    ControllerSetupSceneEnd,
+    AssassinSceneEnd,
+    TitleScreenSceneEnd
+};
+
+void ChangeScene(PotpScene newScene, GameState& gs) {
+    endScenes[newScene](gs);
+    gs.scene = newScene;
+    initScenes[newScene](gs);
+}
 
 void PotpInit(GameState& gs, UserInput& inputs) {
     Camera& cam = Camera::GetMainCamera();
@@ -51,52 +81,23 @@ void PotpInit(GameState& gs, UserInput& inputs) {
             }
         }
         #endif
-        //ControllerSetupSceneInit(gs);
-        AssassinSceneInit(gs); // using this for debugging to boot directly into gameplay
+        //initScenes[PotpScene::CONTROLLER_SETUP](gs);
+        // using this for debugging to boot directly into gameplay
+        initScenes[PotpScene::ASSASSIN](gs);
     }
     #else
     // init game to title screen
-    TitleScreenSceneInit(gs);
+    initScenes[PotpScene::TITLE](gs);
     #endif
 }
 
 
 void PotpUpdate(GameState& gs, UserInput& inputs) {
-    if (gs.scene == PotpScene::CONTROLLER_SETUP) {
-        ControllerSetupSceneTick(gs, inputs);
-    }
-    else if (gs.scene == PotpScene::ASSASSIN) {
-        AssassinSceneTick(gs, inputs);
-    }
-    else if (gs.scene == PotpScene::TITLE) {
-        TitleScreenSceneTick(gs, inputs);
-    }
+    tickScenes[gs.scene](gs, inputs);
 }
 
-
-
 void PotpDraw(const GameState& gs, const UserInput& inputs) {
-    const Camera& cam = Camera::GetMainCamera();
-
-    switch (gs.scene) {
-
-        case PotpScene::NO_SCENE:
-        {
-
-        } break;
-        case PotpScene::CONTROLLER_SETUP:
-        {
-            ControllerSetupSceneDraw(gs, inputs);
-        } break;
-        case PotpScene::ASSASSIN:
-        {
-            AssassinSceneDraw(gs, inputs);
-        } break;
-        case PotpScene::TITLE:
-        {
-            TitleScreenSceneDraw(gs, inputs);
-        } break;
-    }
+    drawScenes[gs.scene](gs, inputs);
 }
 
 

@@ -57,7 +57,7 @@ void playerWonTick(GameState& gs) {
     gs.playerWonTimer--;
     if (gs.playerWonTimer <= 0) {
         gs.playerWonTimer = PLAYER_WON_MAX_TIMER;
-        ControllerSetupSceneInit(gs);
+        ChangeScene(PotpScene::CONTROLLER_SETUP, gs);
     }
 }
 
@@ -130,6 +130,6 @@ void AssassinSceneDraw(const GameState& gs, const UserInput& inputs) {
         DrawText(gs.playerWonText, 15.0, 15.0, 2.0 * GetWindowWidthScaleFactor(), 1.0, 1.0, 1.0, 1.0);
     }
 }
-void AssassinSceneEnd(GameState& gs, UserInput& inputs) {
+void AssassinSceneEnd(GameState& gs) {
 
 }

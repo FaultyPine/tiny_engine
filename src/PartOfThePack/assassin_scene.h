@@ -7,6 +7,6 @@
 void AssassinSceneInit(GameState& gs);
 void AssassinSceneTick(GameState& gs, UserInput& inputs);
 void AssassinSceneDraw(const GameState& gs, const UserInput& inputs);
-void AssassinSceneEnd(GameState& gs, UserInput& inputs);
+void AssassinSceneEnd(GameState& gs);
 
 #endif

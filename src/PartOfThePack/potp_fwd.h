@@ -15,8 +15,13 @@ struct UserInput;
 MAKE_FUNCTION_TYPE(SceneInit, void, GameState&);
 MAKE_FUNCTION_TYPE(SceneTick, void, GameState&, UserInput&);
 MAKE_FUNCTION_TYPE(SceneDraw, void, const GameState&, const UserInput&);
-MAKE_FUNCTION_TYPE(SceneEnd, void, GameState&, UserInput&);
+MAKE_FUNCTION_TYPE(SceneEnd, void, GameState&);
 
+#define NO_IMPL_PRINT_() std::cout << "No implementation!" << __LINE__ << "\n"
+inline void NoSceneInit(GameState& gs) {NO_IMPL_PRINT_();}
+inline void NoSceneTick(GameState& gs, UserInput& inputs) {NO_IMPL_PRINT_();}
+inline void NoSceneDraw(const GameState& gs, const UserInput& inputs) {NO_IMPL_PRINT_();}
+inline void NoSceneEnd(GameState& gs) {NO_IMPL_PRINT_();}
 
 // for text rendering - allows text to scale as window resizes
 inline f32 GetWindowWidthScaleFactor() {

@@ -20,7 +20,7 @@ void TitleScreenSceneTick(GameState& gs, UserInput& inputs) {
     for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
         bool isStartPressed = pollRawInput(i, ControllerType::KEYBOARD, ButtonValues::START) || pollRawInput(i, ControllerType::CONTROLLER, ButtonValues::START);
         if (isStartPressed) {
-            ControllerSetupSceneInit(gs);
+            ChangeScene(PotpScene::CONTROLLER_SETUP, gs);
         }
     }
 }
@@ -29,6 +29,6 @@ void TitleScreenSceneDraw(const GameState& gs, const UserInput& inputs) {
     gs.titleScreenSplash.DrawSprite(cam, {0.0, 0.0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}, 0.0, {0.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 1.0});
     DrawText(gs.titleScreenText, Camera::GetScreenWidth() - 250.0, Camera::GetScreenHeight() -50.0, 1.5, 1.0, 1.0, 1.0, 1.0);
 }
-void TitleScreenSceneEnd(GameState& gs, UserInput& inputs) {
+void TitleScreenSceneEnd(GameState& gs) {
 
 }

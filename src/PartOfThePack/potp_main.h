@@ -20,6 +20,9 @@ enum PotpScene {
     TITLE,
 };
 
+
+void ChangeScene(PotpScene newScene, GameState& gs);
+
 struct GameState {
     PotpScene scene = PotpScene::NO_SCENE;
     

@@ -8,7 +8,7 @@
 void TitleScreenSceneInit(GameState& gs);
 void TitleScreenSceneTick(GameState& gs, UserInput& inputs);
 void TitleScreenSceneDraw(const GameState& gs, const UserInput& inputs);
-void TitleScreenSceneEnd(GameState& gs, UserInput& inputs);
+void TitleScreenSceneEnd(GameState& gs);
 
 
 

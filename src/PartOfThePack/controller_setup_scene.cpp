@@ -44,8 +44,7 @@ void ControllerSetupSceneTick(GameState& gs, UserInput& inputs) {
         gs.allReadyCountdown--;
         // check against 1 to avoid collision with check above for 0
         if (gs.allReadyCountdown == 0) { 
-            gs.scene = PotpScene::ASSASSIN;
-            AssassinSceneInit(gs);
+            ChangeScene(PotpScene::ASSASSIN, gs);
         }
     }
     // if we're not all ready, but countdown already started, restart countdown
@@ -92,6 +91,6 @@ void ControllerSetupSceneDraw(const GameState& gs, const UserInput& inputs) {
 
     DrawText(gs.instructionsText, Camera::GetScreenWidth()/2.0 - 100.0, 15.0,   1.2,    1.0, 1.0, 1.0, 1.0);
 }
-void ControllerSetupSceneEnd(GameState& gs, UserInput& inputs) {
+void ControllerSetupSceneEnd(GameState& gs) {
 
 }

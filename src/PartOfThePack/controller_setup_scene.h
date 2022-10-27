@@ -8,7 +8,7 @@
 void ControllerSetupSceneInit(GameState& gs);
 void ControllerSetupSceneTick(GameState& gs, UserInput& inputs);
 void ControllerSetupSceneDraw(const GameState& gs, const UserInput& inputs);
-void ControllerSetupSceneEnd(GameState& gs, UserInput& inputs);
+void ControllerSetupSceneEnd(GameState& gs);
 
 
 #endif
