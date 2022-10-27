@@ -13,6 +13,10 @@ struct Camera {
 
     u32 screenWidth = 800;
     u32 screenHeight = 600;
+    u32 minScreenWidth = 800;
+    u32 maxScreenWidth = 1300;
+    u32 minScreenHeight = 600;
+    u32 maxScreenHeight = 975;
     f32 FOV = 45.0f;
     f32 nearClip = 0.1f;
     f32 farClip = 100.0f;
@@ -28,6 +32,9 @@ struct Camera {
         static Camera mainCamera;
         return mainCamera;
     }
+    /// returns glm::vec2(minScreenWidth, minScreenHeight)
+    glm::vec2 GetMinScreenDimensions() const { return glm::vec2(minScreenWidth, minScreenHeight); }
+    glm::vec2 GetMaxScreenDimensions() const { return glm::vec2(maxScreenWidth, maxScreenHeight); }
     inline static u32 GetScreenWidth()  { return GetMainCamera().screenWidth; }
     inline static u32 GetScreenHeight() { return GetMainCamera().screenHeight; }
 };
