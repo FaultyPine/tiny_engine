@@ -16,10 +16,10 @@ void DrawShape(const glm::vec2& pos, const glm::vec2& size,
 void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color, bool hollow = false);
 
 void DrawSquare(const glm::vec2& pos, const glm::vec2& size, 
-            f32 rotation, const glm::vec3& rotationAxis, 
+            f32 rotationDegrees, const glm::vec3& rotationAxis, 
             const glm::vec4& color, bool isHollow = false);
 
-void DrawLine(const glm::vec2 origin, const glm::vec2& dest, const glm::vec4& color, f32 width);
+void DrawLine(const glm::vec2& origin, const glm::vec2& dest, const glm::vec4& color = {1.0,1.0,1.0,1.0}, f32 width = 2.0);
 
 }
 #endif

@@ -333,7 +333,6 @@ void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinja
         const Ninja& ninja = aiNinjas[i];
         if (ninja.entity.active) {
             DrawNinja(ninja, ninja.isSpriteFlipped, false);
-            //Shapes::DrawLine(ninja.entity.position, ninja.aiDesiredPos, {1.0, 0.0, 0.0, 1.0}, 5.0);
         }
     }
     for (s32 i = 0; i < numPlayerNinjas; i++) {
