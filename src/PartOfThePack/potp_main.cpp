@@ -9,6 +9,7 @@
 #include "assassin_scene.h"
 #include "controller_setup_scene.h"
 #include "title_screen_scene.h"
+//#include "tiny_engine/job_system.h"
 
 static const SceneInit initScenes[] = {
     NoSceneInit,
@@ -42,6 +43,7 @@ void ChangeScene(PotpScene newScene, GameState& gs) {
 }
 
 void PotpInit(GameState& gs, UserInput& inputs) {
+    //JobSystem::Instance().Initialize();
     Camera& cam = Camera::GetMainCamera();
     SetMinAndMaxWindowSize(cam.GetMinScreenDimensions().x, cam.GetMinScreenDimensions().y, 
                             cam.GetMaxScreenDimensions().x, cam.GetMaxScreenDimensions().y);
@@ -67,7 +69,7 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // Sprites
     gs.background = Sprite(backgroundTex);
 
-    #if 0
+    #if 1
     { // for debugging, init directly to other scenes
         #ifdef TINY_DEBUG 
         // This is for debugging - when I boot directly into the gameplay scene without controller setup
@@ -100,6 +102,9 @@ void PotpDraw(const GameState& gs, const UserInput& inputs) {
     drawScenes[gs.scene](gs, inputs);
 }
 
+void PotpTerminate(GameState& gs) {
+    //JobSystem::Instance().Shutdown();
+}
 
 
 
@@ -144,6 +149,10 @@ void MainUpdate() {
 
     // draw framebuffer to screen with post processing shader
     fb.DrawToScreen();
+}
+
+void Terminate() {
+    PotpTerminate(gs);
 }
 
 } // namespace Potp

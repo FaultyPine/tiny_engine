@@ -22,15 +22,16 @@ void gameTick() {
     Potp::MainUpdate();
 }
 
+void endGame() {
+    Potp::Terminate();
+    TerminateGame();
+}
 
 int main(int argc, char *argv[]) {
     preLoopInit();
-
-    while(!ShouldCloseWindow())
-    {
+    while(!ShouldCloseWindow()) {
         gameTick();
     }
-
-    TerminateGame();
+    endGame();
     return 0;
 }

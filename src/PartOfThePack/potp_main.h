@@ -10,6 +10,7 @@ namespace Potp {
 
 void MainInit();
 void MainUpdate();
+void Terminate();
 
 }
 

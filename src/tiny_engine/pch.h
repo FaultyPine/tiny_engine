@@ -18,6 +18,7 @@
 #include <random>
 #include <map>
 #include <math.h>
+#include <algorithm>
 // ----------------
 
 #include <glad/glad.h>
