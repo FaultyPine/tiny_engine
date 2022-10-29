@@ -21,7 +21,7 @@ BUILD_DIR = "build"
 def get_linker_args():
     if is_windows():
         return var_contents("""
-            -Llib/glfw/windows -lglfw3 -lpthread -lgdi32
+            -Llib/glfw/windows -lpthread -lglfw3 -lgdi32
         """)
     elif is_macos():
         return var_contents("""
@@ -29,7 +29,7 @@ def get_linker_args():
         """)
     elif is_linux():
         return var_contents("""
-            -Llib/glfw/linux -lglfw -lpthread -ldl
+            -Llib/glfw/linux -lglfw -lGL -lm -ldl -lXinerama -lXrandr -lXi -lXcursor -lX11 -lXxf86vm -lpthread
         """)
     else:
         print("Unknown platform! Couldn't get linker args")
