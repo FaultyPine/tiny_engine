@@ -1,21 +1,17 @@
-name: Build Windows
-
+name: ci
 on:
+  pull_request:
   push:
     branches:
-    - master
+      - main
+      - master
 
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: build
-      run: ninja.exe
-    - name: gitkeep
-      run: rm artifacts/.gitkeep
-    - name: artifacts
-      uses: actions/upload-artifact@v1
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
       with:
-        name: Windows
-        path: artifacts
+        python-version: '3.10' 
+    - run: python build.py
