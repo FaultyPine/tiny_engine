@@ -13,7 +13,7 @@ jobs:
     - name: install
       run: sudo apt install gcc g++ make -y
     - name: build
-      run: sh compile.sh out
+      run: ./ninja-linux
     - name: gitkeep
       run: rm artifacts/.gitkeep
     - name: artifacts
