@@ -14,4 +14,8 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10' 
-    - run: python build.py
+    - run: python build.py norun
+    - uses: actions/upload-artifact@v3
+    with:
+      name: build
+      path: build/app.exe
