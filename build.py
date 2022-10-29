@@ -29,7 +29,7 @@ def get_linker_args():
         """)
     elif is_linux():
         return var_contents("""
-            -Llib/glfw/linux -lglfw -lm -ldl -lX11 -lpthread
+            -Llib/glfw/linux -ldl -lpthread  -lglfw 
         """)
     else:
         print("Unknown platform! Couldn't get linker args")
@@ -40,9 +40,6 @@ COMPILER_ARGS = var_contents("""
     -ggdb -Iinclude -Isrc -std=c++11 -O0
 """)
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
-BUILD_COMMAND = var_contents(f"""
-    g++ -o build/{APP_NAME} {COMPILER_ARGS} {" ".join(SOURCES)} {LINKER_ARGS}
-""")
 
 
 def get_ninja_command():
@@ -70,7 +67,6 @@ def get_obj_from_src_file(filename):
 def build():
     generate_ninja_build()
     start_time = time.time()
-    #command(BUILD_COMMAND)
     command(get_ninja_command())
     elapsed = round(time.time() - start_time, 3)
     print("Built!")
