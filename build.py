@@ -29,7 +29,7 @@ def get_linker_args():
         """)
     elif is_linux():
         return var_contents("""
-            -Llib/glfw/linux -lglfw -lGL -lm -ldl -lXinerama -lXrandr -lXi -lXcursor -lX11 -lXxf86vm -lpthread
+            -Llib/glfw/linux -lglfw -lm -ldl -lX11 -lpthread
         """)
     else:
         print("Unknown platform! Couldn't get linker args")
