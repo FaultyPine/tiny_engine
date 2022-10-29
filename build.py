@@ -23,7 +23,7 @@ BUILD_COMMAND = var_contents(f"""
 def get_ninja_command():
     platform = sys.platform
     if platform == "linux" or platform == "linux2": # linux
-        return "./ninja-linux"
+        return "chmod u+x ./ninja-linux && ./ninja-linux"
     elif platform == "darwin": # mac
         return "./ninja-mac"
     elif platform == "win32" or platform == "cygwin": # windows

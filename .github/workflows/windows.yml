@@ -1,4 +1,4 @@
-name: ci
+name: windows-ci
 on:
   pull_request:
   push:
