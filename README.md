@@ -26,10 +26,13 @@ Libraries Used:
 - [tiny_obj_loader](https://github.com/tinyobjloader/tinyobjloader)
 
 Features:
+- Postprocessing
+- Job System (multithreading)
+- sprite rendering
+- spritesheet parsing/animating
+- .obj file parsing/mesh rendering
+- vector shape drawing (sqaures, circles, lines)
 - deterministic randomness
-- custom spritesheet parsing
-- vector shape drawing
-- .obj file parsing
 
 ## Part Of The Pack
 
@@ -76,7 +79,8 @@ Goal-setting for milestone
 - Main Menu
 - Settings menu
 - Controls menu
-
+- Mac support?????
+- ..... Multiplayer???? lmao
 
 ### Possible Future Engine Features:
 - ~~debug line drawing~~
