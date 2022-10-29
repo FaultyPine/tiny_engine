@@ -1,6 +1,6 @@
 cxx = g++
 compiler_args = -ggdb -Iinclude -Isrc -std=c++11 -O0
-linker_args = -Llib/glfw -lglfw3 -lpthread -lgdi32
+linker_args = -Llib/glfw/linux -lglfw
 builddir = build
 rule compile
   command = $cxx -MD -MF $out.d $compiler_args -c $in -o $out
@@ -39,7 +39,7 @@ build $builddir/tiny_audio.o: compile src/tiny_engine/tiny_audio.cpp
 build $builddir/tiny_engine.o: compile src/tiny_engine/tiny_engine.cpp
 build $builddir/tiny_fs.o: compile src/tiny_engine/tiny_fs.cpp
 build $builddir/tiny_text.o: compile src/tiny_engine/tiny_text.cpp
-build $builddir/app.exe: link $builddir/main.o $builddir/ObjParser.o $
+build $builddir/app.out: link $builddir/main.o $builddir/ObjParser.o $
     $builddir/assassin_scene.o $builddir/controller_setup_scene.o $
     $builddir/ninja.o $builddir/potp_input.o $builddir/potp_main.o $
     $builddir/statue.o $builddir/title_screen_scene.o $

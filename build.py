@@ -1,39 +1,63 @@
 import sys, os, subprocess, time, glob
 from ninja_syntax import Writer
 
+platform = sys.platform
+def is_windows():
+    return platform == "win32" or platform == "cygwin"
+def is_linux():
+    return platform == "linux" or platform == "linux2"
+def is_macos():
+    return platform == "darwin" 
+
 def var_contents(contents):
     return contents.replace("\n", "").strip()
 def get_files_with_ext(basedir, ext):
     return [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
 
-APP_NAME = "app"
+
+APP_NAME = "app.exe" if is_windows() else "app.out"
 SOURCE_DIR = "src"
 BUILD_DIR = "build"
-LINKER_ARGS = var_contents("""
-    -Llib/glfw -lglfw3 -lpthread -lgdi32
-""")
+def get_linker_args():
+    if is_windows():
+        return var_contents("""
+            -Llib/glfw/windows -lglfw3 -lpthread -lgdi32
+        """)
+    elif is_macos():
+        return var_contents("""
+            -Llib/glfw/mac/lib-universal -lglfw3
+        """)
+    elif is_linux():
+        return var_contents("""
+            -Llib/glfw/linux -lglfw
+        """)
+    else:
+        print("Unknown platform! Couldn't get linker args")
+        return ""
+LINKER_ARGS = get_linker_args()
+
 COMPILER_ARGS = var_contents("""
     -ggdb -Iinclude -Isrc -std=c++11 -O0
 """)
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
 BUILD_COMMAND = var_contents(f"""
-    g++ -o build/{APP_NAME}.exe {COMPILER_ARGS} {" ".join(SOURCES)} {LINKER_ARGS}
+    g++ -o build/{APP_NAME} {COMPILER_ARGS} {" ".join(SOURCES)} {LINKER_ARGS}
 """)
 
+
 def get_ninja_command():
-    platform = sys.platform
-    if platform == "linux" or platform == "linux2": # linux
+    if is_linux(): # linux
         return "chmod u+x ninja-linux && ./ninja-linux"
-    elif platform == "darwin": # mac
+    elif is_macos(): # mac
         return "chmod 755 ninja-mac && ./ninja-mac"
-    elif platform == "win32" or platform == "cygwin": # windows
+    elif is_windows(): # windows
         return "ninja"
 
 
 def run_app():
     print("Running...")
     os.chdir("build")
-    os.system(APP_NAME + ".exe")
+    os.system(APP_NAME)
     os.chdir("..")
 
 def command(cmd):
@@ -90,7 +114,7 @@ def generate_ninja_build(force_overwrite=False):
         # prep file list for linking
         link_files.append(f"$builddir/{get_obj_from_src_file(src_cpp)}")
     # link
-    n.build(f"$builddir/{APP_NAME}.exe", "link", link_files)
+    n.build(f"$builddir/{APP_NAME}", "link", link_files)
 
     buildfile.close()
 
