@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  build-windows:
+  build-mac:
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v3

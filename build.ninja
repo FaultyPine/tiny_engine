@@ -1,6 +1,6 @@
 cxx = g++
 compiler_args = -ggdb -Iinclude -Isrc -std=c++11 -O0
-linker_args = -Llib/glfw/linux -lglfw
+linker_args = -Llib/glfw/linux -lglfw -ldl
 builddir = build
 rule compile
   command = $cxx -MD -MF $out.d $compiler_args -c $in -o $out
