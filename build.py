@@ -25,11 +25,11 @@ def get_linker_args():
         """)
     elif is_macos():
         return var_contents("""
-            -Llib/glfw/mac/lib-universal -lglfw3
+            -Llib/glfw/mac/lib-universal -lglfw3 -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
         """)
     elif is_linux():
         return var_contents("""
-            -Llib/glfw/linux -lglfw -ldl
+            -Llib/glfw/linux -lglfw -ldl -lpthread
         """)
     else:
         print("Unknown platform! Couldn't get linker args")
