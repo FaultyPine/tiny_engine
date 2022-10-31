@@ -14,6 +14,7 @@ def var_contents(contents):
 def get_files_with_ext(basedir, ext):
     return [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
 
+PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
 APP_NAME = "app.exe" if is_windows() else "app.out"
 SOURCE_DIR = "src"
 BUILD_DIR = "build"
@@ -66,8 +67,11 @@ def build():
     start_time = time.time()
     command(get_ninja_command())
     elapsed = round(time.time() - start_time, 3)
-    os.remove(os.getcwd() + "/" + APP_NAME)
-    shutil.move(BUILD_DIR + "/" + APP_NAME, os.getcwd())
+    if (os.path.exists(os.path.join(PYTHON_SCRIPT_PATH, APP_NAME))):
+        os.remove(os.path.join(PYTHON_SCRIPT_PATH, APP_NAME))
+    src = os.path.join(os.path.join(PYTHON_SCRIPT_PATH, BUILD_DIR), APP_NAME)
+    dst = os.path.join(PYTHON_SCRIPT_PATH, APP_NAME)
+    shutil.move(src, dst)
     print("Built!")
     print(f"Build took {elapsed} seconds")
 
