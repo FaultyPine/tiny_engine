@@ -13,7 +13,7 @@
 #include "PartOfThePack/potp_main.h"
 
 void preLoopInit() {
-    InitGame(800, 600, 4, 3, "Tiny Engine"); 
+    InitGame(800, 600, 4, 3, "Part Of The Pack"); 
 
     Potp::MainInit();
 }

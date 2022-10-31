@@ -3,5 +3,5 @@
 
 /// appends resource path to provided path
 std::string UseResPath(const std::string& path) {
-    return "../src/res/" + path;
+    return "res/" + path;
 }

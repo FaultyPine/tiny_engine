@@ -1,4 +1,4 @@
-import sys, os, subprocess, time, glob
+import sys, os, subprocess, time, glob, shutil
 from ninja_syntax import Writer
 
 platform = sys.platform
@@ -14,14 +14,13 @@ def var_contents(contents):
 def get_files_with_ext(basedir, ext):
     return [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
 
-
 APP_NAME = "app.exe" if is_windows() else "app.out"
 SOURCE_DIR = "src"
 BUILD_DIR = "build"
 def get_linker_args():
     if is_windows():
         return var_contents("""
-            -Llib/glfw/windows -lpthread -lglfw3 -lgdi32
+            -Llib/glfw/windows -lpthread -lglfw3 -lgdi32 -lws2_32 -lwinmm
         """)
     elif is_macos():
         return var_contents("""
@@ -29,7 +28,7 @@ def get_linker_args():
         """)
     elif is_linux():
         return var_contents("""
-            -Llib/glfw/linux -ldl -lpthread -lglfw -v
+            -Llib/glfw/linux -ldl -lpthread -lglfw
         """)
     else:
         print("Unknown platform! Couldn't get linker args")
@@ -53,9 +52,7 @@ def get_ninja_command():
 
 def run_app():
     print("Running...")
-    os.chdir("build")
     os.system(APP_NAME)
-    os.chdir("..")
 
 def command(cmd):
     result = os.system(cmd)
@@ -69,6 +66,8 @@ def build():
     start_time = time.time()
     command(get_ninja_command())
     elapsed = round(time.time() - start_time, 3)
+    os.remove(os.getcwd() + "/" + APP_NAME)
+    shutil.move(BUILD_DIR + "/" + APP_NAME, os.getcwd())
     print("Built!")
     print(f"Build took {elapsed} seconds")
 

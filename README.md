@@ -69,6 +69,7 @@ Goal-setting for milestone
 
 #### Extra
 - ~~Clean up scene code with function pointers~~
+- Statue activation effect (particles & postprocessing?)
 
 
 ### Stretch Goals
@@ -80,7 +81,7 @@ Goal-setting for milestone
 - Settings menu
 - Controls menu
 - Mac support?????
-- ..... Multiplayer???? lmao
+    - got github actions building a binary.. who knows if it actually works though
 
 ### Possible Future Engine Features:
 - ~~debug line drawing~~
