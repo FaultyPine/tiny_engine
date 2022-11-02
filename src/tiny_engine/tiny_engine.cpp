@@ -31,7 +31,7 @@ void InitializeRandomSeed(u64 seed) {
     randomSeed = seed;
 }
 u64 GetRandomSeed() { return randomSeed; }
-u32 GetRandom(u32 start, u32 end) {
+s32 GetRandom(s32 start, s32 end) {
     // lazy init random seed
     if (randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
@@ -43,7 +43,19 @@ u32 GetRandom(u32 start, u32 end) {
     randomSeed++; // deterministic random
     return start + (rand() % end);
 }
-
+f32 GetRandomf(f32 start, f32 end) {
+    // lazy init random seed
+    if (randomSeed == 0) {
+        // truly random initial seed. Subsequent random calls simply increment the seed deterministically
+        f64 time = GetTime();
+        randomSeed = hash((const char*)&time, sizeof(f64));
+        std::cout << "Initial random seed = " << randomSeed << "\n";
+    }
+    srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
+    randomSeed++; // deterministic random
+    f32 zeroToOneRandom = ((f32)rand()) / RAND_MAX;
+    return Math::Lerp(start, end, zeroToOneRandom);
+}
 
 // returns the current GLFW time (in seconds)
 f64 GetTime() {

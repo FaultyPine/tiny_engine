@@ -38,8 +38,8 @@ void InitNinjaDefault(Ninja& ninja, Texture ninjaTex, glm::vec2 pos) {
 
 void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32 numPlayerNinjas) {
     u32 totalNinjas = numAINinjas + numPlayerNinjas;
-    u32 screenWidth = Camera::GetScreenWidth();
-    u32 screenHeight = Camera::GetScreenHeight();
+    u32 screenWidth = Camera::GetMainCamera().GetMinScreenDimensions().x;
+    u32 screenHeight = Camera::GetMainCamera().GetMinScreenDimensions().y;
 
     TextureProperties texProps = TextureProperties::Default();
     texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;

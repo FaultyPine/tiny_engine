@@ -5,7 +5,6 @@
 // by default this framebuffer is just for the whole screen
 FullscreenFrameBuffer::FullscreenFrameBuffer(Shader shader, glm::vec2 framebufferSize) {
     this->size = framebufferSize;
-    this->framebufferShader = shader;
 
     // generate and bind a framebuffer object
     glGenFramebuffers(1, &framebufferID);
@@ -38,6 +37,5 @@ FullscreenFrameBuffer::FullscreenFrameBuffer(Shader shader, glm::vec2 framebuffe
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 
-
-    fullscreenSprite = Sprite(Texture(textureColorBufferID));
+    fullscreenSprite = Sprite(shader, Texture(textureColorBufferID));
 }

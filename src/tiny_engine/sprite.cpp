@@ -7,6 +7,12 @@ Sprite::Sprite(const Texture& mainTex) {
     this->shader = Shader(UseResPath("shaders/default_sprite.vs").c_str(), UseResPath("shaders/default_sprite.fs").c_str());
     initRenderData();
 }
+Sprite::Sprite(const Shader& shader, const Texture& mainTex) {
+    this->mainTex = mainTex;
+    this->shader = shader;
+    initRenderData();
+}
+
 
 
 void Sprite::DrawSprite(const Camera& cam, glm::vec2 position, 

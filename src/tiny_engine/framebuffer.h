@@ -28,7 +28,6 @@ struct FullscreenFrameBuffer {
             std::cout << "[ERROR] Attempted to draw framebuffer with invalid shader!\n";
             exit(1);
         }
-        fullscreenSprite.OverrideSpriteShader(shader);
         BindDefaultFrameBuffer();
         ClearGLColorBuffer();
         shader.use();
@@ -40,15 +39,14 @@ struct FullscreenFrameBuffer {
             {0,0}, size);
     }
     void DrawToScreen() {
-        DrawToScreen(framebufferShader);
+        DrawToScreen(fullscreenSprite.GetShader());
     }
 
     glm::vec2 GetSize() { return size; }
 
 private:
     glm::vec2 size = {0.0, 0.0};
-    Sprite fullscreenSprite;
-    Shader framebufferShader;
+    Sprite fullscreenSprite; // also stores the shader we can use for postprocessing
     u32 framebufferID = 0;
     u32 textureColorBufferID = 0;
     u32 renderBufferObjectID = 0;

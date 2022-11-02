@@ -8,7 +8,8 @@
 
 struct Sprite {
     Sprite() { }
-    Sprite(const Texture &mainTex);
+    Sprite(const Texture& mainTex);
+    Sprite(const Shader& shader, const Texture& mainTex);
     inline void UnloadSprite() {
         glDeleteVertexArrays(1, &quadVAO);
     }
@@ -21,19 +22,18 @@ struct Sprite {
     bool isValid() const { return mainTex.id != 0; }
     inline f32 GetTextureWidth() const { return mainTex.width; }
     inline f32 GetTextureHeight() const { return mainTex.height; }
-    void OverrideSpriteShader(Shader shader) {
-        this->shader = shader;
-    }
+
     template<typename T>
     void setShaderUniform(const char* name, T val) {
         shader.setUniform(name, val);
     }
-    
+    Texture GetMainTex() { return mainTex; }
+    Shader GetShader() { return shader; }
+
 private:
     Texture mainTex;
-    Shader shader; 
+    Shader shader;
     u32 quadVAO;
-
     void initRenderData();
 };
 

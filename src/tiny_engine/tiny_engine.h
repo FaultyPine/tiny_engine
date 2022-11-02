@@ -13,7 +13,8 @@ f64 GetTime();
 
 void InitializeRandomSeed(u64 seed);
 u64 GetRandomSeed();
-u32 GetRandom(u32 start = 0, u32 end = 1);
+s32 GetRandom(s32 start, s32 end);
+f32 GetRandomf(f32 start, f32 end);
 
 f32 GetDeltaTime();
 

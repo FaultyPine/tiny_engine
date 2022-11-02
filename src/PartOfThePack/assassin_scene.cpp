@@ -10,8 +10,8 @@ void AssassinSceneInit(GameState& gs) {
     gs.scene = PotpScene::ASSASSIN;
     gs.winningPlayer = -1;
     // statues
-    u32 screenWidth = Camera::GetMainCamera().screenWidth;
-    u32 screenHeight = Camera::GetMainCamera().screenHeight;
+    u32 screenWidth = Camera::GetMainCamera().GetMinScreenDimensions().x;
+    u32 screenHeight = Camera::GetMainCamera().GetMinScreenDimensions().y;
     f32 screenMargin = 80.0;
     glm::vec2 statuePositions[NUM_STATUES] = {
         glm::vec2(screenMargin, screenMargin),
