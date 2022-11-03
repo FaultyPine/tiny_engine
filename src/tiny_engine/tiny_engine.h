@@ -11,7 +11,7 @@ void CloseGameWindow();
 // returns the current GLFW time
 f64 GetTime();
 
-void InitializeRandomSeed(u64 seed);
+void OverwriteRandomSeed(u64 seed);
 u64 GetRandomSeed();
 s32 GetRandom(s32 start, s32 end);
 f32 GetRandomf(f32 start, f32 end);

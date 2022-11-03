@@ -81,7 +81,6 @@ void CheckWinConditions(GameState& gs, Ninja* aiNinjas, u32 numAINinjas, Ninja* 
             playerIdxWon = CheckNinjaActivatedAllStatues(playerNinjas, numPlayerNinjas);
         }
 
-
         if (playerIdxWon != -1) {
             // kill all ninjas that are not our winning player
             for (s32 aiNinjaIdx = 0; aiNinjaIdx < numAINinjas; aiNinjaIdx++) {
@@ -95,7 +94,7 @@ void CheckWinConditions(GameState& gs, Ninja* aiNinjas, u32 numAINinjas, Ninja* 
                 }
             }
             // player won!
-            gs.winningPlayer = playerIdxWon;
+            gs.winningPlayer = playerIdxWon + 1;
             onPlayerWon(gs);
             std::cout << "Player " << playerIdxWon << " wins!\n";
         }
@@ -112,7 +111,8 @@ void AssassinSceneTick(GameState& gs, UserInput& inputs) {
     std::string playerScores = "";
     for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
         Ninja& playerNinja = gs.playerNinjas[i];
-        const char* playerScore = ("Player " + std::to_string(i+1) + ": " + std::to_string(playerNinja.numStatuesActivated) + "        ").c_str();
+        std::string playerStatus = playerNinja.isDead ? "DEAD" : std::to_string(playerNinja.numStatuesActivated);
+        const char* playerScore = ("Player " + std::to_string(i+1) + ": " + playerStatus + "        ").c_str();
         playerScores.append(playerScore);
     }
     SetText(gs.playerScoresText, playerScores);

@@ -164,6 +164,7 @@ void NinjaSmokeBombProcedure(const UserInput& inputs, Ninja& ninja, u32 playerId
 }
 
 void ProcessPlayerInput(const UserInput& inputs, Ninja& playerNinja, u32 playerIdx) {
+    NinjaSmokeBombProcedure(inputs, playerNinja, playerIdx);
     if (playerNinja.isDead) return;
     glm::vec2& ninjaPos = playerNinja.entity.position;
     glm::vec2 inputDir = GetPlayerInputDir(inputs, playerIdx);
@@ -202,8 +203,6 @@ void ProcessPlayerInput(const UserInput& inputs, Ninja& playerNinja, u32 playerI
         glm::vec2 posDelta = inputDir * playerNinja.ninjaSpeed * GetDeltaTime();
         ninjaPos += posDelta;
     }
-
-    NinjaSmokeBombProcedure(inputs, playerNinja, playerIdx);
 
     CLAMP(ninjaPos.x, 0.0f, (f32)Camera::GetScreenWidth() - NINJA_SPRITE_SIZE);
     CLAMP(ninjaPos.y, 0.0f, (f32)Camera::GetScreenHeight() - NINJA_SPRITE_SIZE);
@@ -316,7 +315,7 @@ void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
 }
 
 void DrawSmokeGrenade(const Ninja& ninja) {
-    if (ninja.smokeGrenade.life) {
+    if (ninja.smokeGrenade.life && !ninja.isDead) {
         glm::vec2 smokeSpriteSize = ninja.smokeGrenade.size;
         smokeSpriteSize += sin((f32)GetTime()*2.0)*8.0;
         f32 smokeSpriteRotation = (f32)GetTime()*15.0;

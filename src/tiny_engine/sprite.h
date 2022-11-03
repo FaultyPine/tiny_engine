@@ -24,7 +24,7 @@ struct Sprite {
     inline f32 GetTextureHeight() const { return mainTex.height; }
 
     template<typename T>
-    void setShaderUniform(const char* name, T val) {
+    void setShaderUniform(const char* name, T val) const {
         shader.setUniform(name, val);
     }
     Texture GetMainTex() { return mainTex; }

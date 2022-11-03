@@ -30,6 +30,7 @@ build $builddir/input.o: compile src/tiny_engine/input.cpp
 build $builddir/job_system.o: compile src/tiny_engine/job_system.cpp
 build $builddir/math.o: compile src/tiny_engine/math.cpp
 build $builddir/mesh.o: compile src/tiny_engine/mesh.cpp
+build $builddir/particles.o: compile src/tiny_engine/particles.cpp
 build $builddir/shader.o: compile src/tiny_engine/shader.cpp
 build $builddir/shapes.o: compile src/tiny_engine/shapes.cpp
 build $builddir/sprite.o: compile src/tiny_engine/sprite.cpp
@@ -44,7 +45,7 @@ build $builddir/app.exe: link $builddir/main.o $builddir/ObjParser.o $
     $builddir/ninja.o $builddir/potp_input.o $builddir/potp_main.o $
     $builddir/statue.o $builddir/title_screen_scene.o $
     $builddir/framebuffer.o $builddir/input.o $builddir/job_system.o $
-    $builddir/math.o $builddir/mesh.o $builddir/shader.o $builddir/shapes.o $
-    $builddir/sprite.o $builddir/spritesheet.o $builddir/texture.o $
-    $builddir/tiny_audio.o $builddir/tiny_engine.o $builddir/tiny_fs.o $
-    $builddir/tiny_text.o
+    $builddir/math.o $builddir/mesh.o $builddir/particles.o $
+    $builddir/shader.o $builddir/shapes.o $builddir/sprite.o $
+    $builddir/spritesheet.o $builddir/texture.o $builddir/tiny_audio.o $
+    $builddir/tiny_engine.o $builddir/tiny_fs.o $builddir/tiny_text.o

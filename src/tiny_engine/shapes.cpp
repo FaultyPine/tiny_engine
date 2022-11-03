@@ -73,7 +73,7 @@ void DrawShape(const glm::mat4& model, const glm::vec4& color, const Shader& sha
     shader.use();
     shader.setUniform("model", model);
     shader.setUniform("projection", projection);
-    shader.setUniform("spriteColor", color);
+    shader.setUniform("color", color);
 
     GLCall(glBindVertexArray(quadVAO));
     GLCall(glDrawArrays(GL_TRIANGLES, 0, 6));

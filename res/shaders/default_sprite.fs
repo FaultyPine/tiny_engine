@@ -4,12 +4,12 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform sampler2D image;
-uniform vec4 spriteColor;
+uniform sampler2D mainTex;
+uniform vec4 color;
 
 void main()
 {
-    FragColor = spriteColor * texture(image, TexCoords);
+    FragColor = color * texture(mainTex, TexCoords);
     if (FragColor.a == 0) {
         discard;
     }

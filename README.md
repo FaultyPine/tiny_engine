@@ -36,12 +36,10 @@ Features:
 
 ## Part Of The Pack
 
-1. Of the goals for milestone 2 you set in your main project milestone 1, what were you able to accomplish? Do a brief tour of what you accomplished in the past week. It's a good idea to have your goals list open, switching back and forth in the screen recording.
+1. Of the goals for milestone 3 you set in your main project milestone 2, what were you able to accomplish? Do a brief tour of what you accomplished in the past week. It's a good idea to have your goals list open, switching back and forth in the screen recording.
 2. What snags are you running into? Describe any problems you are having, or expect to be having in the near future. 
 Goal-setting for milestone 
-3. Goal-setting for milestone 3. What are the goals that you feel must get done for milestone 2, and what goals do you hope to get also get done?
-
-### MVP
+3. Goal-setting for milestone 4. What are the goals that you feel must get done for milestone 3, and what goals do you hope to get also get done?
 
 #### Milestone 1
 - ~~Display graphics onscreen~~
@@ -70,7 +68,13 @@ Goal-setting for milestone
 #### Extra
 - ~~Clean up scene code with function pointers~~
 - Statue activation effect (particles & postprocessing?)
-
+- looping music
+- better indicate when players die... 
+    - during playtesting, I died in a smoke, and couldn't figure out if I was
+        dead or not
+    - have score text indicate death, and put player scores in 4 corners of screen - this way
+        players don't have to necessarily memorize their "player number" they can just remember
+        the corner of the screen their score is in
 
 ### Stretch Goals
 - Implement Z indexing
@@ -80,8 +84,6 @@ Goal-setting for milestone
 - Main Menu
 - Settings menu
 - Controls menu
-- Mac support?????
-    - got github actions building a binary.. who knows if it actually works though
 
 ### Possible Future Engine Features:
 - ~~debug line drawing~~

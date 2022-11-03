@@ -27,7 +27,7 @@ void TerminateGame() {
     GLTTerminate();
     glfwTerminate();
 }
-void InitializeRandomSeed(u64 seed) {
+void OverwriteRandomSeed(u64 seed) {
     randomSeed = seed;
 }
 u64 GetRandomSeed() { return randomSeed; }
@@ -37,7 +37,7 @@ s32 GetRandom(s32 start, s32 end) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
         randomSeed = hash((const char*)&time, sizeof(f64));
-        std::cout << "Initial random seed = " << randomSeed << "\n";
+        //std::cout << "Initial random seed = " << randomSeed << "\n";
     }
     srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
     randomSeed++; // deterministic random
@@ -49,7 +49,7 @@ f32 GetRandomf(f32 start, f32 end) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
         randomSeed = hash((const char*)&time, sizeof(f64));
-        std::cout << "Initial random seed = " << randomSeed << "\n";
+        //std::cout << "Initial random seed = " << randomSeed << "\n";
     }
     srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
     randomSeed++; // deterministic random

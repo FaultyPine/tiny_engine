@@ -45,9 +45,9 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
     
     shader.use();
     shader.setUniform("model", model);
-    shader.setUniform("spriteColor", color);
+    shader.setUniform("color", color);
     shader.setUniform("projection", projection);
-    shader.setUniform("image", mainTex.id);
+    shader.setUniform("mainTex", mainTex.id);
 
     glActiveTexture(GL_TEXTURE0); // not technically necessary since we're just using one texture in sprite frag shader
     mainTex.bind();

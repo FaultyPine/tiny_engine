@@ -50,7 +50,7 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
         GLCall(glGenerateMipmap(GL_TEXTURE_2D));
     }
     else {
-        std::cout << "Failed to load texture! Invalid image data passed\n";
+        ASSERT(false && "Failed to load texture. Invalid image data passed!\n");
         exit(1);
     }
     Texture ret;

@@ -50,7 +50,7 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // manually init random seed so we can serialize it (with the rest of gamestate) if need be
     f64 time = GetTime();
     gs.initialRandomSeed = hash((const char*)&time, sizeof(f64));
-    InitializeRandomSeed(gs.initialRandomSeed);
+    OverwriteRandomSeed(gs.initialRandomSeed);
 
     // SFX
     Audio::InitAudioEngine();
@@ -69,7 +69,7 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // Sprites
     gs.background = Sprite(backgroundTex);
 
-    #if 1
+    #if 0
     { // for debugging, init directly to other scenes
         #ifdef TINY_DEBUG 
         // This is for debugging - when I boot directly into the gameplay scene without controller setup
