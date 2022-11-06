@@ -11,6 +11,8 @@
 #include "title_screen_scene.h"
 //#include "tiny_engine/job_system.h"
 
+#include "tiny_engine/external/imgui/tiny_imgui.h"
+
 static const SceneInit initScenes[] = {
     NoSceneInit,
     ControllerSetupSceneInit,
@@ -69,7 +71,7 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // Sprites
     gs.background = Sprite(backgroundTex);
 
-    #if 0
+    #if 1
     { // for debugging, init directly to other scenes
         #ifdef TINY_DEBUG 
         // This is for debugging - when I boot directly into the gameplay scene without controller setup
@@ -120,6 +122,7 @@ UserInput inputs = {};
 
 void MainInit() {
     PotpInit(gs, inputs);
+    InitImGui(glob_glfw_window);
 }
 void MainUpdate() {
     // poll inputs
@@ -149,10 +152,19 @@ void MainUpdate() {
 
     // draw framebuffer to screen with post processing shader
     fb.DrawToScreen();
+
+
+    // debug imgui drawing
+    #ifdef TINY_DEBUG
+    ImGuiBeginFrame();
+    //ImGui::ColorEdit4("Color", &gs.statues[0].particleSystem.behaviors);
+    ImGuiEndFrame();
+    #endif
 }
 
 void Terminate() {
     PotpTerminate(gs);
+    ImGuiTerminate();
 }
 
 } // namespace Potp

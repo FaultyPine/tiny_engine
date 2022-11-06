@@ -3,6 +3,8 @@
 #include "ninja.h"
 #include "tiny_engine/shapes.h"
 #include "tiny_engine/tiny_audio.h"
+#include "tiny_engine/tiny_engine.h"
+#include "tiny_engine/particles/particle_behaviors.h"
 
 enum StatueFacingDir {
     NEUTRAL = 0,
@@ -39,6 +41,12 @@ void Statue::Initialize(glm::vec2 pos) {
     isActivated = false;
     memset(playersActivated, 0, sizeof(playersActivated));
     activationTimer = STATUE_ACTIVATION_TIMER_MAX;
+
+    /*particleSystem = ParticleSystem2D(35);
+    particleSystem.AddBehavior(new ParticleEmitTickInterval(5))
+                .AddBehavior(new ParticleDecay(0.01))
+                .AddBehavior(new ParticleAlphaDecay(0.01))
+                .AddBehavior(new ParticlesSpreadOut());*/
 }
 
 void OnStatueActivated(Statue& statue) {
@@ -132,6 +140,7 @@ void Statue::Tick() {
             Toggle();
         }
     }
+    particleSystem.Tick(entity.position);
 }
 
 void CheckNinjaStatueCollisions(Statue* statues, u32 numStatues, Ninja* playerNinjas, u32 numPlayerNinjas) {
@@ -159,5 +168,6 @@ void UpdateStatues(Statue* statues, u32 numStatues, Ninja* playerNinjas, u32 num
 }
 
 void Statue::Draw() const {
-    spritesheet.Draw(Camera::GetMainCamera(), entity.position, entity.size, 0.0, {0.0,0.0,1.0}, {1.0,1.0,1.0,1.0}, true);
+    spritesheet.Draw(Camera::GetMainCamera(), entity.position, entity.size, 0.0, {0.0,0.0,1.0}, entity.color, true);
+    particleSystem.Draw();
 }

@@ -3,6 +3,7 @@
 
 #include "potp_fwd.h"
 #include "tiny_engine/spritesheet.h"
+#include "tiny_engine/particles/particles.h"
 
 struct Ninja;
 
@@ -13,6 +14,7 @@ struct Statue {
     Spritesheet spritesheet;
     #define STATUE_ACTIVATION_TIMER_MAX (60*4)
     s32 activationTimer = STATUE_ACTIVATION_TIMER_MAX;
+    ParticleSystem2D particleSystem;
 
     Statue(){}
     void Initialize(glm::vec2 pos);

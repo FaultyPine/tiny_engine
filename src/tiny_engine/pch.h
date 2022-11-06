@@ -19,6 +19,7 @@
 #include <map>
 #include <math.h>
 #include <algorithm>
+#include <memory>
 // ----------------
 
 #include <glad/glad.h>
