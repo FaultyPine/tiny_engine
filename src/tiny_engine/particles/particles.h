@@ -22,7 +22,7 @@ struct ParticleBehavior {
     // called every frame on active particles
     virtual void OnTick(Particle2D& particle) {}
     // called every frame
-    virtual bool ShouldEmitParticle(glm::vec2& offset) { return false; }
+    virtual u32 ShouldEmitParticle() { return 0; }
 };
 
 // default behavior that goes onto every particle system by default
@@ -53,9 +53,14 @@ struct ParticleSystem2D {
         return *this;
     }
 
+    bool isActive = true;
+    bool isVisible = true;
     Sprite defaultParticleSprite;
     std::vector<std::shared_ptr<ParticleBehavior>> behaviors = {};
     std::vector<Particle2D> particles = {};
+
+private:
+    void TrySpawnNewParticles(glm::vec2 position);
 };
 
 #endif

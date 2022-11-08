@@ -24,15 +24,29 @@ struct ParticlesSpreadOut : ParticleBehavior {
 };
 
 struct ParticleEmitEveryTick : ParticleBehavior {
-    bool ShouldEmitParticle(glm::vec2& offset) { return true; }
+    u32 ShouldEmitParticle() { return 1; }
 };
 struct ParticleEmitTickInterval : ParticleBehavior {
     u32 everyXTicks = 1;
     ParticleEmitTickInterval(u32 everyXTicks) {
         this->everyXTicks = everyXTicks;
     }
-    bool ShouldEmitParticle(glm::vec2& offset) {
+    u32 ShouldEmitParticle() {
         return GetFrameCount() % everyXTicks == 0;
+    }
+};
+struct ParticleEmitBurst : ParticleBehavior {
+    bool hasFired = false;
+    u32 numParticlesInBurst = 1;
+    ParticleEmitBurst(u32 numParticlesInBurst) {
+        this->numParticlesInBurst = numParticlesInBurst;
+    }
+    u32 ShouldEmitParticle() {
+        if (!hasFired) {
+            hasFired = true;
+            return numParticlesInBurst;
+        }
+        return 0;
     }
 };
 

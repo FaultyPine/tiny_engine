@@ -23,35 +23,27 @@ u32 FirstUnusedParticle(const std::vector<Particle2D>& particles) {
     return 0;
 }
 
-/*
-when we have components that apply things to the particle initialization
-we should only apply them 
-*/
-
-void ParticleSystem2D::Tick(glm::vec2 position) {    
-    if (!defaultParticleSprite.isValid()) defaultParticleSprite = Sprite(LoadTexture(UseResPath("shaders/default_particle.png").c_str(), TextureProperties::Default()));
-    
-    Particle2D newParticle = Particle2D();
-    bool shouldSpawnNewParticle = false;
-    glm::vec2 offset = glm::vec2(0);
+void ParticleSystem2D::TrySpawnNewParticles(glm::vec2 position) {
+    u32 numNewParticles = 0;
     // if any of our behaviors say we should emit, then we emit one particle on this frame
     for (auto& behavior : behaviors) {
-        // ShouldEmitParticle behaviors can optionally offset the spawn location of the particle
-        if (behavior->ShouldEmitParticle(offset)) {
-            shouldSpawnNewParticle = true;
-            break;
-        }
+        numNewParticles += behavior->ShouldEmitParticle();
     }
-    // if we should emit a particle
-    if (shouldSpawnNewParticle) {
+    for (u32 i = 0; i < numNewParticles; i++) {
         // allow all behaviors to modify the particle before spawning it in
+        Particle2D newParticle = Particle2D();
         for (auto& behavior : behaviors)
-            behavior->InitializeParticle(newParticle, position+offset);
+            behavior->InitializeParticle(newParticle, position);
         u32 firstUnusedParticleIdx = FirstUnusedParticle(particles);
         // "emitting" a particle just means overwriting a dead one in the pool with a new one
         particles.at(firstUnusedParticleIdx) = newParticle;
     }
+}
 
+void ParticleSystem2D::Tick(glm::vec2 position) {    
+    if (!defaultParticleSprite.isValid()) defaultParticleSprite = Sprite(LoadTexture(UseResPath("shaders/default_particle.png").c_str(), TextureProperties::Default()));
+    if (!isActive) return;
+    TrySpawnNewParticles(position);
     for (auto& behavior : behaviors) {
         for (Particle2D& particle : particles) {
             behavior->OnTick(particle);
@@ -60,6 +52,7 @@ void ParticleSystem2D::Tick(glm::vec2 position) {
 }
 
 void ParticleSystem2D::Draw() const {
+    if (!isVisible) return;
     for (const Particle2D& particle : particles) {
         defaultParticleSprite.DrawSprite(Camera::GetMainCamera(), particle.position, particle.size, particle.rotation, {0.0, 0.0, 1.0}, particle.color, true);
     }
