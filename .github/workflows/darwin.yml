@@ -37,7 +37,7 @@ jobs:
       run: |
         zip -r PartOfThePack.zip executable/app.out res
     
-        - name: Upload binary
+    - name: Upload binary
       uses: actions/upload-artifact@v2
       with:
         name: release
