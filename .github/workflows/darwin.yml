@@ -31,7 +31,8 @@ jobs:
 
     - name: prepare zip
       run: |
-        zip -r PartOfThePack.zip build/app.out res
+        cp build/app.out app.out
+        zip -r PartOfThePack.zip app.out res/potp res/shaders
     
     - name: Upload binary
       uses: actions/upload-artifact@v2
