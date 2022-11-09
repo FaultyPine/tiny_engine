@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "sprite.h"
 #include "tiny_engine.h"
+#include <functional>
 
 // if not using a fullscreen buffer, make sure to set glViewport to prevent stretching/weird stuff happening with the rendered texture
 
@@ -23,28 +24,14 @@ struct FullscreenFrameBuffer {
     }
     void ClearDepth() { glClear(GL_DEPTH_BUFFER_BIT); }
     void ClearStencil() { glClear(GL_STENCIL_BUFFER_BIT); }
-    void DrawToScreen(const Shader& shader) {
-        if (!shader.isValid()) {
-            std::cout << "[ERROR] Attempted to draw framebuffer with invalid shader!\n";
-            exit(1);
-        }
-        BindDefaultFrameBuffer();
-        ClearGLColorBuffer();
-        shader.use();
-        shader.setUniform("screenWidth", Camera::GetScreenWidth());
-        shader.setUniform("screenHeight", Camera::GetScreenHeight());
-        shader.setUniform("time", (f32)GetTime());
-        fullscreenSprite.DrawSprite(
-            Camera::GetMainCamera(), 
-            {0,0}, size);
-    }
-    void DrawToScreen() {
-        DrawToScreen(fullscreenSprite.GetShader());
-    }
+    void DrawToScreen(std::function<void()> drawSceneFunc);
 
     glm::vec2 GetSize() { return size; }
 
-private:
+private:    
+    void DrawToScreen(const Shader& shader);
+    
+    Shader postProcessingShader;
     glm::vec2 size = {0.0, 0.0};
     Sprite fullscreenSprite; // also stores the shader we can use for postprocessing
     u32 framebufferID = 0;

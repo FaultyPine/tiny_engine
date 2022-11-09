@@ -131,33 +131,17 @@ void MainUpdate() {
     PotpUpdate(gs, inputs);
     // render gamestate
 
-    // render game to framebuffer
-    glm::vec2 screenDimensions = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
     static FullscreenFrameBuffer fb;
-    static Shader postProcessingShader;
-    if (!postProcessingShader.isValid()) {
-        postProcessingShader = Shader(UseResPath("shaders/screen_texture.vs").c_str(), UseResPath("shaders/screen_texture.fs").c_str());
-    }
-    if (!fb.isValid()) {
-        fb = FullscreenFrameBuffer(postProcessingShader, {screenDimensions.x, screenDimensions.y});
-    }
-
-    if (fb.GetSize().x != screenDimensions.x && fb.GetSize().y != screenDimensions.y) {
-        fb.Delete();
-        fb = FullscreenFrameBuffer(postProcessingShader, screenDimensions);
-    }
-    fb.Bind();
-    ClearGLColorBuffer();
-    PotpDraw(gs, inputs);
-
-    // draw framebuffer to screen with post processing shader
-    fb.DrawToScreen();
+    // render scene to framebuffer and render that framebuffer to screen with postprocessing shader applied
+    fb.DrawToScreen([](){
+        PotpDraw(gs, inputs);
+    });
 
 
     // debug imgui drawing
     #ifdef TINY_DEBUG
     ImGuiBeginFrame();
-    //ImGui::ColorEdit4("Color", &gs.statues[0].particleSystem.behaviors);
+    //ImGui::ColorEdit4("Color", &gs.statues[0].entity.color);
     ImGuiEndFrame();
     #endif
 }

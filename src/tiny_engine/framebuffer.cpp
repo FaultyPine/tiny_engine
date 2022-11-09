@@ -1,6 +1,6 @@
 #include "framebuffer.h"
 #include "camera.h"
-
+#include "tiny_engine/tiny_fs.h"
 
 // by default this framebuffer is just for the whole screen
 FullscreenFrameBuffer::FullscreenFrameBuffer(Shader shader, glm::vec2 framebufferSize) {
@@ -38,4 +38,42 @@ FullscreenFrameBuffer::FullscreenFrameBuffer(Shader shader, glm::vec2 framebuffe
     glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 
     fullscreenSprite = Sprite(shader, Texture(textureColorBufferID));
+}
+
+void FullscreenFrameBuffer::DrawToScreen(const Shader& shader) {
+    if (!shader.isValid()) {
+        std::cout << "[ERROR] Attempted to draw framebuffer with invalid shader!\n";
+        exit(1);
+    }
+    BindDefaultFrameBuffer();
+    ClearGLColorBuffer();
+    shader.use();
+    shader.setUniform("screenWidth", Camera::GetScreenWidth());
+    shader.setUniform("screenHeight", Camera::GetScreenHeight());
+    shader.setUniform("time", (f32)GetTime());
+    fullscreenSprite.DrawSprite(
+        Camera::GetMainCamera(), 
+        {0,0}, size);
+}
+
+
+void FullscreenFrameBuffer::DrawToScreen(std::function<void()> drawSceneFunc) {
+    glm::vec2 screenDimensions = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
+    if (!postProcessingShader.isValid()) {
+        postProcessingShader = Shader(UseResPath("shaders/screen_texture.vs").c_str(), UseResPath("shaders/screen_texture.fs").c_str());
+    }
+    if (!isValid()) {
+        *this = FullscreenFrameBuffer(postProcessingShader, {screenDimensions.x, screenDimensions.y});
+    }
+
+    if (GetSize().x != screenDimensions.x && GetSize().y != screenDimensions.y) {
+        Delete();
+        *this = FullscreenFrameBuffer(postProcessingShader, screenDimensions);
+    }
+    Bind();
+    ClearGLColorBuffer();
+    
+    drawSceneFunc();
+
+    DrawToScreen(fullscreenSprite.GetShader());
 }
