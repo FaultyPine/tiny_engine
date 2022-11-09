@@ -19,23 +19,19 @@ jobs:
       with:
         name: build
         path: app.out
-    - name: Upload binary
-      uses: actions/upload-artifact@v2
-      with:
-        name: executable
-        path: app.out
 
   upload:
     runs-on: ubuntu-latest
     needs:
       - build-mac
     steps:
+    - uses: actions/checkout@v3
     - name: Download all artifacts
       uses: actions/download-artifact@v2
 
     - name: prepare zip
       run: |
-        zip -r PartOfThePack.zip executable/app.out res
+        zip -r PartOfThePack.zip build/app.out res
     
         - name: Upload binary
       uses: actions/upload-artifact@v2
