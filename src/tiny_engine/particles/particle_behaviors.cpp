@@ -12,7 +12,7 @@ glm::vec2 RandomPointInCircle(f32 radius) {
     return ret;
 }
 bool ParticlesSpreadOut::InitializeParticle(Particle2D& particleToEmit, glm::vec2 particleSystemPosition) {
-    glm::vec2 randomVelDir = glm::normalize(RandomPointInCircle(1)+0.01f);
+    glm::vec2 randomVelDir = glm::normalize(RandomPointInCircle(1));
     particleToEmit.velocity += randomVelDir;
     return true;
 }

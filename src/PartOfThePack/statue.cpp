@@ -42,25 +42,32 @@ void Statue::Initialize(glm::vec2 pos) {
     memset(playersActivated, 0, sizeof(playersActivated));
     activationTimer = STATUE_ACTIVATION_TIMER_MAX;
 
-    /*particleSystem = ParticleSystem2D(35);
-    particleSystem.AddBehavior(new ParticleEmitTickInterval(5))
+    particleSystem = ParticleSystem2D(35, false);
+    particleSystem.AddBehavior(new ParticleEmitBurst(35))
                 .AddBehavior(new ParticleDecay(0.01))
                 .AddBehavior(new ParticleAlphaDecay(0.01))
-                .AddBehavior(new ParticlesSpreadOut());*/
+                .AddBehavior(new ParticlesSpreadOut())
+                .AddBehavior(new ParticleColorGradient({1.0, 0.0, 0.0, 1.0}, {1.0, 1.0, 1.0, 0.0}));
 }
 
 void OnStatueActivated(Statue& statue) {
+    Spritesheet::Animation anim = Spritesheet::Animation(1);
+    anim.framerate = 0; // stay on this frame
+    statue.spritesheet.SetAnimation(anim);
     Audio::PlayAudio(UseResPath("potp/statue_activate.wav").c_str());
+    statue.particleSystem.isActive = true;
+}
+void OnStatueDeactivated(Statue& statue) {
+    Spritesheet::Animation anim = Spritesheet::Animation(0);
+    statue.spritesheet.SetAnimation(anim);
+    statue.particleSystem.isActive = false;
+    statue.particleSystem.Reset();
 }
 
 void Statue::Toggle() {
     isActivated = !isActivated;
-    Spritesheet::Animation anim = Spritesheet::Animation(isActivated ? 1 : 0);
-    if (isActivated) {
-        anim.framerate = 0; // stay on that frame
-        OnStatueActivated(*this);
-    }
-    spritesheet.SetAnimation(anim);
+    if (isActivated) OnStatueActivated(*this);
+    else             OnStatueDeactivated(*this);
     activationTimer = STATUE_ACTIVATION_TIMER_MAX;
 }
 
@@ -140,7 +147,7 @@ void Statue::Tick() {
             Toggle();
         }
     }
-    particleSystem.Tick(entity.position);
+    particleSystem.Tick(entity.GetEntityCenter());
 }
 
 void CheckNinjaStatueCollisions(Statue* statues, u32 numStatues, Ninja* playerNinjas, u32 numPlayerNinjas) {

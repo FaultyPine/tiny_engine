@@ -52,8 +52,17 @@ void ParticleSystem2D::Tick(glm::vec2 position) {
 }
 
 void ParticleSystem2D::Draw() const {
-    if (!isVisible) return;
+    if (!isActive) return;
     for (const Particle2D& particle : particles) {
-        defaultParticleSprite.DrawSprite(Camera::GetMainCamera(), particle.position, particle.size, particle.rotation, {0.0, 0.0, 1.0}, particle.color, true);
+        defaultParticleSprite.DrawSprite(Camera::GetMainCamera(), particle.position-particle.size, particle.size, particle.rotation, {0.0, 0.0, 1.0}, particle.color, true);
     }
+}
+
+void ParticleSystem2D::Reset() {
+    u32 maxParticles = particles.size();
+    particles.clear();
+    for (u32 i = 0; i < maxParticles; i++)
+        particles.emplace_back(Particle2D());
+    // reset behaviors (if behaviors track their own variables, these should be reset here)
+    for (auto& behavior : behaviors) behavior->Reset();
 }

@@ -7,6 +7,7 @@
 #include "tiny_engine/tiny_fs.h"
 
 struct Particle2D {
+    // value [0, 1] where 1 is "full life", and 0 is dead
     f32 life = 0.0;
     glm::vec2 size = glm::vec2(15);
     glm::vec2 position, velocity = glm::vec2(0);
@@ -23,6 +24,7 @@ struct ParticleBehavior {
     virtual void OnTick(Particle2D& particle) {}
     // called every frame
     virtual u32 ShouldEmitParticle() { return 0; }
+    virtual void Reset() {}
 };
 
 // default behavior that goes onto every particle system by default
@@ -40,7 +42,8 @@ struct DefaultParticleBehavior : ParticleBehavior {
 
 struct ParticleSystem2D {
     /// NOTE: Use new when passing behaviors in here so the pointer doesn't go out of scope
-    ParticleSystem2D(u32 maxParticles) {
+    ParticleSystem2D(u32 maxParticles, bool isStartingActive) {
+        isActive = isStartingActive;
         for (u32 i = 0; i < maxParticles; i++)
             particles.emplace_back(Particle2D());
         AddBehavior(new DefaultParticleBehavior());
@@ -52,9 +55,9 @@ struct ParticleSystem2D {
         behaviors.emplace_back(std::shared_ptr<ParticleBehavior>(behavior));
         return *this;
     }
+    void Reset();
 
     bool isActive = true;
-    bool isVisible = true;
     Sprite defaultParticleSprite;
     std::vector<std::shared_ptr<ParticleBehavior>> behaviors = {};
     std::vector<Particle2D> particles = {};

@@ -48,6 +48,20 @@ struct ParticleEmitBurst : ParticleBehavior {
         }
         return 0;
     }
+    void Reset() {
+        hasFired = false;
+    }
+};
+
+struct ParticleColorGradient : ParticleBehavior {
+    glm::vec4 firstCol, secondCol;
+    ParticleColorGradient(glm::vec4 firstCol, glm::vec4 secondCol) {
+        this->firstCol = firstCol;
+        this->secondCol = secondCol;
+    }
+    void OnTick(Particle2D& particle) {
+        particle.color = glm::mix(firstCol, secondCol, 1.0-particle.life);
+    }
 };
 
 #endif
