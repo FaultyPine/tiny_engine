@@ -44,3 +44,15 @@ jobs:
         name: linux-release
         path: PartOfThePack.zip
   
+    - name: Update Release
+      uses: meeDamian/github-release@2.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        prerelease: true
+        allow_override: true
+        gzip: folders
+        tag: linux-master
+        name: linux-master
+        body: Build of PartOfThePack from master.
+        files: >
+          PartOfThePack.zip

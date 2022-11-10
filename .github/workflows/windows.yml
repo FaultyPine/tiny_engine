@@ -41,3 +41,15 @@ jobs:
         name: windows-release
         path: PartOfThePack.zip
   
+    - name: Update Release
+      uses: meeDamian/github-release@2.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        prerelease: true
+        allow_override: true
+        gzip: folders
+        tag: windows-master
+        name: windows-master
+        body: Build of PartOfThePack from master.
+        files: >
+          PartOfThePack.zip
