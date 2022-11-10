@@ -1,6 +1,8 @@
 cxx = g++
-compiler_args = -ggdb -Iinclude -Isrc -std=c++11 -O0 -static-libstdc++ -static-libgcc
-linker_args = -Llib/glfw/windows -lpthread -lglfw3 -lgdi32 -lws2_32 -lwinmm
+compiler_args = -ggdb -Iinclude -Isrc -std=c++11 -O0 -static-libstdc++ $
+    -static-libgcc
+linker_args = -Llib/glfw/windows -lpthread -lglfw3 -lgdi32 -lws2_32 -lwinmm $
+    -mwindows -static
 builddir = build
 rule compile
   command = $cxx -MD -MF $out.d $compiler_args -c $in -o $out

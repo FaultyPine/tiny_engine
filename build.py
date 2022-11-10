@@ -21,7 +21,7 @@ BUILD_DIR = "build"
 def get_linker_args():
     if is_windows():
         return var_contents("""
-            -Llib/glfw/windows -lpthread -lglfw3 -lgdi32 -lws2_32 -lwinmm
+            -Llib/glfw/windows -lpthread -lglfw3 -lgdi32 -lws2_32 -lwinmm -mwindows -static
         """)
     elif is_macos():
         return var_contents("""
