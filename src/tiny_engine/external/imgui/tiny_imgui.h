@@ -6,10 +6,10 @@
 #include "imgui_impl_opengl3.h"
 
 
-inline void InitImGui(GLFWwindow *window) {
+inline void InitImGui() {
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(glob_glfw_window, true);
     const char* glsl_version = "#version 330";
     ImGui_ImplOpenGL3_Init(glsl_version);
 }

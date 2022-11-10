@@ -36,10 +36,10 @@ Features:
 
 ## Part Of The Pack
 
-1. Of the goals for milestone 3 you set in your main project milestone 2, what were you able to accomplish? Do a brief tour of what you accomplished in the past week. It's a good idea to have your goals list open, switching back and forth in the screen recording.
+1. Of the goals for milestone X you set in your main project milestone X-1, what were you able to accomplish? Do a brief tour of what you accomplished in the past week. It's a good idea to have your goals list open, switching back and forth in the screen recording.
 2. What snags are you running into? Describe any problems you are having, or expect to be having in the near future. 
 Goal-setting for milestone 
-3. Goal-setting for milestone 4. What are the goals that you feel must get done for milestone 3, and what goals do you hope to get also get done?
+3. Goal-setting for milestone X+1. What are the goals that you feel must get done for milestone X, and what goals do you hope to get also get done?
 
 #### Milestone 1
 - ~~Display graphics onscreen~~
@@ -61,11 +61,11 @@ Goal-setting for milestone
 - ~~Handle window resizing~~
 #### Milestone 4
 - ~~Title Screen~~
-- ~~Postprocessing~~/particle effects
+- ~~Postprocessing/particle effects~~
 #### Project submission
 - ~~intro screen w/visuals for how to play/controls like in og game~~
 - ~~Ensure builds work! Test on other machines~~
-    - maybe also implement a github action for automatic builds/also mac builds?
+    - ~~maybe also implement a github action for automatic builds/also mac builds?~~
 
 #### Extra
 - ~~Clean up scene code with function pointers~~

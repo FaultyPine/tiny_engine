@@ -122,7 +122,7 @@ UserInput inputs = {};
 
 void MainInit() {
     PotpInit(gs, inputs);
-    InitImGui(glob_glfw_window);
+    InitImGui();
 }
 void MainUpdate() {
     // poll inputs
