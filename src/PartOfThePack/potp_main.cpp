@@ -71,7 +71,7 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     // Sprites
     gs.background = Sprite(backgroundTex);
 
-    #if 1
+    #if 0
     { // for debugging, init directly to other scenes
         #ifdef TINY_DEBUG 
         // This is for debugging - when I boot directly into the gameplay scene without controller setup
