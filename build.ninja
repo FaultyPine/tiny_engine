@@ -57,12 +57,13 @@ build $builddir/imgui_widgets.o: compile $
 build $builddir/particles.o: compile src/tiny_engine/particles/particles.cpp
 build $builddir/particle_behaviors.o: compile $
     src/tiny_engine/particles/particle_behaviors.cpp
-build $builddir/app.exe: link $builddir/main.o $builddir/ObjParser.o $
-    $builddir/assassin_scene.o $builddir/controller_setup_scene.o $
-    $builddir/ninja.o $builddir/potp_input.o $builddir/potp_main.o $
-    $builddir/statue.o $builddir/title_screen_scene.o $
-    $builddir/framebuffer.o $builddir/input.o $builddir/job_system.o $
-    $builddir/math.o $builddir/mesh.o $builddir/shader.o $builddir/shapes.o $
+build $builddir/PartOfThePack.exe: link $builddir/main.o $
+    $builddir/ObjParser.o $builddir/assassin_scene.o $
+    $builddir/controller_setup_scene.o $builddir/ninja.o $
+    $builddir/potp_input.o $builddir/potp_main.o $builddir/statue.o $
+    $builddir/title_screen_scene.o $builddir/framebuffer.o $
+    $builddir/input.o $builddir/job_system.o $builddir/math.o $
+    $builddir/mesh.o $builddir/shader.o $builddir/shapes.o $
     $builddir/sprite.o $builddir/spritesheet.o $builddir/texture.o $
     $builddir/tiny_audio.o $builddir/tiny_engine.o $builddir/tiny_fs.o $
     $builddir/tiny_text.o $builddir/imgui.o $builddir/imgui_demo.o $

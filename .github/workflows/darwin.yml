@@ -18,7 +18,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: build
-        path: app.out
+        path: PartOfThePack.out
 
   upload:
     runs-on: ubuntu-latest
@@ -31,8 +31,8 @@ jobs:
 
     - name: prepare zip
       run: |
-        cp build/app.out app.out
-        zip -r PartOfThePack.zip app.out res/potp res/shaders
+        cp build/PartOfThePack.out PartOfThePack.out
+        zip -r PartOfThePack.zip PartOfThePack.out res/potp res/shaders
     
     - name: Upload binary
       uses: actions/upload-artifact@v2

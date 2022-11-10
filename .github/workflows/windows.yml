@@ -18,7 +18,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: build
-        path: app.exe
+        path: PartOfThePack.exe
 
 
   upload:
@@ -32,8 +32,8 @@ jobs:
 
     - name: prepare zip
       run: |
-        cp build/app.exe app.exe
-        zip -r PartOfThePack.zip app.exe res/potp res/shaders
+        cp build/PartOfThePack.exe PartOfThePack.exe
+        zip -r PartOfThePack.zip PartOfThePack.exe res/potp res/shaders
     
     - name: Upload binary
       uses: actions/upload-artifact@v2

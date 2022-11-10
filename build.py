@@ -2,16 +2,6 @@ import sys, os, subprocess, time, glob, shutil
 import build_gpp, build_msvc
 from build_utils import *
 
-def get_linker_args():
-    if USE_MSVC:
-        return build_msvc.get_linker_args_msvc()
-    else:
-        return build_gpp.get_linker_args_gpp()
-def get_compiler_args():
-    if USE_MSVC:
-        return build_msvc.get_compiler_args_msvc()
-    else:
-        return build_gpp.get_compiler_args_gpp()
 def generate_ninja_build(force_overwrite=False):
     if USE_MSVC:
         build_msvc.generate_ninja_build_msvc(force_overwrite)

@@ -15,7 +15,7 @@ def get_files_with_ext(basedir, ext):
 
 # path to the folder that contains this python script regardless of cwd
 PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
-APP_NAME = "app.exe" if is_windows() else "app.out"
+APP_NAME = "PartOfThePack.exe" if is_windows() else "PartOfThePack.out"
 SOURCE_DIR = "src"
 BUILD_DIR = "build"
 USE_MSVC = False
