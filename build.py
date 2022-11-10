@@ -37,7 +37,7 @@ def get_linker_args():
 LINKER_ARGS = get_linker_args()
 
 COMPILER_ARGS = var_contents("""
-    -ggdb -Iinclude -Isrc -std=c++11 -O0
+    -ggdb -Iinclude -Isrc -std=c++11 -O0 -static-libstdc++ -static-libgcc
 """)
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
 

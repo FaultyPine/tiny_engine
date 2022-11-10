@@ -1,5 +1,5 @@
 cxx = g++
-compiler_args = -ggdb -Iinclude -Isrc -std=c++11 -O0
+compiler_args = -ggdb -Iinclude -Isrc -std=c++11 -O0 -static-libstdc++ -static-libgcc
 linker_args = -Llib/glfw/windows -lpthread -lglfw3 -lgdi32 -lws2_32 -lwinmm
 builddir = build
 rule compile
