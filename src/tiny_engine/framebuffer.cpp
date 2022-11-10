@@ -64,6 +64,7 @@ void FullscreenFrameBuffer::DrawToScreen(std::function<void()> drawSceneFunc) {
     }
     if (!isValid()) {
         *this = FullscreenFrameBuffer(postProcessingShader, {screenDimensions.x, screenDimensions.y});
+        glViewport(0, 0, screenDimensions.x, screenDimensions.y);
     }
 
     if (GetSize().x != screenDimensions.x && GetSize().y != screenDimensions.y) {
