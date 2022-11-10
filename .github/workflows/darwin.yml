@@ -37,6 +37,6 @@ jobs:
     - name: Upload binary
       uses: actions/upload-artifact@v2
       with:
-        name: release
+        name: mac-release
         path: PartOfThePack.zip
   

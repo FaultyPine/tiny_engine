@@ -19,3 +19,25 @@ jobs:
       with:
         name: build
         path: app.exe
+
+
+  upload:
+    runs-on: ubuntu-latest
+    needs:
+      - build-windows
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download all artifacts
+      uses: actions/download-artifact@v2
+
+    - name: prepare zip
+      run: |
+        cp build/app.exe app.exe
+        zip -r PartOfThePack.zip app.exe res/potp res/shaders
+    
+    - name: Upload binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-release
+        path: PartOfThePack.zip
+  

@@ -22,3 +22,25 @@ jobs:
       with:
         name: build
         path: app.out
+
+  
+  upload:
+    runs-on: ubuntu-latest
+    needs:
+      - build-linux
+    steps:
+    - uses: actions/checkout@v3
+    - name: Download all artifacts
+      uses: actions/download-artifact@v2
+
+    - name: prepare zip
+      run: |
+        cp build/app.out app.out
+        zip -r PartOfThePack.zip app.out res/potp res/shaders
+    
+    - name: Upload binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-release
+        path: PartOfThePack.zip
+  
