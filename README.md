@@ -64,11 +64,14 @@ Goal-setting for milestone
 - ~~Postprocessing~~/particle effects
 #### Project submission
 - ~~intro screen w/visuals for how to play/controls like in og game~~
+- ~~Ensure builds work! Test on other machines~~
+    - maybe also implement a github action for automatic builds/also mac builds?
 
 #### Extra
 - ~~Clean up scene code with function pointers~~
-- Statue activation effect (particles & postprocessing?)
+- Statue activation effect (~~particles~~ & postprocessing?)
 - looping music
+    - would require a bit of refactoring with my use of miniaudio
 - better indicate when players die... 
     - during playtesting, I died in a smoke, and couldn't figure out if I was
         dead or not
