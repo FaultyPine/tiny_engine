@@ -11,7 +11,7 @@
 #include <sstream>
 #ifndef _MSC_VER
 #include <unistd.h>
-else
+#else
 #include <direct.h>
 #endif
 #include <assert.h>
