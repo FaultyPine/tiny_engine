@@ -20,6 +20,7 @@ SOURCE_DIR = "src"
 BUILD_DIR = "build"
 USE_MSVC = False
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
+PCH_FILE = "src/tiny_engine/pch.h"
 
 
 
@@ -29,7 +30,7 @@ def command(cmd):
         exit()
 
 def get_obj_from_src_file(filename):
-    return filename[filename.rfind("/")+1:].replace(".cpp", ".o")
+    return filename[filename.rfind("/")+1:].replace(".cpp", ".obj" if USE_MSVC else ".o")
 
 def var_contents(contents):
     return contents.replace("\n", "").strip()

@@ -9,7 +9,11 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#ifndef _MSC_VER
 #include <unistd.h>
+else
+#include <direct.h>
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <time.h>
@@ -21,7 +25,7 @@
 #include <algorithm>
 #include <memory>
 // ----------------
-
+#define PATH_MAX 260
 #include <glad/glad.h>
 #include "GLFW/glfw3.h"
 

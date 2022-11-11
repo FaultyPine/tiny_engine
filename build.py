@@ -8,13 +8,19 @@ def generate_ninja_build(force_overwrite=False):
     else:
         build_gpp.generate_ninja_build_gpp(force_overwrite)
 def get_ninja_command():
+    if USE_MSVC:
+        build_msvc.setup_msvc_terminal()
     if is_linux(): # linux
         return "chmod u+x ninja-linux && ./ninja-linux"
     elif is_macos(): # mac
         return "chmod 755 ninja-mac && ./ninja-mac"
     elif is_windows(): # windows
         return "ninja"
-
+def build_pch():
+    if USE_MSVC:
+        build_msvc.build_pch()
+    else:
+        build_gpp.build_pch_gpp()
 
 def run_app():
     print("Running...")
@@ -41,7 +47,9 @@ print("Building...")
 
 args = sys.argv[1:]
 if len(args) > 0:
-    if args[0] == "regen":
+    if args[0] == "pch":
+        build_pch()
+    elif args[0] == "regen":
         generate_ninja_build(True)
         exit()
 

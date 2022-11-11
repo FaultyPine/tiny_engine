@@ -1,73 +1,73 @@
-cxx = g++
-compiler_args = -ggdb -Iinclude -Isrc -std=c++11 -O0 -static-libstdc++ $
-    -static-libgcc
-linker_args = -Llib/glfw/windows -lpthread -lglfw3 -lgdi32 -lws2_32 -lwinmm $
-    -mwindows -static
+cxx = cl
+compiler_args = -std:c++17 -Iinclude -Isrc -EHsc -MT -Z7 /nologo
+linker_args = glfw3_mt.lib user32.lib gdi32.lib shell32.lib msvcrt.lib $
+    ws2_32.lib winmm.lib -LIBPATH:lib/glfw/windows        $
+    /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib $
+    /NODEFAULTLIB:msvcrtd.lib
 builddir = build
 rule compile
-  command = $cxx -MD -MF $out.d $compiler_args -c $in -o $out
+  command = $cxx -showIncludes $compiler_args -c $in -Fo$out
   description = BUILD $out
-  depfile = $out.d
-  deps = gcc
+  deps = msvc
 rule link
-  command = $cxx -o $out $in $linker_args
+  command = LINK -OUT:$out $in $linker_args
   description = LINK $out
 rule pch
-  command = $cxx $compiler_args -c $in -o $out
+  command = $cxx -showIncludes $compiler_args /Yc /Fp$out $in
   description = PCH $out
-build src/tiny_engine/pch.h.gch: pch src/tiny_engine/pch.h
-build $builddir/main.o: compile src/main.cpp
-build $builddir/ObjParser.o: compile src/ObjParser.cpp
-build $builddir/assassin_scene.o: compile src/PartOfThePack/assassin_scene.cpp
-build $builddir/controller_setup_scene.o: compile $
+build $builddir/main.obj: compile src/main.cpp
+build $builddir/ObjParser.obj: compile src/ObjParser.cpp
+build $builddir/assassin_scene.obj: compile $
+    src/PartOfThePack/assassin_scene.cpp
+build $builddir/controller_setup_scene.obj: compile $
     src/PartOfThePack/controller_setup_scene.cpp
-build $builddir/ninja.o: compile src/PartOfThePack/ninja.cpp
-build $builddir/potp_input.o: compile src/PartOfThePack/potp_input.cpp
-build $builddir/potp_main.o: compile src/PartOfThePack/potp_main.cpp
-build $builddir/statue.o: compile src/PartOfThePack/statue.cpp
-build $builddir/title_screen_scene.o: compile $
+build $builddir/ninja.obj: compile src/PartOfThePack/ninja.cpp
+build $builddir/potp_input.obj: compile src/PartOfThePack/potp_input.cpp
+build $builddir/potp_main.obj: compile src/PartOfThePack/potp_main.cpp
+build $builddir/statue.obj: compile src/PartOfThePack/statue.cpp
+build $builddir/title_screen_scene.obj: compile $
     src/PartOfThePack/title_screen_scene.cpp
-build $builddir/framebuffer.o: compile src/tiny_engine/framebuffer.cpp
-build $builddir/input.o: compile src/tiny_engine/input.cpp
-build $builddir/job_system.o: compile src/tiny_engine/job_system.cpp
-build $builddir/math.o: compile src/tiny_engine/math.cpp
-build $builddir/mesh.o: compile src/tiny_engine/mesh.cpp
-build $builddir/shader.o: compile src/tiny_engine/shader.cpp
-build $builddir/shapes.o: compile src/tiny_engine/shapes.cpp
-build $builddir/sprite.o: compile src/tiny_engine/sprite.cpp
-build $builddir/spritesheet.o: compile src/tiny_engine/spritesheet.cpp
-build $builddir/texture.o: compile src/tiny_engine/texture.cpp
-build $builddir/tiny_audio.o: compile src/tiny_engine/tiny_audio.cpp
-build $builddir/tiny_engine.o: compile src/tiny_engine/tiny_engine.cpp
-build $builddir/tiny_fs.o: compile src/tiny_engine/tiny_fs.cpp
-build $builddir/tiny_text.o: compile src/tiny_engine/tiny_text.cpp
-build $builddir/imgui.o: compile src/tiny_engine/external/imgui/imgui.cpp
-build $builddir/imgui_demo.o: compile $
+build $builddir/framebuffer.obj: compile src/tiny_engine/framebuffer.cpp
+build $builddir/input.obj: compile src/tiny_engine/input.cpp
+build $builddir/job_system.obj: compile src/tiny_engine/job_system.cpp
+build $builddir/math.obj: compile src/tiny_engine/math.cpp
+build $builddir/mesh.obj: compile src/tiny_engine/mesh.cpp
+build $builddir/shader.obj: compile src/tiny_engine/shader.cpp
+build $builddir/shapes.obj: compile src/tiny_engine/shapes.cpp
+build $builddir/sprite.obj: compile src/tiny_engine/sprite.cpp
+build $builddir/spritesheet.obj: compile src/tiny_engine/spritesheet.cpp
+build $builddir/texture.obj: compile src/tiny_engine/texture.cpp
+build $builddir/tiny_audio.obj: compile src/tiny_engine/tiny_audio.cpp
+build $builddir/tiny_engine.obj: compile src/tiny_engine/tiny_engine.cpp
+build $builddir/tiny_fs.obj: compile src/tiny_engine/tiny_fs.cpp
+build $builddir/tiny_text.obj: compile src/tiny_engine/tiny_text.cpp
+build $builddir/imgui.obj: compile src/tiny_engine/external/imgui/imgui.cpp
+build $builddir/imgui_demo.obj: compile $
     src/tiny_engine/external/imgui/imgui_demo.cpp
-build $builddir/imgui_draw.o: compile $
+build $builddir/imgui_draw.obj: compile $
     src/tiny_engine/external/imgui/imgui_draw.cpp
-build $builddir/imgui_impl_glfw.o: compile $
+build $builddir/imgui_impl_glfw.obj: compile $
     src/tiny_engine/external/imgui/imgui_impl_glfw.cpp
-build $builddir/imgui_impl_opengl3.o: compile $
+build $builddir/imgui_impl_opengl3.obj: compile $
     src/tiny_engine/external/imgui/imgui_impl_opengl3.cpp
-build $builddir/imgui_tables.o: compile $
+build $builddir/imgui_tables.obj: compile $
     src/tiny_engine/external/imgui/imgui_tables.cpp
-build $builddir/imgui_widgets.o: compile $
+build $builddir/imgui_widgets.obj: compile $
     src/tiny_engine/external/imgui/imgui_widgets.cpp
-build $builddir/particles.o: compile src/tiny_engine/particles/particles.cpp
-build $builddir/particle_behaviors.o: compile $
+build $builddir/particles.obj: compile src/tiny_engine/particles/particles.cpp
+build $builddir/particle_behaviors.obj: compile $
     src/tiny_engine/particles/particle_behaviors.cpp
-build $builddir/PartOfThePack.exe: link $builddir/main.o $
-    $builddir/ObjParser.o $builddir/assassin_scene.o $
-    $builddir/controller_setup_scene.o $builddir/ninja.o $
-    $builddir/potp_input.o $builddir/potp_main.o $builddir/statue.o $
-    $builddir/title_screen_scene.o $builddir/framebuffer.o $
-    $builddir/input.o $builddir/job_system.o $builddir/math.o $
-    $builddir/mesh.o $builddir/shader.o $builddir/shapes.o $
-    $builddir/sprite.o $builddir/spritesheet.o $builddir/texture.o $
-    $builddir/tiny_audio.o $builddir/tiny_engine.o $builddir/tiny_fs.o $
-    $builddir/tiny_text.o $builddir/imgui.o $builddir/imgui_demo.o $
-    $builddir/imgui_draw.o $builddir/imgui_impl_glfw.o $
-    $builddir/imgui_impl_opengl3.o $builddir/imgui_tables.o $
-    $builddir/imgui_widgets.o $builddir/particles.o $
-    $builddir/particle_behaviors.o
+build $builddir/PartOfThePack.exe: link $builddir/main.obj $
+    $builddir/ObjParser.obj $builddir/assassin_scene.obj $
+    $builddir/controller_setup_scene.obj $builddir/ninja.obj $
+    $builddir/potp_input.obj $builddir/potp_main.obj $builddir/statue.obj $
+    $builddir/title_screen_scene.obj $builddir/framebuffer.obj $
+    $builddir/input.obj $builddir/job_system.obj $builddir/math.obj $
+    $builddir/mesh.obj $builddir/shader.obj $builddir/shapes.obj $
+    $builddir/sprite.obj $builddir/spritesheet.obj $builddir/texture.obj $
+    $builddir/tiny_audio.obj $builddir/tiny_engine.obj $
+    $builddir/tiny_fs.obj $builddir/tiny_text.obj $builddir/imgui.obj $
+    $builddir/imgui_demo.obj $builddir/imgui_draw.obj $
+    $builddir/imgui_impl_glfw.obj $builddir/imgui_impl_opengl3.obj $
+    $builddir/imgui_tables.obj $builddir/imgui_widgets.obj $
+    $builddir/particles.obj $builddir/particle_behaviors.obj

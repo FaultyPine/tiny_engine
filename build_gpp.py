@@ -1,4 +1,5 @@
 from build_utils import *
+import time
 
 def get_linker_args_gpp():
     if is_windows():
@@ -22,6 +23,16 @@ def get_compiler_args_gpp():
         -ggdb -Iinclude -Isrc -std=c++11 -O0 -static-libstdc++ -static-libgcc
     """)
 
+def build_pch_gpp():
+    PCH_COMMAND = f"g++ -x c++-header -o {PCH_FILE}.gch -c {PCH_FILE} {get_compiler_args_gpp()}"
+    start_time = time.time()
+    command(PCH_COMMAND)
+    elapsed = round(time.time() - start_time, 3)
+    print(f"Rebuilt precompiled header! {PCH_FILE}")
+    print(f"Build took {elapsed} seconds")
+    exit()
+
+# TODO: is our pch still actually building the gch?
 def generate_ninja_build_gpp(force_overwrite):
     ninja_build_filename = "build.ninja"
     if os.path.exists(ninja_build_filename) and not force_overwrite:
@@ -49,7 +60,7 @@ def generate_ninja_build_gpp(force_overwrite):
         description="PCH $out"
     )
     # pch build
-    n.build("src/tiny_engine/pch.h.gch", "pch", "src/tiny_engine/pch.h")
+    n.build(f"{PCH_FILE}.gch", "pch", f"{PCH_FILE}")
     link_files = []
     # sources build
     for src_cpp in SOURCES:
