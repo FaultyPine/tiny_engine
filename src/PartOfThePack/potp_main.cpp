@@ -56,7 +56,11 @@ void PotpInit(GameState& gs, UserInput& inputs) {
 
     // SFX
     Audio::InitAudioEngine();
+    #ifdef TINY_DEBUG
     Audio::SetMute(true);
+    #else
+    Audio::SetMute(false);
+    #endif
     Audio::PlayAudio(UseResPath("potp/clarkPapple_Song.mp3").c_str());
 
     //Audio::SetVolume(2.0);

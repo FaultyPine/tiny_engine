@@ -14,7 +14,7 @@ void TitleScreenSceneInit(GameState& gs) {
     }
 
     if (!gs.titleScreenText)
-        gs.titleScreenText = CreateText("Press start to play");
+        gs.titleScreenText = CreateText("Press Tab to start");
 }
 void TitleScreenSceneTick(GameState& gs, UserInput& inputs) {
     for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
