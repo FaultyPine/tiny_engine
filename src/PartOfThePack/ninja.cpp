@@ -7,6 +7,7 @@
 #include "tiny_engine/tiny_fs.h"
 #include "tiny_engine/shapes.h"
 #include "tiny_engine/tiny_audio.h"
+#include "tiny_engine/tiny_text.h"
 
 glm::vec2 GetRandomAIDesiredPos() {
     u32 screenWidth = Camera::GetMainCamera().GetMinScreenDimensions().x;
@@ -307,7 +308,7 @@ void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
     
     ninja.spritesheet.Draw(Camera::GetMainCamera(), 
             ninja.entity.position, ninja.entity.size, rotation, glm::vec3(0.0, 1.0, 0.0), ninja.entity.color, true);
-    
+
     // NOTE: FOR DEBUGGING
     glm::vec4 col = isPlayer ? glm::vec4(0.0, 1.0, 0.0, 1.0) : glm::vec4(1.0, 0.0, 0.0, 1.0);
     //Shapes::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
@@ -338,6 +339,15 @@ void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinja
         const Ninja& ninja = playerNinjas[i];
         if (ninja.entity.active) {
             DrawNinja(ninja, ninja.isSpriteFlipped, true);
+            if (ninja.isDead) {
+                static GLTtext* deadText = nullptr;
+                if (!deadText) {
+                    deadText = CreateText("");
+                }
+                SetText(deadText, ("P" + std::to_string(i+1) + " DEAD").c_str());
+                glm::vec2 ninjaCenter = ninja.entity.GetEntityCenter();
+                DrawText(deadText, ninjaCenter.x, ninjaCenter.y, 0.8, 1.0, 0.0, 0.0, 1.0);
+            }
         }
     }
     // draw smoke grenades on top of ninjas
