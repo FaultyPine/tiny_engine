@@ -20,9 +20,6 @@ static u64 randomSeed = 0;
 void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
     s32 screenWidth = width;
     s32 screenHeight = height;
-
-    glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
-
     UpdateGLTViewport(screenWidth, screenHeight);
     glViewport(0, 0, screenWidth, screenHeight);
     Camera::GetMainCamera().screenWidth = screenWidth;
