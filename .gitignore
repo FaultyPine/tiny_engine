@@ -1,7 +1,6 @@
 
 
 .vs
-.vscode
 
 build/
 __pycache__/
