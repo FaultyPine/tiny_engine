@@ -36,11 +36,6 @@ Features:
 
 ## Part Of The Pack
 
-1. Of the goals for milestone X you set in your main project milestone X-1, what were you able to accomplish? Do a brief tour of what you accomplished in the past week. It's a good idea to have your goals list open, switching back and forth in the screen recording.
-2. What snags are you running into? Describe any problems you are having, or expect to be having in the near future. 
-Goal-setting for milestone 
-3. Goal-setting for milestone X+1. What are the goals that you feel must get done for milestone X, and what goals do you hope to get also get done?
-
 #### Milestone 1
 - ~~Display graphics onscreen~~
 - ~~(moving) Sprites~~
