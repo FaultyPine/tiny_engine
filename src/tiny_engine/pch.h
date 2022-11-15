@@ -34,7 +34,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-#define TINY_DEBUG
+//#define TINY_DEBUG
 #define TARGET_FPS 60
 
 // types
