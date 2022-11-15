@@ -119,7 +119,7 @@ bool ShouldCloseWindow() {
 void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName) {
     s8 cwd[PATH_MAX];
     #ifdef _MSC_VER
-    std::cout << "CWD: " << _wgetcwd((wchar_t*)cwd, PATH_MAX) << "\n";
+    std::cout << "CWD: " << getcwd(cwd, PATH_MAX) << "\n";
     #else
     std::cout << "CWD: " << getcwd(cwd, PATH_MAX) << "\n";
     #endif

@@ -7,17 +7,23 @@ def get_linker_args_msvc():
     """)
 
 def get_compiler_args_msvc():
+    # MT = static link runtime lib
+    # Z7 = include debug info in object files
+    # EHsc = catch C++ exceptions
     return var_contents("""
-        -std:c++17 -Iinclude -Isrc -EHsc -MT -Z7 /nologo
+        /std:c++17 -Iinclude -Isrc -EHsc -MT -Z7 /nologo
     """)
 def build_pch_msvc():
     print("UNIMPLEMENTED build_pch_msvc")
     pass
 def setup_msvc_terminal():
-    # TODO: is there a way to automatically search known installation paths
-    # for vcvarsall?
-    VCVARSALL_PATH = "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Auxiliary/Build"
-    command('call "' + VCVARSALL_PATH + "/" + 'vcvarsall.bat" x64')
+    #TEMP = "%comspec% /k "
+    #FILE = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\BuildTools\\Common7\\Tools\\VsDevCmd.bat\""
+    #command(TEMP + FILE + " -arch=x86")
+    
+    # BUG: this is not persisting into the next calls to command("...") so cl isn't able to be found
+    VCVARSALL_PATH = "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Auxiliary/Build/vcvarsall.bat"
+    command('call "' + VCVARSALL_PATH + "\" x64")
 
 def generate_ninja_build_msvc(force_overwrite):
     ninja_build_filename = "build.ninja"
@@ -36,7 +42,7 @@ def generate_ninja_build_msvc(force_overwrite):
         deps="msvc")
     n.rule(
         name="link",
-        command="LINK -OUT:$out $in $linker_args", # TODO
+        command="LINK -OUT:$out $in $linker_args",
         description="LINK $out"
     )
     n.rule(

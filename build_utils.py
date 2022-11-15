@@ -10,7 +10,17 @@ def is_linux():
 def is_macos():
     return platform == "darwin" 
 def get_files_with_ext(basedir, ext):
-    return [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
+    files_with_ext = [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
+    # if a folder/file starts with .  ignore it
+    def filter_out_files_that_start_with_dot(filepath):
+        #filepath looks like 'src/PartOfThePack/assassin_scene.cpp'
+        for folder in filepath.split("/"):
+            if folder.startswith("."):
+                return False
+        return True
+
+    files_with_ext = list(filter(filter_out_files_that_start_with_dot, files_with_ext))
+    return files_with_ext
 
 
 # path to the folder that contains this python script regardless of cwd

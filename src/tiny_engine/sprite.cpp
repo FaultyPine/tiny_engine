@@ -13,6 +13,14 @@ Sprite::Sprite(const Shader& shader, const Texture& mainTex) {
     initRenderData();
 }
 
+void AdjustDimensionsForSceenSize(glm::vec2& position, glm::vec2& size) {
+    const Camera& cam = Camera::GetMainCamera();
+    glm::vec2 screenMin = cam.GetMinScreenDimensions();
+    size.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), size.x) /1.1;
+    size.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), size.y) /1.1;
+    position.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), position.x);
+    position.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), position.y);
+}
 
 
 void Sprite::DrawSprite(const Camera& cam, glm::vec2 position, 
@@ -24,11 +32,7 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
     }
 
     if (adjustToScreensize) {
-        glm::vec2 screenMin = cam.GetMinScreenDimensions();
-        size.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), size.x) /1.1;
-        size.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), size.y) /1.1;
-        position.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), position.x);
-        position.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), position.y);
+        AdjustDimensionsForSceenSize(position, size);
     }
 
     // set up transform of the actual sprite
@@ -62,6 +66,8 @@ void Sprite::initRenderData() {
     // configure VAO/VBO
     u32 VBO;
 
+    // one vert attribute with first two components being 2d pos
+    // and second 2 components being texcoords
     const f32 tex_quad[] = { 
         // pos      // tex
         0.0f, 1.0f, 0.0f, 1.0f,

@@ -32,7 +32,6 @@ def build_pch_gpp():
     print(f"Build took {elapsed} seconds")
     exit()
 
-# TODO: is our pch still actually building the gch?
 def generate_ninja_build_gpp(force_overwrite):
     ninja_build_filename = "build.ninja"
     if os.path.exists(ninja_build_filename) and not force_overwrite:
