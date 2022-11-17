@@ -8,8 +8,6 @@ def generate_ninja_build(force_overwrite=False):
     else:
         build_gpp.generate_ninja_build_gpp(force_overwrite)
 def get_ninja_command():
-    if USE_MSVC:
-        build_msvc.setup_msvc_terminal()
     if is_linux(): # linux
         return "chmod u+x ninja-linux && ./ninja-linux"
     elif is_macos(): # mac

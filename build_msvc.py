@@ -16,14 +16,6 @@ def get_compiler_args_msvc():
 def build_pch_msvc():
     print("UNIMPLEMENTED build_pch_msvc")
     pass
-def setup_msvc_terminal():
-    #TEMP = "%comspec% /k "
-    #FILE = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\BuildTools\\Common7\\Tools\\VsDevCmd.bat\""
-    #command(TEMP + FILE + " -arch=x86")
-    
-    # BUG: this is not persisting into the next calls to command("...") so cl isn't able to be found
-    VCVARSALL_PATH = "C:/Program Files (x86)/Microsoft Visual Studio/2019/BuildTools/VC/Auxiliary/Build/vcvarsall.bat"
-    command('call "' + VCVARSALL_PATH + "\" x64")
 
 def generate_ninja_build_msvc(force_overwrite):
     ninja_build_filename = "build.ninja"
