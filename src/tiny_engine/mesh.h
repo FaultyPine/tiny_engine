@@ -21,30 +21,33 @@ struct Vertex {
 struct Mesh {
     Shader cachedShader;
     u32 VAO, VBO, EBO; // vert array obj, vert buf obj, element buf obj
-    std::vector<Vertex> vertices;
-    std::vector<u32> indices;
-    std::vector<Texture> textures;
+    std::vector<Vertex> vertices = {};
+    std::vector<u32> indices = {};
+    std::vector<Texture> textures = {};
     
     Mesh(){}
-    Mesh(const std::vector<Vertex>& verts, const std::vector<u32>& idxs, const std::vector<Texture>& texs);
     Mesh(const Shader& shader, const std::vector<Vertex>& verts, const std::vector<u32>& idxs, const std::vector<Texture>& texs);
     void UnloadMesh();
     inline void SetCachedShader(const Shader& shader) { cachedShader = shader; }
+    inline bool isValid() {
+        return vertices.size() && indices.size() && VAO && VBO && EBO;
+    }
+    inline Shader& GetShader() { return cachedShader; }
 
     // draw mesh with specified shader
-    inline void Draw(Shader& shader) {
-        DrawMesh(shader);
+    inline void Draw(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
+        DrawMesh(shader, position, scale, rotation, rotationAxis);
     }
     // draw mesh with cached shader
-    inline void Draw() {
-        DrawMesh(cachedShader);
+    inline void Draw(glm::vec3 position, f32 scale = 1.0, f32 rotation = 0.0, glm::vec3 rotationAxis = {1.0, 0.0, 0.0}) {
+        DrawMesh(cachedShader, position, scale, rotation, rotationAxis);
     }
    
     void initMesh();
 
 private:
     
-    void DrawMesh(Shader& shader);
+    void DrawMesh(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis);
 };
 
 

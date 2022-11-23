@@ -95,17 +95,20 @@ void EngineLoop() {
     f32 currentTime = GetTime();
     deltaTime = currentTime - lastFrameTime;
     lastFrameTime = currentTime;
-
+    // inc frame
     frameCount++;
+    // update cam
+    Camera::UpdateCamera();
 
-    {
+    { // sleep until we should draw the next frame
         static f64 lastframe = GetTime();
         while (GetTime() < lastframe + 1.0/TARGET_FPS) {
             // zzzzzz
         }
         lastframe += 1.0/TARGET_FPS;
     }
-
+    // clear screen after we've waited
+    ClearGLBuffers();
 }
 
 /// Game loop should be while(!ShouldCloseWindow())
@@ -161,16 +164,16 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
     glViewport(0, 0, windowWidth, windowHeight);
     UpdateGLTViewport(windowWidth, windowHeight);
     
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
 
     glfwSetWindowAspectRatio(window, aspectRatioW, aspectRatioH);
 
     // For 2D games, don't depth test so that the order they are drawn in makes sense
     // (subsequent draws overwrite previous draws)
-    glDepthFunc(GL_NEVER);
+    //glDepthFunc(GL_NEVER);
     // comment out above line and comment in below line for proper 3D depth testing
-    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_STENCIL_TEST);  
    
@@ -180,7 +183,6 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); 
     glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
 
     glob_glfw_window = window;
 

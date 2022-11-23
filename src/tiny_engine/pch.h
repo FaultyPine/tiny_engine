@@ -24,17 +24,19 @@
 #include <math.h>
 #include <algorithm>
 #include <memory>
+#include <stdarg.h>
 // ----------------
 #define PATH_MAX 260
 #include <glad/glad.h>
 #include "GLFW/glfw3.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 
-//#define TINY_DEBUG
+#define TINY_DEBUG
 #define TARGET_FPS 60
 
 // types
@@ -66,18 +68,16 @@ static void GLClearError() {
 }
 static bool GLLogCall(const char* func, const char* file, int line) {
     while (GLenum error = glGetError()) {
-        std::cout << "OpenGL error: (" << error << "): " << file << " line: " << line << std::endl;
+        std::cout << "OpenGL error: (" << error << "): " << file << ":" << line << std::endl;
         return false;
     }
     return true;
 }
 
 #ifdef TINY_DEBUG
-    #define GLCall(x) GLClearError();\
-        x;\
-        ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+#define GLCall(_CALL)      do { _CALL; GLenum gl_err = glGetError(); if (gl_err != 0) fprintf(stderr, "GL error 0x%x returned from '%s' %s:%i.\n", gl_err, #_CALL, __FILE__, __LINE__); } while (0)
 #else
-    #define GLCall(x) x
+#define GLCall(_CALL)      _CALL   // Call without error check
 #endif
 
 const double PI  =3.141592653589793238463;
@@ -136,13 +136,46 @@ inline u32 countLeadingZeroes(u32 n) {
     return n == 0 ? 0 : log2(n & -n);
 }
 
+// yoinked from raylib
+// https://github.com/raysan5/raylib/blob/master/src/rcore.c#L7169
+inline const char *TextFormat(const char *text, ...)
+{
+#ifndef MAX_TEXTFORMAT_BUFFERS
+    #define MAX_TEXTFORMAT_BUFFERS      12        // Maximum number of static buffers for text formatting
+#endif
+#ifndef MAX_TEXT_BUFFER_LENGTH
+    #define MAX_TEXT_BUFFER_LENGTH   1024        // Maximum size of static text buffer
+#endif
 
+    // We create an array of buffers so strings don't expire until MAX_TEXTFORMAT_BUFFERS invocations
+    static char buffers[MAX_TEXTFORMAT_BUFFERS][MAX_TEXT_BUFFER_LENGTH] = { 0 };
+    static int index = 0;
 
-inline std::string Vec3ToStr(const glm::vec3& vec) {
-    return std::to_string(vec.x) + " " + std::to_string(vec.y) + " " + std::to_string(vec.z);
+    char *currentBuffer = buffers[index];
+    memset(currentBuffer, 0, MAX_TEXT_BUFFER_LENGTH);   // Clear buffer before using
+
+    va_list args;
+    va_start(args, text);
+    vsnprintf(currentBuffer, MAX_TEXT_BUFFER_LENGTH, text, args);
+    va_end(args);
+
+    index += 1;     // Move to next buffer for next function call
+    if (index >= MAX_TEXTFORMAT_BUFFERS) index = 0;
+
+    return currentBuffer;
 }
-inline std::string Vec2ToStr(const glm::vec2& vec) {
-    return std::to_string(vec.x) + " " + std::to_string(vec.y);
+
+inline std::string VecToStr(const glm::vec2& vec) {
+    return std::string(TextFormat("%f %f", vec.x, vec.y));
+}
+inline std::string VecToStr(const glm::vec3& vec) {
+    return std::string(TextFormat("%f %f %f", vec.x, vec.y, vec.z));
+}
+inline std::string VecToStr(const glm::vec4& vec) {
+    return std::string(TextFormat("%f %f %f %f", vec.x, vec.y, vec.z, vec.w));
+}
+inline std::string Matrix4x4ToStr(const glm::mat4 mat) {
+    return glm::to_string(mat);
 }
 
 #endif

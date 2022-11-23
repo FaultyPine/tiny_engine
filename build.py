@@ -29,12 +29,12 @@ def build():
     start_time = time.time()
     command(get_ninja_command())
     elapsed = round(time.time() - start_time, 3)
-    if (os.path.exists(os.path.join(PYTHON_SCRIPT_PATH, APP_NAME))):
-        os.remove(os.path.join(PYTHON_SCRIPT_PATH, APP_NAME))
+    #if (os.path.exists(os.path.join(PYTHON_SCRIPT_PATH, APP_NAME))):
+        #os.remove(os.path.join(PYTHON_SCRIPT_PATH, APP_NAME))
     src = os.path.join(os.path.join(PYTHON_SCRIPT_PATH, BUILD_DIR), APP_NAME)
     dst = os.path.join(PYTHON_SCRIPT_PATH, APP_NAME)
     if os.path.exists(src):
-        shutil.move(src, dst)
+        shutil.copy(src, dst)
     else:
         print(f"{src} doesn't exist, didn't copy.")
     print("Built!")

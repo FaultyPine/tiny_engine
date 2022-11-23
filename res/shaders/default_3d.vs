@@ -9,15 +9,13 @@ out vec2 texCoord;
 out vec3 color;
 
 
-// matricies for 3d rendering
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 mvp;
+uniform float time;
 
 void main()
 {
 	normal = vertNormal;
 	texCoord = vertTexCoord;
     color = vertColor;
-	gl_Position = projection * view * model * vec4(vertPos, 1.0);
+	gl_Position = mvp * vec4(vertPos, 1.0);
 }

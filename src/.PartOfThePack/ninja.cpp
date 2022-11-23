@@ -339,6 +339,7 @@ void DrawNinjas(const Ninja* aiNinjas, u32 numAINinjas, const Ninja* playerNinja
         const Ninja& ninja = playerNinjas[i];
         if (ninja.entity.active) {
             DrawNinja(ninja, ninja.isSpriteFlipped, true);
+            // draw death indicator when player ninja dies (should be moved into DrawNinja)
             if (ninja.isDead) {
                 static GLTtext* deadText = nullptr;
                 if (!deadText) {

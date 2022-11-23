@@ -38,12 +38,13 @@ namespace Keyboard {
 bool GetKeyState(s32 key, s32 keyState);
 bool isKeyPressed(s32 key);
 bool isKeyReleased(s32 key);
+bool isKeyDown(s32 key);
+bool isKeyUp(s32 key);
 
 }
 // Mouse
 
 void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos);
-void cursor_position_callback(GLFWwindow* window, f64 xpos, f64 ypos);
 
 struct MouseInput {
     f32 lastX = 400;

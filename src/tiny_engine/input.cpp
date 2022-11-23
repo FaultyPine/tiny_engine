@@ -66,6 +66,12 @@ bool isKeyReleased(s32 key) {
     keyboardButtonStates[key] = isPressed;
     return isJustReleased;
 }
+bool isKeyDown(s32 key) {
+    return GetKeyState(key, GLFW_PRESS);
+}
+bool isKeyUp(s32 key) {
+    return !isKeyDown(key);
+}
 
 
 }
@@ -98,7 +104,6 @@ void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
         mouseInput.pitch = 89.0f;
     if(mouseInput.pitch < -89.0f)
         mouseInput.pitch = -89.0f;
-}
-void cursor_position_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
+
     MouseInput::GetMouse().mousePos = glm::vec2(xpos, ypos);
 }

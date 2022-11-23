@@ -7,8 +7,8 @@
 
 struct Camera {
     f32 speed = 4.5f;
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+    glm::vec3 cameraPos = glm::vec3(1);
+    glm::vec3 cameraFront = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
     u32 screenWidth = 800;
@@ -20,17 +20,25 @@ struct Camera {
     f32 FOV = 45.0f;
     f32 nearClip = 0.1f;
     f32 farClip = 100.0f;
+    bool isSwivelable = true;
 
-    inline glm::mat4 GetProjectionMatrix() {
+    inline glm::mat4 GetProjectionMatrix() const {
         f32 aspect = (f32)screenWidth / screenHeight;
         return glm::perspective(glm::radians(FOV), aspect, nearClip, farClip);
     }
-    inline glm::mat4 GetViewMatrix() {
+    inline glm::mat4 GetViewMatrix() const {
         return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     }
     inline static Camera& GetMainCamera() {
         static Camera mainCamera;
         return mainCamera;
+    }
+    inline static void UpdateCamera() {
+        Camera& cam = GetMainCamera();
+        MouseInput& mouseInput = MouseInput::GetMouse();
+        if (cam.isSwivelable) {
+            cam.cameraFront = mouseInput.GetNormalizedLookDir();
+        }
     }
     /// returns glm::vec2(minScreenWidth, minScreenHeight)
     glm::vec2 GetMinScreenDimensions() const { return glm::vec2(minScreenWidth, minScreenHeight); }

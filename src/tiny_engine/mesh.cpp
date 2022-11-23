@@ -1,9 +1,6 @@
 #include "mesh.h"
+#include "tiny_engine/camera.h"
 
-Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<u32>& idxs, const std::vector<Texture>& texs) {
-    vertices = verts; indices = idxs; textures = texs;
-    initMesh();
-}
 Mesh::Mesh(const Shader& shader, const std::vector<Vertex>& verts, const std::vector<u32>& idxs, const std::vector<Texture>& texs) {
     vertices = verts; indices = idxs; textures = texs; cachedShader = shader;
     initMesh();
@@ -48,9 +45,33 @@ void Mesh::initMesh() {
     GLCall(glBindVertexArray(0));
 }
 
-void Mesh::DrawMesh(Shader& shader) {
-    assert(textures.size() <= 32); // ogl max texture samplers
+void Set3DMatrixUniforms(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
+    Camera& cam = Camera::GetMainCamera();
+    MouseInput& mouseInput = MouseInput::GetMouse();
+    
+    // identity matrix to start out with
+    glm::mat4 model = glm::mat4(1.0f);
+    // rotate it a little bit
+    model = glm::rotate(model, glm::radians(rotation), rotationAxis); 
+    model = glm::translate(model, position);
+    model = glm::scale(model, glm::vec3(scale));
+
+    glm::mat4 view = cam.GetViewMatrix();
+    glm::mat4 projection = cam.GetProjectionMatrix();
+
     shader.use();
+    // set transform uniforms with the raw data of our matricies
+    shader.setUniform("mvp", projection * view * model);
+}
+
+void Mesh::DrawMesh(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
+    assert(textures.size() <= 32); // ogl max texture samplers
+    if (!isValid()) {
+        std::cout << "[ERR] Tried to draw invalid mesh!\n";
+        return;
+    }
+    shader.use();
+    Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
     // setup textures before drawing
     std::vector<u32> numOfEachTexType(TextureMaterialType::NUM_TYPES-1, 1);
 

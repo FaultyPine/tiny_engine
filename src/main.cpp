@@ -10,20 +10,24 @@
 #include "tiny_engine/tiny_engine.h"
 
 // game includes
-#include "PartOfThePack/potp_main.h"
+//#include "PartOfThePack/potp_main.h"
+#include "testbed/testbed_main.h"
 
 void preLoopInit() {
-    InitGame(800, 600, 4, 3, "Part Of The Pack"); 
+    InitGame(800, 600, 4, 3, "Tiny Engine"); 
 
-    Potp::MainInit();
+    //Potp::MainInit();
+    testbed_init();
 }
 
 void gameTick() {
-    Potp::MainUpdate();
+    //Potp::MainUpdate();
+    testbed_tick();
 }
 
 void endGame() {
-    Potp::Terminate();
+    //Potp::Terminate();
+    testbed_terminate();
     TerminateGame();
 }
 

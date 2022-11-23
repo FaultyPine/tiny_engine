@@ -28,7 +28,7 @@ PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
 APP_NAME = "PartOfThePack.exe" if is_windows() else "PartOfThePack.out"
 SOURCE_DIR = "src"
 BUILD_DIR = "build"
-USE_MSVC = False
+USE_MSVC = True
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
 PCH_FILE = "src/tiny_engine/pch.h"
 
