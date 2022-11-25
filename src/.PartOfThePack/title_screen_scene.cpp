@@ -6,10 +6,7 @@
 void TitleScreenSceneInit(GameState& gs) {
     gs.scene = PotpScene::TITLE;
     if (!gs.titleScreenSplash.isValid()) {
-        TextureProperties texProps = TextureProperties::Default();
-        texProps.imgFormat = TextureProperties::ImageFormat::RGB;
-        texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-        texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
+        TextureProperties texProps = TextureProperties::RGB_NEAREST();
         gs.titleScreenSplash = Sprite(LoadTexture(UseResPath("potp/title_screen.jpg").c_str(), texProps));
     }
 

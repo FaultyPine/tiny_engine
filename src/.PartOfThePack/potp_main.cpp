@@ -66,11 +66,7 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     //Audio::SetVolume(2.0);
 
     // textures
-    TextureProperties texProps = TextureProperties::Default();
-    texProps.imgFormat = TextureProperties::ImageFormat::RGB;
-    texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
-    
+    TextureProperties texProps = TextureProperties::RGB_NEAREST();
     Texture backgroundTex = LoadTexture(UseResPath("potp/background.jpg").c_str(), texProps);
     // Sprites
     gs.background = Sprite(backgroundTex);

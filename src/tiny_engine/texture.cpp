@@ -5,6 +5,7 @@ std::string GetTexMatTypeString(TextureMaterialType type) {
     switch (type) {
         case DIFFUSE: return "tex_diffuse";
         case SPECULAR: return "tex_specular";
+        case AMBIENT: return "tex_ambient";
         case NORMAL: return "tex_normal";
         case ROUGHNESS: return "tex_roughness";
         case EMISSION: return "tex_emission";
@@ -31,7 +32,7 @@ u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels
 
 
 Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props, TextureMaterialType texType) {
-    u32 texture = 0; // good default?
+    u32 texture = 0;
     if (imgData) {
         //std::cout << "Loaded img " << imgPath << "\n";
         GLCall(glGenTextures(1, &texture));
@@ -68,7 +69,12 @@ Texture LoadTexture(const std::string& imgPath,
                     bool flipVertically) {
     s32 width, height, numChannels;
     u8* data = LoadImageData(imgPath.c_str(), &width, &height, &numChannels, flipVertically);
+    // if we didn't specify texture properties, fetch them automatically
+    if (props.isNone) {
+        props = numChannels == 3 ? TextureProperties::RGB_LINEAR() : TextureProperties::RGBA_LINEAR();
+    }
     Texture ret = GenTextureFromImg(data, width, height, props, texType);
+    ret.texpath = imgPath;
     stbi_image_free(data);
     return ret;
 }

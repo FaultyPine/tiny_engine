@@ -8,9 +8,7 @@ void ControllerSetupSceneInit(GameState& gs) {
     gs.scene = PotpScene::CONTROLLER_SETUP;
     gs.allReadyCountdown = ASSASSIN_ALL_READY_COUNTDOWN_FRAMES;
 
-    TextureProperties texProps = TextureProperties::Default();
-    texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
+    TextureProperties texProps = TextureProperties::RGBA_NEAREST();
     // init keyboard/controller sprites
     if (!gs.keyboardSprite.isValid()) 
         gs.keyboardSprite = Sprite(LoadTexture(UseResPath("potp/keyboard.png").c_str(), texProps));

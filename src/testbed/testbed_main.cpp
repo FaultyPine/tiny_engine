@@ -43,7 +43,7 @@ void testbed_inputpoll() {
         if (glfwGetInputMode(glob_glfw_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(glob_glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             cam.isSwivelable = true;
-            cam.cameraFront = glm::normalize(glm::vec3(1, 0, 0));
+            cam.LookAt({0,cam.cameraPos.y,0});
         }
         else {
             glfwSetInputMode(glob_glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);  
@@ -52,54 +52,50 @@ void testbed_inputpoll() {
     }
 }
 
-
-void createMeshOBJ(Mesh& meshToLoad, const char* meshObjFile, const Shader& shader, const std::vector<Texture>& textures) {
-    std::vector<Vertex> meshVerts = {};
-    std::vector<u32> meshIndices = {};
-    std::vector<Texture> meshTexs = {};
-    std::vector<Material> materials = {};
-    load_obj(meshObjFile, UseResPath().c_str(), 
-            meshVerts, meshIndices, materials);
-    meshToLoad = Mesh(shader, meshVerts, meshIndices, textures);
+void testbed_orbit(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) {
+    Camera& cam = Camera::GetMainCamera();
+    f32 time = (f32)GetTime();
+    f32 x = sinf(time) * orbitRadius;
+    f32 z = cosf(time) * orbitRadius;
+    cam.cameraPos = glm::vec3(x, cameraOrbitHeight, z);
+    cam.LookAt(lookAtPos);
 }
 
+
+std::vector<Mesh> testModel = {};
 Mesh testMesh;
 glm::vec3 testMeshPos = glm::vec3(0);
 f32 testMeshScale = 1.0;
 f32 testMeshRotation = 0.0;
 glm::vec3 testMeshRotationAxis = glm::vec3(1, 0, 0);
 Light meshLight = {0};
-glm::vec4 ambientCol = glm::vec4(1);
-glm::vec4 colDiffuse = glm::vec4(1);
 f32 shininess = 16.0;
 
 void drawGameState() {
     f32 time = (f32)GetTime();
-    //testMesh.GetShader().setUniform("time", time);
-    Shader& shader = testMesh.GetShader();
-    shader.use();
-    shader.setUniform("ambient", ambientCol);
-    shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
-    shader.setUniform("colDiffuse", colDiffuse);
-    shader.setUniform("shininess", shininess);
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(testMeshRotation), testMeshRotationAxis); 
-    model = glm::translate(model, testMeshPos);
-    model = glm::scale(model, glm::vec3(testMeshScale));
-    shader.setUniform("modelMat", model);
+    // TODO: abstract this multiple mesh setup into a "Model" object
+    for (auto& mesh : testModel) {
+        Shader& shader = mesh.GetShader();
+        shader.use();
+        shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
+        mesh.material.shininess = shininess;
 
-    UpdateLightValues(testMesh.GetShader(), meshLight);
-
-    testMesh.Draw(testMeshPos, testMeshScale, testMeshRotation, testMeshRotationAxis);
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::rotate(model, glm::radians(testMeshRotation), testMeshRotationAxis); 
+        model = glm::translate(model, testMeshPos);
+        model = glm::scale(model, glm::vec3(testMeshScale));
+        shader.setUniform("modelMat", model);
+        UpdateLightValues(shader, meshLight);
+        mesh.Draw(testMeshPos, testMeshScale, testMeshRotation, testMeshRotationAxis);
+    }
+    meshLight.Visualize();
 
     ImGuiBeginFrame();
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::ColorEdit4("Light Color", &meshLight.color[0]);
     ImGui::DragFloat3("Light pos", &meshLight.position[0]);
     ImGui::DragFloat3("Light target", &meshLight.target[0]);
-    ImGui::ColorEdit4("Ambient col", &ambientCol[0]);
-    ImGui::ColorEdit4("ColDiffuse", &colDiffuse[0]);
     ImGui::DragFloat("Shininess", &shininess);
     ImGui::SliderInt("1=point 0=directional", (int*)&meshLight.type, 0, 1);
     ImGui::DragFloat3("Mesh pos", &testMeshPos[0]);
@@ -115,21 +111,14 @@ void testbed_init() {
         Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
         meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(5, 10, 5), glm::vec3(0), glm::vec4(1), shader);
 
-        const char* imgPath = UseResPath("other/container.jpg").c_str();
-        TextureProperties texProps;
-        texProps.texWrapMode =  TextureProperties::TexWrapMode::MIRRORED_REPEAT;
-        texProps.minFilter = TextureProperties::TexMinFilter::LINEAR_MIPMAP_LINEAR;
-        texProps.magFilter = TextureProperties::TexMagFilter::LINEAR;
-        texProps.texFormat = TextureProperties::TexFormat::RGB;
-        texProps.imgFormat = TextureProperties::ImageFormat::RGB;
-        texProps.imgDataType = TextureProperties::ImageDataType::UNSIGNED_BYTE;
-        Texture texture1 = LoadTexture(imgPath, texProps, TextureMaterialType::DIFFUSE);
-        createMeshOBJ(testMesh, UseResPath("other/HumanMesh.obj").c_str(), shader, {texture1});
+        testModel = load_obj(shader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
+        //testModel = load_obj(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
     }
 
 }
 void testbed_tick() {
     testbed_inputpoll();
+    //testbed_orbit(27, 17, {0, 10, 0});
     drawGameState();
 }
 void testbed_terminate() {

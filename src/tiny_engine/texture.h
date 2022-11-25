@@ -3,9 +3,11 @@
 
 #include "pch.h"
 #include "stb_image.h"
+#include "tiny_engine/shader.h"
 
 enum TextureMaterialType {
     DIFFUSE = 0,
+    AMBIENT,
     SPECULAR,
     NORMAL,
     ROUGHNESS,
@@ -63,11 +65,11 @@ struct TextureProperties {
     TexFormat texFormat;
     ImageFormat imgFormat;
     ImageDataType imgDataType;
+    bool isNone = false;
 
     /// DEFAULTS: Wrap = mirrored repeat Min = lin_mip_lin Mag = lin TexFormat = RGBA ImgFormat = RGBA ImgData = UnsignedByte
-    static TextureProperties Default() {
+    static TextureProperties RGBA_LINEAR() {
         TextureProperties texProps;
-        // defaults
         texProps.texWrapMode = TextureProperties::TexWrapMode::MIRRORED_REPEAT;
         texProps.minFilter = TextureProperties::TexMinFilter::LINEAR_MIPMAP_LINEAR;
         texProps.magFilter = TextureProperties::TexMagFilter::LINEAR;
@@ -76,26 +78,83 @@ struct TextureProperties {
         texProps.imgDataType = TextureProperties::ImageDataType::UNSIGNED_BYTE;
         return texProps;
     }
+    static TextureProperties RGBA_NEAREST() {
+        TextureProperties texProps = RGBA_LINEAR();
+        texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
+        texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
+        return texProps;
+    }
+    static TextureProperties RGB_LINEAR() {
+        TextureProperties texProps = RGBA_LINEAR();
+        texProps.imgFormat = TextureProperties::ImageFormat::RGB;
+        texProps.texFormat = TextureProperties::TexFormat::RGB;
+        return texProps;
+    }
+    static TextureProperties RGB_NEAREST() {
+        TextureProperties texProps = RGB_LINEAR();
+        texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
+        texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
+        return texProps;
+    }
+    static TextureProperties None() {
+        TextureProperties texProps = RGBA_LINEAR();
+        texProps.isNone = true;
+        return texProps;
+    }
 };
 
 struct Texture {
-    u32 id = 0; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
+    // when we pass texture id to our shader, it needs to use the glUniform1i (<- signed) which is why this is s32 not u32
+    s32 id = 0; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
     f32 width, height = 0.0;
     TextureMaterialType type = TextureMaterialType::DIFFUSE;
+    std::string texpath;
 
-    Texture() { id = 0; type = TextureMaterialType::DIFFUSE; width = 0.0; height = 0.0; }
-    Texture(u32 id) { Texture(); this->id = id; }
-    void bind() const { glBindTexture(GL_TEXTURE_2D, id); }
+    Texture() {}
+    Texture(s32 id) { Texture(); this->id = id; }
+    void bind() const { GLCall(glBindTexture(GL_TEXTURE_2D, id)); }
+    static void activate(u32 textureUnit) { GLCall(glActiveTexture(GL_TEXTURE0 + textureUnit)); }
 };
 
+struct MaterialProp {
+    bool hasTexture = false;
+    glm::vec4 color = glm::vec4(1);
+    Texture texture;
+    MaterialProp() {}
+};
 struct Material {
-    glm::vec3 diffuseColor;
-    bool hasTexture;
-    std::string diffuseTexPath;
-    Texture diffuseTex;
+    MaterialProp diffuseMat;
+    MaterialProp ambientMat;
+    MaterialProp specularMat;
+    f32 shininess;
+    std::string name = "";
 
-    Material(glm::vec3 diffuseCol) { diffuseColor = diffuseCol; }
-    Material(glm::vec3 diffuseCol, const std::string& texName) { diffuseColor = diffuseCol; diffuseTexPath = texName; }
+    Material(){}
+    Material(MaterialProp diffuse, MaterialProp ambient, MaterialProp specular, std::string name) {
+        diffuseMat = diffuse;
+        ambientMat = ambient;
+        specularMat = specular;
+        this->name = name;
+    }
+    void SetShaderUniforms(Shader& shader) {
+        #define MAT_DIFFUSE   0
+        #define MAT_AMBIENT   1
+        #define MAT_SPECULAR  2
+        shader.use();
+
+        #define SET_MATERIAL_UNIFORMS(matIdx, matVar) \
+            shader.setUniform(TextFormat("materials[%i].useSampler", matIdx), matVar.hasTexture); \
+            glActiveTexture(GL_TEXTURE0 + matIdx); \
+            matVar.texture.bind(); \
+            shader.setUniform(TextFormat("materials[%i].tex", matIdx), matVar.texture.id); \
+            shader.setUniform(TextFormat("materials[%i].color", matIdx), matVar.color)
+
+        // opengl error on setUniform(materials[0].tex)
+        SET_MATERIAL_UNIFORMS(MAT_DIFFUSE, diffuseMat);
+        SET_MATERIAL_UNIFORMS(MAT_AMBIENT, ambientMat);
+        SET_MATERIAL_UNIFORMS(MAT_SPECULAR, specularMat);
+        shader.setUniform("shininess", shininess);
+    }
 };
 
 void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4);
@@ -103,7 +162,7 @@ void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4
 u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);
 
 Texture LoadTexture(const std::string& imgPath, 
-                    TextureProperties props, 
+                    TextureProperties props = TextureProperties::None(), 
                     TextureMaterialType texType = TextureMaterialType::OTHER, 
                     bool flipVertically = false);
 Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, 

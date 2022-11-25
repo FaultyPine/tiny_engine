@@ -80,6 +80,7 @@ u32 Shader::CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource) {
     if (!success) {
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cout << "shader linking failed. vs = " << vertexShader << " fs = " << fragShader << "\n" << infoLog << std::endl;
+        exit(1);
     }
     // delete vert/frag shader after we've linked them to the program object
     glDeleteShader(vertexShader);

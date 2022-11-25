@@ -60,6 +60,7 @@ struct MouseInput {
         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         return glm::normalize(direction);
     }
+    void UpdateMouse(f64 xpos, f64 ypos);
     // mouse singleton
     static MouseInput& GetMouse() {
         static MouseInput mouseInput;

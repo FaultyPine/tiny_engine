@@ -11,10 +11,10 @@ struct Vertex {
     glm::vec2 texCoords;
     glm::vec3 color;
     inline std::string str() {
-        std::string pos = "("  + std::to_string(position.x)  + ", " + std::to_string(position.y)  + ", " + std::to_string(position.z) + ")"; 
-        std::string norm = "(" + std::to_string(normal.x)    + ", " + std::to_string(normal.y)    + ", " + std::to_string(normal.z) + ")";
-        std::string tex = "("  + std::to_string(texCoords.x) + ", " + std::to_string(texCoords.y) + ")";
-        std::string col = "("  + std::to_string(color.x)     + ", " + std::to_string(color.y)     + ", " + std::to_string(color.z) + ")";
+        std::string pos = "("  + VecToStr(position) + ")"; 
+        std::string norm = "(" + VecToStr(normal) + ", " + std::to_string(normal.z) + ")";
+        std::string tex = "("  + VecToStr(texCoords) + ")";
+        std::string col = "("  + VecToStr(color) + ")";
         return "[Pos = " + pos + "  Normals = " + norm + "  TexCoords = " + tex + "  Colors = " + col + " ]";
     }
 };
@@ -24,11 +24,16 @@ struct Mesh {
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
     std::vector<Texture> textures = {};
+    Material material = {};
     
     Mesh(){}
-    Mesh(const Shader& shader, const std::vector<Vertex>& verts, const std::vector<u32>& idxs, const std::vector<Texture>& texs);
+    Mesh(const Shader& shader, 
+        const std::vector<Vertex>& verts, 
+        const std::vector<u32>& idxs, 
+        const std::vector<Texture>& texs = {},
+        const Material& mat = {});
     void UnloadMesh();
-    inline void SetCachedShader(const Shader& shader) { cachedShader = shader; }
+    inline void SetMeshShader(const Shader& shader) { cachedShader = shader; }
     inline bool isValid() {
         return vertices.size() && indices.size() && VAO && VBO && EBO;
     }

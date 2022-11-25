@@ -8,32 +8,43 @@
 
 using glm::vec3;
 using glm::vec2;
+using glm::vec4;
 
 
-void load_materials(const std::vector<tinyobj::material_t> & objmaterials, const std::string & tex_dir, std::vector<Material> & materials) {
+void load_materials(const std::vector<tinyobj::material_t>& objmaterials, const std::string& tex_dir, std::vector<Material>& materials) {
     //extract the relevant material properties from the material_t format used by tinyobjloader
     //if a texture is defined, use the constructor that loads a texture
-    for(auto mat : objmaterials) {
-        vec3 diffuse_colour(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]);
-        if (mat.diffuse_texname.empty()) {
-            materials.push_back(Material(diffuse_colour));
+    for (tinyobj::material_t mat : objmaterials) {
+        MaterialProp diffuse;
+        MaterialProp ambient;
+        MaterialProp specular;
+        MaterialProp* props[] = {&diffuse, &ambient, &specular};
+        f32* materialTypes[] = {mat.diffuse, mat.ambient, mat.specular};
+        std::string* texnames[] = {&mat.diffuse_texname, &mat.ambient_texname, &mat.specular_texname};
+        TextureMaterialType types[] = {TextureMaterialType::DIFFUSE, TextureMaterialType::AMBIENT, TextureMaterialType::SPECULAR};
+        assert(ARRAY_SIZE(props) == ARRAY_SIZE(materialTypes) && ARRAY_SIZE(materialTypes) == ARRAY_SIZE(texnames));
+
+        for (u32 i = 0; i < ARRAY_SIZE(props); i++) {
+            MaterialProp& prop = *props[i];
+            f32* color = materialTypes[i];
+            vec3 colorvec = {color[0], color[1], color[2]};
+            prop.color = vec4(colorvec, mat.dissolve);
+            if (!texnames[i]->empty()) {
+                prop.texture = LoadTexture(tex_dir + *texnames[i]);
+                prop.texture.type = types[i];
+                prop.hasTexture = true;
+            }
         }
-        else {
-            materials.push_back(Material(diffuse_colour, tex_dir + mat.diffuse_texname));
-        }
+        Material meshMat = Material(diffuse, ambient, specular, mat.name);
+        meshMat.shininess = mat.shininess;
+        materials.push_back(meshMat);
     }
 }
 
-
-void load_obj(
-    const char* filename, const char* matsDirectory, 
-    std::vector<Vertex>& vertices, std::vector<u32>& indices,
-    std::vector<Material>& materials) {
-    //load a Wavefront .obj file at 'file' and store vertex coordinates as vec3 and face_inds as uvec3 of indices
-    
-    assert(vertices.size() == 0);
-    assert(indices.size() == 0);
-    assert(materials.size() == 0);
+std::vector<Mesh> load_obj(
+    const Shader& shader, const char* filename, const char* matsDirectory) {
+    //load a Wavefront .obj file at 'file' as a list of meshes
+    std::vector<Mesh> ret = {};
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -64,11 +75,20 @@ void load_obj(
     const std::vector<tinyobj::real_t>& attribNorms = attrib.normals; // 3 floats per vertex
     const std::vector<tinyobj::real_t>& attribTexCoords = attrib.texcoords; // 2 floats per vertex
     const std::vector<tinyobj::real_t>& attribColors = attrib.colors; // 3 floats per vertex (optional)
+    
+    std::vector<Material> materials = {};
+    //convert materials and load textures
+    load_materials(objmaterials, matsDirectory, materials);
 
-    // go through all indices we got from tinyobjloader
-    // and push them into a Vertex list so we can give it to opengl
-    // in a proper VBO index buffer
-    for (const auto& shape : shapes) {
+
+    // a single obj might have multiple sub-meshes
+    // iterate through each of those and load their verts/norms/materials/etc
+    for (const tinyobj::shape_t& shape : shapes) {
+        // assert all material id's are the same... not currently supporting different materials on a single mesh
+        assert("Multiple materials not supported for single mesh" && std::equal(shape.mesh.material_ids.begin() + 1, shape.mesh.material_ids.end(), shape.mesh.material_ids.begin()));
+
+        std::vector<Vertex> vertices = {};
+        std::vector<u32> indices = {};
         for (u32 i = 0; i < shape.mesh.indices.size(); i++) {
             Vertex v = {};
             // indexes into input data from obj file
@@ -110,12 +130,19 @@ void load_obj(
             vertices.push_back(v);
             indices.push_back(indices.size());
         }
+        s32 materialId = shape.mesh.material_ids[0];
+        Material material = {};
+        if (materialId != -1)
+            material = materials.at(materialId);
+        //std::cout << shape.name << " material id " << materialId << " " << materials.at(materialId).name << "\n";
+        //std::cout << VecToStr(materials.at(materialId).diffuseMat.color) << "\n";
+        
+        ret.emplace_back(Mesh(shader, vertices, indices, 
+            {}, material));
     }
-    
-    //conver materials and load textures
-    load_materials(objmaterials, matsDirectory, materials);
 
     std::cout << "Loaded model " << filename << "." << std::endl;
+    return ret;
 }
 
 

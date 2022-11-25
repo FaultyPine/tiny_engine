@@ -10,7 +10,6 @@ out vec3 color;
 
 
 uniform mat4 mvp;
-uniform float time;
 
 void main()
 {

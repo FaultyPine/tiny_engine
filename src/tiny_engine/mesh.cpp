@@ -1,8 +1,12 @@
 #include "mesh.h"
 #include "tiny_engine/camera.h"
 
-Mesh::Mesh(const Shader& shader, const std::vector<Vertex>& verts, const std::vector<u32>& idxs, const std::vector<Texture>& texs) {
-    vertices = verts; indices = idxs; textures = texs; cachedShader = shader;
+Mesh::Mesh(const Shader& shader, 
+            const std::vector<Vertex>& verts, 
+            const std::vector<u32>& idxs, 
+            const std::vector<Texture>& texs,
+            const Material& mat) {
+    vertices = verts; indices = idxs; textures = texs; cachedShader = shader; material = mat;
     initMesh();
 }
 void Mesh::UnloadMesh() {
@@ -72,13 +76,14 @@ void Mesh::DrawMesh(Shader& shader, glm::vec3 position, f32 scale, f32 rotation,
     }
     shader.use();
     Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
+    material.SetShaderUniforms(shader);
     // setup textures before drawing
     std::vector<u32> numOfEachTexType(TextureMaterialType::NUM_TYPES-1, 1);
 
     for (s32 i = 0; i < textures.size(); i++) {
         const Texture& tex = textures[i];
         // before binding, activate the texture we're talking about
-        GLCall(glActiveTexture(GL_TEXTURE0 + i));
+        tex.activate(i);
 
         // get the string representation of our texture type
         // something like tex_diffuse or tex_normal
@@ -88,10 +93,10 @@ void Mesh::DrawMesh(Shader& shader, glm::vec3 position, f32 scale, f32 rotation,
         // this means shader uniforms will follow the convention of
         // tex_<texture type><number>   I.E. tex_diffuse1
         std::string texNum = std::to_string(numOfEachTexType[tex.type]++);
-        
+
         // set the texture uniform to the proper texture unit
         shader.setUniform((texName + texNum).c_str(), i);
-        GLCall(glBindTexture(GL_TEXTURE_2D, tex.id));
+        tex.bind();
     }
 
     // draw mesh = bind vert array -> draw -> unbind
@@ -101,4 +106,5 @@ void Mesh::DrawMesh(Shader& shader, glm::vec3 position, f32 scale, f32 rotation,
     // clean up
     GLCall(glBindVertexArray(0)); // unbind vert array
     GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
+
 }

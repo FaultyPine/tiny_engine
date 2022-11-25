@@ -78,32 +78,35 @@ bool isKeyUp(s32 key) {
 
 // mouse callbacks
 void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
-    MouseInput& mouseInput = MouseInput::GetMouse();
+    MouseInput::GetMouse().UpdateMouse(xpos, ypos);
+}
+
+void MouseInput::UpdateMouse(f64 xpos, f64 ypos) {
     static bool firstMouse = true;
     if (firstMouse)
     {
-        mouseInput.lastX = xpos;
-        mouseInput.lastY = ypos;
+        lastX = xpos;
+        lastY = ypos;
         firstMouse = false;
     }
   
-    f32 xoffset = xpos - mouseInput.lastX;
-    f32 yoffset = mouseInput.lastY - ypos; 
-    mouseInput.lastX = xpos;
-    mouseInput.lastY = ypos;
+    f32 xoffset = xpos - lastX;
+    f32 yoffset = lastY - ypos; 
+    lastX = xpos;
+    lastY = ypos;
 
-    f32 sensitivity = mouseInput.sensitivity;
+    f32 sensitivity = this->sensitivity;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
-    mouseInput.yaw   += xoffset;
-    mouseInput.pitch += yoffset;
+    yaw   += xoffset;
+    pitch += yoffset;
 
     // clamp looking up/down
-    if(mouseInput.pitch > 89.0f)
-        mouseInput.pitch = 89.0f;
-    if(mouseInput.pitch < -89.0f)
-        mouseInput.pitch = -89.0f;
+    if(pitch > 89.0f)
+        pitch = 89.0f;
+    if(pitch < -89.0f)
+        pitch = -89.0f;
 
-    MouseInput::GetMouse().mousePos = glm::vec2(xpos, ypos);
+    mousePos = glm::vec2(xpos, ypos);
 }

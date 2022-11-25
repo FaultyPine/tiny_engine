@@ -21,6 +21,9 @@ Features:
 
 ### TODO:
 - Learn how to use Perforce
+- Fix Model Loading
+    - load model in as seperate meshes... rn I (unintentionally) merge all meshes into one
+    - then apply materials to each mesh
 - 3D lighting
     - ~~Basic blinn-phong~~
     - ~~Point & Directional light~~
@@ -45,3 +48,16 @@ Features:
     - lock free queue: https://jbseg.medium.com/lock-free-queues-e48de693654b
 - Intrusive profiling API - using chrome://tracing as the visualizing backend
     - https://perfetto.dev/docs/instrumentation/tracing-sdk
+
+
+
+
+## Personal Notes:
+- MTL:
+Ka: specifies ambient color     values between 0 and 1 for the RGB components.
+Kd: specifies diffuse color
+Ks: specifies specular color
+Ke: emissive coefficient (rgb emission color)
+Ns: focus of specular highlights. normally range from 0 to 1000, with a high value resulting in a tight, concentrated highlight.
+Ni: defines the optical density (aka index of refraction) values can range from 0.001 to 10. A value of 1.0 means that light does not bend as it passes through an object.
+d: (dissolve) specifies alpha (0 = fully transparent, 1 = fully opaque)

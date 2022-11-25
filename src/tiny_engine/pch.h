@@ -57,6 +57,7 @@ inline void PrintAndExitDBG(const char* file, s32 line, const char* msg) {
     exit(1);
 }
 #ifdef TINY_DEBUG
+#include <intrin.h>
 #define ASSERT(x) if (!(x)) PrintAndExitDBG(__FILE__, __LINE__, #x)
 #else
 #define ASSERT(x)
@@ -75,7 +76,14 @@ static bool GLLogCall(const char* func, const char* file, int line) {
 }
 
 #ifdef TINY_DEBUG
-#define GLCall(_CALL)      do { _CALL; GLenum gl_err = glGetError(); if (gl_err != 0) fprintf(stderr, "GL error 0x%x returned from '%s' %s:%i.\n", gl_err, #_CALL, __FILE__, __LINE__); } while (0)
+#define GLCall(_CALL)  \
+    do { \
+        _CALL; GLenum gl_err = glGetError(); \
+        if (gl_err != 0) { \
+            fprintf(stderr, "GL error 0x%x returned from '%s' %s:%i.\n", gl_err, #_CALL, __FILE__, __LINE__); \
+            exit(1); \
+        } \
+    } while (0)
 #else
 #define GLCall(_CALL)      _CALL   // Call without error check
 #endif

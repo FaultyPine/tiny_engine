@@ -42,9 +42,7 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     u32 screenWidth = Camera::GetMainCamera().GetMinScreenDimensions().x;
     u32 screenHeight = Camera::GetMainCamera().GetMinScreenDimensions().y;
 
-    TextureProperties texProps = TextureProperties::Default();
-    texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
+    TextureProperties texProps = TextureProperties::RGBA_NEAREST();
     Texture ninjaDefaultTex = LoadTexture(UseResPath("potp/ninja_sprites/tile000.png").c_str(), texProps);
 
     Spritesheet ninjaSpritesheet = Spritesheet(UseResPath("potp/ninja_spritesheet_32x32.png").c_str(), 12, 7, texProps);

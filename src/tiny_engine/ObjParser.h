@@ -1,13 +1,10 @@
 #ifndef OBJ_PARSER_H
 #define OBJ_PARSER_H
 
-#include "tiny_engine/pch.h" // for types
+#include "tiny_engine/pch.h"
+#include "tiny_engine/mesh.h"
 
-
-struct Vertex; struct Material;
-void load_obj(
-    const char* filename, const char* matsDirectory, 
-    std::vector<Vertex>& vertices, std::vector<u32>& indices,
-    std::vector<Material>& materials);
+std::vector<Mesh> load_obj(
+    const Shader& shader, const char* filename, const char* matsDirectory);
 
 #endif

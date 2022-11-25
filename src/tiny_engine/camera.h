@@ -40,6 +40,14 @@ struct Camera {
             cam.cameraFront = mouseInput.GetNormalizedLookDir();
         }
     }
+    inline void LookAt(glm::vec3 pos) {
+        glm::vec3 diff = pos - cameraPos;
+        glm::vec3 forward = glm::normalize(diff);
+        glm::vec3 side = glm::normalize(glm::cross({0,1,0}, forward));
+        glm::vec3 newUp = glm::cross(forward, side);
+        cameraFront = forward;
+        cameraUp = newUp;
+    }
     /// returns glm::vec2(minScreenWidth, minScreenHeight)
     glm::vec2 GetMinScreenDimensions() const { return glm::vec2(minScreenWidth, minScreenHeight); }
     glm::vec2 GetMaxScreenDimensions() const { return glm::vec2(maxScreenWidth, maxScreenHeight); }
