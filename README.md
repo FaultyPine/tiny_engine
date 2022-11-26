@@ -22,12 +22,15 @@ Features:
 ### TODO:
 - Learn how to use Perforce
 - Fix Model Loading
-    - load model in as seperate meshes... rn I (unintentionally) merge all meshes into one
-    - then apply materials to each mesh
+    - ~~load model in as seperate meshes... rn I (unintentionally) merge all meshes into one~~
+    - ~~then apply materials to each mesh~~
 - 3D lighting
     - ~~Basic blinn-phong~~
     - ~~Point & Directional light~~
-    - Materials
+    - ~~Materials~~
+        - note: currently materials are set automatically through .mtl files...
+            maybe would be cool to have an interface to set mesh materials through code?
+            also maybe implement hot reloading mtl files for easy material edit iterations?
 - default mesh generation (plane, cube, sphere)
 - shadow mapping
 - HDR & Bloom

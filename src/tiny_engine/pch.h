@@ -26,7 +26,6 @@
 #include <memory>
 #include <stdarg.h>
 // ----------------
-#define PATH_MAX 260
 #include <glad/glad.h>
 #include "GLFW/glfw3.h"
 
@@ -50,10 +49,11 @@ typedef unsigned long u64;
 typedef long s64;
 typedef float f32;
 typedef double f64;
+#define PATH_MAX 260
 
 // debug
 inline void PrintAndExitDBG(const char* file, s32 line, const char* msg) {
-    std::cout << "[ERROR] In " << file << " on line " << line << "\n" << msg << std::endl; 
+    std::cout << "[ERROR] In " << file << ":" << line << "\n" << msg << std::endl; 
     exit(1);
 }
 #ifdef TINY_DEBUG
@@ -88,8 +88,8 @@ static bool GLLogCall(const char* func, const char* file, int line) {
 #define GLCall(_CALL)      _CALL   // Call without error check
 #endif
 
-const double PI  =3.141592653589793238463;
-const float  PI_F=3.14159265358979f;
+const double PI   = 3.141592653589793238463;
+const float  PI_F = 3.14159265358979f;
 
 // Utils
 template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }

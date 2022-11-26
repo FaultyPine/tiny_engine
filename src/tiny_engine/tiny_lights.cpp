@@ -19,23 +19,27 @@ Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 colo
 }
 
 void UpdateLightValues(Shader shader, Light light) {
+    s32 lightIdx = light.globalIndex;
+    // TODO: make a better check?
+    // maybe prevent creating more than maximum # of lights?
+    assert(lightIdx < MAX_NUM_LIGHTS); 
     shader.use();
     // Send to shader light enabled state and type
-    const char* enabledLoc = TextFormat("lights[%i].enabled", light.globalIndex);
+    const char* enabledLoc = TextFormat("lights[%i].enabled", lightIdx);
     shader.setUniform(enabledLoc, light.enabled);
 
-    const char* typeLoc = TextFormat("lights[%i].type", light.globalIndex);
+    const char* typeLoc = TextFormat("lights[%i].type", lightIdx);
     shader.setUniform(typeLoc, light.type);
 
     // Send to shader light position values
-    const char* positionLoc = TextFormat("lights[%i].position", light.globalIndex);
+    const char* positionLoc = TextFormat("lights[%i].position", lightIdx);
     shader.setUniform(positionLoc, light.position);
 
     // Send to shader light target position values
-    const char* targetLoc = TextFormat("lights[%i].target", light.globalIndex);
+    const char* targetLoc = TextFormat("lights[%i].target", lightIdx);
     shader.setUniform(targetLoc, light.target);
 
     // Send to shader light color values
-    const char* colorLoc = TextFormat("lights[%i].color", light.globalIndex);
+    const char* colorLoc = TextFormat("lights[%i].color", lightIdx);
     shader.setUniform(colorLoc, light.color);
 }

@@ -9,6 +9,8 @@
 #include "tiny_fs.h"
 #include "ObjParser.h"
 
+#define MAX_NUM_LIGHTS 4
+
 struct Light {   
     s32 type = 0;
     bool enabled = true;

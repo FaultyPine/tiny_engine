@@ -49,7 +49,7 @@ void Mesh::initMesh() {
     GLCall(glBindVertexArray(0));
 }
 
-void Set3DMatrixUniforms(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
+void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
     Camera& cam = Camera::GetMainCamera();
     MouseInput& mouseInput = MouseInput::GetMouse();
     
@@ -68,7 +68,7 @@ void Set3DMatrixUniforms(Shader& shader, glm::vec3 position, f32 scale, f32 rota
     shader.setUniform("mvp", projection * view * model);
 }
 
-void Mesh::DrawMesh(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
+void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) const {
     assert(textures.size() <= 32); // ogl max texture samplers
     if (!isValid()) {
         std::cout << "[ERR] Tried to draw invalid mesh!\n";

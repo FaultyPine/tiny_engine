@@ -3,7 +3,7 @@ compiler_args = /std:c++17 -Iinclude -Isrc -EHsc -MT -Z7 /nologo
 linker_args = glfw3_mt.lib user32.lib gdi32.lib shell32.lib msvcrt.lib $
     ws2_32.lib winmm.lib -LIBPATH:lib/glfw/windows        $
     /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib $
-    /NODEFAULTLIB:msvcrtd.lib /DEBUG
+    /NODEFAULTLIB:msvcrtd.lib
 builddir = build
 rule compile
   command = $cxx -showIncludes $compiler_args -c $in -Fo$out
@@ -22,6 +22,7 @@ build $builddir/input.obj: compile src/tiny_engine/input.cpp
 build $builddir/job_system.obj: compile src/tiny_engine/job_system.cpp
 build $builddir/math.obj: compile src/tiny_engine/math.cpp
 build $builddir/mesh.obj: compile src/tiny_engine/mesh.cpp
+build $builddir/model.obj: compile src/tiny_engine/model.cpp
 build $builddir/ObjParser.obj: compile src/tiny_engine/ObjParser.cpp
 build $builddir/shader.obj: compile src/tiny_engine/shader.cpp
 build $builddir/shapes.obj: compile src/tiny_engine/shapes.cpp
@@ -52,12 +53,12 @@ build $builddir/particle_behaviors.obj: compile $
 build $builddir/PartOfThePack.exe: link $builddir/main.obj $
     $builddir/testbed_main.obj $builddir/framebuffer.obj $
     $builddir/input.obj $builddir/job_system.obj $builddir/math.obj $
-    $builddir/mesh.obj $builddir/ObjParser.obj $builddir/shader.obj $
-    $builddir/shapes.obj $builddir/sprite.obj $builddir/spritesheet.obj $
-    $builddir/texture.obj $builddir/tiny_audio.obj $
-    $builddir/tiny_engine.obj $builddir/tiny_fs.obj $
-    $builddir/tiny_lights.obj $builddir/tiny_text.obj $builddir/imgui.obj $
-    $builddir/imgui_demo.obj $builddir/imgui_draw.obj $
+    $builddir/mesh.obj $builddir/model.obj $builddir/ObjParser.obj $
+    $builddir/shader.obj $builddir/shapes.obj $builddir/sprite.obj $
+    $builddir/spritesheet.obj $builddir/texture.obj $
+    $builddir/tiny_audio.obj $builddir/tiny_engine.obj $
+    $builddir/tiny_fs.obj $builddir/tiny_lights.obj $builddir/tiny_text.obj $
+    $builddir/imgui.obj $builddir/imgui_demo.obj $builddir/imgui_draw.obj $
     $builddir/imgui_impl_glfw.obj $builddir/imgui_impl_opengl3.obj $
     $builddir/imgui_tables.obj $builddir/imgui_widgets.obj $
     $builddir/particles.obj $builddir/particle_behaviors.obj

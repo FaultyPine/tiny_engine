@@ -11,7 +11,7 @@
 #include "tiny_engine/texture.h"
 #include "tiny_engine/tiny_lights.h"
 #include "tiny_engine/external/imgui/tiny_imgui.h"
-
+#include "tiny_engine/model.h"
 
 void testbed_inputpoll() {
     Camera& cam = Camera::GetMainCamera();
@@ -40,16 +40,21 @@ void testbed_inputpoll() {
         CloseGameWindow();
     }
     if (Keyboard::isKeyPressed(GLFW_KEY_TAB)) {
+        // when "tabbing" in and out of the game, the cursor position jumps around weirdly
+        // so here we save the last cursor pos when we tab out, and re-set it when we tab back in
+        static glm::vec2 lastMousePos = glm::vec2(0);
         if (glfwGetInputMode(glob_glfw_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
             glfwSetInputMode(glob_glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             cam.isSwivelable = true;
-            cam.LookAt({0,cam.cameraPos.y,0});
+            glfwSetCursorPos(glob_glfw_window, lastMousePos.x, lastMousePos.y);
         }
         else {
+            lastMousePos = {MouseInput::GetMouse().lastX, MouseInput::GetMouse().lastY};
             glfwSetInputMode(glob_glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);  
             cam.isSwivelable = false;
         }
     }
+
 }
 
 void testbed_orbit(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) {
@@ -62,33 +67,18 @@ void testbed_orbit(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) 
 }
 
 
-std::vector<Mesh> testModel = {};
-Mesh testMesh;
+Model testModel;
 glm::vec3 testMeshPos = glm::vec3(0);
 f32 testMeshScale = 1.0;
 f32 testMeshRotation = 0.0;
 glm::vec3 testMeshRotationAxis = glm::vec3(1, 0, 0);
-Light meshLight = {0};
-f32 shininess = 16.0;
 
 void drawGameState() {
     f32 time = (f32)GetTime();
 
-    // TODO: abstract this multiple mesh setup into a "Model" object
-    for (auto& mesh : testModel) {
-        Shader& shader = mesh.GetShader();
-        shader.use();
-        shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
-        mesh.material.shininess = shininess;
+    testModel.Draw(testMeshPos, testMeshScale, testMeshRotation, testMeshRotationAxis);
 
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, glm::radians(testMeshRotation), testMeshRotationAxis); 
-        model = glm::translate(model, testMeshPos);
-        model = glm::scale(model, glm::vec3(testMeshScale));
-        shader.setUniform("modelMat", model);
-        UpdateLightValues(shader, meshLight);
-        mesh.Draw(testMeshPos, testMeshScale, testMeshRotation, testMeshRotationAxis);
-    }
+    Light& meshLight = testModel.lights[0];
     meshLight.Visualize();
 
     ImGuiBeginFrame();
@@ -96,7 +86,6 @@ void drawGameState() {
     ImGui::ColorEdit4("Light Color", &meshLight.color[0]);
     ImGui::DragFloat3("Light pos", &meshLight.position[0]);
     ImGui::DragFloat3("Light target", &meshLight.target[0]);
-    ImGui::DragFloat("Shininess", &shininess);
     ImGui::SliderInt("1=point 0=directional", (int*)&meshLight.type, 0, 1);
     ImGui::DragFloat3("Mesh pos", &testMeshPos[0]);
     ImGui::DragFloat("Mesh scale", &testMeshScale);
@@ -107,18 +96,16 @@ void drawGameState() {
 
 void testbed_init() {
     InitImGui();
-    if (!testMesh.isValid()) {
-        Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
-        meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(5, 10, 5), glm::vec3(0), glm::vec4(1), shader);
+    Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
+    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(5, 10, 5), glm::vec3(0), glm::vec4(1), shader);
 
-        testModel = load_obj(shader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
-        //testModel = load_obj(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
-    }
-
+    //testModel = Model(shader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
+    testModel = Model(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
+    testModel.AddLight(meshLight);
 }
 void testbed_tick() {
     testbed_inputpoll();
-    //testbed_orbit(27, 17, {0, 10, 0});
+    testbed_orbit(27, 17, {0, 10, 0});
     drawGameState();
 }
 void testbed_terminate() {

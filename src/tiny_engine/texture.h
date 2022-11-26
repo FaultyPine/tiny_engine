@@ -136,7 +136,7 @@ struct Material {
         specularMat = specular;
         this->name = name;
     }
-    void SetShaderUniforms(Shader& shader) {
+    void SetShaderUniforms(const Shader& shader) const {
         #define MAT_DIFFUSE   0
         #define MAT_AMBIENT   1
         #define MAT_SPECULAR  2

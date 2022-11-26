@@ -34,17 +34,17 @@ struct Mesh {
         const Material& mat = {});
     void UnloadMesh();
     inline void SetMeshShader(const Shader& shader) { cachedShader = shader; }
-    inline bool isValid() {
+    inline bool isValid() const {
         return vertices.size() && indices.size() && VAO && VBO && EBO;
     }
     inline Shader& GetShader() { return cachedShader; }
 
     // draw mesh with specified shader
-    inline void Draw(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
+    inline void Draw(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) const {
         DrawMesh(shader, position, scale, rotation, rotationAxis);
     }
     // draw mesh with cached shader
-    inline void Draw(glm::vec3 position, f32 scale = 1.0, f32 rotation = 0.0, glm::vec3 rotationAxis = {1.0, 0.0, 0.0}) {
+    inline void Draw(glm::vec3 position, f32 scale = 1.0, f32 rotation = 0.0, glm::vec3 rotationAxis = {1.0, 0.0, 0.0}) const {
         DrawMesh(cachedShader, position, scale, rotation, rotationAxis);
     }
    
@@ -52,7 +52,7 @@ struct Mesh {
 
 private:
     
-    void DrawMesh(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis);
+    void DrawMesh(const Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) const;
 };
 
 
