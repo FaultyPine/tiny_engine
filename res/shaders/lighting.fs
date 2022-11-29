@@ -11,23 +11,25 @@ out vec4 finalColor;
 
 // ============================ MATERIALS ==================================
 
-#define NUM_MATERIALS 3
+#define NUM_MATERIAL_TYPES 4
+
 #define MAT_DIFFUSE   0
 #define MAT_AMBIENT   1
 #define MAT_SPECULAR  2
+#define MAT_NORMAL    3
 struct MaterialProperty {
     vec4 color;
     int useSampler;
     sampler2D tex;
 };
-
-uniform MaterialProperty materials[NUM_MATERIALS];
+uniform int useNormalMap = 0; // If unset, use vertex normals. If set, sample normal map
+uniform MaterialProperty materials[NUM_MATERIAL_TYPES];
 uniform float shininess = 16.0;
 
-vec4 GetMaterialColor(int matIdx, vec2 texCoords) {
-    int shouldUseSampler = materials[matIdx].useSampler;
-    vec4 color = (1-shouldUseSampler) * materials[matIdx].color;
-    vec4 tex = shouldUseSampler * texture(materials[matIdx].tex, fragTexCoord);
+vec4 GetMaterialColor(int matType, vec2 texCoords) {
+    int shouldUseSampler = materials[matType].useSampler;
+    vec4 color = (1-shouldUseSampler) * materials[matType].color;
+    vec4 tex = shouldUseSampler * texture(materials[matType].tex, fragTexCoord);
     // if useSampler is true, color is 0, if it's false, tex is 0
     return color + tex;
 }
@@ -50,17 +52,23 @@ struct Light {
 uniform Light lights[MAX_LIGHTS];
 uniform vec3 viewPos;
 
+vec3 GetNormals() {
+    vec3 vertNormals = (1-useNormalMap) * normalize(fragNormalWS);
+    vec3 normalMapNormals = (useNormalMap) * GetMaterialColor(MAT_NORMAL, fragTexCoord).rgb;
+    return vertNormals + normalMapNormals;
+}
+
 vec3 calculateLighting() {
     vec3 lightDot = vec3(0);
     vec3 specular = vec3(0);
-    vec3 normal = normalize(fragNormalWS);
+    vec3 normal = GetNormals();
     vec3 viewDir = normalize(viewPos - fragPositionWS);
 
     for (int i = 0; i < MAX_LIGHTS; i++) {
-        // TODO: performance boost https://theorangeduck.com/page/avoiding-shader-conditionals
         if (lights[i].enabled == 1) {
             vec3 lightDir = vec3(0.0);
 
+            // TODO: performance boost https://theorangeduck.com/page/avoiding-shader-conditionals
             if (lights[i].type == LIGHT_DIRECTIONAL) {
                 // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
                 lightDir = -normalize(lights[i].target - lights[i].position);

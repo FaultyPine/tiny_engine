@@ -64,9 +64,6 @@ inline void PrintAndExitDBG(const char* file, s32 line, const char* msg) {
 #endif
 
 // OpenGL error handling
-static void GLClearError() {
-    while (glGetError() != GL_NO_ERROR);
-}
 static bool GLLogCall(const char* func, const char* file, int line) {
     while (GLenum error = glGetError()) {
         std::cout << "OpenGL error: (" << error << "): " << file << ":" << line << std::endl;

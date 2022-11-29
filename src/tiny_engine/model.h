@@ -14,6 +14,7 @@ struct Model {
 
     std::vector<Mesh> meshes = {};
     std::vector<Light> lights = {};
+    bool isLit = false;
 };
 
 

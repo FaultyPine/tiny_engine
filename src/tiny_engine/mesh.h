@@ -6,10 +6,10 @@
 #include "texture.h"
 
 struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 texCoords;
-    glm::vec3 color;
+    glm::vec3 position = glm::vec3(0);
+    glm::vec3 normal = glm::vec3(0);
+    glm::vec2 texCoords = glm::vec3(0);
+    glm::vec3 color = glm::vec3(1);
     inline std::string str() {
         std::string pos = "("  + VecToStr(position) + ")"; 
         std::string norm = "(" + VecToStr(normal) + ", " + std::to_string(normal.z) + ")";

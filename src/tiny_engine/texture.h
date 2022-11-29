@@ -126,35 +126,19 @@ struct Material {
     MaterialProp diffuseMat;
     MaterialProp ambientMat;
     MaterialProp specularMat;
+    MaterialProp normalMat;
     f32 shininess;
     std::string name = "";
 
     Material(){}
-    Material(MaterialProp diffuse, MaterialProp ambient, MaterialProp specular, std::string name) {
+    Material(MaterialProp diffuse, MaterialProp ambient, MaterialProp specular, MaterialProp normal, std::string name) {
         diffuseMat = diffuse;
         ambientMat = ambient;
         specularMat = specular;
+        normalMat = normal;
         this->name = name;
     }
-    void SetShaderUniforms(const Shader& shader) const {
-        #define MAT_DIFFUSE   0
-        #define MAT_AMBIENT   1
-        #define MAT_SPECULAR  2
-        shader.use();
-
-        #define SET_MATERIAL_UNIFORMS(matIdx, matVar) \
-            shader.setUniform(TextFormat("materials[%i].useSampler", matIdx), matVar.hasTexture); \
-            glActiveTexture(GL_TEXTURE0 + matIdx); \
-            matVar.texture.bind(); \
-            shader.setUniform(TextFormat("materials[%i].tex", matIdx), matVar.texture.id); \
-            shader.setUniform(TextFormat("materials[%i].color", matIdx), matVar.color)
-
-        // opengl error on setUniform(materials[0].tex)
-        SET_MATERIAL_UNIFORMS(MAT_DIFFUSE, diffuseMat);
-        SET_MATERIAL_UNIFORMS(MAT_AMBIENT, ambientMat);
-        SET_MATERIAL_UNIFORMS(MAT_SPECULAR, specularMat);
-        shader.setUniform("shininess", shininess);
-    }
+    void SetShaderUniforms(const Shader& shader) const;
 };
 
 void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4);

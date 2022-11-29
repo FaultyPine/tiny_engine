@@ -78,3 +78,29 @@ Texture LoadTexture(const std::string& imgPath,
     stbi_image_free(data);
     return ret;
 }
+
+
+void Material::SetShaderUniforms(const Shader& shader) const {
+    #define MAT_DIFFUSE   0
+    #define MAT_AMBIENT   1
+    #define MAT_SPECULAR  2
+    #define MAT_NORMAL  3
+    // keep these ^ in sync with the ones in lighting.fs
+    shader.use();
+
+    #define SET_MATERIAL_UNIFORMS(matType, matVar) \
+        shader.setUniform(TextFormat("materials[%i].useSampler", matType), matVar.hasTexture); \
+        if (matVar.hasTexture) { \
+            glActiveTexture(GL_TEXTURE0 + matType); \
+            matVar.texture.bind(); \
+        } \
+        shader.setUniform(TextFormat("materials[%i].tex", matType), matVar.texture.id); \
+        shader.setUniform(TextFormat("materials[%i].color", matType), matVar.color)
+
+    SET_MATERIAL_UNIFORMS(MAT_DIFFUSE, diffuseMat);
+    SET_MATERIAL_UNIFORMS(MAT_AMBIENT, ambientMat);
+    SET_MATERIAL_UNIFORMS(MAT_SPECULAR, specularMat);
+    SET_MATERIAL_UNIFORMS(MAT_NORMAL, normalMat);
+    shader.setUniform("shininess", shininess);
+    shader.setUniform("useNormalMap", normalMat.hasTexture);
+}

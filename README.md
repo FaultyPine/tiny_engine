@@ -31,15 +31,27 @@ Features:
         - note: currently materials are set automatically through .mtl files...
             maybe would be cool to have an interface to set mesh materials through code?
             also maybe implement hot reloading mtl files for easy material edit iterations?
+    - Multiple materials per mesh???? Should I support this?
+        - if so, just make the Mesh class have a list of materials and have the lighting shader take in a 2d array of
+            materials... this is probably slow or cringe but premature optimization is more cringe
 - default mesh generation (plane, cube, sphere)
 - shadow mapping
-- HDR & Bloom
 - instancing
+- 3D particles
+- Try making the island/waterfall scene!
+    - Floating island
+    - grass on island
+    - pond in middle, area near pond is green, rest of island is white
+    - pond -> water (shader/mesh/tex/etc)
+    - waterfall flowing into pond
+        - waterfall shader/mesh/particles
+- HDR & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
     - Space partitioning (BSP/Quadtree/Octree)
 - animation
+    - .obj files don't support animation... might need to implement gltf or collada or fbx support
     - https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation
     - https://www.youtube.com/watch?v=f3Cr8Yx3GGA
 

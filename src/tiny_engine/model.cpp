@@ -4,11 +4,12 @@
 #include "camera.h"
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
-    meshes = load_obj(shader, meshObjFile, meshMaterialDir);
+    meshes = LoadObjMesh(shader, meshObjFile, meshMaterialDir);
 }
 void Model::AddLight(const Light& light) {
-    this->lights.push_back(light);
-    assert(this->lights.size() < MAX_NUM_LIGHTS);
+    isLit = true;
+    lights.push_back(light);
+    assert(lights.size() < MAX_NUM_LIGHTS);
 }
 void Model::Draw(glm::vec3 pos, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
     for (Mesh& mesh : meshes) {
@@ -23,8 +24,10 @@ void Model::Draw(glm::vec3 pos, f32 scale, f32 rotation, glm::vec3 rotationAxis)
         model = glm::scale(model, glm::vec3(scale));
         shader.setUniform("modelMat", model);
 
-        for (Light& light : lights)
-            UpdateLightValues(shader, light);
+        if (isLit) {
+            for (Light& light : lights)
+                UpdateLightValues(shader, light);
+        }
 
         mesh.Draw(pos, scale, rotation, rotationAxis);
     }

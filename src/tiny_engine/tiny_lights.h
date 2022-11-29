@@ -25,7 +25,7 @@ struct Light {
     void Visualize() {
         if (!lightVisualizer.isValid()) {
             Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
-            lightVisualizer = load_obj(shader, UseResPath("other/blender_cube.obj").c_str(), UseResPath("other/").c_str())[0];
+            lightVisualizer = LoadObjMesh(shader, UseResPath("other/blender_cube.obj").c_str(), UseResPath("other/").c_str())[0];
             lightVisualizer.material.ambientMat.color = glm::vec4(10);
         }
         lightVisualizer.Draw(position, 0.3);

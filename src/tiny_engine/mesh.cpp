@@ -77,6 +77,7 @@ void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, f32 scale, f32 rot
     shader.use();
     Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
     material.SetShaderUniforms(shader);
+    //std::cout << "Setting material uniforms for material 0. Multiple materials not yet implemented in mesh class\n";
     // setup textures before drawing
     std::vector<u32> numOfEachTexType(TextureMaterialType::NUM_TYPES-1, 1);
 

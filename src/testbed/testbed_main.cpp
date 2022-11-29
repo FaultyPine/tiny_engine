@@ -69,7 +69,7 @@ void testbed_orbit(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) 
 
 Model testModel;
 glm::vec3 testMeshPos = glm::vec3(0);
-f32 testMeshScale = 1.0;
+f32 testMeshScale = 0.08;
 f32 testMeshRotation = 0.0;
 glm::vec3 testMeshRotationAxis = glm::vec3(1, 0, 0);
 
@@ -98,14 +98,18 @@ void testbed_init() {
     InitImGui();
     Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
     Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(5, 10, 5), glm::vec3(0), glm::vec4(1), shader);
+    Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(5,10,5), glm::vec3(0), glm::vec4(1), shader);
 
-    //testModel = Model(shader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
-    testModel = Model(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
+    testModel = Model(shader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
+    //testModel = Model(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
+    //testModel = Model(shader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
+    //testModel = Model(shader, UseResPath("other/Free_Tower/obj/objTower.obj").c_str(), UseResPath("other/Free_Tower/obj/").c_str());
     testModel.AddLight(meshLight);
+    testModel.AddLight(meshPointLight);
 }
 void testbed_tick() {
     testbed_inputpoll();
-    testbed_orbit(27, 17, {0, 10, 0});
+    //testbed_orbit(27, 17, {0, 10, 0});
     drawGameState();
 }
 void testbed_terminate() {
