@@ -111,6 +111,15 @@ std::vector<Mesh> load_obj(
             }
             if (!attribTexCoords.empty()) {
                 s32 texcoordIndexBase = tinyobjIdx.texcoord_index;
+                // obj files may have faces like   f 1530//780
+                // this happens when the obj doesn't have texcoords
+                if (texcoordIndexBase != -1) {
+                    vec2 texcoord = vec2(
+                        attribTexCoords.at( 2*texcoordIndexBase+0 ),
+                        attribTexCoords.at( 2*texcoordIndexBase+1 )
+                    );
+                    v.texCoords = texcoord;
+                }
                 vec2 texcoord = vec2(
                     attribTexCoords.at( 2*texcoordIndexBase+0 ),
                     attribTexCoords.at( 2*texcoordIndexBase+1 )
