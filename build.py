@@ -40,11 +40,20 @@ def build():
     print("Built!")
     print(f"Build took {elapsed} seconds")
 
+def start_debugger():
+    if USE_MSVC:
+        build_msvc.start_debugger()
+    else:
+        print("TODO: GCC debugger auto-start not currently implemented")
 
 print("Building...")
 
 args = sys.argv[1:]
 if len(args) > 0:
+    if args[0] == "debug":
+        build()
+        start_debugger()
+        exit()
     if args[0] == "pch":
         build_pch()
     elif args[0] == "regen":

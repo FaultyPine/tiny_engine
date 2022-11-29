@@ -3,7 +3,7 @@ compiler_args = /std:c++17 -Iinclude -Isrc -EHsc -MT -Z7 /nologo
 linker_args = glfw3_mt.lib user32.lib gdi32.lib shell32.lib msvcrt.lib $
     ws2_32.lib winmm.lib -LIBPATH:lib/glfw/windows        $
     /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib $
-    /NODEFAULTLIB:msvcrtd.lib
+    /NODEFAULTLIB:msvcrtd.lib /DEBUG
 builddir = build
 rule compile
   command = $cxx -showIncludes $compiler_args -c $in -Fo$out

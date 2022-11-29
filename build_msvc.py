@@ -3,7 +3,7 @@ from build_utils import *
 def get_linker_args_msvc():
     return var_contents("""
         glfw3_mt.lib user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib -LIBPATH:lib/glfw/windows
-        /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
+        /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib /DEBUG
     """)
 
 def get_compiler_args_msvc():
@@ -16,6 +16,8 @@ def get_compiler_args_msvc():
 def build_pch_msvc():
     print("UNIMPLEMENTED build_pch_msvc")
     pass
+def start_debugger():
+    command(f"devenv /nosplash /edit {PYTHON_SCRIPT_PATH} /debugexe {PYTHON_SCRIPT_PATH}\\{APP_NAME}")
 
 def generate_ninja_build_msvc(force_overwrite):
     ninja_build_filename = "build.ninja"
