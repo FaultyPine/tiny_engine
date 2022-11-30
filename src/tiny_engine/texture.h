@@ -108,7 +108,7 @@ struct Texture {
     s32 id = 0; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
     f32 width, height = 0.0;
     TextureMaterialType type = TextureMaterialType::DIFFUSE;
-    std::string texpath;
+    std::string texpath = "";
 
     Texture() {}
     Texture(s32 id) { Texture(); this->id = id; }
@@ -119,26 +119,29 @@ struct Texture {
 struct MaterialProp {
     bool hasTexture = false;
     glm::vec4 color = glm::vec4(1);
-    Texture texture;
+    Texture texture = {};
     MaterialProp() {}
+    MaterialProp(glm::vec4 col) {
+        color = col;
+    }
 };
 struct Material {
-    MaterialProp diffuseMat;
-    MaterialProp ambientMat;
-    MaterialProp specularMat;
-    MaterialProp normalMat;
-    f32 shininess;
+    MaterialProp diffuseMat = {};
+    MaterialProp ambientMat = {};
+    MaterialProp specularMat = {};
+    MaterialProp normalMat = {};
+    f32 shininess = 16.0;
     std::string name = "";
 
     Material(){}
-    Material(MaterialProp diffuse, MaterialProp ambient, MaterialProp specular, MaterialProp normal, std::string name) {
+    Material(MaterialProp diffuse, MaterialProp ambient, MaterialProp specular, MaterialProp normal, f32 shininess, std::string name) {
         diffuseMat = diffuse;
         ambientMat = ambient;
         specularMat = specular;
         normalMat = normal;
         this->name = name;
     }
-    void SetShaderUniforms(const Shader& shader) const;
+    void SetShaderUniforms(const Shader& shader, u32 matIdx) const;
 };
 
 void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4);

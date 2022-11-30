@@ -10,6 +10,7 @@ struct Vertex {
     glm::vec3 normal = glm::vec3(0);
     glm::vec2 texCoords = glm::vec3(0);
     glm::vec3 color = glm::vec3(1);
+    u32 materialId = 0;
     inline std::string str() {
         std::string pos = "("  + VecToStr(position) + ")"; 
         std::string norm = "(" + VecToStr(normal) + ", " + std::to_string(normal.z) + ")";
@@ -23,15 +24,14 @@ struct Mesh {
     u32 VAO, VBO, EBO; // vert array obj, vert buf obj, element buf obj
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
-    std::vector<Texture> textures = {};
-    Material material = {};
+    //std::vector<Texture> textures = {};
+    std::vector<Material> materials = {};
     
     Mesh(){}
     Mesh(const Shader& shader, 
         const std::vector<Vertex>& verts, 
         const std::vector<u32>& idxs, 
-        const std::vector<Texture>& texs = {},
-        const Material& mat = {});
+        const std::vector<Material>& mats = {});
     void UnloadMesh();
     inline void SetMeshShader(const Shader& shader) { cachedShader = shader; }
     inline bool isValid() const {

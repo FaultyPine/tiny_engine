@@ -19,7 +19,7 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
     const f32* materialTypes[] = {mat.diffuse, mat.ambient, mat.specular, nullptr};
     const std::string* texnames[] = {&mat.diffuse_texname, &mat.ambient_texname, &mat.specular_texname, &mat.normal_texname};
     TextureMaterialType types[] = {TextureMaterialType::DIFFUSE, TextureMaterialType::AMBIENT, TextureMaterialType::SPECULAR, TextureMaterialType::NORMAL};
-    assert(ARRAY_SIZE(props) == ARRAY_SIZE(materialTypes) && ARRAY_SIZE(materialTypes) == ARRAY_SIZE(texnames));
+    ASSERT(ARRAY_SIZE(props) == ARRAY_SIZE(materialTypes) && ARRAY_SIZE(materialTypes) == ARRAY_SIZE(texnames));
 
     for (u32 i = 0; i < ARRAY_SIZE(props); i++) {
         MaterialProp& prop = *props[i];
@@ -34,11 +34,10 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
             prop.hasTexture = true;
         }
     }
-    Material meshMat = Material(diffuse, ambient, specular, normal, mat.name);
-    meshMat.shininess = mat.shininess;
+    Material meshMat = Material(diffuse, ambient, specular, normal, mat.shininess, mat.name);
     return meshMat;
 }
-Mesh MeshConvert(const Shader& shader, const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& materials) {
+Mesh MeshConvert(const Shader& shader, const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& allMaterials) {
     // input data from tiny_obj_loader
     const std::vector<tinyobj::real_t>& attribVerts = attrib.vertices; // 3 floats per vertex
     const std::vector<tinyobj::real_t>& attribNorms = attrib.normals; // 3 floats per vertex
@@ -48,7 +47,9 @@ Mesh MeshConvert(const Shader& shader, const tinyobj::shape_t& shape, const tiny
     // assert all material id's are the same... not currently supporting different materials on a single mesh
     bool isOnlyOneMaterialUsed = std::equal(shape.mesh.material_ids.begin() + 1, shape.mesh.material_ids.end(), shape.mesh.material_ids.begin());
     ASSERT("Multiple materials not supported for single mesh" && isOnlyOneMaterialUsed);
-    
+
+    std::vector<Material> materials = {};
+    std::vector<s32> usedMaterialIds = {};
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
     for (u32 i = 0; i < shape.mesh.indices.size(); i++) {
@@ -92,16 +93,24 @@ Mesh MeshConvert(const Shader& shader, const tinyobj::shape_t& shape, const tiny
             );
             v.color = col;
         }
+        // NOTE: shape.mesh.indices.size == (shape.mesh.material_ids.size * 3)
+        s32 materialId = shape.mesh.material_ids.at(i / 3);
+        if (materialId != -1) {
+            s32 vertexMaterialId = 0;
+            // don't push duplicate materials
+            if (!std::count(usedMaterialIds.begin(), usedMaterialIds.end(), materialId)) {
+                vertexMaterialId = materials.size();
+                materials.push_back(allMaterials.at(materialId));
+                usedMaterialIds.push_back(materialId);
+            }
+            v.materialId = vertexMaterialId;
+        }
 
         vertices.push_back(v);
         indices.push_back(indices.size());
     }
-    s32 materialId = shape.mesh.material_ids[0];
-    Material material = {};
-    if (materialId != -1)
-        material = materials.at(materialId);
 
-    return Mesh(shader, vertices, indices, {}, material);
+    return Mesh(shader, vertices, indices, materials);
 }
 
 void LoadMaterials(const std::vector<tinyobj::material_t>& objmaterials, const std::string& texdir, std::vector<Material>& materials) {
@@ -153,7 +162,7 @@ std::vector<Mesh> LoadObjMesh(
         ret.emplace_back(MeshConvert(shader, shape, attrib, materials));
     }
 
-    std::cout << "Loaded model " << filename << "." << std::endl;
+    std::cout << "Loaded model " << filename << " [mats: " << materials.size() << ", submeshes: " << shapes.size() << ", verts: " << attrib.vertices.size()/3 << "]\n";
     return ret;
 }
 

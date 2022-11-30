@@ -26,7 +26,7 @@ struct Light {
         if (!lightVisualizer.isValid()) {
             Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
             lightVisualizer = LoadObjMesh(shader, UseResPath("other/blender_cube.obj").c_str(), UseResPath("other/").c_str())[0];
-            lightVisualizer.material.ambientMat.color = glm::vec4(10);
+            lightVisualizer.materials[0].ambientMat.color = glm::vec4(10);
         }
         lightVisualizer.Draw(position, 0.3);
     }
@@ -38,7 +38,7 @@ enum LightType {
 };
 
 // Create a light and get shader locations
-Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color, Shader shader);
+Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color);
 // Send light properties to shader
 void UpdateLightValues(Shader shader, Light light);
 

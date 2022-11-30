@@ -3,7 +3,7 @@
 
 static u32 global_num_lights = 0;
 
-Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color, Shader shader) {
+Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color) {
     Light light = {};
 
     light.enabled = true;
@@ -13,8 +13,6 @@ Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 colo
     light.color = color;
     light.globalIndex = global_num_lights++;
 
-    UpdateLightValues(shader, light);
-
     return light;
 }
 
@@ -22,7 +20,7 @@ void UpdateLightValues(Shader shader, Light light) {
     s32 lightIdx = light.globalIndex;
     // TODO: make a better check?
     // maybe prevent creating more than maximum # of lights?
-    assert(lightIdx < MAX_NUM_LIGHTS); 
+    ASSERT(lightIdx < MAX_NUM_LIGHTS); 
     shader.use();
     // Send to shader light enabled state and type
     const char* enabledLoc = TextFormat("lights[%i].enabled", lightIdx);

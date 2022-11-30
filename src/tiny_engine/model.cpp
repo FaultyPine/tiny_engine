@@ -9,7 +9,7 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
 void Model::AddLight(const Light& light) {
     isLit = true;
     lights.push_back(light);
-    assert(lights.size() < MAX_NUM_LIGHTS);
+    ASSERT(lights.size() < MAX_NUM_LIGHTS);
 }
 void Model::Draw(glm::vec3 pos, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
     for (Mesh& mesh : meshes) {

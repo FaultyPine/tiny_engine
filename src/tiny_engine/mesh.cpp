@@ -4,9 +4,13 @@
 Mesh::Mesh(const Shader& shader, 
             const std::vector<Vertex>& verts, 
             const std::vector<u32>& idxs, 
-            const std::vector<Texture>& texs,
-            const Material& mat) {
-    vertices = verts; indices = idxs; textures = texs; cachedShader = shader; material = mat;
+            const std::vector<Material>& mats) {
+    vertices = verts; indices = idxs; cachedShader = shader; materials = mats;
+    if (materials.size() == 0) {
+        // if no materials, set defaults
+        Material defaultMat = Material();
+        materials.push_back(defaultMat);
+    }
     initMesh();
 }
 void Mesh::UnloadMesh() {
@@ -44,6 +48,8 @@ void Mesh::initMesh() {
         2, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
     ConfigureVertexAttrib( // vert color
         3, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
+    ConfigureVertexAttrib( // material id
+        4, 1, GL_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialId));
 
     // unbind vert array
     GLCall(glBindVertexArray(0));
@@ -69,15 +75,17 @@ void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, f32 scale, f3
 }
 
 void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) const {
-    assert(textures.size() <= 32); // ogl max texture samplers
+    //ASSERT(textures.size() <= 32); // ogl max texture samplers
     if (!isValid()) {
         std::cout << "[ERR] Tried to draw invalid mesh!\n";
         return;
     }
     shader.use();
     Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
-    material.SetShaderUniforms(shader);
-    //std::cout << "Setting material uniforms for material 0. Multiple materials not yet implemented in mesh class\n";
+    for (u32 i = 0; i < materials.size(); i++) {
+        materials.at(i).SetShaderUniforms(shader, i);
+    }
+    #if 0 // disabled/unused texture code... textures generally reside in the materials now
     // setup textures before drawing
     std::vector<u32> numOfEachTexType(TextureMaterialType::NUM_TYPES-1, 1);
 
@@ -99,6 +107,7 @@ void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, f32 scale, f32 rot
         shader.setUniform((texName + texNum).c_str(), i);
         tex.bind();
     }
+    #endif
 
     // draw mesh = bind vert array -> draw -> unbind
     GLCall(glBindVertexArray(VAO));

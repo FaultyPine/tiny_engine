@@ -80,27 +80,26 @@ Texture LoadTexture(const std::string& imgPath,
 }
 
 
-void Material::SetShaderUniforms(const Shader& shader) const {
+void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
     #define MAT_DIFFUSE   0
     #define MAT_AMBIENT   1
     #define MAT_SPECULAR  2
-    #define MAT_NORMAL  3
-    // keep these ^ in sync with the ones in lighting.fs
+    #define MAT_NORMAL    3
     shader.use();
 
     #define SET_MATERIAL_UNIFORMS(matType, matVar) \
-        shader.setUniform(TextFormat("materials[%i].useSampler", matType), matVar.hasTexture); \
+        shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
         if (matVar.hasTexture) { \
-            glActiveTexture(GL_TEXTURE0 + matType); \
+            glActiveTexture(GL_TEXTURE0 + matType*matIdx); \
             matVar.texture.bind(); \
         } \
-        shader.setUniform(TextFormat("materials[%i].tex", matType), matVar.texture.id); \
-        shader.setUniform(TextFormat("materials[%i].color", matType), matVar.color)
+        shader.setUniform(TextFormat("materials[%i].%s.tex", matIdx, #matVar), matVar.texture.id); \
+        shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
 
     SET_MATERIAL_UNIFORMS(MAT_DIFFUSE, diffuseMat);
     SET_MATERIAL_UNIFORMS(MAT_AMBIENT, ambientMat);
     SET_MATERIAL_UNIFORMS(MAT_SPECULAR, specularMat);
     SET_MATERIAL_UNIFORMS(MAT_NORMAL, normalMat);
-    shader.setUniform("shininess", shininess);
+    shader.setUniform(TextFormat("materials[%i].shininess", matIdx), shininess);
     shader.setUniform("useNormalMap", normalMat.hasTexture);
 }

@@ -5,6 +5,7 @@ in vec3 fragPositionWS;
 in vec2 fragTexCoord;
 in vec4 fragColor;
 in vec3 fragNormalWS;
+flat in int materialId;
 // Output fragment color
 out vec4 finalColor;
 
@@ -12,26 +13,40 @@ out vec4 finalColor;
 // ============================ MATERIALS ==================================
 
 #define NUM_MATERIAL_TYPES 4
+#define MAX_NUM_MATERIALS 4
 
-#define MAT_DIFFUSE   0
-#define MAT_AMBIENT   1
-#define MAT_SPECULAR  2
-#define MAT_NORMAL    3
 struct MaterialProperty {
     vec4 color;
     int useSampler;
     sampler2D tex;
 };
+struct Material {
+    MaterialProperty diffuseMat;
+    MaterialProperty ambientMat;
+    MaterialProperty specularMat;
+    MaterialProperty normalMat;
+    float shininess;
+};
 uniform int useNormalMap = 0; // If unset, use vertex normals. If set, sample normal map
-uniform MaterialProperty materials[NUM_MATERIAL_TYPES];
-uniform float shininess = 16.0;
-
-vec4 GetMaterialColor(int matType, vec2 texCoords) {
-    int shouldUseSampler = materials[matType].useSampler;
-    vec4 color = (1-shouldUseSampler) * materials[matType].color;
-    vec4 tex = shouldUseSampler * texture(materials[matType].tex, fragTexCoord);
+uniform Material materials[MAX_NUM_MATERIALS];
+vec4 GetMaterialColor(MaterialProperty mat) {
+    int shouldUseSampler = mat.useSampler;
+    vec4 color = (1-shouldUseSampler) * mat.color;
+    vec4 tex =   shouldUseSampler     * texture(mat.tex, fragTexCoord);
     // if useSampler is true, color is 0, if it's false, tex is 0
     return color + tex;
+}
+vec4 GetDiffuseMaterial() {
+    return GetMaterialColor(materials[materialId].diffuseMat);
+}
+vec4 GetAmbientMaterial() {
+    return GetMaterialColor(materials[materialId].ambientMat);
+}
+vec4 GetSpecularMaterial() {
+    return GetMaterialColor(materials[materialId].specularMat);
+}
+vec4 GetNormalMaterial() {
+    return GetMaterialColor(materials[materialId].normalMat);
 }
 
 // ================================== LIGHTING ===================================
@@ -54,7 +69,7 @@ uniform vec3 viewPos;
 
 vec3 GetNormals() {
     vec3 vertNormals = (1-useNormalMap) * normalize(fragNormalWS);
-    vec3 normalMapNormals = (useNormalMap) * GetMaterialColor(MAT_NORMAL, fragTexCoord).rgb;
+    vec3 normalMapNormals = (useNormalMap) * GetNormalMaterial().rgb;
     return vertNormals + normalMapNormals;
 }
 
@@ -90,9 +105,9 @@ vec3 calculateLighting() {
                 // blinn-phong
                 vec3 halfwayDir = normalize(lightDir + viewDir);
                 float specularFactor = dot(normal, halfwayDir);
-                specCo = pow(max(0.0, specularFactor), shininess);
+                specCo = pow(max(0.0, specularFactor), materials[materialId].shininess);
             }
-            specular += specCo * lights[i].color.rgb * GetMaterialColor(MAT_SPECULAR, fragTexCoord).rgb;
+            specular += specCo * lights[i].color.rgb * GetSpecularMaterial().rgb;
         }
     }
     return specular * lightDot;
@@ -101,8 +116,8 @@ vec3 calculateLighting() {
 
 void main() {
     // Texel color fetching from texture sampler
-    vec4 diffuseColor = GetMaterialColor(MAT_DIFFUSE, fragTexCoord);
-    vec4 ambient = GetMaterialColor(MAT_AMBIENT, fragTexCoord);
+    vec4 diffuseColor = GetDiffuseMaterial();
+    vec4 ambient = GetAmbientMaterial();
 
     // colored lighting
     vec4 lighting = vec4(calculateLighting(), 1.0); // lighting always has 1 for alpha
