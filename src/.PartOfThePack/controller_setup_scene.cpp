@@ -70,7 +70,7 @@ void ControllerSetupSceneDraw(const GameState& gs, const UserInput& inputs) {
         bool isReady = gs.isReady[playerIdx];
         color.a = isReady ? 1.0 : 0.3;
         glm::vec2 pos = {playerIndicatorsStartX + playerIndicatorsXSpacing * playerIdx, playerIndicatorsY};
-        Shapes::DrawSquare(pos, playerIndicatorsSizeVec, sin(GetTime())*50.0, rotationAxis, color);
+        Shapes2D::DrawSquare(pos, playerIndicatorsSizeVec, sin(GetTime())*50.0, rotationAxis, color);
 
         ControllerType controllerType = inputs.controllers[playerIdx].type;
         Sprite inputDeviceSprite;

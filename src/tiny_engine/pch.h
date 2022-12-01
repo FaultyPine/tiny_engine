@@ -141,6 +141,14 @@ inline u32 countLeadingZeroes(u32 n) {
     return n == 0 ? 0 : log2(n & -n);
 }
 
+inline glm::mat4 Position3DToModelMat(const glm::vec3& position, const glm::vec3& scale, f32 rotation, const glm::vec3& rotationAxis = {1,0,0}) {
+    glm::mat4 model = glm::mat4(1);
+    model = glm::rotate(model, glm::radians(rotation), rotationAxis); 
+    model = glm::translate(model, position);
+    model = glm::scale(model, glm::vec3(scale));
+    return model;
+}
+
 // yoinked from raylib
 // https://github.com/raysan5/raylib/blob/master/src/rcore.c#L7169
 inline const char *TextFormat(const char *text, ...)

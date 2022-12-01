@@ -22,10 +22,9 @@ struct Shader {
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
     void Unload() const { glDeleteProgram(ID); }
     bool isValid() const { return ID != 0; }
-    static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
-    static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
-    static Shader CreateShaderFromSources(const s8* vsSource, const s8* fsSource) {
-        return Shader(CreateShaderProgFromStr(vsSource, fsSource));
+    /// Takes vertex/fragment shader code (as a string)
+    static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) {
+        return Shader(CreateShaderProgFromStr(vsCodeStr, fsCodeStr));
     }
 
     // use/activate the shader
@@ -101,7 +100,9 @@ struct Shader {
         if (loc != -1) GLCall(glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(mat4)));
     }
 
-
+private:
+    static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
+    static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
 };
 
 

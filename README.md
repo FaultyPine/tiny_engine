@@ -31,7 +31,7 @@ Features:
         - note: currently materials are set automatically through .mtl files...
             maybe would be cool to have an interface to set mesh materials through code?
             also maybe implement hot reloading mtl files for easy material edit iterations?
-    - Multiple materials per mesh???? Should I support this?
+    - ~~Multiple materials per mesh~~
         - if so, just make the Mesh class have a list of materials and have the lighting shader take in a 2d array of
             materials... this is probably slow or cringe but premature optimization is more cringe
 - default mesh generation (plane, cube, sphere)

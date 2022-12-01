@@ -309,8 +309,8 @@ void DrawNinja(const Ninja& ninja, bool horzFlip, bool isPlayer) {
 
     // NOTE: FOR DEBUGGING
     glm::vec4 col = isPlayer ? glm::vec4(0.0, 1.0, 0.0, 1.0) : glm::vec4(1.0, 0.0, 0.0, 1.0);
-    //Shapes::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
-    //Shapes::DrawSquare(ninja.entity.position + ninja.punchHitbox.pos, ninja.punchHitbox.size, 0.0, {0.0, 0.0, 1.0}, col, true);
+    //Shapes2D::DrawSquare(ninja.entity.position, ninja.entity.size, 0.0, {0.0, 0.0, 1.0}, col, true);
+    //Shapes2D::DrawSquare(ninja.entity.position + ninja.punchHitbox.pos, ninja.punchHitbox.size, 0.0, {0.0, 0.0, 1.0}, col, true);
 }
 
 void DrawSmokeGrenade(const Ninja& ninja) {

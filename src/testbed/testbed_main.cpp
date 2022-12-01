@@ -12,6 +12,7 @@
 #include "tiny_engine/tiny_lights.h"
 #include "tiny_engine/external/imgui/tiny_imgui.h"
 #include "tiny_engine/model.h"
+#include "tiny_engine/shapes.h"
 
 void testbed_inputpoll() {
     Camera& cam = Camera::GetMainCamera();
@@ -81,6 +82,8 @@ void drawGameState() {
     Light& meshLight = testModel.lights[0];
     for (Light& light : testModel.lights) {
         light.Visualize();
+        if (light.type == LIGHT_DIRECTIONAL)
+            Shapes3D::DrawLine(light.position, light.target, {1.0, 0.0, 0.0, 1.0});
     }
 
     ImGuiBeginFrame();

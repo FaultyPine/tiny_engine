@@ -11,6 +11,7 @@ struct Model {
 
     void AddLight(const Light& lights);
     void Draw(glm::vec3 pos, f32 scale, f32 rotation, glm::vec3 rotationAxis);
+    inline bool isValid() { return !meshes.empty(); }
 
     std::vector<Mesh> meshes = {};
     std::vector<Light> lights = {};

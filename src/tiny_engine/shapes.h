@@ -2,11 +2,15 @@
 #define TINY_SHAPES_H
 
 #include "pch.h"
-#include "shader.h"
-#include "tiny_fs.h"
+struct Shader;
 
-namespace Shapes {
+namespace Shapes3D {
 
+void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = {1.0,1.0,1.0,1.0}, f32 width = 1.0);
+
+} // namespace Shapes3D
+
+namespace Shapes2D {
 
 void DrawShape(const glm::vec2& pos, const glm::vec2& size, 
             f32 rotation, const glm::vec3& rotationAxis, 
@@ -21,5 +25,7 @@ void DrawSquare(const glm::vec2& pos, const glm::vec2& size,
 
 void DrawLine(const glm::vec2& origin, const glm::vec2& dest, const glm::vec4& color = {1.0,1.0,1.0,1.0}, f32 width = 2.0);
 
-}
+} // namespace Shapes2D
+
+
 #endif

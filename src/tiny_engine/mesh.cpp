@@ -60,12 +60,7 @@ void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, f32 scale, f3
     MouseInput& mouseInput = MouseInput::GetMouse();
     
     // identity matrix to start out with
-    glm::mat4 model = glm::mat4(1.0f);
-    // rotate it a little bit
-    model = glm::rotate(model, glm::radians(rotation), rotationAxis); 
-    model = glm::translate(model, position);
-    model = glm::scale(model, glm::vec3(scale));
-
+    glm::mat4 model = Position3DToModelMat(position, glm::vec3(scale), rotation, rotationAxis);
     glm::mat4 view = cam.GetViewMatrix();
     glm::mat4 projection = cam.GetProjectionMatrix();
 
