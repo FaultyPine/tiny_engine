@@ -4,7 +4,7 @@
 #include "texture.h"
 #include "shader.h"
 #include "tiny_fs.h"
-
+#include "math.h"
 
 // shader var is just called "shader" after this macro
 #define SHAPE_SHADER(shaderName, vertShaderPath, fragShaderPath) static Shader shaderName; \
@@ -84,6 +84,188 @@ void main(){
     GLCall(glDrawArrays(GL_LINES, 0, 2));
     GLCall(glBindVertexArray(0));
 }
+
+void DrawCube(const glm::vec3& pos, const glm::vec3& scale, f32 rotation, const glm::vec3& rotationAxis, const glm::vec4& color) {
+    static Shader shader;
+    if (!shader.isValid()) {
+        shader = Shader::CreateShaderFromStr(
+R"(
+#version 330 core
+layout (location = 0) in vec3 vertPos;
+layout (location = 1) in vec3 vertNormal;
+layout (location = 2) in vec2 vertTexCoords;
+uniform mat4 mvp;
+out vec2 TexCoords;
+out vec3 Normal;
+void main(){
+    Normal = vertNormal;
+    TexCoords = vertTexCoords;
+	gl_Position = mvp * vec4(vertPos, 1.0);
+}
+)",
+R"(
+#version 330 core
+out vec4 FragColor;
+in vec2 TexCoords;
+in vec3 Normal;
+uniform vec4 color;
+void main(){
+	FragColor = color;
+}
+)"
+        );
+    }
+    static u32 cubeVAO = 0;
+    static u32 cubeVBO = 0;
+    // initialize (if necessary)
+    if (cubeVAO == 0) {
+        float vertices[] = {
+            // back face
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+            1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+            1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+            // front face
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+            1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+            1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+            1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+            // left face
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+            // right face
+            1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+            1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+            1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right         
+            1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+            1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+            1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left     
+            // bottom face
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+            1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+            1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+            1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+            -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+            // top face
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+            1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+            1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right     
+            1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+            -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
+        };
+        glGenVertexArrays(1, &cubeVAO);
+        glGenBuffers(1, &cubeVBO);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // link vertex attributes
+        glBindVertexArray(cubeVAO);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    shader.use();
+    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
+    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
+    glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
+    glm::mat4 mvp = proj * view * model;
+    shader.setUniform("mvp", mvp);
+    shader.setUniform("color", color);
+    // render Cube
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+
+}
+
+void DrawPlane(const glm::vec3& pos, const glm::vec3& scale, f32 rotation, const glm::vec3& rotationAxis, const glm::vec4& color) {
+    static Shader shader;
+    static u32 planeVAO = 0;
+    static u32 planeVBO = 0;
+    if (!shader.isValid()) {
+        shader = Shader::CreateShaderFromStr(
+R"(
+#version 330 core
+layout (location = 0) in vec3 vertPos;
+layout (location = 1) in vec3 vertNormal;
+layout (location = 2) in vec2 vertTexCoords;
+uniform mat4 mvp;
+out vec2 TexCoords;
+out vec3 Normal;
+void main(){
+    Normal = vertNormal;
+    TexCoords = vertTexCoords;
+	gl_Position = mvp * vec4(vertPos, 1.0);
+}
+)",
+R"(
+#version 330 core
+out vec4 FragColor;
+in vec2 TexCoords;
+in vec3 Normal;
+uniform vec4 color;
+void main(){
+	FragColor = color;
+}
+)"
+        );
+    }
+
+    if (planeVAO == 0) {
+        float planeVertices[] = {
+            // positions            // normals         // texcoords
+            1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+            -1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+            -1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+            1.0f, -0.5f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+            -1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+            1.0f, -0.5f, -1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f
+        };
+        glGenVertexArrays(1, &planeVAO);
+        glGenBuffers(1, &planeVBO);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+        // link vertex attributes
+        glBindVertexArray(planeVAO);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    shader.use();
+    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
+    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
+    glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
+    glm::mat4 mvp = proj * view * model;
+    shader.setUniform("mvp", mvp);
+    shader.setUniform("color", color);
+    // render Cube
+    glBindVertexArray(planeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
 
 } // namespace Shapes3D
 
