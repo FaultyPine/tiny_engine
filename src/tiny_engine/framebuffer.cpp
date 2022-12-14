@@ -1,80 +1,52 @@
 #include "framebuffer.h"
-#include "camera.h"
-#include "tiny_engine/tiny_fs.h"
 
-// by default this framebuffer is just for the whole screen
-FullscreenFrameBuffer::FullscreenFrameBuffer(Shader shader, glm::vec2 framebufferSize) {
-    this->size = framebufferSize;
+
+Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype) {
+    this->type = fbtype;
+    this->size = glm::vec2(width, height);
 
     // generate and bind a framebuffer object
-    glGenFramebuffers(1, &framebufferID);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebufferID);    
+    GLCall(glGenFramebuffers(1, &framebufferID));
+    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, framebufferID));    
 
-    // generate a texture so that writes to this framebuffer go into the texture
-    // this is useful because we can then use this texture in our shaders
-    glGenTextures(1, &textureColorBufferID);
-    glBindTexture(GL_TEXTURE_2D, textureColorBufferID);
-    // allocate mem for the texture, but don't fill it (hence the NULL at the end)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0); // should this go after the glFramebufferTexture2D?
+    GLCall(glGenTextures(1, &texture));
+    GLCall(glBindTexture(GL_TEXTURE_2D, texture));
 
-    // attach it to currently bound framebuffer object
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorBufferID, 0); 
+    s32 component = type == DEPTH ? GL_DEPTH_COMPONENT : GL_RGB;
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    if (type == DEPTH) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        f32 borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
+    }
+    else {
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)); 
+        GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)); 
+    }
+    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, component, width, height, 0, component, type == DEPTH ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL));
+    if (type == DEPTH) {
+        // disable color buffer
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+    }
+    GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, type, GL_TEXTURE_2D, texture, 0));
+    GLCall(glBindTexture(GL_TEXTURE_2D, 0));
 
     // to make sure opengl can do depth testing (or stencil testing), gotta add a depth/stencil attachment
     // since we're only actually (in this senario) sampling the color and not the other buffers,
     // using a renderbuffer object for depth/stencil is great for this
-    glGenRenderbuffers(1, &renderBufferObjectID);
-    glBindRenderbuffer(GL_RENDERBUFFER, renderBufferObjectID); 
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x, size.y);  
-    glBindRenderbuffer(GL_RENDERBUFFER, 0); // should this go after the glFramebufferRenderbuffer?
+    /*
+    GLCall(glGenRenderbuffers(1, &renderBufferObjectID));
+    GLCall(glBindRenderbuffer(GL_RENDERBUFFER, renderBufferObjectID)); 
+    GLCall(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x, size.y));  
+    GLCall(glBindRenderbuffer(GL_RENDERBUFFER, 0)); // should this go after the glFramebufferRenderbuffer?
     // attach the renderbuffer object to the depth and stencil attachment of the framebuffer
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferObjectID);
+    GLCall(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferObjectID));
+    */
     
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);  
-
-    fullscreenSprite = Sprite(shader, Texture(textureColorBufferID));
-}
-
-void FullscreenFrameBuffer::DrawToScreen(const Shader& shader) {
-    if (!shader.isValid()) {
-        std::cout << "[ERROR] Attempted to draw framebuffer with invalid shader!\n";
-        exit(1);
-    }
-    BindDefaultFrameBuffer();
-    ClearGLColorBuffer();
-    shader.use();
-    shader.setUniform("screenWidth", (f32)Camera::GetScreenWidth());
-    shader.setUniform("screenHeight", (f32)Camera::GetScreenHeight());
-    shader.setUniform("time", (f32)GetTime());
-    fullscreenSprite.DrawSprite(
-        Camera::GetMainCamera(), 
-        {0,0}, size);
-}
-
-
-void FullscreenFrameBuffer::DrawToScreen(std::function<void()> drawSceneFunc) {
-    glm::vec2 screenDimensions = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-    if (!postProcessingShader.isValid()) {
-        postProcessingShader = Shader(UseResPath("shaders/screen_texture.vs").c_str(), UseResPath("shaders/screen_texture.fs").c_str());
-    }
-    if (!isValid()) {
-        *this = FullscreenFrameBuffer(postProcessingShader, {screenDimensions.x, screenDimensions.y});
-        glViewport(0, 0, screenDimensions.x, screenDimensions.y);
-    }
-
-    if (GetSize().x != screenDimensions.x && GetSize().y != screenDimensions.y) {
-        Delete();
-        *this = FullscreenFrameBuffer(postProcessingShader, screenDimensions);
-    }
-    Bind();
-    ClearGLColorBuffer();
-    
-    drawSceneFunc();
-
-    DrawToScreen(fullscreenSprite.GetShader());
+    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));  
 }

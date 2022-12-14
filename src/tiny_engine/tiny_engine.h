@@ -30,7 +30,7 @@ void ClearGLBuffers();
 void ClearGLColorBuffer();
 void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 maxHeight);
 
-void EnableWireframeDrawing();
+void SetWireframeDrawing(bool shouldDrawWireframes);
 
 
 #endif

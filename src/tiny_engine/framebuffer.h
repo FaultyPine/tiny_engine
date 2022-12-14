@@ -1,43 +1,46 @@
-#ifndef TINY_RENDER_TEXTURE_H
-#define TINY_RENDER_TEXTURE_H
+#ifndef TINY_FRAMEBUFFER_H
+#define TINY_FRAMEBUFFER_H
 
 #include "pch.h"
-#include "sprite.h"
-#include "tiny_engine.h"
-#include <functional>
+#include "texture.h"
+#include "camera.h"
 
-// if not using a fullscreen buffer, make sure to set glViewport to prevent stretching/weird stuff happening with the rendered texture
+// possible TODO: give easy api func that draws this framebuffer to the screen
 
-struct FullscreenFrameBuffer {
-    FullscreenFrameBuffer(Shader shader, glm::vec2 size);
-    FullscreenFrameBuffer() {}
+struct Framebuffer {
+    enum FramebufferAttachmentType {
+        COLOR = GL_COLOR_ATTACHMENT0,
+        DEPTH = GL_DEPTH_ATTACHMENT,
+    };
+    Framebuffer(){}
+    Framebuffer(f32 width, f32 height, FramebufferAttachmentType type);
 
     inline bool isValid() { return framebufferID != 0; }
-    inline void Bind() { glBindFramebuffer(GL_FRAMEBUFFER, framebufferID); }
-    inline void BindDefaultFrameBuffer() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
-    void Delete() { 
-        glDeleteFramebuffers(1, &framebufferID);
-        glDeleteTextures(1, &textureColorBufferID);
-        glDeleteRenderbuffers(1, &renderBufferObjectID);
-        fullscreenSprite.UnloadSprite();
-        framebufferID, textureColorBufferID, renderBufferObjectID = 0;
+    inline void Bind() {
+        GLCall(glBindFramebuffer(GL_FRAMEBUFFER, framebufferID)); 
+        GLCall(glViewport(0, 0, size.x, size.y));
     }
-    void ClearDepth() { glClear(GL_DEPTH_BUFFER_BIT); }
-    void ClearStencil() { glClear(GL_STENCIL_BUFFER_BIT); }
-    void DrawToScreen(std::function<void()> drawSceneFunc);
+    static void BindDefaultFrameBuffer() {
+        GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0)); 
+        GLCall(glViewport(0, 0, (f32)Camera::GetMainCamera().GetScreenWidth(), (f32)Camera::GetMainCamera().GetScreenHeight()));
+    }
+    void Delete() { 
+        GLCall(glDeleteFramebuffers(1, &framebufferID));
+        //GLCall(glDeleteRenderbuffers(1, &renderBufferObjectID));
+        GLCall(glDeleteTextures(1, &texture));
+        framebufferID, texture = 0;
+    }
+    static void ClearDepth() { GLCall(glClear(GL_DEPTH_BUFFER_BIT)); }
+    static void ClearStencil() { GLCall(glClear(GL_STENCIL_BUFFER_BIT)); }
 
     glm::vec2 GetSize() { return size; }
-
-private:    
-    void DrawToScreen(const Shader& shader);
-    
-    Shader postProcessingShader;
-    glm::vec2 size = {0.0, 0.0};
-    Sprite fullscreenSprite; // also stores the shader we can use for postprocessing
+    Texture GetTexture() { return Texture(texture); }
+    FramebufferAttachmentType type = COLOR;
+private:
     u32 framebufferID = 0;
-    u32 textureColorBufferID = 0;
-    u32 renderBufferObjectID = 0;
-
+    //u32 renderBufferObjectID = 0;
+    u32 texture = 0;
+    glm::vec2 size = glm::vec2(0);
 };
 
 

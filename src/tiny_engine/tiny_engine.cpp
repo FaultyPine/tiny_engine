@@ -38,10 +38,10 @@ s32 GetRandom(s32 start, s32 end) {
     if (randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
-        randomSeed = hash((const char*)&time, sizeof(f64));
+        randomSeed = Math::hash((const char*)&time, sizeof(f64));
         //std::cout << "Initial random seed = " << randomSeed << "\n";
     }
-    srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
+    srand(Math::hash((const char*)&randomSeed, sizeof(randomSeed)));
     randomSeed++; // deterministic random
     return start + (rand() % end);
 }
@@ -50,10 +50,10 @@ f32 GetRandomf(f32 start, f32 end) {
     if (randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
-        randomSeed = hash((const char*)&time, sizeof(f64));
+        randomSeed = Math::hash((const char*)&time, sizeof(f64));
         //std::cout << "Initial random seed = " << randomSeed << "\n";
     }
-    srand(hash((const char*)&randomSeed, sizeof(randomSeed)));
+    srand(Math::hash((const char*)&randomSeed, sizeof(randomSeed)));
     randomSeed++; // deterministic random
     f32 zeroToOneRandom = ((f32)rand()) / RAND_MAX;
     return Math::Lerp(start, end, zeroToOneRandom);
@@ -190,6 +190,6 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
     Camera::GetMainCamera().screenHeight = windowHeight;
 }
 
-void EnableWireframeDrawing() {
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+void SetWireframeDrawing(bool shouldDrawWireframes) {
+    glPolygonMode(GL_FRONT_AND_BACK, shouldDrawWireframes ? GL_LINE : GL_FILL);
 }

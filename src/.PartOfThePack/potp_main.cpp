@@ -3,7 +3,7 @@
 #include "tiny_engine/input.h"
 #include "tiny_engine/tiny_audio.h"
 #include "tiny_engine/tiny_engine.h"
-#include "tiny_engine/framebuffer.h"
+#include "tiny_engine/postprocessing.h"
 #include "tiny_engine/tiny_fs.h"
 
 #include "assassin_scene.h"
@@ -131,7 +131,7 @@ void MainUpdate() {
     PotpUpdate(gs, inputs);
     // render gamestate
 
-    static FullscreenFrameBuffer fb;
+    static PostprocessingFB fb;
     // render scene to framebuffer and render that framebuffer to screen with postprocessing shader applied
     fb.DrawToScreen([](){
         PotpDraw(gs, inputs);
