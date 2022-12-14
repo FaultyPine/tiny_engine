@@ -1,6 +1,7 @@
 #include "particle_behaviors.h"
 
 #include "tiny_engine/tiny_engine.h"
+#include "tiny_engine/math.h"
 
 glm::vec2 RandomPointInCircle(f32 radius) {
     glm::vec2 ret = glm::vec2(0);

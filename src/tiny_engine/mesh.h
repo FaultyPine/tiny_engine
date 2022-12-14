@@ -20,12 +20,16 @@ struct Vertex {
     }
 };
 struct Mesh {
+    // TODO: might be cleaner to have the shader cached in the Model class
+    // and have a Mesh always take a shader to be drawn with
     Shader cachedShader;
     u32 VAO, VBO, EBO; // vert array obj, vert buf obj, element buf obj
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
     //std::vector<Texture> textures = {};
     std::vector<Material> materials = {};
+    // when true, the shader MVP is not set
+    bool isOverrideModelMatrix = false;
     
     Mesh(){}
     Mesh(const Shader& shader, 
@@ -40,19 +44,19 @@ struct Mesh {
     inline Shader& GetShader() { return cachedShader; }
 
     // draw mesh with specified shader
-    inline void Draw(Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) const {
+    inline void Draw(const Shader& shader, glm::vec3 position, glm::vec3 scale = glm::vec3(1.0), f32 rotation = 0.0, glm::vec3 rotationAxis = {1.0, 0.0, 0.0}) const {
         DrawMesh(shader, position, scale, rotation, rotationAxis);
     }
     // draw mesh with cached shader
-    inline void Draw(glm::vec3 position, f32 scale = 1.0, f32 rotation = 0.0, glm::vec3 rotationAxis = {1.0, 0.0, 0.0}) const {
+    inline void Draw(glm::vec3 position, glm::vec3 scale = glm::vec3(1.0), f32 rotation = 0.0, glm::vec3 rotationAxis = {1.0, 0.0, 0.0}) const {
         DrawMesh(cachedShader, position, scale, rotation, rotationAxis);
     }
    
-    void initMesh();
 
 private:
     
-    void DrawMesh(const Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) const;
+    void DrawMesh(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) const;
+    void initMesh();
 };
 
 

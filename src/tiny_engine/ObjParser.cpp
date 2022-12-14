@@ -10,6 +10,7 @@ using glm::vec3;
 using glm::vec2;
 using glm::vec4;
 
+// if texture is defined/used, load the texture. Otherwise use material color
 Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texdir) {
     MaterialProp diffuse;
     MaterialProp ambient;
@@ -115,7 +116,6 @@ Mesh MeshConvert(const Shader& shader, const tinyobj::shape_t& shape, const tiny
 
 void LoadMaterials(const std::vector<tinyobj::material_t>& objmaterials, const std::string& texdir, std::vector<Material>& materials) {
     //extract the relevant material properties from the material_t format used by tinyobjloader
-    //if a texture is defined, use the constructor that loads a texture
     for (const tinyobj::material_t& mat : objmaterials) {
         Material convertedMat = MaterialConvert(mat, texdir);
         materials.push_back(convertedMat);

@@ -1,5 +1,6 @@
 #include "mesh.h"
 #include "tiny_engine/camera.h"
+#include "tiny_engine/math.h"
 
 Mesh::Mesh(const Shader& shader, 
             const std::vector<Vertex>& verts, 
@@ -55,12 +56,12 @@ void Mesh::initMesh() {
     GLCall(glBindVertexArray(0));
 }
 
-void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) {
+void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) {
     Camera& cam = Camera::GetMainCamera();
     MouseInput& mouseInput = MouseInput::GetMouse();
     
     // identity matrix to start out with
-    glm::mat4 model = Position3DToModelMat(position, glm::vec3(scale), rotation, rotationAxis);
+    glm::mat4 model = Math::Position3DToModelMat(position, scale, rotation, rotationAxis);
     glm::mat4 view = cam.GetViewMatrix();
     glm::mat4 projection = cam.GetProjectionMatrix();
 
@@ -69,17 +70,21 @@ void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, f32 scale, f3
     shader.setUniform("mvp", projection * view * model);
 }
 
-void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, f32 scale, f32 rotation, glm::vec3 rotationAxis) const {
+void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) const {
     //ASSERT(textures.size() <= 32); // ogl max texture samplers
     if (!isValid()) {
         std::cout << "[ERR] Tried to draw invalid mesh!\n";
         return;
     }
     shader.use();
-    Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
+    if (!isOverrideModelMatrix) {
+        Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
+    }
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
+    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
+    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
     #if 0 // disabled/unused texture code... textures generally reside in the materials now
     // setup textures before drawing
     std::vector<u32> numOfEachTexType(TextureMaterialType::NUM_TYPES-1, 1);
