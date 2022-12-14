@@ -5,7 +5,7 @@
 void JobSystem::Initialize() {
     // get number of threads this system supports
     u32 numCores = std::thread::hardware_concurrency();
-    u32 threads = MAX(1u, numCores); // hardware_concurrency may return 0 if it can't query properly.. in that case just use 1
+    u32 threads = std::max(1u, numCores); // hardware_concurrency may return 0 if it can't query properly.. in that case just use 1
     this->numThreads = threads;
     inProgressJobs = std::vector<std::vector<u32>>(numThreads);
     std::cout << "[JOBS] Spinning up " << numThreads << " job threads\n";
