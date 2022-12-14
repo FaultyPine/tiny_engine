@@ -5,11 +5,14 @@
 #include "shader.h"
 
 // needed for 3d light visualization
-#include "mesh.h"
-#include "tiny_fs.h"
-#include "ObjParser.h"
+#include "shapes.h"
 
 #define MAX_NUM_LIGHTS 4
+
+enum LightType {
+    LIGHT_DIRECTIONAL = 0,
+    LIGHT_POINT = 1
+};
 
 struct Light {   
     s32 type = 0;
@@ -20,21 +23,9 @@ struct Light {
     f32 attenuation = 1.0;
     s32 globalIndex = -1;
 
-    // TODO: improve! This is messy!
-    Mesh lightVisualizer;
     void Visualize() {
-        if (!lightVisualizer.isValid()) {
-            Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
-            lightVisualizer = LoadObjMesh(shader, UseResPath("other/blender_cube.obj").c_str(), UseResPath("other/").c_str())[0];
-            lightVisualizer.materials[0].ambientMat.color = glm::vec4(10);
-        }
-        lightVisualizer.Draw(position, 0.3);
+        Shapes3D::DrawCube(position, glm::vec3(0.2), 0, {0,1,0}, type == LightType::LIGHT_DIRECTIONAL ? glm::vec4(1,1,0,1) : glm::vec4(0.8));
     }
-};
-
-enum LightType {
-    LIGHT_DIRECTIONAL = 0,
-    LIGHT_POINT = 1
 };
 
 // Create a light and get shader locations
