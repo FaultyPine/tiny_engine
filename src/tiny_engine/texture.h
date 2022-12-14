@@ -131,7 +131,7 @@ struct Material {
     MaterialProp specularMat = {};
     MaterialProp normalMat = {};
     f32 shininess = 16.0;
-    std::string name = "";
+    std::string name = "DefaultMat";
 
     Material(){}
     Material(MaterialProp diffuse, MaterialProp ambient, MaterialProp specular, MaterialProp normal, f32 shininess, std::string name) {

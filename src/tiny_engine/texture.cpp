@@ -86,14 +86,15 @@ void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
     #define MAT_SPECULAR  2
     #define MAT_NORMAL    3
     shader.use();
-
+    s32 matPropIdx = 0;
     #define SET_MATERIAL_UNIFORMS(matType, matVar) \
         shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
+        matPropIdx = (matType * matIdx) + matType; \
         if (matVar.hasTexture) { \
-            glActiveTexture(GL_TEXTURE0 + matType*matIdx); \
+            Texture::activate(matPropIdx); \
             matVar.texture.bind(); \
         } \
-        shader.setUniform(TextFormat("materials[%i].%s.tex", matIdx, #matVar), matVar.texture.id); \
+        shader.setUniform(TextFormat("materials[%i].%s.tex", matIdx, #matVar), matPropIdx); \
         shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
 
     SET_MATERIAL_UNIFORMS(MAT_DIFFUSE, diffuseMat);
