@@ -5,10 +5,13 @@ in vec3 fragPositionWS;
 in vec2 fragTexCoord;
 in vec4 fragColor;
 in vec3 fragNormalWS;
+in vec4 fragPosLightSpace;
 flat in int materialId;
 // Output fragment color
 out vec4 finalColor;
 
+uniform float nearClip;
+uniform float farClip;
 
 // ============================ MATERIALS ==================================
 
@@ -55,7 +58,6 @@ vec4 GetNormalMaterial() {
 #define     LIGHT_DIRECTIONAL       0
 #define     LIGHT_POINT             1
 
-const float AMBIENT_INFLUENCE_DIVISOR = 17.0;
 struct Light {
     int enabled;
     int type;
@@ -66,6 +68,7 @@ struct Light {
 // Input lighting values
 uniform Light lights[MAX_LIGHTS];
 uniform vec3 viewPos;
+uniform sampler2D depthMap;
 
 vec3 GetNormals() {
     vec3 vertNormals = (1-useNormalMap) * normalize(fragNormalWS);
@@ -114,7 +117,41 @@ vec3 calculateLighting() {
 }
 // =========================================================================
 
+float GetDepth(vec2 texcoords) {
+    float depthMapSample = texture(depthMap, texcoords).r;
+    // don't need to linearize this.. even if we were using perspective proj
+    // for the shadow map, shadow values are relative when comparing fragment depths
+    // linearizing the depth is only useful for debugging perspective projected depth textures
+    return depthMapSample;
+}
+
+// 0 is in shadow, 1 is out of shadow
+float GetShadow(vec4 fragPosLS) {
+    const float shadowBias = 0.005;
+    //vec3 normal = GetNormals();
+    //vec3 lightDir = 
+    
+    // manual perspective divide
+    // range [-1,1]
+    vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
+    // transform to [0,1]
+    projCoords = projCoords * 0.5 + 0.5;
+    if (projCoords.z > 1.0) // if fragment in light space is outside the frustum, it should be fully lit
+        return 1.0;
+
+    // depth value from shadow map
+    float depthMapDepth = GetDepth(projCoords.xy);
+    // [0,1] current depth of this fragment
+    float currentDepth = projCoords.z;
+    // 1.0 is in shadow, 0 is out of shadow
+    // - bias   gets rid of shadow acne
+    float shadow = currentDepth-shadowBias > depthMapDepth ? 1.0 : 0.0;
+    return 1-shadow;
+}
+
 void main() {
+    float shadow = GetShadow(fragPosLightSpace);
+
     // Texel color fetching from texture sampler
     vec4 diffuseColor = GetDiffuseMaterial();
     vec4 ambient = GetAmbientMaterial();
@@ -124,9 +161,9 @@ void main() {
 
 
     // set color to our diffuse multiplied by light
-    finalColor = diffuseColor * lighting;
-    // apply ambient lighting - ambient by itself wouldn't work by itself, we want unlit areas to be a little bit of their real color
-    finalColor += diffuseColor*(ambient/AMBIENT_INFLUENCE_DIVISOR);
+    finalColor = diffuseColor * lighting * vec4(vec3(shadow), 1.0);
+    // apply ambient lighting - we want unlit areas to be just a little bit of their real color
+    finalColor += diffuseColor*(ambient/17.0);
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));

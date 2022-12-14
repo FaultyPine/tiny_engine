@@ -21,10 +21,10 @@ Features:
 
 ### TODO:
 - Learn how to use Perforce
-- Fix Model Loading
+- ~~Fix Model Loading~~
     - ~~load model in as seperate meshes... rn I (unintentionally) merge all meshes into one~~
     - ~~then apply materials to each mesh~~
-- 3D lighting
+- ~~3D lighting~~
     - ~~Basic blinn-phong~~
     - ~~Point & Directional light~~
     - ~~Materials~~
@@ -34,8 +34,12 @@ Features:
     - ~~Multiple materials per mesh~~
         - if so, just make the Mesh class have a list of materials and have the lighting shader take in a 2d array of
             materials... this is probably slow or cringe but premature optimization is more cringe
-- default mesh generation (plane, cube, sphere)
-- shadow mapping
+- ~~pull functions out of pch.h~~
+- make sure pch works with msvc
+- ~~default mesh generation (plane, cube, etc)~~
+- ~~shadow mapping~~
+    - ~~make generic framebuffer class~~
+    - ~~pull out current "FullscreenFramebuffer" object into Postprocessing file/class/whatever~~
 - instancing
 - 3D particles
 - Try making the island/waterfall scene!
