@@ -1,0 +1,52 @@
+{
+    "General": {
+        "showErrorOnFailedBrokerConnection": true,
+        "spawnBrokerForLocalConnection": true
+    },
+    "HotReload": {
+        "clearLog": true,
+        "deletePatchFiles": true,
+        "hotReloadShortcutModifiers": 3,
+        "hotReloadShortcutVirtualKeyCode": 122,
+        "loadIncompleteCompilands ": false,
+        "loadIncompleteModules": false,
+        "timeout": 3000
+    },
+    "HotRestart": {
+        "timeout": 10000
+    },
+    "Logging": {
+        "colorError": -65536,
+        "colorInfo": -1,
+        "colorPanic": -11141121,
+        "colorSuccess": -16711936,
+        "colorTimeAndDate": -6250336,
+        "colorWarning": -256,
+        "enableWordWrap": false,
+        "font": "Courier New,10,-1,2,400,0,0,0,0,0,0,0,0,0,0,1",
+        "printTimestamps": true,
+        "verbosity": 0
+    },
+    "Network": {
+        "hostOrIP": "127.0.0.1",
+        "timeout": 2000
+    },
+    "Notifications": {
+        "areEnabled": false,
+        "focusType": 0,
+        "playSoundOnError": false,
+        "playSoundOnSuccess": false,
+        "soundOnError": "",
+        "soundOnSuccess": ""
+    },
+    "UI": {
+        "initialState": 0,
+        "style": 1
+    },
+    "VisualStudio": {
+        "keepBreakpointsEnabled": true,
+        "showModalDialog": false,
+        "toggleOptimizationsShortcutModifiers": 3,
+        "toggleOptimizationsShortcutVirtualKeyCode": 79
+    }
+}

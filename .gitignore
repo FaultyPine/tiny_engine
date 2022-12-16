@@ -8,3 +8,5 @@ build.ninja
 *.gch
 *.exe
 **/imgui.ini
+*.sln
+*.pdb

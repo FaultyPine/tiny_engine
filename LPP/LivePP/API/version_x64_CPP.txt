@@ -1,0 +1,2 @@
+Live++ for Windows C++, 2.0.4
+Released on October 7, 2022
