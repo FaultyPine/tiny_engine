@@ -68,9 +68,10 @@ void main(){
     }
     else {
         // each update, reupload the vertex data to the gpu since the line positions may have changed
-        GLCall(glBindVertexArray(quadVAO));
+        //GLCall(glBindVertexArray(quadVAO));
         GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(lineVerts), lineVerts, GL_DYNAMIC_DRAW));
+        // copy into gpu vertex buffer with offset 0
+        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVerts), lineVerts));
         GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
     }
     glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();

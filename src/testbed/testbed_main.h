@@ -20,6 +20,9 @@ struct WorldEntity {
             hash = std::hash<std::string>{}(std::string(name));
         }
     }
+    void Delete() {
+        model.Delete();
+    }
     bool isValid() { return hash != 0; }
 };
 
@@ -29,25 +32,22 @@ struct GameState {
 
     static GameState& get() {
         static GameState gs;
-        return gs;
+        return gs; 
     }
-    bool GetEntity(const char* name, WorldEntity& entity) {
+    void Terminate() {
+        for (auto& ent : entities) {
+            ent.Delete();
+        }
+    }
+    // TODO: return shared_ptr?
+    WorldEntity* GetEntity(const char* name) {
         u32 hash = std::hash<std::string>{}(std::string(name));
         for (auto& ent : entities) {
             if (ent.hash == hash) {
-                entity = ent;
-                return true;
+                return &ent;
             }
         }
-        return false;
-    }
-    WorldEntity& GetEntity(const char* name) {
-        for (auto& ent : entities) {
-            if (ent.hash == std::hash<std::string>{}(std::string(name))) {
-                return ent;
-            }
-        }
-        return WorldEntity();
+        return nullptr;
     }
 };
 

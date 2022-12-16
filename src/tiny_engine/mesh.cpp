@@ -2,11 +2,10 @@
 #include "tiny_engine/camera.h"
 #include "tiny_engine/math.h"
 
-Mesh::Mesh(const Shader& shader, 
-            const std::vector<Vertex>& verts, 
+Mesh::Mesh(const std::vector<Vertex>& verts, 
             const std::vector<u32>& idxs, 
             const std::vector<Material>& mats) {
-    vertices = verts; indices = idxs; cachedShader = shader; materials = mats;
+    vertices = verts; indices = idxs; materials = mats;
     if (materials.size() == 0) {
         // if no materials, set defaults
         Material defaultMat = Material();
@@ -14,14 +13,19 @@ Mesh::Mesh(const Shader& shader,
     }
     initMesh();
 }
-void Mesh::UnloadMesh() {
+void Mesh::Delete() {
     GLCall(glDeleteVertexArrays(1, &VAO));
     GLCall(glDeleteBuffers(1, &VBO));
     GLCall(glDeleteBuffers(1, &EBO));
+    for (auto& m : materials) {
+        m.Delete();
+    }
 }
 
 void ConfigureVertexAttrib(u32 attributeLoc, u32 attributeSize, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
     GLCall(glVertexAttribPointer(attributeLoc, attributeSize, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+    // glEnableVertexAttribArray enables vertex attribute for currently bound vertex array object
+    // glEnableVertexArrayAttrib ^ but you provide the vertex array obj explicitly
     GLCall(glEnableVertexAttribArray(attributeLoc));
 }
 
@@ -58,7 +62,6 @@ void Mesh::initMesh() {
 
 void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) {
     Camera& cam = Camera::GetMainCamera();
-    MouseInput& mouseInput = MouseInput::GetMouse();
     
     // identity matrix to start out with
     glm::mat4 model = Math::Position3DToModelMat(position, scale, rotation, rotationAxis);
@@ -70,44 +73,21 @@ void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, glm::vec3 sca
     shader.setUniform("mvp", projection * view * model);
 }
 
-void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) const {
-    //ASSERT(textures.size() <= 32); // ogl max texture samplers
+void Mesh::Draw(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) const {
     if (!isValid()) {
         std::cout << "[ERR] Tried to draw invalid mesh!\n";
         return;
     }
     shader.use();
-    if (!isOverrideModelMatrix) {
-        Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
-    }
+    // misc uniforms
+    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
+    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
+    // mvp uniform
+    Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
+    // material uniforms
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
-    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
-    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
-    #if 0 // disabled/unused texture code... textures generally reside in the materials now
-    // setup textures before drawing
-    std::vector<u32> numOfEachTexType(TextureMaterialType::NUM_TYPES-1, 1);
-
-    for (s32 i = 0; i < textures.size(); i++) {
-        const Texture& tex = textures[i];
-        // before binding, activate the texture we're talking about
-        tex.activate(i);
-
-        // get the string representation of our texture type
-        // something like tex_diffuse or tex_normal
-        std::string texName = GetTexMatTypeString(tex.type);
-        // get (and post-increment) the str representation of the number
-        // of these kinds of textures we've set.
-        // this means shader uniforms will follow the convention of
-        // tex_<texture type><number>   I.E. tex_diffuse1
-        std::string texNum = std::to_string(numOfEachTexType[tex.type]++);
-
-        // set the texture uniform to the proper texture unit
-        shader.setUniform((texName + texNum).c_str(), i);
-        tex.bind();
-    }
-    #endif
 
     // draw mesh = bind vert array -> draw -> unbind
     GLCall(glBindVertexArray(VAO));
@@ -117,4 +97,28 @@ void Mesh::DrawMesh(const Shader& shader, glm::vec3 position, glm::vec3 scale, f
     GLCall(glBindVertexArray(0)); // unbind vert array
     GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
 
+}
+void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
+    if (!isValid()) {
+        std::cout << "[ERR] Tried to draw invalid mesh!\n";
+        return;
+    }
+    shader.use();
+    // misc uniforms
+    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
+    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
+    // mvp uniform
+    shader.setUniform("mvp", mvp);
+    // material uniforms
+    for (u32 i = 0; i < materials.size(); i++) {
+        materials.at(i).SetShaderUniforms(shader, i);
+    }
+
+    // draw mesh = bind vert array -> draw -> unbind
+    GLCall(glBindVertexArray(VAO));
+    GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
+    
+    // clean up
+    GLCall(glBindVertexArray(0)); // unbind vert array
+    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
 }

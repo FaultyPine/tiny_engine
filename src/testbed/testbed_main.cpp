@@ -92,18 +92,12 @@ void drawImGuiDebug() {
 
 void drawGameState() {
     GameState& gs = GameState::get();
-    //SetWireframeDrawing(true);
-    //Shapes3D::DrawCube({5,5,5});
-    //Shapes3D::DrawPlane({3,0,0});
-    //SetWireframeDrawing(false);
-    WorldEntity& testModel = gs.entities[0];
-    //if (testModel.isValid()) {
-        testModel.model.Draw(testModel.transform.position, testModel.transform.scale, 
-                        testModel.transform.rotation, testModel.transform.rotationAxis, gs.lights);
-    //}
-    WorldEntity& box = gs.entities[1];
-    box.model.Draw(box.transform.position, box.transform.scale,
-                    box.transform.rotation, box.transform.rotationAxis, gs.lights);
+    WorldEntity* testModel = gs.GetEntity("testModel");
+    testModel->model.Draw(testModel->transform.position, testModel->transform.scale, 
+                        testModel->transform.rotation, testModel->transform.rotationAxis, gs.lights);
+    WorldEntity* box = gs.GetEntity("box");
+    box->model.Draw(box->transform.position, box->transform.scale,
+                    box->transform.rotation, box->transform.rotationAxis, gs.lights);
 
     for (Light& light : gs.lights) {
         light.Visualize();
@@ -123,7 +117,7 @@ void testbed_init() {
     testModel = Model(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
     //testModel = Model(shader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
     
-    GameState::get().entities.emplace_back(WorldEntity(Transform(), testModel, "testModel"));
+    GameState::get().entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "testModel"));
     Model boxModel = Model(shader, UseResPath("other/blender_cube.obj").c_str(), UseResPath("other/").c_str());
     GameState::get().entities.emplace_back(WorldEntity(Transform({4,6,8}), boxModel, "box"));
 
@@ -131,73 +125,30 @@ void testbed_init() {
     GameState::get().lights.push_back(meshPointLight);
 }
 
-
-glm::mat4 GetLightSpaceMatrix(const Light& light) {
-    const f32 boxScale = 15.0f;
-    glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, Camera::GetMainCamera().nearClip, Camera::GetMainCamera().farClip);
-    glm::mat4 lightView = glm::lookAt(light.position, light.target, {0,1,0});
-    glm::mat4 lightMat = lightProj * lightView;
-    return lightMat;
-}
-
-void RenderToShadowMap(Model& model, const Shader& depthShader, const Light& light,
-                    glm::vec3 pos, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) {
-    depthShader.use();
-    glm::mat4 lightMat = GetLightSpaceMatrix(light);
-    glm::mat4 modelMat = Math::Position3DToModelMat(pos, glm::vec3(scale), rotation, rotationAxis);
-    depthShader.setUniform("mvp", lightMat * modelMat);
-    // draw model to depth tex/fb
-    model.SetIsOverrideMatrix(true);
-    model.Draw(depthShader, pos, scale, rotation, rotationAxis);
-    model.SetIsOverrideMatrix(false);
-}
-void SetShadowShaderUniforms(const Texture& depthTexture, const Shader& lightingShader, const Light& light) {
-    lightingShader.use();
-    s32 texunit = 0; // TODO: ensure this works..?
-    Texture::activate(texunit);
-    depthTexture.bind();
-    lightingShader.setUniform("depthMap", texunit);
-    lightingShader.setUniform("lightSpaceMatrix", GetLightSpaceMatrix(light));
-}
-
 void testbed_tick() {
     GameState& gs = GameState::get();
     testbed_inputpoll();
     //testbed_orbit(27, 17, {0, 10, 0});
 
-    static Framebuffer depthFb;
-    static Sprite fbSprite;
-    static Shader depthShader;
-    static const s32 depthTexResolution = 1024;
-    if (!depthFb.isValid()) {
-        depthFb = Framebuffer(depthTexResolution, depthTexResolution, Framebuffer::FramebufferAttachmentType::DEPTH);
-        // this shader renders our scene from the perspective of a light
-        depthShader = Shader(UseResPath("shaders/simpleDepthShader.vs").c_str(), UseResPath("shaders/simpleDepthShader.fs").c_str());
-        fbSprite = Sprite(depthFb.GetTexture());
+    static ShadowMap shadowMap;
+    static Sprite depthSprite;
+    if (!shadowMap.isValid()) {
+        shadowMap = ShadowMap(1024);
+        depthSprite = Sprite(shadowMap.fb.GetTexture());
     }
-    // render depth texture
-    depthFb.Bind();
-    ClearGLBuffers();
 
-    // want to render the game to our depth framebuffer from the light's POV
-    glCullFace(GL_FRONT);
+    shadowMap.BeginRender();
     for (auto& ent : gs.entities) {
-        RenderToShadowMap(ent.model, depthShader, gs.lights[0], 
-                        ent.transform.position, ent.transform.scale, ent.transform.rotation, ent.transform.rotationAxis);
+        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform);
     }
-    glCullFace(GL_BACK);
+    shadowMap.EndRender();
 
-    Framebuffer::BindDefaultFrameBuffer();
-    ClearGLBuffers();
-    
-    WorldEntity& testModel = gs.entities[0];
-    //if (testModel.isValid()) {
-        SetShadowShaderUniforms(depthFb.GetTexture(), testModel.model.meshes[0].GetShader(), gs.lights[0]);
-    //}
+    WorldEntity* testModel = gs.GetEntity("testModel");
+    shadowMap.SetShadowUniforms(testModel->model.cachedShader, gs.lights[0], 0);
 
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
-    fbSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/2.5f, 0, {0,0,1}, {1,1,1,1}, false, true);
+    depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/2.8f, 0, {0,0,1}, {1,1,1,1}, false, true);
 
     // render normal scene
     drawGameState();
@@ -209,4 +160,5 @@ void testbed_tick() {
 }
 void testbed_terminate() {
     ImGuiTerminate();
+    GameState::get().Terminate();
 }

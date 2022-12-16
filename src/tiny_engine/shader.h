@@ -20,7 +20,7 @@ struct Shader {
 
 
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
-    void Unload() const { glDeleteProgram(ID); }
+    void Delete() const { glDeleteProgram(ID); }
     bool isValid() const { return ID != 0; }
     /// Takes vertex/fragment shader code (as a string)
     static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) {

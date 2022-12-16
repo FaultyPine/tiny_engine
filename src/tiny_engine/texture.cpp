@@ -91,8 +91,7 @@ void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
         shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
         matPropIdx = (matType * matIdx) + matType; \
         if (matVar.hasTexture) { \
-            Texture::activate(matPropIdx); \
-            matVar.texture.bind(); \
+            matVar.texture.bindUnit(matPropIdx); \
         } \
         shader.setUniform(TextFormat("materials[%i].%s.tex", matIdx, #matVar), matPropIdx); \
         shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)

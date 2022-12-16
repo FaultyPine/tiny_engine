@@ -41,6 +41,11 @@ Features:
     - ~~make generic framebuffer class~~
     - ~~pull out current "FullscreenFramebuffer" object into Postprocessing file/class/whatever~~
 - instancing
+    - instancing: drawing multiple instances of the same vertex data. gl_InstanceID is passed to the vert shader
+        so you can pass uniform arrays and index into those with that instanceID to get different behavior for each instance of the mesh
+    - batching: only using one draw call and instead of setting uniforms for each draw call for each mesh, put all mesh-specific info
+        into the vertex buffer and draw it all in one drawcall. I.E. instead of a color uniform, you'd put the color info in the vertex buffer (as a vert attribute) same for storing a texture id that corresponds with a texture unit, or an index into
+        a uniform array of positions or something
 - 3D particles
 - Try making the island/waterfall scene!
     - Floating island

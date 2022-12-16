@@ -1,5 +1,14 @@
 #include "tiny_lights.h"
-#include "tiny_engine/tiny_engine.h"
+#include "tiny_engine.h"
+#include "camera.h"
+
+glm::mat4 Light::GetLightViewProjMatrix() const {
+    const f32 boxScale = 15.0f;
+    glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, Camera::GetMainCamera().nearClip, Camera::GetMainCamera().farClip);
+    glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
+    glm::mat4 lightMat = lightProj * lightView;
+    return lightMat;
+}
 
 static u32 global_num_lights = 0;
 

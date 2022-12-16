@@ -112,6 +112,12 @@ struct Texture {
 
     Texture() {}
     Texture(s32 id) { Texture(); this->id = id; }
+    void Delete() { GLCall(glDeleteTextures(1, (const GLuint*)&id)); }
+    void bindUnit(u32 textureUnit) const {
+        activate(textureUnit);
+        bind();
+        activate(0);
+    }
     void bind() const { GLCall(glBindTexture(GL_TEXTURE_2D, id)); }
     static void activate(u32 textureUnit) { GLCall(glActiveTexture(GL_TEXTURE0 + textureUnit)); }
 };
@@ -124,6 +130,7 @@ struct MaterialProp {
     MaterialProp(glm::vec4 col) {
         color = col;
     }
+    void Delete() { texture.Delete(); }
 };
 struct Material {
     MaterialProp diffuseMat = {};
@@ -140,6 +147,12 @@ struct Material {
         specularMat = specular;
         normalMat = normal;
         this->name = name;
+    }
+    void Delete() {
+        diffuseMat.Delete();
+        ambientMat.Delete();
+        specularMat.Delete();
+        normalMat.Delete();
     }
     void SetShaderUniforms(const Shader& shader, u32 matIdx) const;
 };

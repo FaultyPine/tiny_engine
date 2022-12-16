@@ -38,7 +38,7 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
     Material meshMat = Material(diffuse, ambient, specular, normal, mat.shininess, mat.name);
     return meshMat;
 }
-Mesh MeshConvert(const Shader& shader, const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& allMaterials) {
+Mesh MeshConvert(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& allMaterials) {
     // input data from tiny_obj_loader
     const std::vector<tinyobj::real_t>& attribVerts = attrib.vertices; // 3 floats per vertex
     const std::vector<tinyobj::real_t>& attribNorms = attrib.normals; // 3 floats per vertex
@@ -111,7 +111,7 @@ Mesh MeshConvert(const Shader& shader, const tinyobj::shape_t& shape, const tiny
         indices.push_back(indices.size());
     }
 
-    return Mesh(shader, vertices, indices, materials);
+    return Mesh(vertices, indices, materials);
 }
 
 void LoadMaterials(const std::vector<tinyobj::material_t>& objmaterials, const std::string& texdir, std::vector<Material>& materials) {
@@ -122,8 +122,7 @@ void LoadMaterials(const std::vector<tinyobj::material_t>& objmaterials, const s
     }
 }
 
-std::vector<Mesh> LoadObjMesh(
-    const Shader& shader, const char* filename, const char* matsDirectory) {
+std::vector<Mesh> LoadObjMesh(const char* filename, const char* matsDirectory) {
     //load a Wavefront .obj file at 'file' as a list of meshes
     std::vector<Mesh> ret = {};
 
@@ -158,8 +157,7 @@ std::vector<Mesh> LoadObjMesh(
     // a single obj might have multiple sub-meshes
     // iterate through each of those and load their verts/norms/materials/etc
     for (const tinyobj::shape_t& shape : shapes) {
-        // Mesh(shader, vertices, indices, {}, material)
-        ret.emplace_back(MeshConvert(shader, shape, attrib, materials));
+        ret.emplace_back(MeshConvert(shape, attrib, materials));
     }
 
     std::cout << "Loaded model " << filename << " [mats: " << materials.size() << ", submeshes: " << shapes.size() << ", verts: " << attrib.vertices.size()/3 << "]\n";

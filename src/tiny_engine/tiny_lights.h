@@ -26,6 +26,7 @@ struct Light {
     void Visualize() {
         Shapes3D::DrawCube(position, glm::vec3(0.2), 0, {0,1,0}, type == LightType::LIGHT_DIRECTIONAL ? glm::vec4(1,1,0,1) : glm::vec4(0.8));
     }
+    glm::mat4 GetLightViewProjMatrix() const;
 };
 
 // Create a light and get shader locations
