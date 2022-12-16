@@ -9,6 +9,13 @@ def is_linux():
     return platform == "linux" or platform == "linux2"
 def is_macos():
     return platform == "darwin" 
+def get_ninja_command():
+    if is_linux():
+        return "chmod u+x ninja-linux && ./ninja-linux"
+    elif is_macos():
+        return "chmod 755 ninja-mac && ./ninja-mac"
+    elif is_windows():
+        return "ninja"
 def get_files_with_ext(basedir, ext):
     files_with_ext = [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
     # if a folder/file starts with .  ignore it

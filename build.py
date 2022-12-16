@@ -7,16 +7,9 @@ def generate_ninja_build(force_overwrite=False):
         build_msvc.generate_ninja_build_msvc(force_overwrite)
     else:
         build_gpp.generate_ninja_build_gpp(force_overwrite)
-def get_ninja_command():
-    if is_linux(): # linux
-        return "chmod u+x ninja-linux && ./ninja-linux"
-    elif is_macos(): # mac
-        return "chmod 755 ninja-mac && ./ninja-mac"
-    elif is_windows(): # windows
-        return "ninja"
 def build_pch():
     if USE_MSVC:
-        build_msvc.build_pch()
+        build_msvc.build_pch_msvc()
     else:
         build_gpp.build_pch_gpp()
 

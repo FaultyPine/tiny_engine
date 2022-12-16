@@ -1,9 +1,10 @@
 cxx = cl
-compiler_args = /std:c++17 -Iinclude -Isrc -EHsc -MT -Z7 /nologo
+compiler_args = /std:c++17 /Iinclude /Isrc /EHa /MT /Zi /FS /Gm- /nologo /MP
 linker_args = glfw3_mt.lib user32.lib gdi32.lib shell32.lib msvcrt.lib $
     ws2_32.lib winmm.lib -LIBPATH:lib/glfw/windows        $
     /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib $
-    /NODEFAULTLIB:msvcrtd.lib /DEBUG
+    /NODEFAULTLIB:msvcrtd.lib        /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF $
+    /DEBUG:FULL
 builddir = build
 rule compile
   command = $cxx -showIncludes $compiler_args -c $in -Fo$out
@@ -12,9 +13,6 @@ rule compile
 rule link
   command = LINK -OUT:$out $in $linker_args
   description = LINK $out
-rule pch
-  command = $cxx -showIncludes $compiler_args /Yc /Fp$out $in
-  description = PCH $out
 build $builddir/main.obj: compile src/main.cpp
 build $builddir/testbed_main.obj: compile src/testbed/testbed_main.cpp
 build $builddir/framebuffer.obj: compile src/tiny_engine/framebuffer.cpp
