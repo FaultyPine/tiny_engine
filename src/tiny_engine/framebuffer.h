@@ -47,7 +47,7 @@ struct ShadowMap {
     ShadowMap(u32 resolution);
     bool isValid() const { return fb.isValid(); }
     void BeginRender() const;
-    void RenderToShadowMap(const Light& light, Model& model, const Transform& tf) const;
+    void RenderToShadowMap(const Light& light, Model& model, const Transform& tf, s32 depthTexTextureUnit) const;
     void EndRender() const;
     void SetShadowUniforms(const Shader& shader, const Light& light, s32 depthTexTextureUnit) const;
 

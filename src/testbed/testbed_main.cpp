@@ -139,12 +139,9 @@ void testbed_tick() {
 
     shadowMap.BeginRender();
     for (auto& ent : gs.entities) {
-        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform);
+        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform, 0);
     }
     shadowMap.EndRender();
-
-    WorldEntity* testModel = gs.GetEntity("testModel");
-    shadowMap.SetShadowUniforms(testModel->model.cachedShader, gs.lights[0], 0);
 
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};

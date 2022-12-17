@@ -76,10 +76,44 @@ vec3 GetNormals() {
     return vertNormals + normalMapNormals;
 }
 
+float GetDepth(vec2 texcoords) {
+    float depthMapSample = texture(depthMap, texcoords).r;
+    // don't need to linearize this.. even if we were using perspective proj
+    // for the shadow map, shadow values are relative when comparing fragment depths
+    // linearizing the depth is only useful for debugging perspective projected depth textures
+    return depthMapSample;
+}
+
+// 0 is in shadow, 1 is out of shadow
+float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
+    //const float shadowBias = 0.005;
+    // maximum bias of 0.05 and a minimum of 0.005 based on the surface's normal and light direction
+    float shadowBias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);  
+
+    // manual perspective divide
+    // range [-1,1]
+    vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
+    // transform to [0,1]
+    projCoords = projCoords * 0.5 + 0.5;
+    if (projCoords.z > 1.0) // if fragment in light space is outside the frustum, it should be fully lit
+        return 1.0;
+
+    // depth value from shadow map
+    float depthMapDepth = GetDepth(projCoords.xy);
+    // [0,1] current depth of this fragment
+    float currentDepth = projCoords.z;
+    // 1.0 is in shadow, 0 is out of shadow
+    // - bias   gets rid of shadow acne
+    float shadow = currentDepth-shadowBias > depthMapDepth ? 1.0 : 0.0;
+    return 1-shadow;
+}
+
 vec3 calculateLighting() {
     vec3 lightDot = vec3(0);
     vec3 specular = vec3(0);
     vec3 normal = GetNormals();
+    // direction of directional light (if there are multiple, this currently uses the last)
+    vec3 sunLightDir = vec3(0);
     vec3 viewDir = normalize(viewPos - fragPositionWS);
 
     for (int i = 0; i < MAX_LIGHTS; i++) {
@@ -90,6 +124,8 @@ vec3 calculateLighting() {
             if (lights[i].type == LIGHT_DIRECTIONAL) {
                 // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
                 lightDir = -normalize(lights[i].target - lights[i].position);
+                // grab last (hopefully only) directional light direction for use in shadow calculations
+                sunLightDir = lightDir;
             }
 
             if (lights[i].type == LIGHT_POINT) {
@@ -113,45 +149,14 @@ vec3 calculateLighting() {
             specular += specCo * lights[i].color.rgb * GetSpecularMaterial().rgb;
         }
     }
-    return specular * lightDot;
+    float shadow = GetShadow(fragPosLightSpace, sunLightDir, normal);
+    return specular * lightDot * shadow;
 }
 // =========================================================================
 
-float GetDepth(vec2 texcoords) {
-    float depthMapSample = texture(depthMap, texcoords).r;
-    // don't need to linearize this.. even if we were using perspective proj
-    // for the shadow map, shadow values are relative when comparing fragment depths
-    // linearizing the depth is only useful for debugging perspective projected depth textures
-    return depthMapSample;
-}
 
-// 0 is in shadow, 1 is out of shadow
-float GetShadow(vec4 fragPosLS) {
-    const float shadowBias = 0.005;
-    //vec3 normal = GetNormals();
-    //vec3 lightDir = 
-    
-    // manual perspective divide
-    // range [-1,1]
-    vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
-    // transform to [0,1]
-    projCoords = projCoords * 0.5 + 0.5;
-    if (projCoords.z > 1.0) // if fragment in light space is outside the frustum, it should be fully lit
-        return 1.0;
-
-    // depth value from shadow map
-    float depthMapDepth = GetDepth(projCoords.xy);
-    // [0,1] current depth of this fragment
-    float currentDepth = projCoords.z;
-    // 1.0 is in shadow, 0 is out of shadow
-    // - bias   gets rid of shadow acne
-    float shadow = currentDepth-shadowBias > depthMapDepth ? 1.0 : 0.0;
-    return 1-shadow;
-}
 
 void main() {
-    float shadow = GetShadow(fragPosLightSpace);
-
     // Texel color fetching from texture sampler
     vec4 diffuseColor = GetDiffuseMaterial();
     vec4 ambient = GetAmbientMaterial();
@@ -161,7 +166,7 @@ void main() {
 
 
     // set color to our diffuse multiplied by light
-    finalColor = diffuseColor * lighting * vec4(vec3(shadow), 1.0);
+    finalColor = diffuseColor * lighting;
     // apply ambient lighting - we want unlit areas to be just a little bit of their real color
     finalColor += diffuseColor*(ambient/17.0);
 

@@ -74,11 +74,12 @@ void ShadowMap::BeginRender() const {
     // cull front faces when rendering to depth tex
     glCullFace(GL_FRONT);
 }
-void ShadowMap::RenderToShadowMap(const Light& light, Model& model, const Transform& tf) const {
+void ShadowMap::RenderToShadowMap(const Light& light, Model& model, const Transform& tf, s32 depthTexTextureUnit) const {
     depthShader.use();
     glm::mat4 lightMat = light.GetLightViewProjMatrix();
     glm::mat4 modelMat = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
     glm::mat4 mvp = lightMat * modelMat;
+    SetShadowUniforms(model.cachedShader, light, depthTexTextureUnit);
     // draw model to depth tex/fb
     model.Draw(depthShader, mvp, modelMat);
 }
