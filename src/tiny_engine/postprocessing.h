@@ -17,7 +17,7 @@ struct PostprocessingFB {
     inline void Bind() { fb.Bind(); }
     inline void BindDefaultFrameBuffer() { fb.BindDefaultFrameBuffer(); }
     void Delete() { 
-        fullscreenSprite.UnloadSprite();
+        fullscreenSprite.Delete();
         fb.Delete();
     }
     void ClearDepth() { fb.ClearDepth(); }

@@ -29,6 +29,7 @@ struct Framebuffer {
         GLCall(glDeleteFramebuffers(1, &framebufferID));
         GLCall(glDeleteTextures(1, &texture));
         framebufferID, texture = 0;
+        size = glm::vec2(0);
     }
     static void ClearDepth() { GLCall(glClear(GL_DEPTH_BUFFER_BIT)); }
     static void ClearStencil() { GLCall(glClear(GL_STENCIL_BUFFER_BIT)); }
@@ -45,6 +46,10 @@ private:
 struct ShadowMap {
     ShadowMap(){}
     ShadowMap(u32 resolution);
+    void Delete() {
+        fb.Delete();
+        depthShader.Delete();
+    }
     bool isValid() const { return fb.isValid(); }
     void BeginRender() const;
     void RenderToShadowMap(const Light& light, Model& model, const Transform& tf, s32 depthTexTextureUnit) const;

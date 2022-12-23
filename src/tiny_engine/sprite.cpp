@@ -16,10 +16,10 @@ Sprite::Sprite(const Shader& shader, const Texture& mainTex) {
 void AdjustDimensionsForSceenSize(glm::vec2& position, glm::vec2& size) {
     const Camera& cam = Camera::GetMainCamera();
     glm::vec2 screenMin = cam.GetMinScreenDimensions();
-    size.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), size.x) /1.1;
-    size.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), size.y) /1.1;
-    position.x = Math::Remap(0, screenMin.x, 0, cam.GetScreenWidth(), position.x);
-    position.y = Math::Remap(0, screenMin.y, 0, cam.GetScreenHeight(), position.y);
+    size.x = Math::Remap(size.x, 0, screenMin.x, 0, cam.GetScreenWidth()) /1.1;
+    size.y = Math::Remap(size.y, 0, screenMin.y, 0, cam.GetScreenHeight()) /1.1;
+    position.x = Math::Remap(position.x, 0, screenMin.x, 0, cam.GetScreenWidth());
+    position.y = Math::Remap(position.y, 0, screenMin.y, 0, cam.GetScreenHeight());
 }
 
 

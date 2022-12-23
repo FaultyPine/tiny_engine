@@ -4,6 +4,8 @@
 #include "tiny_engine/model.h"
 #include "tiny_engine/tiny_types.h"
 #include "tiny_engine/tiny_engine.h"
+#include "tiny_engine/sprite.h"
+#include "tiny_engine/framebuffer.h"
 
 struct WorldEntity {
     Transform transform;
@@ -30,6 +32,9 @@ struct GameState {
     std::vector<WorldEntity> entities = {};
     std::vector<Light> lights = {};
 
+    ShadowMap shadowMap;
+    Sprite depthSprite;
+
     static GameState& get() {
         static GameState gs;
         return gs; 
@@ -38,6 +43,8 @@ struct GameState {
         for (auto& ent : entities) {
             ent.Delete();
         }
+        shadowMap.Delete();
+        depthSprite.Delete();
     }
     // TODO: return shared_ptr?
     WorldEntity* GetEntity(const char* name) {

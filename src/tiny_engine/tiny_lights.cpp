@@ -2,6 +2,8 @@
 #include "tiny_engine.h"
 #include "camera.h"
 
+// TODO: this is hardcoded... ideally this would take a list of transforms and maybe some
+// camera frustum info and calculate the optimal size of the projection matrix
 glm::mat4 Light::GetLightViewProjMatrix() const {
     const f32 boxScale = 15.0f;
     glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, Camera::GetMainCamera().nearClip, Camera::GetMainCamera().farClip);
@@ -10,9 +12,11 @@ glm::mat4 Light::GetLightViewProjMatrix() const {
     return lightMat;
 }
 
-static u32 global_num_lights = 0;
 
 Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color) {
+    static u32 global_num_lights = 0;
+    ASSERT(global_num_lights+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
+    
     Light light = {};
 
     light.enabled = true;
@@ -27,10 +31,9 @@ Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 colo
 
 void UpdateLightValues(Shader shader, Light light) {
     s32 lightIdx = light.globalIndex;
-    // TODO: make a better check?
-    // maybe prevent creating more than maximum # of lights?
     ASSERT(lightIdx < MAX_NUM_LIGHTS); 
     shader.use();
+
     // Send to shader light enabled state and type
     const char* enabledLoc = TextFormat("lights[%i].enabled", lightIdx);
     shader.setUniform(enabledLoc, light.enabled);

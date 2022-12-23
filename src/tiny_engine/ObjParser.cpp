@@ -5,6 +5,7 @@
 
 #include "tiny_engine/texture.h"
 #include "tiny_engine/mesh.h" // for Vertex
+#include "tiny_engine/math.h"
 
 using glm::vec3;
 using glm::vec2;
@@ -35,7 +36,9 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
             prop.hasTexture = true;
         }
     }
-    Material meshMat = Material(diffuse, ambient, specular, normal, mat.shininess, mat.name);
+    // .obj Ns is [0, 1000]. Remap that to a resonable range
+    f32 shininess = Math::Remap(mat.shininess, 0.0, 1000.0, 0.0, 50.0);
+    Material meshMat = Material(diffuse, ambient, specular, normal, shininess, mat.name);
     return meshMat;
 }
 Mesh MeshConvert(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& allMaterials) {

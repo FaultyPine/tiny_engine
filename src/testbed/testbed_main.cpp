@@ -13,8 +13,6 @@
 #include "tiny_engine/external/imgui/tiny_imgui.h"
 #include "tiny_engine/model.h"
 #include "tiny_engine/shapes.h"
-#include "tiny_engine/framebuffer.h"
-#include "tiny_engine/sprite.h"
 
 void testbed_inputpoll() {
     Camera& cam = Camera::GetMainCamera();
@@ -60,13 +58,20 @@ void testbed_inputpoll() {
 
 }
 
-void testbed_orbit(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) {
+void testbed_orbit_cam(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) {
     Camera& cam = Camera::GetMainCamera();
     f32 time = (f32)GetTime();
     f32 x = sinf(time) * orbitRadius;
     f32 z = cosf(time) * orbitRadius;
     cam.cameraPos = glm::vec3(x, cameraOrbitHeight, z);
     cam.LookAt(lookAtPos);
+}
+void testbed_orbit_light(Light& light, f32 orbitRadius, f32 orbitHeight, f32 speedMultiplier) {
+    f32 time = (f32)GetTime()*speedMultiplier;
+    f32 x = sinf(time) * orbitRadius;
+    f32 z = cosf(time) * orbitRadius;
+    light.position.x = x;
+    light.position.z = z;
 }
 
 
@@ -76,28 +81,21 @@ void drawImGuiDebug() {
     Light& meshLight = gs.lights[0];
     ImGuiBeginFrame();
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    WorldEntity& box = gs.entities[1];
+    WorldEntity& box = *gs.GetEntity("cubeModel");
         ImGui::DragFloat3("Box pos", &box.transform.position[0]);
     ImGui::ColorEdit4("Light Color", &meshLight.color[0]);
     ImGui::DragFloat3("Light pos", &meshLight.position[0]);
     ImGui::DragFloat3("Light target", &meshLight.target[0]);
     ImGui::SliderInt("1=point 0=directional", (int*)&meshLight.type, 0, 1);
-    WorldEntity& testMesh = gs.entities[0];
-        ImGui::DragFloat3("Mesh pos", &testMesh.transform.position[0]);
-        ImGui::DragFloat3("Mesh scale", &testMesh.transform.scale[0]);
-        ImGui::DragFloat("Mesh rotation", &testMesh.transform.rotation);
-        ImGui::DragFloat3("Mesh rotation axis", &testMesh.transform.rotationAxis[0]);
     ImGuiEndFrame();
 }
 
 void drawGameState() {
     GameState& gs = GameState::get();
-    WorldEntity* testModel = gs.GetEntity("testModel");
-    testModel->model.Draw(testModel->transform.position, testModel->transform.scale, 
-                        testModel->transform.rotation, testModel->transform.rotationAxis, gs.lights);
-    WorldEntity* box = gs.GetEntity("box");
-    box->model.Draw(box->transform.position, box->transform.scale,
-                    box->transform.rotation, box->transform.rotationAxis, gs.lights);
+    for (auto& ent : gs.entities) {
+        ent.model.Draw(ent.transform.position, ent.transform.scale, 
+                ent.transform.rotation, ent.transform.rotationAxis, gs.lights);
+    }
 
     for (Light& light : gs.lights) {
         light.Visualize();
@@ -108,30 +106,32 @@ void drawGameState() {
 
 void testbed_init() {
     InitImGui();
+    GameState& gs = GameState::get();
     Shader shader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
     Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(5, 10, 5), glm::vec3(0), glm::vec4(1));
-    Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
+    //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
     
     Model testModel;
-    //testModel = Model(shader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
-    testModel = Model(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
+    testModel = Model(shader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
+    //testModel = Model(shader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
     //testModel = Model(shader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
     
-    GameState::get().entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "testModel"));
-    Model boxModel = Model(shader, UseResPath("other/blender_cube.obj").c_str(), UseResPath("other/").c_str());
-    GameState::get().entities.emplace_back(WorldEntity(Transform({4,6,8}), boxModel, "box"));
+    gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "testModel"));
+    //Model boxModel = Model(shader, UseResPath("other/blender_cube.obj").c_str(), UseResPath("other/").c_str());
+    //gs.entities.emplace_back(WorldEntity(Transform({4,6,8}), boxModel, "box"));
+    
+    Mesh cube = Shapes3D::GenCubeMesh();
+    Model cubeModel = Model(shader, {cube});
+    gs.entities.push_back(WorldEntity(Transform({0,5,0}), cubeModel, "cubeModel"));
 
-    GameState::get().lights.push_back(meshLight);
-    GameState::get().lights.push_back(meshPointLight);
+    gs.lights.push_back(meshLight);
+    //gs.lights.push_back(meshPointLight);
 }
 
-void testbed_tick() {
+void DepthPrePass() {
     GameState& gs = GameState::get();
-    testbed_inputpoll();
-    //testbed_orbit(27, 17, {0, 10, 0});
-
-    static ShadowMap shadowMap;
-    static Sprite depthSprite;
+    ShadowMap& shadowMap = gs.shadowMap;
+    Sprite& depthSprite = gs.depthSprite; 
     if (!shadowMap.isValid()) {
         shadowMap = ShadowMap(1024);
         depthSprite = Sprite(shadowMap.fb.GetTexture());
@@ -145,7 +145,18 @@ void testbed_tick() {
 
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
-    depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/2.8f, 0, {0,0,1}, {1,1,1,1}, false, true);
+    //depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/2.8f, 0, {0,0,1}, {1,1,1,1}, false, true);
+}
+
+void testbed_tick() {
+    GameState& gs = GameState::get();
+    testbed_inputpoll();
+    //testbed_orbit_cam(27, 17, {0, 10, 0});
+    // have main directional light orbit
+    Light& mainLight = gs.lights[0];
+    testbed_orbit_light(mainLight, 35, 25, 0.3);
+
+    DepthPrePass();
 
     // render normal scene
     drawGameState();

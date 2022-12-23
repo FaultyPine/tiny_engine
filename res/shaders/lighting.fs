@@ -67,9 +67,13 @@ struct Light {
 };
 // Input lighting values
 uniform Light lights[MAX_LIGHTS];
+uniform int numActiveLights;
 uniform vec3 viewPos;
 uniform sampler2D depthMap;
 
+vec3 GetViewDir() {
+    return normalize(viewPos - fragPositionWS);
+}
 vec3 GetNormals() {
     vec3 vertNormals = (1-useNormalMap) * normalize(fragNormalWS);
     vec3 normalMapNormals = (useNormalMap) * GetNormalMaterial().rgb;
@@ -86,9 +90,9 @@ float GetDepth(vec2 texcoords) {
 
 // 0 is in shadow, 1 is out of shadow
 float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
-    //const float shadowBias = 0.005;
+    const float shadowBias = 0.004;
     // maximum bias of 0.05 and a minimum of 0.005 based on the surface's normal and light direction
-    float shadowBias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);  
+    //float shadowBias = max(0.01 * (1.0 - dot(normal, lightDir)), 0.005);  
 
     // manual perspective divide
     // range [-1,1]
@@ -109,66 +113,88 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
 }
 
 vec3 calculateLighting() {
-    vec3 lightDot = vec3(0);
-    vec3 specular = vec3(0);
+    // Texel color fetching from texture sampler
+    vec3 diffuseColor = GetDiffuseMaterial().rgb;
+    // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
+    vec3 ambientLight = GetAmbientMaterial().rgb * diffuseColor * 0.01;
+
+    vec3 diffuseLight = vec3(0);
+    vec3 specularLight = vec3(0);
     vec3 normal = GetNormals();
     // direction of directional light (if there are multiple, this currently uses the last)
     vec3 sunLightDir = vec3(0);
-    vec3 viewDir = normalize(viewPos - fragPositionWS);
+    vec3 viewDir = GetViewDir();
 
-    for (int i = 0; i < MAX_LIGHTS; i++) {
-        if (lights[i].enabled == 1) {
-            vec3 lightDir = vec3(0.0);
+    // assumes active lights are at the front of the lights array
+    // this is asserted in the model drawing functions
+    for (int i = 0; i < numActiveLights; i++) {
+        vec3 lightColor = lights[i].color.rgb;
+        vec3 lightDir = vec3(0.0);
 
-            // TODO: performance boost https://theorangeduck.com/page/avoiding-shader-conditionals
-            if (lights[i].type == LIGHT_DIRECTIONAL) {
-                // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
-                lightDir = -normalize(lights[i].target - lights[i].position);
-                // grab last (hopefully only) directional light direction for use in shadow calculations
-                sunLightDir = lightDir;
-            }
-
-            if (lights[i].type == LIGHT_POINT) {
-                // distance from the light to our fragment
-                lightDir = normalize(lights[i].position - fragPositionWS);
-            }
-
-            // [0-1] 0 being totally unlit, 1 being in full light
-            float NdotL = max(dot(normal, lightDir), 0.0);
-            lightDot += lights[i].color.rgb*NdotL;
-            float specCo = 0.0;
-            if (NdotL > 0.0) {
-                // phong
-                //vec3 reflectDir = reflect(-lightDir, normal);
-                //float specularFactor = dot(viewDir, reflectDir);
-                // blinn-phong
-                vec3 halfwayDir = normalize(lightDir + viewDir);
-                float specularFactor = dot(normal, halfwayDir);
-                specCo = pow(max(0.0, specularFactor), materials[materialId].shininess);
-            }
-            specular += specCo * lights[i].color.rgb * GetSpecularMaterial().rgb;
+        // TODO: performance boost https://theorangeduck.com/page/avoiding-shader-conditionals
+        if (lights[i].type == LIGHT_DIRECTIONAL) {
+            // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
+            lightDir = -normalize(lights[i].target - lights[i].position);
+            // grab last (hopefully only) directional light direction for use in shadow calculations
+            sunLightDir = lightDir;
         }
+
+        if (lights[i].type == LIGHT_POINT) {
+            // distance from the light to our fragment
+            lightDir = normalize(lights[i].position - fragPositionWS);
+        }
+
+        // Diffuse light
+        // [0-1] 0 being totally unlit, 1 being in full light
+        float NdotL = max(dot(normal, lightDir), 0.0);
+        diffuseLight += lightColor * NdotL;
+
+        // specular light
+        float specCo = 0.0;
+        if (NdotL > 0.0) {
+            // blinn-phong
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            float specularFactor = dot(normal, halfwayDir);
+            specCo = pow(max(0.0, specularFactor), materials[materialId].shininess);
+        }
+        specularLight += specCo * lightColor * GetSpecularMaterial().rgb;
+
     }
     float shadow = GetShadow(fragPosLightSpace, sunLightDir, normal);
-    return specular * lightDot * shadow;
+    vec3 lighting = specularLight + diffuseLight + ambientLight;
+    return lighting * shadow * diffuseColor;
 }
 // =========================================================================
 
 
+float map(float value, float min1, float max1, float min2, float max2) {
+    return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+}
+float Fresnel(vec3 normal, vec3 viewDir, float power) {
+    float NormDotView = dot(normalize(normal), normalize(viewDir));
+    NormDotView = clamp(NormDotView, 0.0, 1.0);
+    return pow((1.0 - NormDotView), power);
+}
+
 
 void main() {
-    // Texel color fetching from texture sampler
-    vec4 diffuseColor = GetDiffuseMaterial();
-    vec4 ambient = GetAmbientMaterial();
+
+    // TODO: ambient might be a bit wrong
+    // TODO: diffuse might be wrong, diffuse might
+    //       not refer to the base color, but a base
+    //       color that also takes light into account
 
     // colored lighting
     vec4 lighting = vec4(calculateLighting(), 1.0); // lighting always has 1 for alpha
 
+    // lighting includes diffuse, specular, and ambient light along with base diffuse color
+    finalColor = lighting;
 
-    // set color to our diffuse multiplied by light
-    finalColor = diffuseColor * lighting;
-    // apply ambient lighting - we want unlit areas to be just a little bit of their real color
-    finalColor += diffuseColor*(ambient/17.0);
+    // apply fresnel effect on top
+    float fresnelCoeff = Fresnel(GetNormals(), GetViewDir(), 20.0);
+    fresnelCoeff = map(fresnelCoeff, 0.0, 1.0, 0.0, 0.2);
+    vec3 fresnel = fresnelCoeff * vec3(1,1,1);//vec3(0.95, 0.7, 0.2);
+    finalColor += vec4(fresnel, 0.0);
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));

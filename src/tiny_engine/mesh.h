@@ -32,7 +32,7 @@ struct Mesh {
         const std::vector<Material>& mats = {});
     void Delete();
     inline bool isValid() const {
-        return vertices.size() && indices.size() && VAO && VBO && EBO;
+        return vertices.size() && VAO;
     }
 
     // draw mesh with specified shader

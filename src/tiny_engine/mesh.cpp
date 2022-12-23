@@ -7,7 +7,7 @@ Mesh::Mesh(const std::vector<Vertex>& verts,
             const std::vector<Material>& mats) {
     vertices = verts; indices = idxs; materials = mats;
     if (materials.size() == 0) {
-        // if no materials, set defaults
+        // if no materials, push a default one
         Material defaultMat = Material();
         materials.push_back(defaultMat);
     }
@@ -38,11 +38,15 @@ void Mesh::initMesh() {
     // bind buffers
     GLCall(glBindVertexArray(VAO));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-    GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
+    if (!indices.empty()) {
+        GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
+    }
 
     // put data into buffers
     GLCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));  
-    GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW));
+    if (!indices.empty()) {
+        GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW));
+    }
 
     // tell ogl where vertex attributes are
     ConfigureVertexAttrib( // vert positions
@@ -91,7 +95,12 @@ void Mesh::Draw(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 r
 
     // draw mesh = bind vert array -> draw -> unbind
     GLCall(glBindVertexArray(VAO));
-    GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
+    if (!indices.empty()) {
+        GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
+    }
+    else {
+        GLCall(glDrawArrays(GL_TRIANGLES, 0, vertices.size()));
+    }
     
     // clean up
     GLCall(glBindVertexArray(0)); // unbind vert array
@@ -116,7 +125,12 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
 
     // draw mesh = bind vert array -> draw -> unbind
     GLCall(glBindVertexArray(VAO));
-    GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
+    if (!indices.empty()) {
+        GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
+    }
+    else {
+        GLCall(glDrawArrays(GL_TRIANGLES, 0, vertices.size()));
+    }
     
     // clean up
     GLCall(glBindVertexArray(0)); // unbind vert array

@@ -2,6 +2,7 @@
 #define TINY_SHAPES_H
 
 #include "pch.h"
+#include "mesh.h"
 struct Shader;
 
 namespace Shapes3D {
@@ -9,6 +10,9 @@ namespace Shapes3D {
 void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = {1.0,1.0,1.0,1.0}, f32 width = 1.0);
 void DrawCube(const glm::vec3& pos, const glm::vec3& scale = glm::vec3(1), f32 rotation = 0.0, const glm::vec3& rotationAxis = {0,1,0}, const glm::vec4& color = glm::vec4(1));
 void DrawPlane(const glm::vec3& pos, const glm::vec3& scale = glm::vec3(1), f32 rotation = 0.0, const glm::vec3& rotationAxis = {0,1,0}, const glm::vec4& color = glm::vec4(1));
+
+Mesh GenCubeMesh();
+Mesh GenPlaneMesh();
 
 } // namespace Shapes3D
 

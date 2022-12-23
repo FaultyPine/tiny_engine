@@ -10,8 +10,10 @@ struct Sprite {
     Sprite() { }
     Sprite(const Texture& mainTex);
     Sprite(const Shader& shader, const Texture& mainTex);
-    inline void UnloadSprite() {
+    inline void Delete() {
         glDeleteVertexArrays(1, &quadVAO);
+        shader.Delete();
+        mainTex.Delete();
     }
 
     void DrawSprite(const Camera& cam, glm::vec2 position = glm::vec2(0), 
