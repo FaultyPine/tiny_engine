@@ -10,6 +10,8 @@ void CloseGameWindow();
 
 // returns the current GLFW time
 f64 GetTime();
+// just casts GetTime to f32
+f32 GetTimef();
 
 void OverwriteRandomSeed(u64 seed);
 u64 GetRandomSeed();

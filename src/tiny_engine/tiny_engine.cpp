@@ -63,6 +63,9 @@ f32 GetRandomf(f32 start, f32 end) {
 f64 GetTime() {
     return glfwGetTime();
 }
+f32 GetTimef() {
+    return (f32)GetTime();
+}
 void CloseGameWindow() {
     glfwSetWindowShouldClose(glob_glfw_window, true);
 }
