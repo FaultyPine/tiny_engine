@@ -99,6 +99,10 @@ struct Shader {
         s32 loc = getLoc(uniformName);
         if (loc != -1) GLCall(glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(mat4)));
     }
+    inline void setUniform(const s8* uniformName, glm::mat3 mat3, bool transpose = false) const {
+        s32 loc = getLoc(uniformName);
+        if (loc != -1) GLCall(glUniformMatrix3fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(mat3)));
+    }
 
 private:
     static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);

@@ -70,9 +70,9 @@ inline u32 countLeadingZeroes(u32 n) {
 
 inline glm::mat4 Position3DToModelMat(const glm::vec3& position, const glm::vec3& scale = glm::vec3(1), f32 rotation = 0.0, const glm::vec3& rotationAxis = {1,0,0}) {
     glm::mat4 model = glm::mat4(1);
-    model = glm::rotate(model, glm::radians(rotation), rotationAxis); 
     model = glm::translate(model, position);
-    model = glm::scale(model, glm::vec3(scale));
+    model = glm::scale(model, scale);
+    model = glm::rotate(model, glm::radians(rotation), rotationAxis); 
     return model;
 }
 

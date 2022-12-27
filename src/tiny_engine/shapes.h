@@ -12,7 +12,7 @@ void DrawCube(const glm::vec3& pos, const glm::vec3& scale = glm::vec3(1), f32 r
 void DrawPlane(const glm::vec3& pos, const glm::vec3& scale = glm::vec3(1), f32 rotation = 0.0, const glm::vec3& rotationAxis = {0,1,0}, const glm::vec4& color = glm::vec4(1));
 
 Mesh GenCubeMesh();
-Mesh GenPlaneMesh();
+Mesh GenPlaneMesh(u32 resolution = 1);
 
 } // namespace Shapes3D
 

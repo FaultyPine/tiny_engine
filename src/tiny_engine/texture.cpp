@@ -52,7 +52,6 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
     }
     else {
         ASSERT(false && "Failed to load texture. Invalid image data passed!\n");
-        exit(1);
     }
     Texture ret;
     ret.id = texture;
@@ -76,6 +75,7 @@ Texture LoadTexture(const std::string& imgPath,
     Texture ret = GenTextureFromImg(data, width, height, props, texType);
     ret.texpath = imgPath;
     stbi_image_free(data);
+    std::cout << "Loaded texture " << ret.texpath << " channels: " << numChannels << "\n";
     return ret;
 }
 

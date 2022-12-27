@@ -14,7 +14,7 @@ if (shaderName.ID == 0) \
 
 namespace Shapes3D {
 
-static f32 cubeVertices[] = {
+const static f32 cubeVertices[] = {
     // position (v3), normal (v3), texcoords (v2)
     // back face
     -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
@@ -59,7 +59,7 @@ static f32 cubeVertices[] = {
     -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
     -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
 };
-static f32 planeVertices[] = {
+const static f32 planeVertices[] = {
     // positions            // normals         // texcoords
     1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
     -1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
@@ -67,35 +67,57 @@ static f32 planeVertices[] = {
 
     1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
     -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-    1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f
+    1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
 };
 
-// create vertex with position, normal, texcoords from vertex data pointer
-Vertex CreateVertexPNT(f32* vertexData) {
-    Vertex v;
-    v.position = {vertexData[0], vertexData[1], vertexData[2]};
-    v.normal = {vertexData[3], vertexData[4], vertexData[5]};
-    v.texCoords = {vertexData[6], vertexData[7]};
-    return v;
-}
 
 Mesh GenCubeMesh() {
     std::vector<Vertex> cubeverts = {};
     for (u32 i = 0; i < ARRAY_SIZE(cubeVertices); i += 8) {
-        f32* vertexData = &cubeVertices[i];
-        Vertex v = CreateVertexPNT(vertexData);
+        const f32* vertexData = &cubeVertices[i];
+        Vertex v;
+        v.position = {vertexData[0], vertexData[1], vertexData[2] };
+        v.normal = {vertexData[3], vertexData[4], vertexData[5]};
+        v.texCoords = {vertexData[6], vertexData[7]};
         cubeverts.push_back(v);
     }
     return Mesh(cubeverts, {}, {});
 }
-Mesh GenPlaneMesh() {
+Mesh GenPlaneMesh(u32 resolution) {
+    resolution++; // resolution of 1 should really be 2
     std::vector<Vertex> planeverts = {};
-    for (u32 i = 0; i < ARRAY_SIZE(planeVertices); i += 8) {
-        f32* vertexData = &planeVertices[i];
-        Vertex v = CreateVertexPNT(vertexData);
-        planeverts.push_back(v);
+
+    // https://github.com/raysan5/raylib/blob/master/src/rmodels.c#L2171
+    for (s32 z = 0; z < resolution; z++) {
+        // [-length/2, length/2]
+        f32 zPos = ((f32)z/(resolution - 1) - 0.5f);
+        for (s32 x = 0; x < resolution; x++) {
+            // [-width/2, width/2]
+            f32 xPos = ((f32)x/(resolution - 1) - 0.5f);
+            Vertex v;
+            v.normal = {0,1,0};
+            v.texCoords = {xPos, zPos};
+            v.position = {xPos, 0, zPos};
+            planeverts.push_back(v);
+        }
     }
-    return Mesh(planeverts, {}, {});
+
+    s32 numFaces = (resolution - 1)*(resolution - 1);
+    std::vector<u32> indices = {};
+    for (s32 face = 0; face < numFaces; face++) {
+        // Retrieve lower left corner from face ind
+        s32 i = face % (resolution - 1) + (face/(resolution - 1)*resolution);
+
+        indices.push_back(i + resolution);
+        indices.push_back(i + 1);
+        indices.push_back(i);
+
+        indices.push_back(i + resolution);
+        indices.push_back(i + resolution + 1);
+        indices.push_back(i + 1);
+    }
+
+    return Mesh(planeverts, indices, {});
 }
 
 void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color, f32 width) {
