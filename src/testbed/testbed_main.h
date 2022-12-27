@@ -8,8 +8,8 @@
 #include "tiny_engine/framebuffer.h"
 
 struct WorldEntity {
-    Transform transform;
-    Model model;
+    Transform transform = {};
+    Model model = {};
     u32 hash = 0;
     WorldEntity(){}
     WorldEntity(const Transform& tf, const Model& mod, const char* name = "") {
@@ -28,8 +28,23 @@ struct WorldEntity {
     bool isValid() { return hash != 0; }
 };
 
+struct Wave {
+    f32 waveSpeed = 1.0;
+    f32 wavelength = 10.0;
+    f32 steepness = 0.3;
+    glm::vec2 direction = glm::vec2(1,0);
+    Wave(f32 ws, f32 wl, f32 stp, glm::vec2 dir)
+        : waveSpeed(ws), wavelength(wl), steepness(stp), direction(dir) {}
+    Wave(){}
+};
+
 struct GameState {
+    // TODO: use hashmap
     std::vector<WorldEntity> entities = {};
+    #define NUM_WAVES 8
+    Wave waves[NUM_WAVES];
+    WorldEntity waveEntity = {};
+    Texture waterTexture;
     std::vector<Light> lights = {};
 
     ShadowMap shadowMap;
@@ -47,6 +62,7 @@ struct GameState {
         depthSprite.Delete();
     }
     // TODO: return shared_ptr?
+    // TODO: use hashmap
     WorldEntity* GetEntity(const char* name) {
         u32 hash = std::hash<std::string>{}(std::string(name));
         for (auto& ent : entities) {

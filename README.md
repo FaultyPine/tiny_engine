@@ -48,12 +48,13 @@ Features:
         a uniform array of positions or something
 - 3D particles
 - Try making the island/waterfall scene!
-    - Floating island
+    - ~~Floating island~~
     - grass on island
     - pond in middle, area near pond is green, rest of island is white
     - pond -> water (shader/mesh/tex/etc)
     - waterfall flowing into pond
         - waterfall shader/mesh/particles
+- Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units
 - HDR & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph

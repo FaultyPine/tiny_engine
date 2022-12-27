@@ -70,6 +70,7 @@ uniform Light lights[MAX_LIGHTS];
 uniform int numActiveLights;
 uniform vec3 viewPos;
 uniform sampler2D depthMap;
+const float ambientLightIntensity = 0.07;
 
 vec3 GetViewDir() {
     return normalize(viewPos - fragPositionWS);
@@ -80,19 +81,13 @@ vec3 GetNormals() {
     return vertNormals + normalMapNormals;
 }
 
-float GetDepth(vec2 texcoords) {
-    float depthMapSample = texture(depthMap, texcoords).r;
-    // don't need to linearize this.. even if we were using perspective proj
-    // for the shadow map, shadow values are relative when comparing fragment depths
-    // linearizing the depth is only useful for debugging perspective projected depth textures
-    return depthMapSample;
-}
 
+// TODO: PCF
 // 0 is in shadow, 1 is out of shadow
 float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
-    const float shadowBias = 0.004;
+    //const float shadowBias = 0.005;
     // maximum bias of 0.05 and a minimum of 0.005 based on the surface's normal and light direction
-    //float shadowBias = max(0.01 * (1.0 - dot(normal, lightDir)), 0.005);  
+    float shadowBias = max(0.01 * (1.0 - dot(normal, lightDir)), 0.005);  
 
     // manual perspective divide
     // range [-1,1]
@@ -103,7 +98,7 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
         return 1.0;
 
     // depth value from shadow map
-    float depthMapDepth = GetDepth(projCoords.xy);
+    float depthMapDepth = texture(depthMap, projCoords.xy).r;
     // [0,1] current depth of this fragment
     float currentDepth = projCoords.z;
     // 1.0 is in shadow, 0 is out of shadow
@@ -116,7 +111,7 @@ vec3 calculateLighting() {
     // Texel color fetching from texture sampler
     vec3 diffuseColor = GetDiffuseMaterial().rgb;
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
-    vec3 ambientLight = GetAmbientMaterial().rgb * diffuseColor * 0.01;
+    vec3 ambientLight = GetAmbientMaterial().rgb * diffuseColor * ambientLightIntensity;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
@@ -158,11 +153,12 @@ vec3 calculateLighting() {
             specCo = pow(max(0.0, specularFactor), materials[materialId].shininess);
         }
         specularLight += specCo * lightColor * GetSpecularMaterial().rgb;
-
     }
+
     float shadow = GetShadow(fragPosLightSpace, sunLightDir, normal);
-    vec3 lighting = specularLight + diffuseLight + ambientLight;
-    return lighting * shadow * diffuseColor;
+    vec3 lighting = shadow * (specularLight + diffuseLight);
+    lighting += ambientLight; // add ambient on top of everything
+    return lighting * diffuseColor;
 }
 // =========================================================================
 
@@ -179,11 +175,6 @@ float Fresnel(vec3 normal, vec3 viewDir, float power) {
 
 void main() {
 
-    // TODO: ambient might be a bit wrong
-    // TODO: diffuse might be wrong, diffuse might
-    //       not refer to the base color, but a base
-    //       color that also takes light into account
-
     // colored lighting
     vec4 lighting = vec4(calculateLighting(), 1.0); // lighting always has 1 for alpha
 
@@ -191,10 +182,13 @@ void main() {
     finalColor = lighting;
 
     // apply fresnel effect on top
+    /*
     float fresnelCoeff = Fresnel(GetNormals(), GetViewDir(), 20.0);
     fresnelCoeff = map(fresnelCoeff, 0.0, 1.0, 0.0, 0.2);
-    vec3 fresnel = fresnelCoeff * vec3(1,1,1);//vec3(0.95, 0.7, 0.2);
+    vec3 fresnelColor = GetDiffuseMaterial().rgb;
+    vec3 fresnel = fresnelCoeff * fresnelColor;
     finalColor += vec4(fresnel, 0.0);
+    */
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));
