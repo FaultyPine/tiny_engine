@@ -3,6 +3,7 @@
 #include "ObjParser.h"
 #include "camera.h"
 #include "tiny_engine/math.h"
+#include "tiny_engine/tiny_engine.h"
 
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
@@ -33,8 +34,11 @@ void Model::Draw(glm::vec3 pos, glm::vec3 scale, f32 rotation, glm::vec3 rotatio
         cachedShader.use();
         cachedShader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
         // set model-space matrix seperately so we can get fragment WS positions and WS normals
-        glm::mat4 model = Math::Position3DToModelMat(pos, glm::vec3(scale), rotation, rotationAxis);
+        glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
         cachedShader.setUniform("modelMat", model);
+        glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
+        cachedShader.setUniform("normalMat", matNormal);
+        cachedShader.setUniform("time", GetTimef());
 
         for (const Light& light : lights) {
             if (light.enabled)
@@ -53,6 +57,9 @@ void Model::Draw(const Shader& shader, glm::vec3 pos, glm::vec3 scale, f32 rotat
         // set model-space matrix seperately so we can get fragment WS positions and WS normals
         glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
         shader.setUniform("modelMat", model);
+        glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
+        shader.setUniform("normalMat", matNormal);
+        shader.setUniform("time", GetTimef());
 
         for (const Light& light : lights) {
             if (light.enabled)
@@ -70,6 +77,9 @@ void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& mo
         shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
         // set model-space matrix seperately so we can get fragment WS positions and WS normals
         shader.setUniform("modelMat", modelMat);
+        glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(modelMat)));
+        shader.setUniform("normalMat", matNormal);
+        shader.setUniform("time", GetTimef());
 
         for (const Light& light : lights) {
             if (light.enabled)
