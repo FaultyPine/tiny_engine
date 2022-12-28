@@ -79,7 +79,7 @@ void drawImGuiDebug() {
     ImGuiBeginFrame();
     
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    if (gs.waveEntity.isValid()) {
+    if (ImGui::CollapsingHeader("Main Pond") && gs.waveEntity.isValid()) {
         if (ImGui::CollapsingHeader("Wave Plane")) {
             ImGui::DragFloat3("Wave pos", &gs.waveEntity.transform.position[0], 0.01f);
             ImGui::DragFloat3("Wave scale", &gs.waveEntity.transform.scale[0], 0.01f);
@@ -138,9 +138,6 @@ void testbed_init() {
     InitImGui();
     GameState& gs = GameState::get();
     Shader lightingShader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
-    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(5, 10, 5), glm::vec3(0), glm::vec4(1));
-    //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
-    
     Model testModel;
     //testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
     testModel = Model(lightingShader, UseResPath("other/island_wip/island.obj").c_str(), UseResPath("other/island_wip/").c_str());
@@ -148,18 +145,23 @@ void testbed_init() {
     //testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "testModel"));
     
+    // Init water
     Shader waterShader = Shader(UseResPath("shaders/water.vs").c_str(), UseResPath("shaders/water.fs").c_str());
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
-    Transform waterPlaneTf = Transform({0.26, -0.5, -0.36}, {4.41, 1.0, 3.84});
+    Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
     WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "waterPlane");
     gs.waveEntity = waterPlaneEnt;
-    gs.waves[0] = Wave(0.2, 8.7, 0.15, glm::vec2(1,1));
-    gs.waves[1] = Wave(0.5, 2.0, 0.25, glm::vec2(0,1));
-    gs.waves[2] = Wave(0.8, 1.0, 0.60, glm::vec2(1,0.4));
+    gs.waves[0] = Wave(0.2, 8.7, 0.05, glm::vec2(1,1));
+    gs.waves[1] = Wave(0.5, 2.0, 0.09, glm::vec2(0,1));
+    gs.waves[2] = Wave(0.8, 1.0, 0.1, glm::vec2(1,0.4));
     waterShader.use();
     waterShader.setUniform("numActiveWaves", 3);
     gs.waterTexture = LoadTexture(UseResPath("other/water.png"));
     waterShader.setUniform("waterTexture", 0);
+
+    // Init lights
+    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 30, -22), glm::vec3(0), glm::vec4(1));
+    //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
     gs.lights.push_back(meshLight);
     //gs.lights.push_back(meshPointLight);
 }
@@ -192,7 +194,7 @@ void testbed_tick() {
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
-    testbed_orbit_light(mainLight, 35, 25, 0.02);
+    //testbed_orbit_light(mainLight, 35, 25, 0.2);
 
     DepthPrePass();
 

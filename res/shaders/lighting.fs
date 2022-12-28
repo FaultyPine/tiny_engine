@@ -81,6 +81,18 @@ vec3 GetNormals() {
     return vertNormals + normalMapNormals;
 }
 
+float PCFShadow(vec2 projCoords, float shadowBias, float currentDepth, int resolution) {
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(depthMap, 0);
+    for(int x = -resolution; x <= resolution; x++) {
+        for(int y = -resolution; y <= resolution; y++) {
+            float pcfDepth = texture(depthMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - shadowBias > pcfDepth ? 1.0 : 0.0;        
+        }    
+    }
+    shadow /= float(pow(resolution*2 + 1, 2));
+    return shadow;
+}
 
 // TODO: PCF
 // 0 is in shadow, 1 is out of shadow
@@ -88,7 +100,6 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
     //const float shadowBias = 0.005;
     // maximum bias of 0.05 and a minimum of 0.005 based on the surface's normal and light direction
     float shadowBias = max(0.01 * (1.0 - dot(normal, lightDir)), 0.005);  
-
     // manual perspective divide
     // range [-1,1]
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
@@ -97,13 +108,18 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
     if (projCoords.z > 1.0) // if fragment in light space is outside the frustum, it should be fully lit
         return 1.0;
 
+
     // depth value from shadow map
     float depthMapDepth = texture(depthMap, projCoords.xy).r;
     // [0,1] current depth of this fragment
     float currentDepth = projCoords.z;
     // 1.0 is in shadow, 0 is out of shadow
+
+    float shadow = PCFShadow(projCoords.xy, shadowBias, currentDepth, 1);
+
     // - bias   gets rid of shadow acne
-    float shadow = currentDepth-shadowBias > depthMapDepth ? 1.0 : 0.0;
+    //float shadow = currentDepth-shadowBias > depthMapDepth ? 1.0 : 0.0;
+    
     return 1-shadow;
 }
 

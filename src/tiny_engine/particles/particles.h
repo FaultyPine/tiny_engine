@@ -41,7 +41,6 @@ struct DefaultParticleBehavior : ParticleBehavior {
 };
 
 struct ParticleSystem2D {
-    /// NOTE: Use new when passing behaviors in here so the pointer doesn't go out of scope
     ParticleSystem2D(u32 maxParticles, bool isStartingActive) {
         isActive = isStartingActive;
         for (u32 i = 0; i < maxParticles; i++)

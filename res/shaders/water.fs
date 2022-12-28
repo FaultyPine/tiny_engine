@@ -25,12 +25,13 @@ uniform float time;
 
 void main() {
     float time = time * 0.01;
+    vec3 waterTextureCol = texture(waterTexture, fragTexCoord+time).rgb;
     //vec3 fragthing = normalize( cross(dFdx(fragPositionWS), dFdy(fragPositionWS)) );
     
     float mask = (waveHeight - offset) * contrast;
     vec3 col = mix(waterColor, waterHighlight, mask) * brightness;
-    col *= texture(waterTexture, fragTexCoord+time).rgb;
-    finalColor = vec4(vec3(col), 1.0);
+    col *= waterTextureCol;
+    col = pow(col, vec3(1.0/2.2)); // gamma correction
+    finalColor = vec4(vec3(col), length(waterTextureCol)*1.2);
 
-    finalColor = pow(finalColor, vec4(1.0/2.2));
 }
