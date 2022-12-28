@@ -107,8 +107,7 @@ void drawImGuiDebug() {
 void drawGameState() {
     GameState& gs = GameState::get();
     for (auto& ent : gs.entities) {
-        ent.model.Draw(ent.transform.position, ent.transform.scale, 
-                ent.transform.rotation, ent.transform.rotationAxis, gs.lights);
+        ent.model.Draw(ent.transform, gs.lights);
     }
 
     // Waves
@@ -123,8 +122,12 @@ void drawGameState() {
             waveShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
         }
         gs.waterTexture.bindUnit(0);
-        gs.waveEntity.model.Draw(gs.waveEntity.transform.position, gs.waveEntity.transform.scale, 
-            gs.waveEntity.transform.rotation, gs.waveEntity.transform.rotationAxis);
+        gs.waveEntity.model.Draw(gs.waveEntity.transform);
+    }
+
+    // grass
+    if (gs.grass.isValid()) {
+        gs.grass.model.DrawInstanced(gs.grassTransforms);
     }
 
     for (Light& light : gs.lights) {
@@ -158,6 +161,19 @@ void testbed_init() {
     waterShader.setUniform("numActiveWaves", 3);
     gs.waterTexture = LoadTexture(UseResPath("other/water.png"));
     waterShader.setUniform("waterTexture", 0);
+
+    // Init grass
+    Shader grassShader = Shader(UseResPath("shaders/grass.vs").c_str(), UseResPath("shaders/grass.fs").c_str());
+    Model grassModel = Model(grassShader, UseResPath("other/island_wip/grass_blade.obj").c_str(), UseResPath("other/island_wip/").c_str());
+    Transform grassTf = Transform({0,0,0}, {1,1,1});
+    gs.grass = WorldEntity(grassTf, grassModel, "grass");
+    //  init grass transforms
+    u32 numGrassInstances = 50;
+    for (u32 i = 0; i < sqrt(numGrassInstances); i++) {
+        for (u32 j = 0; j < sqrt(numGrassInstances); j++) {
+            gs.grassTransforms.emplace_back(Transform({i, 9, j}, glm::vec3(0.5)));
+        }
+    }
 
     // Init lights
     Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 30, -22), glm::vec3(0), glm::vec4(1));

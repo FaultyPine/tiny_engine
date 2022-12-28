@@ -17,7 +17,7 @@ struct Transform {
         rotationAxis = rotAxis;
     }
 
-    glm::mat4 ToMatrix() const {
+    glm::mat4 ToModelMatrix() const {
         return Math::Position3DToModelMat(position, scale, rotation, rotationAxis);
     }
 };

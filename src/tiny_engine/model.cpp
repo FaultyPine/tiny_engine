@@ -28,34 +28,13 @@ bool AreActiveLightsInFront(const std::vector<Light>& lights) {
     return true;
 }
 
-void Model::Draw(glm::vec3 pos, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis, const std::vector<Light>& lights) const {
-    ASSERT(AreActiveLightsInFront(lights));
-    for (const Mesh& mesh : meshes) {
-        cachedShader.use();
-        cachedShader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
-        // set model-space matrix seperately so we can get fragment WS positions and WS normals
-        glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
-        cachedShader.setUniform("modelMat", model);
-        glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
-        cachedShader.setUniform("normalMat", matNormal);
-        cachedShader.setUniform("time", GetTimef());
-
-        for (const Light& light : lights) {
-            if (light.enabled)
-                UpdateLightValues(cachedShader, light);
-        }
-        cachedShader.setUniform("numActiveLights", (s32)lights.size());
-
-        mesh.Draw(cachedShader, pos, scale, rotation, rotationAxis);
-    }
-}
-void Model::Draw(const Shader& shader, glm::vec3 pos, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis, const std::vector<Light>& lights) const {
+void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Light>& lights) const {
     ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
         shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
         // set model-space matrix seperately so we can get fragment WS positions and WS normals
-        glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
+        glm::mat4 model = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
         shader.setUniform("modelMat", model);
         glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
         shader.setUniform("normalMat", matNormal);
@@ -67,7 +46,7 @@ void Model::Draw(const Shader& shader, glm::vec3 pos, glm::vec3 scale, f32 rotat
         }
         shader.setUniform("numActiveLights", (s32)lights.size());
 
-        mesh.Draw(shader, pos, scale, rotation, rotationAxis);
+        mesh.Draw(shader, tf);
     }
 }
 void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights) const {
@@ -88,5 +67,28 @@ void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& mo
         shader.setUniform("numActiveLights", (s32)lights.size());
 
         mesh.Draw(shader, mvp);
+    }
+}
+
+
+void Model::DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms, const std::vector<Light>& lights) const {
+    ASSERT(AreActiveLightsInFront(lights));
+    for (const Mesh& mesh : meshes) {
+        shader.use();
+        shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
+        // set model-space matrix seperately so we can get fragment WS positions and WS normals
+        //glm::mat4 model = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
+        //shader.setUniform("modelMat", model);
+        //glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
+        //shader.setUniform("normalMat", matNormal);
+        shader.setUniform("time", GetTimef());
+
+        for (const Light& light : lights) {
+            if (light.enabled)
+                UpdateLightValues(shader, light);
+        }
+        shader.setUniform("numActiveLights", (s32)lights.size());
+
+        mesh.DrawInstanced(shader, transforms);
     }
 }

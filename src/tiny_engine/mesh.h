@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "shader.h"
 #include "texture.h"
+#include "tiny_types.h"
 
 struct Vertex {
     glm::vec3 position = glm::vec3(0);
@@ -36,9 +37,9 @@ struct Mesh {
     }
 
     // draw mesh with specified shader
-    void Draw(const Shader& shader, glm::vec3 position, glm::vec3 scale = glm::vec3(1.0), 
-            f32 rotation = 0.0, glm::vec3 rotationAxis = {1.0, 0.0, 0.0}) const;
+    void Draw(const Shader& shader, const Transform& tf) const;
     void Draw(const Shader& shader, const glm::mat4& mvp) const;
+    void DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms) const;
    
 private:    
     void initMesh();

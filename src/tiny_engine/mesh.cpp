@@ -64,11 +64,40 @@ void Mesh::initMesh() {
     GLCall(glBindVertexArray(0));
 }
 
-void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) {
+void OGLDrawDefault(u32 VAO, u32 indicesSize, u32 verticesSize) {
+    // draw mesh = bind vert array -> draw -> unbind
+    GLCall(glBindVertexArray(VAO));
+    if (indicesSize) { // if indices is not empty, draw indexed
+        GLCall(glDrawElements(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0));
+    }
+    else { // indices is empty, draw arrays
+        GLCall(glDrawArrays(GL_TRIANGLES, 0, verticesSize));
+    }
+    
+    // clean up
+    GLCall(glBindVertexArray(0)); // unbind vert array
+    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
+}
+void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstances) {
+    // draw mesh = bind vert array -> draw -> unbind
+    GLCall(glBindVertexArray(VAO));
+    if (indicesSize) { // if indices is not empty, draw indexed
+        GLCall(glDrawElementsInstanced(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0, numInstances));
+    }
+    else { // indices is empty, draw arrays
+        GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, verticesSize, numInstances));
+    }
+    
+    // clean up
+    GLCall(glBindVertexArray(0)); // unbind vert array
+    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
+}
+
+void Set3DMatrixUniforms(const Shader& shader, const Transform& tf) {
     Camera& cam = Camera::GetMainCamera();
     
     // identity matrix to start out with
-    glm::mat4 model = Math::Position3DToModelMat(position, scale, rotation, rotationAxis);
+    glm::mat4 model = tf.ToModelMatrix();
     glm::mat4 view = cam.GetViewMatrix();
     glm::mat4 projection = cam.GetProjectionMatrix();
 
@@ -77,41 +106,24 @@ void Set3DMatrixUniforms(const Shader& shader, glm::vec3 position, glm::vec3 sca
     shader.setUniform("mvp", projection * view * model);
 }
 
-void Mesh::Draw(const Shader& shader, glm::vec3 position, glm::vec3 scale, f32 rotation, glm::vec3 rotationAxis) const {
-    if (!isValid()) {
-        std::cout << "[ERR] Tried to draw invalid mesh!\n";
-        return;
-    }
+void Mesh::Draw(const Shader& shader, const Transform& tf) const {
+    ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+
     shader.use();
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
     shader.setUniform("farClip", Camera::GetMainCamera().farClip);
     // mvp uniform
-    Set3DMatrixUniforms(shader, position, scale, rotation, rotationAxis);
+    Set3DMatrixUniforms(shader, tf);
     // material uniforms
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
-
-    // draw mesh = bind vert array -> draw -> unbind
-    GLCall(glBindVertexArray(VAO));
-    if (!indices.empty()) {
-        GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
-    }
-    else {
-        GLCall(glDrawArrays(GL_TRIANGLES, 0, vertices.size()));
-    }
-    
-    // clean up
-    GLCall(glBindVertexArray(0)); // unbind vert array
-    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
-
+    OGLDrawDefault(VAO, indices.size(), vertices.size());
 }
 void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
-    if (!isValid()) {
-        std::cout << "[ERR] Tried to draw invalid mesh!\n";
-        return;
-    }
+    ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+
     shader.use();
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
@@ -122,17 +134,34 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
+    OGLDrawDefault(VAO, indices.size(), vertices.size());
+}
 
-    // draw mesh = bind vert array -> draw -> unbind
-    GLCall(glBindVertexArray(VAO));
-    if (!indices.empty()) {
-        GLCall(glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0));
+
+void Mesh::DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms) const {
+    ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+
+    shader.use();
+    // misc uniforms
+    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
+    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
+
+    // material uniforms
+    for (u32 i = 0; i < materials.size(); i++) {
+        materials.at(i).SetShaderUniforms(shader, i);
     }
-    else {
-        GLCall(glDrawArrays(GL_TRIANGLES, 0, vertices.size()));
+
+    Camera& cam = Camera::GetMainCamera();
+    glm::mat4 view = cam.GetViewMatrix();
+    glm::mat4 projection = cam.GetProjectionMatrix();
+
+    // instance uniforms
+    shader.setUniform("numInstances", (s32)transforms.size());
+    for (u32 i = 0; i < transforms.size(); i++) {
+        const Transform& tf = transforms.at(i);
+        glm::mat4 model = tf.ToModelMatrix();
+        shader.setUniform(TextFormat("instanceMvps[%i]", i), projection * view * model);
     }
-    
-    // clean up
-    GLCall(glBindVertexArray(0)); // unbind vert array
-    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
+
+    OGLDrawInstanced(VAO, indices.size(), vertices.size(), transforms.size());
 }

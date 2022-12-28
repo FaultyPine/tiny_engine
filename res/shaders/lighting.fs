@@ -94,7 +94,6 @@ float PCFShadow(vec2 projCoords, float shadowBias, float currentDepth, int resol
     return shadow;
 }
 
-// TODO: PCF
 // 0 is in shadow, 1 is out of shadow
 float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
     //const float shadowBias = 0.005;
@@ -179,16 +178,6 @@ vec3 calculateLighting() {
 // =========================================================================
 
 
-float map(float value, float min1, float max1, float min2, float max2) {
-    return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
-}
-float Fresnel(vec3 normal, vec3 viewDir, float power) {
-    float NormDotView = dot(normalize(normal), normalize(viewDir));
-    NormDotView = clamp(NormDotView, 0.0, 1.0);
-    return pow((1.0 - NormDotView), power);
-}
-
-
 void main() {
 
     // colored lighting
@@ -196,15 +185,6 @@ void main() {
 
     // lighting includes diffuse, specular, and ambient light along with base diffuse color
     finalColor = lighting;
-
-    // apply fresnel effect on top
-    /*
-    float fresnelCoeff = Fresnel(GetNormals(), GetViewDir(), 20.0);
-    fresnelCoeff = map(fresnelCoeff, 0.0, 1.0, 0.0, 0.2);
-    vec3 fresnelColor = GetDiffuseMaterial().rgb;
-    vec3 fresnel = fresnelCoeff * fresnelColor;
-    finalColor += vec4(fresnel, 0.0);
-    */
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));

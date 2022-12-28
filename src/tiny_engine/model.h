@@ -10,9 +10,23 @@ struct Model {
     Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir);
     Model(const Shader& shader, const std::vector<Mesh>& meshes);
 
-    void Draw(glm::vec3 pos, glm::vec3 scale = glm::vec3(1.0), f32 rotation = 0.0, glm::vec3 rotationAxis = {1,0,0}, const std::vector<Light>& lights = {}) const;
-    void Draw(const Shader& shader, glm::vec3 pos, glm::vec3 scale = glm::vec3(1.0), f32 rotation = 0.0, glm::vec3 rotationAxis = {1,0,0}, const std::vector<Light>& lights = {}) const;
+    // draw with transform
+    void Draw(const Shader& shader, const Transform& tf, const std::vector<Light>& lights = {}) const;
+    void Draw(const Transform& tf, const std::vector<Light>& lights = {}) const {
+        Draw(cachedShader, tf, lights);
+    }
+    // draw with mvp matrix
     void Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights = {}) const;
+    void Draw(const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights = {}) const {
+        Draw(cachedShader, mvp, modelMat, lights);
+    }
+    
+    // instanced drawing
+    void DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms, const std::vector<Light>& lights = {}) const;
+    void DrawInstanced(const std::vector<Transform>& transforms, const std::vector<Light>& lights = {}) const {
+        DrawInstanced(cachedShader, transforms, lights);
+    }
+
     void Delete() {
         for (auto& mesh : meshes) {
             mesh.Delete();

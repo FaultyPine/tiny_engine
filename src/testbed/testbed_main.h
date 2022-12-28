@@ -41,12 +41,19 @@ struct Wave {
 struct GameState {
     // TODO: use hashmap
     std::vector<WorldEntity> entities = {};
+    std::vector<Light> lights = {};
+
+    // Main pond
     #define NUM_WAVES 8
     Wave waves[NUM_WAVES];
     WorldEntity waveEntity = {};
     Texture waterTexture;
-    std::vector<Light> lights = {};
+    
+    // grass
+    WorldEntity grass;
+    std::vector<Transform> grassTransforms = {};
 
+    // shadows/depth tex
     ShadowMap shadowMap;
     Sprite depthSprite;
 

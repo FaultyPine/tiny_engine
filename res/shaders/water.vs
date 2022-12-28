@@ -94,9 +94,8 @@ void main() {
 
     
     // world space normals
-    // TODO: Do I need to recalculate normals here? Probably...
-    fragNormalWS = normalize(normalMat * vertexNormal);
-    //fragNormalWS = normal;
+    //fragNormalWS = normalize(normalMat * vertexNormal);
+    fragNormalWS = normalize(normalMat*normal); // recalculated normals
     
     // world space frag pos to light space
     fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);

@@ -21,40 +21,20 @@ Features:
 
 ### TODO:
 - Learn how to use Perforce
-- ~~Fix Model Loading~~
-    - ~~load model in as seperate meshes... rn I (unintentionally) merge all meshes into one~~
-    - ~~then apply materials to each mesh~~
-- ~~3D lighting~~
-    - ~~Basic blinn-phong~~
-    - ~~Point & Directional light~~
-    - ~~Materials~~
-        - note: currently materials are set automatically through .mtl files...
-            maybe would be cool to have an interface to set mesh materials through code?
-            also maybe implement hot reloading mtl files for easy material edit iterations?
-    - ~~Multiple materials per mesh~~
-        - if so, just make the Mesh class have a list of materials and have the lighting shader take in a 2d array of
-            materials... this is probably slow or cringe but premature optimization is more cringe
-- ~~pull functions out of pch.h~~
 - make sure pch works with msvc
-- ~~default mesh generation (plane, cube, etc)~~
-- ~~shadow mapping~~
-    - ~~make generic framebuffer class~~
-    - ~~pull out current "FullscreenFramebuffer" object into Postprocessing file/class/whatever~~
 - instancing
-    - instancing: drawing multiple instances of the same vertex data. gl_InstanceID is passed to the vert shader
-        so you can pass uniform arrays and index into those with that instanceID to get different behavior for each instance of the mesh
-    - batching: only using one draw call and instead of setting uniforms for each draw call for each mesh, put all mesh-specific info
-        into the vertex buffer and draw it all in one drawcall. I.E. instead of a color uniform, you'd put the color info in the vertex buffer (as a vert attribute) same for storing a texture id that corresponds with a texture unit, or an index into
-        a uniform array of positions or something
 - 3D particles
+- Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units
 - Try making the island/waterfall scene!
     - ~~Floating island~~
+    - ~~Rock for waterfall~~
+    - ~~pond in middle~~, area near pond is green, rest of island is white
+    - ~~pond -> water (shader/mesh/tex/etc)~~
     - grass on island
-    - pond in middle, area near pond is green, rest of island is white
-    - pond -> water (shader/mesh/tex/etc)
     - waterfall flowing into pond
         - waterfall shader/mesh/particles
-- Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units
+
+
 - HDR & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph

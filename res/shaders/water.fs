@@ -32,6 +32,6 @@ void main() {
     vec3 col = mix(waterColor, waterHighlight, mask) * brightness;
     col *= waterTextureCol;
     col = pow(col, vec3(1.0/2.2)); // gamma correction
-    finalColor = vec4(vec3(col), length(waterTextureCol)*1.2);
-
+    float alpha = length(waterTextureCol)*1.2;
+    finalColor = vec4(vec3(col), alpha);
 }
