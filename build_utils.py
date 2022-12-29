@@ -32,7 +32,8 @@ def get_files_with_ext(basedir, ext):
 
 # path to the folder that contains this python script regardless of cwd
 PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
-APP_NAME = "PartOfThePack.exe" if is_windows() else "PartOfThePack.out"
+APP_NAME = "TinyEngine"
+EXE_NAME = f"{APP_NAME}.exe" if is_windows() else f"{APP_NAME}.out"
 SOURCE_DIR = "src"
 BUILD_DIR = "build"
 USE_MSVC = True

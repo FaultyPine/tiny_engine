@@ -28,7 +28,7 @@ def get_pch_compiler_args():
     """)
 
 def start_debugger():
-    command(f"devenv /nosplash /edit {PYTHON_SCRIPT_PATH} /debugexe {PYTHON_SCRIPT_PATH}\\{APP_NAME}")
+    command(f"devenv /nosplash /edit {PYTHON_SCRIPT_PATH} /debugexe {PYTHON_SCRIPT_PATH}\\{EXE_NAME}")
 
 def generate_ninja_build_msvc(force_overwrite):
     ninja_build_filename = "build.ninja"
@@ -68,6 +68,6 @@ def generate_ninja_build_msvc(force_overwrite):
         # prep file list for linking
         link_files.append(f"$builddir/{get_obj_from_src_file(src_cpp)}")
     # link
-    n.build(f"$builddir/{APP_NAME}", "link", link_files)
+    n.build(f"$builddir/{EXE_NAME}", "link", link_files)
 
     buildfile.close()

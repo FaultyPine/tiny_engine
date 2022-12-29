@@ -70,6 +70,6 @@ def generate_ninja_build_gpp(force_overwrite):
         # prep file list for linking
         link_files.append(f"$builddir/{get_obj_from_src_file(src_cpp)}")
     # link
-    n.build(f"$builddir/{APP_NAME}", "link", link_files)
+    n.build(f"$builddir/{EXE_NAME}", "link", link_files)
 
     buildfile.close()

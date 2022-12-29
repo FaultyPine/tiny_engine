@@ -49,7 +49,7 @@ build $builddir/imgui_widgets.obj: compile $
 build $builddir/particles.obj: compile src/tiny_engine/particles/particles.cpp
 build $builddir/particle_behaviors.obj: compile $
     src/tiny_engine/particles/particle_behaviors.cpp
-build $builddir/PartOfThePack.exe: link $builddir/main.obj $
+build $builddir/TinyEngine.exe: link $builddir/main.obj $
     $builddir/testbed_main.obj $builddir/framebuffer.obj $
     $builddir/input.obj $builddir/job_system.obj $builddir/math.obj $
     $builddir/mesh.obj $builddir/model.obj $builddir/ObjParser.obj $
