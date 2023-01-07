@@ -209,9 +209,6 @@ void init_grass(GameState& gs) {
     
     WorldEntity* islandModel = gs.GetEntity("island");
     if (islandModel) {
-        for (auto& m : islandModel->model.meshes) {
-            std::cout << m.name << "\n";
-        }
         Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
         if (grassSpawnMesh) {
             grassSpawnMesh->isVisible = false;

@@ -27,34 +27,42 @@ flat out int instanceID;
 
 float cnoise(vec2 P);
 
+float GetGrassSway() {
+    float speed = 0.5;
+    float strength = 0.5;
+    // -------- vertex displacement ------------
+    float perlinNoise = cnoise(vec2(time*speed-gl_InstanceID));
+
+    float height = vertexTexCoord.y;
+    float sway = perlinNoise * height * strength;
+    return sway;
+}
+mat4 Billboard(mat4 modelViewMat) {
+    // To create a "billboard" effect,
+    // set upper 3x3 submatrix of model-view matrix to identity
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            modelViewMat[i][j] = 0;
+        }
+    }
+    modelViewMat[0][0] = 1;
+    modelViewMat[1][1] = 1;
+    modelViewMat[2][2] = 1;
+    return modelViewMat;
+}
+
 void main()
 {
     instanceID = gl_InstanceID;
     mat4 modelMat = instanceModelMats[gl_InstanceID];
-    //mat3 normalMat = mat3(transpose(inverse(modelMat))); // expensive!
-    mat4 mvp = projectionMat * viewMat * modelMat;
-    vec3 fragPositionWS = vec3(modelMat*vec4(vertexPosition, 1.0));
+    mat4 modelView = viewMat * modelMat;
+    modelView = Billboard(modelView);
+    mat4 mvp = projectionMat * modelView;
     
     vec3 vertPos = vertexPosition;
-    float speed = 0.5;
-    float strength = 0.5;
-    // -------- vertex displacement ------------
-    float perlinNoise = cnoise(vec2(time*speed-length(fragPositionWS.xz)));
+    vertPos.xz += GetGrassSway();
 
-    float height = vertexTexCoord.y;
-    float sway = perlinNoise * height * strength;
-
-    vertPos.xz += sway;
-    // -----------------------------------------
-
-    // transform model space vertexPosition into world space by multiplying with model matrix
     fragTexCoord = vertexTexCoord;
-    //fragColor = vertexColor;
-    // world space frag pos to light space
-    //fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
-    //materialId = vertexMaterialId;
-    //fragNormalWS = normalize(vec3(normalMat*vertexNormal));
-    //fragPositionOS = vertexPosition;
 
     gl_Position = mvp*vec4(vertPos, 1.0);
 }
