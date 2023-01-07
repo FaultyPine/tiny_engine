@@ -28,9 +28,12 @@ Features:
 - Try making the island/waterfall scene!
     - ~~Floating island~~
     - ~~Rock for waterfall~~
+    - Make rock bigger, waterfall starts high up - mostly out of view
     - ~~pond in middle~~, area near pond is green, rest of island is white
     - ~~pond -> water (shader/mesh/tex/etc)~~
     - grass on island
+        - grass spawning algorithm
+            - blue noise + "grass area" <- polygon? list of circles?
     - waterfall flowing into pond
         - waterfall shader/mesh/particles
 

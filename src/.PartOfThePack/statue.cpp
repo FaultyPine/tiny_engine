@@ -21,11 +21,9 @@ enum StatueFacingDir {
 
 void Statue::Initialize(glm::vec2 pos) {
     entity.name = "Statue";
-    TextureProperties texProps = TextureProperties::Default();
-    texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
+    TextureProperties texProps = TextureProperties::RGBA_NEAREST();
 
-    spritesheet = Spritesheet(UseResPath("potp/tdingle_spritesheet.png").c_str(), 4, 3, texProps);
+    spritesheet = Spritesheet(ResPath("potp/tdingle_spritesheet.png").c_str(), 4, 3, texProps);
     spritesheet.SetAnimationIndices(0, {0});
     spritesheet.SetAnimationIndices(1, {1,2,3,4,5,6,7,8,9});
     spritesheet.SetAnimation(Spritesheet::Animation(0));
@@ -54,7 +52,7 @@ void OnStatueActivated(Statue& statue) {
     Spritesheet::Animation anim = Spritesheet::Animation(1);
     anim.framerate = 0; // stay on this frame
     statue.spritesheet.SetAnimation(anim);
-    Audio::PlayAudio(UseResPath("potp/statue_activate.wav").c_str());
+    Audio::PlayAudio(ResPath("potp/statue_activate.wav").c_str());
     statue.particleSystem.isActive = true;
 }
 void OnStatueDeactivated(Statue& statue) {
@@ -85,48 +83,48 @@ void Statue::ActivateByNinja(Ninja& ninja, u32 playerIdx) {
     // maybe dot product & an signof(statueToNinjaDir.x) check? ..... would still result in a lot of branching.. is it unavoidable?
 
     // if we are to the left of the statue's center
-    if (isInRange(statueToNinjaDir.x, -1.0f, -0.3f)) {
+    if (Math::isInRange(statueToNinjaDir.x, -1.0f, -0.3f)) {
         // bottom-left
-        if (isInRange(statueToNinjaDir.y, 0.5f, 1.0f)) {
+        if (Math::isInRange(statueToNinjaDir.y, 0.5f, 1.0f)) {
             //std::cout << "Ninja bottom left of statue\n";
             lookingDirectionSpritesheetIndices.push_back(0);
         }
         // to the direct left
-        else if (isInRange(statueToNinjaDir.y, -0.5f, 0.5f)) {
+        else if (Math::isInRange(statueToNinjaDir.y, -0.5f, 0.5f)) {
             //std::cout << "Ninja left of statue\n";
             lookingDirectionSpritesheetIndices.push_back(4);
         }
         // to the top-left
-        else if (isInRange(statueToNinjaDir.y, -1.0f, -0.5f)) {
+        else if (Math::isInRange(statueToNinjaDir.y, -1.0f, -0.5f)) {
             //std::cout << "Ninja top-left of statue\n";
             lookingDirectionSpritesheetIndices.push_back(7);
         }
     }
     // above/below
-    else if (isInRange(statueToNinjaDir.x, -0.3f, 0.3f)) {
-        if (isInRange(statueToNinjaDir.y, -1.0f, -0.5f)) {
+    else if (Math::isInRange(statueToNinjaDir.x, -0.3f, 0.3f)) {
+        if (Math::isInRange(statueToNinjaDir.y, -1.0f, -0.5f)) {
             //std::cout << "Ninja above statue\n";
             lookingDirectionSpritesheetIndices.push_back(2);
         }
-        else if (isInRange(statueToNinjaDir.y, 0.5f, 1.0f)) {
+        else if (Math::isInRange(statueToNinjaDir.y, 0.5f, 1.0f)) {
             //std::cout << "Ninja below statue\n";
             lookingDirectionSpritesheetIndices.push_back(3);
         }
     }
     // to the right
-    else if (isInRange(statueToNinjaDir.x, 0.3f, 1.0f)) {
+    else if (Math::isInRange(statueToNinjaDir.x, 0.3f, 1.0f)) {
         // bottom-right
-        if (isInRange(statueToNinjaDir.y, 0.5f, 1.0f)) {
+        if (Math::isInRange(statueToNinjaDir.y, 0.5f, 1.0f)) {
             //std::cout << "Ninja bottom right of statue\n";
             lookingDirectionSpritesheetIndices.push_back(1);
         }
         // to the direct right
-        else if (isInRange(statueToNinjaDir.y, -0.5f, 0.5f)) {
+        else if (Math::isInRange(statueToNinjaDir.y, -0.5f, 0.5f)) {
             //std::cout << "Ninja right of statue\n";
             lookingDirectionSpritesheetIndices.push_back(5);
         }
         // to the top-right
-        else if (isInRange(statueToNinjaDir.y, -1.0f, -0.5f)) {
+        else if (Math::isInRange(statueToNinjaDir.y, -1.0f, -0.5f)) {
             //std::cout << "Ninja top-right of statue\n";
             lookingDirectionSpritesheetIndices.push_back(6);
         }
@@ -155,7 +153,7 @@ void CheckNinjaStatueCollisions(Statue* statues, u32 numStatues, Ninja* playerNi
         for (s32 n = 0; n < numPlayerNinjas; n++) {
             Statue& statue = statues[s];
             Ninja& ninja = playerNinjas[n];
-            if (Math::isOverlappingRect2D(statue.entity.position, statue.entity.size, ninja.entity.position, ninja.entity.size)) {
+            if (Math::isOverlappingRectSize2D(statue.entity.position, statue.entity.size, ninja.entity.position, ninja.entity.size)) {
                 if (!statue.isActivated && !statue.playersActivated[n]) {
                     statue.ActivateByNinja(ninja, n);
                 }

@@ -49,7 +49,7 @@ struct Entity {
         sprite.DrawSprite(cam, position, size, rotation, glm::vec3(0.0, 0.0, 1.0), color);
     }
     inline bool isCollidingWith(const Entity& other) const {
-        return Math::isOverlappingRect2D(this->position, this->size, other.position, other.size);
+        return Math::isOverlappingRectSize2D(this->position, this->size, other.position, other.size);
     }
     inline glm::vec2 GetEntityCenter() const {
         return position + (size/2.0f);

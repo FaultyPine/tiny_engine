@@ -54,7 +54,7 @@ typedef double f64;
 // debug
 inline void PrintAndExitDBG(const char* file, s32 line, const char* msg) {
     std::cout << "[ERROR] In " << file << ":" << line << "\n" << msg << std::endl; 
-    exit(1);
+    throw std::exception();
 }
 #ifdef TINY_DEBUG
 #include <intrin.h>

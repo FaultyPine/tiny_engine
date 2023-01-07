@@ -79,6 +79,10 @@ void drawImGuiDebug() {
     ImGuiBeginFrame();
     
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    if (ImGui::CollapsingHeader("Grass spawn planes")) {
+        ImGui::DragFloat3("Grass ex min", &gs.grassSpawnExclusion.min[0], 0.01f);
+        ImGui::DragFloat3("Grass ex max", &gs.grassSpawnExclusion.max[0], 0.01f);
+    }
     if (ImGui::CollapsingHeader("Main Pond") && gs.waveEntity.isValid()) {
         if (ImGui::CollapsingHeader("Wave Plane")) {
             ImGui::DragFloat3("Wave pos", &gs.waveEntity.transform.position[0], 0.01f);
@@ -97,14 +101,38 @@ void drawImGuiDebug() {
     }
     Light& meshLight = gs.lights[0];
     ImGui::ColorEdit4("Light Color", &meshLight.color[0]);
-    ImGui::DragFloat3("Light pos", &meshLight.position[0]);
+    ImGui::DragFloat3("Light pos", &meshLight.position[0], 0.1f);
     ImGui::DragFloat3("Light target", &meshLight.target[0]);
     ImGui::SliderInt("1=point 0=directional", (int*)&meshLight.type, 0, 1);
     
     ImGuiEndFrame();
 }
 
+void DepthPrePass() {
+    GameState& gs = GameState::get();
+    ShadowMap& shadowMap = gs.shadowMap;
+    Sprite& depthSprite = gs.depthSprite; 
+    if (!shadowMap.isValid()) {
+        shadowMap = ShadowMap(1024);
+        depthSprite = Sprite(shadowMap.fb.GetTexture());
+    }
+
+    shadowMap.BeginRender();
+    for (auto& ent : gs.entities) {
+        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform, 0);
+    }
+    shadowMap.EndRender();
+
+    #if 0
+    // render depth tex to screen
+    glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
+    depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
+    #endif
+}
+
 void drawGameState() {
+    DepthPrePass();
+
     GameState& gs = GameState::get();
     for (auto& ent : gs.entities) {
         ent.model.Draw(ent.transform, gs.lights);
@@ -135,21 +163,66 @@ void drawGameState() {
         if (light.type == LIGHT_DIRECTIONAL)
             Shapes3D::DrawLine(light.position, light.position + glm::normalize(light.target-light.position), {1.0, 1.0, 1.0, 1.0});
     }
+
+    #if 0
+    Shapes3D::DrawLine(gs.grassSpawnInclusion.min, gs.grassSpawnInclusion.max);
+    Shapes3D::DrawLine(gs.grassSpawnExclusion.max, gs.grassSpawnExclusion.min, glm::vec4(0,0,0,1), 2.0f);
+    #endif
 }
 
-void testbed_init() {
-    InitImGui();
-    GameState& gs = GameState::get();
-    Shader lightingShader = Shader(UseResPath("shaders/lighting.vs").c_str(), UseResPath("shaders/lighting.fs").c_str());
-    Model testModel;
-    //testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
-    testModel = Model(lightingShader, UseResPath("other/island_wip/island.obj").c_str(), UseResPath("other/island_wip/").c_str());
-    //testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
-    //testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
-    gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "testModel"));
+void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, const std::vector<Vertex>& planeVerts, std::vector<Transform>& grassTransforms, u32 numGrassInstancesToSpawn) {
+    constexpr f32 spawnNeighborLeniency = 0.5f;
+    constexpr f32 grassSpawnHeight = 7.6; // ew hardcoded
+    glm::vec2 exclusionMin = glm::vec2(spawnExclusion.min.x, spawnExclusion.min.z);
+    glm::vec2 exclusionMax = glm::vec2(spawnExclusion.max.x, spawnExclusion.max.z);
+    for (u32 i = 0; i < numGrassInstancesToSpawn; i++) {
+        glm::vec2 randomPointBetweenVerts = glm::vec2(0);
+        // pick random point. If point is within "excluded" region, pick another point
+        while (randomPointBetweenVerts == glm::vec2(0) || Math::isOverlappingRect2D(exclusionMax, exclusionMin, randomPointBetweenVerts, randomPointBetweenVerts+spawnNeighborLeniency)) {
+            // pick two verts and pick a random spot between those two points to spawn it in
+            u32 randPointIdx1 = GetRandom(0, planeVerts.size());
+            u32 randPointIdx2 = GetRandom(0, planeVerts.size());
+            while (randPointIdx2 == randPointIdx1) {
+                // don't pick two of the same vertex
+                randPointIdx2 = GetRandom(0, planeVerts.size());
+            }
+            const Vertex& vert1 = planeVerts.at(randPointIdx1);
+            const Vertex& vert2 = planeVerts.at(randPointIdx2);
+            // after picking two random vertices, pick a random amount [0,1] and lerp between those to find this "random" grass spawn position
+            glm::vec3 point = Math::Lerp(vert1.position, vert2.position, GetRandomf(0.0f, 1.0f));
+            randomPointBetweenVerts = glm::vec2(point.x, point.z);
+        }
+        grassTransforms.push_back(Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(0.5)));
+    }
+}
+
+void init_grass(GameState& gs) {
+    Shader grassShader = Shader(ResPath("shaders/grass.vs").c_str(), ResPath("shaders/grass.fs").c_str());
+    Model grassModel = Model(grassShader, ResPath("other/island_wip/grass_blade.obj").c_str(), ResPath("other/island_wip/").c_str());
+    Transform grassTf = Transform({0,0,0}, {1,1,1});
+    gs.grass = WorldEntity(grassTf, grassModel, "grass");
+    //  init grass transforms
+    // area where grass CAN spawn
+    gs.grassSpawnInclusion = BoundingBox();
+    // area where grass CANNOT spawn
+    gs.grassSpawnExclusion = BoundingBox({5.4,8,6.83}, {-4.53,8,-0.52});
     
-    // Init water
-    Shader waterShader = Shader(UseResPath("shaders/water.vs").c_str(), UseResPath("shaders/water.fs").c_str());
+    WorldEntity* islandModel = gs.GetEntity("island");
+    if (islandModel) {
+        for (auto& m : islandModel->model.meshes) {
+            std::cout << m.name << "\n";
+        }
+        Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
+        if (grassSpawnMesh) {
+            grassSpawnMesh->isVisible = false;
+            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 100);
+        }
+    }
+
+}
+
+void init_main_pond(GameState& gs) {
+    Shader waterShader = Shader(ResPath("shaders/water.vs").c_str(), ResPath("shaders/water.fs").c_str());
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
     WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "waterPlane");
@@ -159,21 +232,27 @@ void testbed_init() {
     gs.waves[2] = Wave(0.8, 1.0, 0.1, glm::vec2(1,0.4));
     waterShader.use();
     waterShader.setUniform("numActiveWaves", 3);
-    gs.waterTexture = LoadTexture(UseResPath("other/water.png"));
+    gs.waterTexture = LoadTexture(ResPath("other/water.png"));
     waterShader.setUniform("waterTexture", 0);
+}
+
+void testbed_init() {
+    InitImGui();
+    GameState& gs = GameState::get();
+    Camera::GetMainCamera().cameraPos.y = 10;
+    Shader lightingShader = Shader(ResPath("shaders/lighting.vs").c_str(), ResPath("shaders/lighting.fs").c_str());
+    Model testModel;
+    //testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
+    testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
+    //testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
+    //testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
+    gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "island"));
+    
+    // Init water
+    init_main_pond(gs);
 
     // Init grass
-    Shader grassShader = Shader(UseResPath("shaders/grass.vs").c_str(), UseResPath("shaders/grass.fs").c_str());
-    Model grassModel = Model(grassShader, UseResPath("other/island_wip/grass_blade.obj").c_str(), UseResPath("other/island_wip/").c_str());
-    Transform grassTf = Transform({0,0,0}, {1,1,1});
-    gs.grass = WorldEntity(grassTf, grassModel, "grass");
-    //  init grass transforms
-    u32 numGrassInstances = 50;
-    for (u32 i = 0; i < sqrt(numGrassInstances); i++) {
-        for (u32 j = 0; j < sqrt(numGrassInstances); j++) {
-            gs.grassTransforms.emplace_back(Transform({i, 9, j}, glm::vec3(0.5)));
-        }
-    }
+    init_grass(gs);
 
     // Init lights
     Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 30, -22), glm::vec3(0), glm::vec4(1));
@@ -182,27 +261,6 @@ void testbed_init() {
     //gs.lights.push_back(meshPointLight);
 }
 
-void DepthPrePass() {
-    GameState& gs = GameState::get();
-    ShadowMap& shadowMap = gs.shadowMap;
-    Sprite& depthSprite = gs.depthSprite; 
-    if (!shadowMap.isValid()) {
-        shadowMap = ShadowMap(1024);
-        depthSprite = Sprite(shadowMap.fb.GetTexture());
-    }
-
-    shadowMap.BeginRender();
-    for (auto& ent : gs.entities) {
-        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform, 0);
-    }
-    shadowMap.EndRender();
-
-    #if 0
-    // render depth tex to screen
-    glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
-    depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
-    #endif
-}
 
 void testbed_tick() {
     GameState& gs = GameState::get();
@@ -211,8 +269,6 @@ void testbed_tick() {
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
     //testbed_orbit_light(mainLight, 35, 25, 0.2);
-
-    DepthPrePass();
 
     // render normal scene
     #if 0

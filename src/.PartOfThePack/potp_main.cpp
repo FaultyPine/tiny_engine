@@ -61,13 +61,13 @@ void PotpInit(GameState& gs, UserInput& inputs) {
     #else
     Audio::SetMute(false);
     #endif
-    Audio::PlayAudio(UseResPath("potp/clarkPapple_Song.mp3").c_str());
+    Audio::PlayAudio(ResPath("potp/clarkPapple_Song.mp3").c_str());
 
     //Audio::SetVolume(2.0);
 
     // textures
     TextureProperties texProps = TextureProperties::RGB_NEAREST();
-    Texture backgroundTex = LoadTexture(UseResPath("potp/background.jpg").c_str(), texProps);
+    Texture backgroundTex = LoadTexture(ResPath("potp/background.jpg").c_str(), texProps);
     // Sprites
     gs.background = Sprite(backgroundTex);
 

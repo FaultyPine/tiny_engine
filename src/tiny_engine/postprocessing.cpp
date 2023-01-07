@@ -30,7 +30,7 @@ void PostprocessingFB::DrawToScreen(const Shader& shader) {
 void PostprocessingFB::DrawToScreen(std::function<void()> drawSceneFunc) {
     glm::vec2 screenDimensions = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
     if (!postProcessingShader.isValid()) {
-        postProcessingShader = Shader(UseResPath("shaders/screen_texture.vs").c_str(), UseResPath("shaders/screen_texture.fs").c_str());
+        postProcessingShader = Shader(ResPath("shaders/screen_texture.vs").c_str(), ResPath("shaders/screen_texture.fs").c_str());
     }
     if (!isValid()) {
         *this = PostprocessingFB(postProcessingShader, {screenDimensions.x, screenDimensions.y});

@@ -11,6 +11,7 @@ struct WorldEntity {
     Transform transform = {};
     Model model = {};
     u32 hash = 0;
+    bool isVisible = true;
     WorldEntity(){}
     WorldEntity(const Transform& tf, const Model& mod, const char* name = "") {
         transform = tf;
@@ -24,6 +25,11 @@ struct WorldEntity {
     }
     void Delete() {
         model.Delete();
+    }
+    void Draw(const Transform &tf, const std::vector<Light> &lights = {}) {
+        if (isVisible) {
+            model.Draw(tf, lights);
+        }
     }
     bool isValid() { return hash != 0; }
 };
@@ -52,6 +58,8 @@ struct GameState {
     // grass
     WorldEntity grass;
     std::vector<Transform> grassTransforms = {};
+    BoundingBox grassSpawnInclusion = {};
+    BoundingBox grassSpawnExclusion = {};
 
     // shadows/depth tex
     ShadowMap shadowMap;

@@ -4,7 +4,7 @@
 #include "pch.h"
 
 /// appends resource path to provided path
-std::string UseResPath(const std::string& path = "");
+std::string ResPath(const std::string& path = "");
 
 
 #endif

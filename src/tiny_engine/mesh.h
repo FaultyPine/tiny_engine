@@ -26,15 +26,20 @@ struct Mesh {
     std::vector<u32> indices = {};
     //std::vector<Texture> textures = {};
     std::vector<Material> materials = {};
+    std::string name = "";
+    bool isVisible = true;
     
     Mesh(){}
     Mesh( const std::vector<Vertex>& verts, 
         const std::vector<u32>& idxs, 
-        const std::vector<Material>& mats = {});
+        const std::vector<Material>& mats = {},
+        const std::string& name = "");
     void Delete();
     inline bool isValid() const {
         return vertices.size() && VAO;
     }
+
+    BoundingBox GetMeshBoundingBox();
 
     // draw mesh with specified shader
     void Draw(const Shader& shader, const Transform& tf) const;

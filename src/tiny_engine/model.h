@@ -10,6 +10,8 @@ struct Model {
     Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir);
     Model(const Shader& shader, const std::vector<Mesh>& meshes);
 
+    BoundingBox GetBoundingBox();
+
     // draw with transform
     void Draw(const Shader& shader, const Transform& tf, const std::vector<Light>& lights = {}) const;
     void Draw(const Transform& tf, const std::vector<Light>& lights = {}) const {
@@ -34,6 +36,8 @@ struct Model {
         //cachedShader.Delete(); // other meshes may be using the same shader...
     }
     inline bool isValid() { return !meshes.empty(); }
+
+    Mesh* GetMesh(const std::string& name);
 
     Shader cachedShader;
     std::vector<Mesh> meshes = {};

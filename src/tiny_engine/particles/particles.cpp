@@ -41,7 +41,7 @@ void ParticleSystem2D::TrySpawnNewParticles(glm::vec2 position) {
 }
 
 void ParticleSystem2D::Tick(glm::vec2 position) {    
-    if (!defaultParticleSprite.isValid()) defaultParticleSprite = Sprite(LoadTexture(UseResPath("shaders/default_particle.png").c_str(), TextureProperties::RGBA_LINEAR()));
+    if (!defaultParticleSprite.isValid()) defaultParticleSprite = Sprite(LoadTexture(ResPath("shaders/default_particle.png").c_str(), TextureProperties::RGBA_LINEAR()));
     if (!isActive) return;
     TrySpawnNewParticles(position);
     for (auto& behavior : behaviors) {

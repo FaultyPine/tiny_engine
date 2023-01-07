@@ -24,7 +24,8 @@ struct Light {
     s32 globalIndex = -1;
 
     void Visualize() {
-        Shapes3D::DrawCube(position, glm::vec3(0.2), 0, {0,1,0}, type == LightType::LIGHT_DIRECTIONAL ? glm::vec4(1,1,0,1) : glm::vec4(0.8));
+        Transform tf = Transform(position, glm::vec3(0.2), 0, {0,1,0});
+        Shapes3D::DrawCube(tf, type == LightType::LIGHT_DIRECTIONAL ? glm::vec4(1,1,0,1) : glm::vec4(0.8));
     }
     glm::mat4 GetLightViewProjMatrix() const;
 };

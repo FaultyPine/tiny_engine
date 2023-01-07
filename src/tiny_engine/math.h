@@ -3,21 +3,26 @@
 
 #include "pch.h"
 
-const double PI   = 3.141592653589793238463;
-const float  PI_F = 3.14159265358979f;
+constexpr double PI   = 3.141592653589793238463;
+constexpr float  PI_F = 3.14159265358979f;
 
 namespace Math {
 
 
 
-bool isOverlappingRect2D(const glm::vec2& pos1, const glm::vec2& size1, const glm::vec2& pos2, const glm::vec2& size2);
+bool isOverlappingRectSize2D(const glm::vec2& pos1, const glm::vec2& size1, const glm::vec2& pos2, const glm::vec2& size2);
+bool isOverlappingRect2D(const glm::vec2& startPos1, const glm::vec2& endPos1, const glm::vec2& startPos2, const glm::vec2& endPos2);
 bool isPositionNear(const glm::vec2& pos1, const glm::vec2& pos2, f32 dist);
 
 f32 Lerp(f32 a, f32 b, f32 t);
 f32 InvLerp(f32 a, f32 b, f32 v);
 f32 Remap(f32 val, f32 iMin, f32 iMax, f32 oMin, f32 oMax);
 
+inline glm::vec3 Lerp(glm::vec3 a, glm::vec3 b, f32 t) {
+    return a * (f32)(1.0 - t) + (b * t);
+}
 
+glm::vec2 RandomPointInCircle(f32 radius);
 
 template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }
 template<typename T> inline T MIN(T x, T y) { return x < y ? x : y; }

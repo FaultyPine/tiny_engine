@@ -11,13 +11,13 @@ void ControllerSetupSceneInit(GameState& gs) {
     TextureProperties texProps = TextureProperties::RGBA_NEAREST();
     // init keyboard/controller sprites
     if (!gs.keyboardSprite.isValid()) 
-        gs.keyboardSprite = Sprite(LoadTexture(UseResPath("potp/keyboard.png").c_str(), texProps));
+        gs.keyboardSprite = Sprite(LoadTexture(ResPath("potp/keyboard.png").c_str(), texProps));
     if (!gs.controllerSprite.isValid()) 
-        gs.controllerSprite = Sprite(LoadTexture(UseResPath("potp/controller.png").c_str(), texProps));
+        gs.controllerSprite = Sprite(LoadTexture(ResPath("potp/controller.png").c_str(), texProps));
     if (!gs.blankControllerSprite.isValid()) 
-        gs.blankControllerSprite = Sprite(LoadTexture(UseResPath("potp/x.png").c_str(), texProps));
+        gs.blankControllerSprite = Sprite(LoadTexture(ResPath("potp/x.png").c_str(), texProps));
     if (!gs.howToPlayBackgroundSprite.isValid())
-        gs.howToPlayBackgroundSprite = Sprite(LoadTexture(UseResPath("potp/howtoplay.png").c_str(), texProps));
+        gs.howToPlayBackgroundSprite = Sprite(LoadTexture(ResPath("potp/howtoplay.png").c_str(), texProps));
     for (s32 i = 0; i < MAX_NUM_PLAYERS; i++) {
         if (!gs.playerTexts[i]) {
             const char* playerText = ("Player " + std::to_string(i+1)).c_str();

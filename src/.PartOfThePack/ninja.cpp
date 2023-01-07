@@ -43,9 +43,9 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     u32 screenHeight = Camera::GetMainCamera().GetMinScreenDimensions().y;
 
     TextureProperties texProps = TextureProperties::RGBA_NEAREST();
-    Texture ninjaDefaultTex = LoadTexture(UseResPath("potp/ninja_sprites/tile000.png").c_str(), texProps);
+    Texture ninjaDefaultTex = LoadTexture(ResPath("potp/ninja_sprites/tile000.png").c_str(), texProps);
 
-    Spritesheet ninjaSpritesheet = Spritesheet(UseResPath("potp/ninja_spritesheet_32x32.png").c_str(), 12, 7, texProps);
+    Spritesheet ninjaSpritesheet = Spritesheet(ResPath("potp/ninja_spritesheet_32x32.png").c_str(), 12, 7, texProps);
     ninjaSpritesheet.SetDefaultFramerate(24);
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::IDLE, {0});
     ninjaSpritesheet.SetAnimationIndices(NinjaAnimStates::WALK, {1,1,1,8,8,8,15,15,15,22,22,22});
@@ -55,7 +55,7 @@ void InitializeNinjas(Ninja* aiNinjas, u32 numAINinjas, Ninja* playerNinjas, u32
     Spritesheet::Animation anim = {};
     anim.animKey = NinjaAnimStates::IDLE;
     ninjaSpritesheet.SetAnimation(anim);
-    Spritesheet smokeGrenade = Spritesheet(UseResPath("potp/tdingle_smoke.png").c_str(), 3, 2, texProps);
+    Spritesheet smokeGrenade = Spritesheet(ResPath("potp/tdingle_smoke.png").c_str(), 3, 2, texProps);
     smokeGrenade.SetDefaultFramerate(12);
     smokeGrenade.SetAnimationIndices(0, {0,1,2,3,4});
     anim = {};
@@ -129,7 +129,7 @@ void NinjaInitPunch(Ninja& ninja) {
     anim.isLoop = false;
     anim.nonLoopNextAnim = NinjaAnimStates::IDLE;
     ninja.spritesheet.SetAnimation(anim);
-    Audio::PlayAudio(UseResPath("potp/hit.wav").c_str()); // TODO: can we preload this? This probably reads the file in every time...
+    Audio::PlayAudio(ResPath("potp/hit.wav").c_str()); // TODO: can we preload this? This probably reads the file in every time...
 }
 void NinjaEndPunch(Ninja& ninja) {
 
@@ -258,7 +258,7 @@ void Ninja::Die() {
 }
 // checks if ninjaToCheck is being hit by ninja
 bool NinjaHitboxCheck(const Ninja& ninja, const Ninja& ninjaToCheck) {
-    return Math::isOverlappingRect2D(ninja.punchHitbox.pos + ninja.entity.position, ninja.punchHitbox.size, 
+    return Math::isOverlappingRectSize2D(ninja.punchHitbox.pos + ninja.entity.position, ninja.punchHitbox.size, 
                 ninjaToCheck.entity.position, ninjaToCheck.entity.size);
 }
 // is there a better way to do this? of course... but for the scope of this project, I don't need anything more complex

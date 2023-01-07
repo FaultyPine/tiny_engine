@@ -1,20 +1,20 @@
 #include "math.h"
 
+#include "tiny_engine/tiny_engine.h"
+
 namespace Math {
 
  
-bool isOverlappingRect2D(const glm::vec2& pos1, const glm::vec2& size1, const glm::vec2& pos2, const glm::vec2& size2) {
-    // get top-left corner and bottom-right corner of entities
-    glm::vec2 l1 = pos1;
-    glm::vec2 l2 = pos2;
-    glm::vec2 r1 = l1 + size1;
-    glm::vec2 r2 = l2 + size2;
-
-    if (l1.x > r2.x || l2.x > r1.x)
+bool isOverlappingRectSize2D(const glm::vec2& pos1, const glm::vec2& size1, const glm::vec2& pos2, const glm::vec2& size2) {
+    glm::vec2 r1 = pos1 + size1;
+    glm::vec2 r2 = pos2 + size2;
+    return isOverlappingRect2D(pos1, pos2, r1, r2);
+}
+// exclusionMax, exclusionMin, glm::vec2(randomPointBetweenVerts.x, randomPointBetweenVerts.z), glm::vec2(2)
+bool isOverlappingRect2D(const glm::vec2& startPos1, const glm::vec2& endPos1, const glm::vec2& startPos2, const glm::vec2& endPos2) {
+    if (startPos1.x > endPos2.x || startPos2.x > endPos1.x)
         return false;
-
-    //  this one
-    if (l1.y > r2.y || l2.y > r1.y)
+    if (startPos1.y > endPos2.y || startPos2.y > endPos1.y)
         return false;
     return true;
 }
@@ -23,6 +23,15 @@ bool isPositionNear(const glm::vec2& pos1, const glm::vec2& pos2, f32 dist) {
     return glm::distance(pos1, pos2) <= dist;
 }
 
+glm::vec2 RandomPointInCircle(f32 radius) {
+    glm::vec2 ret = glm::vec2(0);
+    f32 randomRadius = GetRandomf(0, radius);
+    f32 len = sqrt(GetRandomf(0, 1)) * radius;
+    f32 degrees = 2* PI_F * GetRandomf(0,1);
+    ret.x = len * cos(degrees);
+    ret.y = len * sin(degrees);
+    return ret;
+}
 
 f32 Lerp(f32 a, f32 b, f32 t) {
     return a * (1.0 - t) + (b * t);

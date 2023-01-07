@@ -22,6 +22,10 @@ struct Transform {
     }
 };
 
-
+struct BoundingBox {
+    BoundingBox(){}
+    BoundingBox(glm::vec3 mn, glm::vec3 mx) {min = mn; max = mx;}
+    glm::vec3 min, max = glm::vec3(0);
+};
 
 #endif

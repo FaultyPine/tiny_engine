@@ -32,7 +32,7 @@ void endGame() {
 }
 
 // Live++ hot-reloading
-#define LIVEPP_ACTIVE
+//#define LIVEPP_ACTIVE
 
 #ifdef LIVEPP_ACTIVE
 #include <Windows.h>

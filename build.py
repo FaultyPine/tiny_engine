@@ -46,7 +46,7 @@ def clean_debug_executables():
     print("Cleaning debug executables...")
     iteration = 0
     name = APP_NAME + str(iteration) + ".exe"
-    for i in range(0, 20): # some arbitrary max debug executables
+    for i in range(0, 60): # some arbitrary max debug executables
         if os.path.exists(name):
             try:
                 os.remove(name)

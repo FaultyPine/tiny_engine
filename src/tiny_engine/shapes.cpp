@@ -9,7 +9,7 @@
 // shader var is just called "shader" after this macro
 #define SHAPE_SHADER(shaderName, vertShaderPath, fragShaderPath) static Shader shaderName; \
 if (shaderName.ID == 0) \
-    shaderName = Shader(UseResPath(vertShaderPath).c_str(), UseResPath(fragShaderPath).c_str())
+    shaderName = Shader(ResPath(vertShaderPath).c_str(), ResPath(fragShaderPath).c_str())
 
 
 namespace Shapes3D {
@@ -59,7 +59,8 @@ const static f32 cubeVertices[] = {
     -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
     -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left        
 };
-const static f32 planeVertices[] = {
+// this scales from the center out
+const static f32 planeVerticesCentered[] = {
     // positions            // normals         // texcoords
     1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
     -1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
@@ -68,6 +69,16 @@ const static f32 planeVertices[] = {
     1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
     -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
     1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
+};
+const static f32 planeVerticesTopLeft[] = {
+    // positions            // normals         // texcoords
+    1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+    0.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
+    0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+
+    1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
+    0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
+    1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
 };
 
 
@@ -188,40 +199,14 @@ void main(){
     shader.setUniform("mvp", mvp);
 
     GLCall(glBindVertexArray(quadVAO));
+    glLineWidth(width);
     GLCall(glDrawArrays(GL_LINES, 0, 2));
+    glLineWidth(1.0);
     GLCall(glBindVertexArray(0));
 }
 
-void DrawCube(const glm::vec3& pos, const glm::vec3& scale, f32 rotation, const glm::vec3& rotationAxis, const glm::vec4& color) {
-    static Shader shader;
-    if (!shader.isValid()) {
-        shader = Shader::CreateShaderFromStr(
-R"(
-#version 330 core
-layout (location = 0) in vec3 vertPos;
-layout (location = 1) in vec3 vertNormal;
-layout (location = 2) in vec2 vertTexCoords;
-uniform mat4 mvp;
-out vec2 TexCoords;
-out vec3 Normal;
-void main(){
-    Normal = vertNormal;
-    TexCoords = vertTexCoords;
-	gl_Position = mvp * vec4(vertPos, 1.0);
-}
-)",
-R"(
-#version 330 core
-out vec4 FragColor;
-in vec2 TexCoords;
-in vec3 Normal;
-uniform vec4 color;
-void main(){
-	FragColor = color;
-}
-)"
-        );
-    }
+void DrawCube(const Transform& tf, const glm::vec4& color) {
+    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vs", "shaders/shapes/default_3d.fs");
     static u32 cubeVAO = 0;
     static u32 cubeVBO = 0;
     // initialize (if necessary)
@@ -245,7 +230,7 @@ void main(){
     shader.use();
     glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
-    glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
+    glm::mat4 model = tf.ToModelMatrix();
     glm::mat4 mvp = proj * view * model;
     shader.setUniform("mvp", mvp);
     shader.setUniform("color", color);
@@ -256,45 +241,16 @@ void main(){
 
 }
 
-void DrawPlane(const glm::vec3& pos, const glm::vec3& scale, f32 rotation, const glm::vec3& rotationAxis, const glm::vec4& color) {
-    static Shader shader;
+void DrawPlane(const Transform& tf, const glm::vec4& color) {
+    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vs", "shaders/shapes/default_3d.fs");
     static u32 planeVAO = 0;
     static u32 planeVBO = 0;
-    if (!shader.isValid()) {
-        shader = Shader::CreateShaderFromStr(
-R"(
-#version 330 core
-layout (location = 0) in vec3 vertPos;
-layout (location = 1) in vec3 vertNormal;
-layout (location = 2) in vec2 vertTexCoords;
-uniform mat4 mvp;
-out vec2 TexCoords;
-out vec3 Normal;
-void main(){
-    Normal = vertNormal;
-    TexCoords = vertTexCoords;
-	gl_Position = mvp * vec4(vertPos, 1.0);
-}
-)",
-R"(
-#version 330 core
-out vec4 FragColor;
-in vec2 TexCoords;
-in vec3 Normal;
-uniform vec4 color;
-void main(){
-	FragColor = color;
-}
-)"
-        );
-    }
-
     if (planeVAO == 0) {
         glGenVertexArrays(1, &planeVAO);
         glGenBuffers(1, &planeVBO);
         // fill buffer
         glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), planeVertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(planeVerticesCentered), planeVerticesCentered, GL_STATIC_DRAW);
         // link vertex attributes
         glBindVertexArray(planeVAO);
         glEnableVertexAttribArray(0);
@@ -309,7 +265,7 @@ void main(){
     shader.use();
     glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
-    glm::mat4 model = Math::Position3DToModelMat(pos, scale, rotation, rotationAxis);
+    glm::mat4 model = tf.ToModelMatrix();
     glm::mat4 mvp = proj * view * model;
     shader.setUniform("mvp", mvp);
     shader.setUniform("color", color);

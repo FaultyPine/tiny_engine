@@ -4,8 +4,9 @@
 
 Mesh::Mesh(const std::vector<Vertex>& verts, 
             const std::vector<u32>& idxs, 
-            const std::vector<Material>& mats) {
-    vertices = verts; indices = idxs; materials = mats;
+            const std::vector<Material>& mats,
+            const std::string& name) {
+    vertices = verts; indices = idxs; materials = mats; this->name = name;
     if (materials.size() == 0) {
         // if no materials, push a default one
         Material defaultMat = Material();
@@ -108,6 +109,7 @@ void Set3DMatrixUniforms(const Shader& shader, const Transform& tf) {
 
 void Mesh::Draw(const Shader& shader, const Transform& tf) const {
     ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    if (!isVisible) return;
 
     shader.use();
     // misc uniforms
@@ -123,6 +125,7 @@ void Mesh::Draw(const Shader& shader, const Transform& tf) const {
 }
 void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
     ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    if (!isVisible) return;
 
     shader.use();
     // misc uniforms
@@ -140,6 +143,7 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
 
 void Mesh::DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms) const {
     ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    if (!isVisible) return;
 
     shader.use();
     // misc uniforms
@@ -151,17 +155,38 @@ void Mesh::DrawInstanced(const Shader& shader, const std::vector<Transform>& tra
         materials.at(i).SetShaderUniforms(shader, i);
     }
 
-    Camera& cam = Camera::GetMainCamera();
-    glm::mat4 view = cam.GetViewMatrix();
-    glm::mat4 projection = cam.GetProjectionMatrix();
-
     // instance uniforms
     shader.setUniform("numInstances", (s32)transforms.size());
     for (u32 i = 0; i < transforms.size(); i++) {
         const Transform& tf = transforms.at(i);
         glm::mat4 model = tf.ToModelMatrix();
-        shader.setUniform(TextFormat("instanceMvps[%i]", i), projection * view * model);
+        shader.setUniform(TextFormat("instanceModelMats[%i]", i), model);
     }
 
     OGLDrawInstanced(VAO, indices.size(), vertices.size(), transforms.size());
+}
+
+
+BoundingBox Mesh::GetMeshBoundingBox()
+{
+    // Get min and max vertex to construct bounds (AABB)
+    glm::vec3 minVertex = glm::vec3(0);
+    glm::vec3 maxVertex = glm::vec3(0);
+
+    if (!vertices.empty()) {
+        minVertex = glm::vec3(vertices[0].position);
+        maxVertex = glm::vec3(vertices[0].position);
+
+        for (s32 i = 1; i < vertices.size(); i++) {
+            minVertex = glm::min(minVertex, vertices[i].position);
+            maxVertex = glm::max(maxVertex, vertices[i].position);
+        }
+    }
+
+    // Create the bounding box
+    BoundingBox box = {};
+    box.min = minVertex;
+    box.max = maxVertex;
+
+    return box;
 }

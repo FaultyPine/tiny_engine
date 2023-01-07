@@ -41,34 +41,25 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
     Material meshMat = Material(diffuse, ambient, specular, normal, shininess, mat.name);
     return meshMat;
 }
-Mesh MeshConvert(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& allMaterials) {
+Vertex GetVertexFromTinyIdx(const tinyobj::index_t& tinyobjIdx, const tinyobj::attrib_t& attrib) {
     // input data from tiny_obj_loader
     const std::vector<tinyobj::real_t>& attribVerts = attrib.vertices; // 3 floats per vertex
     const std::vector<tinyobj::real_t>& attribNorms = attrib.normals; // 3 floats per vertex
     const std::vector<tinyobj::real_t>& attribTexCoords = attrib.texcoords; // 2 floats per vertex
     const std::vector<tinyobj::real_t>& attribColors = attrib.colors; // 3 floats per vertex (optional)
-
-    // assert all material id's are the same... not currently supporting different materials on a single mesh
-    bool isOnlyOneMaterialUsed = std::equal(shape.mesh.material_ids.begin() + 1, shape.mesh.material_ids.end(), shape.mesh.material_ids.begin());
-    ASSERT("Multiple materials not supported for single mesh" && isOnlyOneMaterialUsed);
-
-    std::vector<Material> materials = {};
-    std::vector<s32> usedMaterialIds = {};
-    std::vector<Vertex> vertices = {};
-    std::vector<u32> indices = {};
-    for (u32 i = 0; i < shape.mesh.indices.size(); i++) {
-        Vertex v = {};
-        // indexes into input data from obj file
-        const tinyobj::index_t& tinyobjIdx = shape.mesh.indices.at(i);
-        s32 vertexIndexBase = tinyobjIdx.vertex_index;
-        vec3 pos = vec3(
-            attribVerts.at( 3*vertexIndexBase+0 ),
-            attribVerts.at( 3*vertexIndexBase+1 ),
-            attribVerts.at( 3*vertexIndexBase+2 )
-        );
-        v.position = pos;
-        if (!attribNorms.empty()) {
-            s32 normalIndexBase = tinyobjIdx.normal_index;
+    Vertex v = {};
+    // indexes into input data from obj file
+    //const tinyobj::index_t& tinyobjIdx = shape.mesh.indices.at(i);
+    s32 vertexIndexBase = tinyobjIdx.vertex_index;
+    vec3 pos = vec3(
+        attribVerts.at( 3*vertexIndexBase+0 ),
+        attribVerts.at( 3*vertexIndexBase+1 ),
+        attribVerts.at( 3*vertexIndexBase+2 )
+    );
+    v.position = pos;
+    if (!attribNorms.empty()) {
+        s32 normalIndexBase = tinyobjIdx.normal_index;
+        if (normalIndexBase != -1) {
             vec3 norm = vec3(
                 attribNorms.at( 3*normalIndexBase+0 ),
                 attribNorms.at( 3*normalIndexBase+1 ),
@@ -76,27 +67,46 @@ Mesh MeshConvert(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib,
             );
             v.normal = norm;
         }
-        if (!attribTexCoords.empty()) {
-            s32 texcoordIndexBase = tinyobjIdx.texcoord_index;
-            // obj files may have faces like   f 1530//780
-            // this happens when the obj doesn't have texcoords
-            if (texcoordIndexBase != -1) {
-                vec2 texcoord = vec2(
-                    attribTexCoords.at( 2*texcoordIndexBase+0 ),
-                    attribTexCoords.at( 2*texcoordIndexBase+1 )
-                );
-                v.texCoords = texcoord;
-            }
+    }
+    if (!attribTexCoords.empty()) {
+        s32 texcoordIndexBase = tinyobjIdx.texcoord_index;
+        // obj files may have faces like   f 1530//780
+        // this happens when the obj doesn't have texcoords
+        if (texcoordIndexBase != -1) {
+            vec2 texcoord = vec2(
+                attribTexCoords.at( 2*texcoordIndexBase+0 ),
+                attribTexCoords.at( 2*texcoordIndexBase+1 )
+            );
+            v.texCoords = texcoord;
         }
-        if (!attribColors.empty()) {
-            s32 colorIndexBase = tinyobjIdx.vertex_index; // using vert index for vert colors
+    }
+    if (!attribColors.empty()) {
+        s32 colorIndexBase = tinyobjIdx.vertex_index; // using vert index for vert colors
+        if (colorIndexBase != -1) {
             vec3 col = vec3(
                 attribColors.at( 3*colorIndexBase+0 ),
                 attribColors.at( 3*colorIndexBase+1 ),
                 attribColors.at( 3*colorIndexBase+2 )
             );
-            v.color = col;
+        v.color = col;
         }
+    }
+    return v;
+}
+Mesh MeshConvert(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& allMaterials) {
+
+    // assert all material id's are the same... not currently supporting different materials on a single mesh
+    bool isOnlyOneMaterialUsed = shape.mesh.material_ids.empty() || std::equal(shape.mesh.material_ids.begin() + 1, shape.mesh.material_ids.end(), shape.mesh.material_ids.begin());
+    ASSERT("Multiple materials not supported for single mesh" && isOnlyOneMaterialUsed);
+
+    std::vector<Material> materials = {};
+    std::vector<s32> usedMaterialIds = {};
+    std::vector<Vertex> vertices = {};
+    std::vector<u32> indices = {};
+    for (u32 i = 0; i < shape.mesh.indices.size(); i++) {
+        const tinyobj::index_t& tinyObjIdx = shape.mesh.indices.at(i);
+        Vertex v = GetVertexFromTinyIdx(tinyObjIdx, attrib);
+        
         // NOTE: shape.mesh.indices.size == (shape.mesh.material_ids.size * 3)
         s32 materialId = shape.mesh.material_ids.at(i / 3);
         if (materialId != -1) {
@@ -113,8 +123,14 @@ Mesh MeshConvert(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib,
         vertices.push_back(v);
         indices.push_back(indices.size());
     }
+    for (u32 i = 0; i < shape.lines.indices.size(); i++) {
+        const tinyobj::index_t& tinyObjIdx = shape.lines.indices.at(i);
+        Vertex v = GetVertexFromTinyIdx(tinyObjIdx, attrib);
+        vertices.push_back(v);
+        indices.push_back(indices.size());
+    }
 
-    return Mesh(vertices, indices, materials);
+    return Mesh(vertices, indices, materials, shape.name);
 }
 
 void LoadMaterials(const std::vector<tinyobj::material_t>& objmaterials, const std::string& texdir, std::vector<Material>& materials) {
