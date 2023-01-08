@@ -4,13 +4,12 @@
 #include "pch.h"
 #include "texture.h"
 
+// map of shader id -> list of sampler ids
+// putting this outside the shader object to keep Shaders a wrapper around an ID
+static std::unordered_map<u32, std::vector<s32>> samplerIDs = {};
+
 struct Shader {
     u32 ID = 0;
-    #define MAX_SAMPLERS 32
-    // shaders store their own textures. TODO: make this a shared ptr to a texture
-    s32 samplerIds[MAX_SAMPLERS] = {0};
-    s32 currentSamplerUnit = 0;
-
 
     Shader() { ID = 0; }
     Shader(u32 id) { ID = id; }
@@ -22,15 +21,22 @@ struct Shader {
     static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) {
         return Shader(CreateShaderProgFromStr(vsCodeStr, fsCodeStr));
     }
-    inline void ActivateSamplers() {
-        for (s32 i = 0; i < currentSamplerUnit; i++) {
-            Texture::bindUnit(i, samplerIds[i]);
+    inline void ActivateSamplers() const {
+        const std::vector<s32>& shaderSamplers = samplerIDs[ID];
+        for (s32 i = 0; i < shaderSamplers.size(); i++) {
+            Texture::bindUnit(i, shaderSamplers.at(i));
         }
     }
-    inline void AddSampler(const Texture& texture, const char* uniformName) {
-        setUniform(uniformName, currentSamplerUnit);
-        samplerIds[currentSamplerUnit] = texture.id;
-        currentSamplerUnit++;
+    /// attempts to add the texture to the sampler list. If the texture id alrady exists, does nothing
+    inline bool TryAddSampler(const Texture& texture, const char* uniformName) const {
+        std::vector<s32>& shaderSamplers = samplerIDs[ID];
+        // don't add if this texture is already tracked
+        if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture.id) != shaderSamplers.end()) return false;
+        // this sampler needs to be added
+        shaderSamplers.push_back(texture.id);
+        use();
+        setUniform(uniformName, (s32)shaderSamplers.size()-1);
+        return true;
     }
 
     // use/activate the shader

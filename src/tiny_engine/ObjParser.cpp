@@ -34,7 +34,7 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
             // Assume that textures are stored in "texdir"
             std::string filename = std::filesystem::path(*texnames[i]).filename().string();
             std::string path = std::filesystem::path(texdir).append(filename).string();
-            prop.texture = LoadTexture(path);
+            prop.texture = LoadTexture(path, TextureProperties::None(), TextureMaterialType::OTHER, true); // flip image upside down
             prop.texture.type = types[i];
             prop.hasTexture = true;
         }

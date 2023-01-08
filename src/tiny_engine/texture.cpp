@@ -88,13 +88,20 @@ void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
     #define MAT_NORMAL    3
     shader.use();
     s32 matPropIdx = 0;
-    #define SET_MATERIAL_UNIFORMS(matType, matVar) \
+    /*#define SET_MATERIAL_UNIFORMS(matType, matVar) \
         shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
         matPropIdx = (matType * matIdx) + matType; \
         if (matVar.hasTexture) { \
             matVar.texture.bindUnit(matPropIdx); \
         } \
         shader.setUniform(TextFormat("materials[%i].%s.tex", matIdx, #matVar), matPropIdx); \
+        shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
+    */
+   #define SET_MATERIAL_UNIFORMS(matType, matVar) \
+        shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
+        if (matVar.hasTexture) { \
+            shader.TryAddSampler(matVar.texture, TextFormat("materials[%i].%s.tex", matIdx, #matVar)); \
+        } \
         shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
 
     SET_MATERIAL_UNIFORMS(MAT_DIFFUSE, diffuseMat);

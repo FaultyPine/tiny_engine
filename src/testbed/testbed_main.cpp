@@ -105,6 +105,15 @@ void drawImGuiDebug() {
     ImGui::DragFloat3("Light target", &meshLight.target[0]);
     ImGui::SliderInt("1=point 0=directional", (int*)&meshLight.type, 0, 1);
     
+    #if 0
+    static f32 ambientLightIntensity = 0.1f;
+    ImGui::DragFloat("Ambient light intensity", &ambientLightIntensity, 0.01f);
+    for (auto& ent : gs.entities) {
+        ent.model.cachedShader.use();
+        ent.model.cachedShader.setUniform("ambientLightIntensity", ambientLightIntensity);
+    }
+    #endif
+
     ImGuiEndFrame();
 }
 
@@ -119,7 +128,7 @@ void DepthPrePass() {
 
     shadowMap.BeginRender();
     for (auto& ent : gs.entities) {
-        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform, 0);
+        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform);
     }
     shadowMap.EndRender();
 
@@ -224,7 +233,7 @@ void init_main_pond(GameState& gs) {
     waterShader.use();
     waterShader.setUniform("numActiveWaves", 3);
     gs.waterTexture = LoadTexture(ResPath("other/water.png"));
-    waterShader.AddSampler(gs.waterTexture, "waterTexture");
+    waterShader.TryAddSampler(gs.waterTexture, "waterTexture");
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
     WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "waterPlane");
@@ -238,7 +247,7 @@ void testbed_init() {
     InitImGui();
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
-    Shader lightingShader = Shader(ResPath("shaders/lighting.vs").c_str(), ResPath("shaders/lighting.fs").c_str());
+    Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vs").c_str(), ResPath("shaders/basic_lighting.fs").c_str());
     Model testModel;
     //testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
     testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
@@ -246,6 +255,9 @@ void testbed_init() {
     //testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "island"));
     
+    Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
+    gs.entities.emplace_back(WorldEntity(Transform({10,7.5,3}), treeModel, "tree"));
+
     // Init water
     init_main_pond(gs);
 
@@ -253,7 +265,7 @@ void testbed_init() {
     init_grass(gs);
 
     // Init lights
-    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 30, -22), glm::vec3(0), glm::vec4(1));
+    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 50, -22), glm::vec3(0, 10, 0), glm::vec4(1));
     //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
     gs.lights.push_back(meshLight);
     //gs.lights.push_back(meshPointLight);
@@ -266,7 +278,7 @@ void testbed_tick() {
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
-    testbed_orbit_light(mainLight, 35, 25, 0.2);
+    testbed_orbit_light(mainLight, 55, 25, 0.2);
 
     // render normal scene
     #if 0

@@ -123,6 +123,7 @@ void Mesh::Draw(const Shader& shader, const Transform& tf) const {
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
+    shader.ActivateSamplers();
     OGLDrawDefault(VAO, indices.size(), vertices.size());
 }
 void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
@@ -139,6 +140,7 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
+    shader.ActivateSamplers();
     OGLDrawDefault(VAO, indices.size(), vertices.size());
 }
 
@@ -156,7 +158,8 @@ void Mesh::DrawInstanced(const Shader& shader, const std::vector<Transform>& tra
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
-
+    shader.ActivateSamplers();
+    
     // instance uniforms
     shader.setUniform("numInstances", (s32)transforms.size());
     for (u32 i = 0; i < transforms.size(); i++) {

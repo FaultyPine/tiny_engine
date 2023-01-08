@@ -70,7 +70,7 @@ uniform Light lights[MAX_LIGHTS];
 uniform int numActiveLights;
 uniform vec3 viewPos;
 uniform sampler2D depthMap;
-uniform float ambientLightIntensity = 0.6;
+uniform float ambientLightIntensity = 0.15;
 
 vec3 GetViewDir() {
     return normalize(viewPos - fragPositionWS);

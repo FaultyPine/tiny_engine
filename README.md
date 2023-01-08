@@ -35,7 +35,7 @@ Features:
         - grass spawning algorithm
     - waterfall flowing into pond
         - waterfall shader/mesh/particles
-
+- PBR shading
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc objects

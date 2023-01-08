@@ -74,24 +74,24 @@ void ShadowMap::BeginRender() const {
     // cull front faces when rendering to depth tex
     glCullFace(GL_FRONT);
 }
-void ShadowMap::RenderToShadowMap(const Light& light, Model& model, const Transform& tf, s32 depthTexTextureUnit) const {
-    depthShader.use();
-    glm::mat4 lightMat = light.GetLightViewProjMatrix();
-    glm::mat4 modelMat = tf.ToModelMatrix();
-    glm::mat4 mvp = lightMat * modelMat;
-    SetShadowUniforms(model.cachedShader, light, depthTexTextureUnit);
-    // draw model to depth tex/fb
-    model.Draw(depthShader, mvp, modelMat);
-}
 void ShadowMap::EndRender() const {
     // reset cull mode
     glCullFace(GL_BACK);
     // bind default fb
     Framebuffer::BindDefaultFrameBuffer();
 }
-void ShadowMap::SetShadowUniforms(const Shader& shader, const Light& light, s32 depthTexTextureUnit) const {
+void SetShadowUniforms(Shader& shader, const Light& light, const Framebuffer& fb) {
     shader.use();
-    fb.GetTexture().bindUnit(depthTexTextureUnit);
-    shader.setUniform("depthMap", depthTexTextureUnit);
+    shader.TryAddSampler(fb.GetTexture(), "depthMap");
+    shader.ActivateSamplers();
     shader.setUniform("lightSpaceMatrix", light.GetLightViewProjMatrix());
+}
+void ShadowMap::RenderToShadowMap(const Light& light, Model& model, const Transform& tf) const {
+    depthShader.use();
+    glm::mat4 lightMat = light.GetLightViewProjMatrix();
+    glm::mat4 modelMat = tf.ToModelMatrix();
+    glm::mat4 mvp = lightMat * modelMat;
+    SetShadowUniforms(model.cachedShader, light, fb);
+    // draw model to depth tex/fb
+    model.Draw(depthShader, mvp, modelMat);
 }
