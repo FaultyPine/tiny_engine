@@ -12,6 +12,7 @@ namespace Math {
 
 bool isOverlappingRectSize2D(const glm::vec2& pos1, const glm::vec2& size1, const glm::vec2& pos2, const glm::vec2& size2);
 bool isOverlappingRect2D(const glm::vec2& startPos1, const glm::vec2& endPos1, const glm::vec2& startPos2, const glm::vec2& endPos2);
+bool isPointInRectangle(const glm::vec2& point, const glm::vec2& rectStart, const glm::vec2& rectEnd);
 bool isPositionNear(const glm::vec2& pos1, const glm::vec2& pos2, f32 dist);
 
 f32 Lerp(f32 a, f32 b, f32 t);

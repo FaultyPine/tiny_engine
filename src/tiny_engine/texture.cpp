@@ -62,7 +62,7 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
     return ret;
 }
 
-// TODO: use optional type for return value
+// Note: May crash with invalid path/image. Should this return an optional?
 Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props, 
                     TextureMaterialType texType, 

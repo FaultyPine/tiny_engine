@@ -75,11 +75,6 @@ struct Shader {
         if (loc != -1) GLCall(glFunc(loc, val1, val2, val3, val4));                                                 \
     }
 
-    // TODO: Decide whether or not to include an implementation for
-    // f64. As of now, there'll be a weird looking error if you try to
-    // pass a double to setUniform. Could generate a normal glUniformXf
-    // impl for it, but that would implicit cast and lose precision without
-    // anyone knowing.....
 
     DECLARE_SET_UNIFORM_FUNC1(glUniform1f, f32)
     DECLARE_SET_UNIFORM_FUNC1(glUniform1i, s32)

@@ -18,6 +18,11 @@ bool isOverlappingRect2D(const glm::vec2& startPos1, const glm::vec2& endPos1, c
         return false;
     return true;
 }
+bool isPointInRectangle(const glm::vec2& point, const glm::vec2& rectStart, const glm::vec2& rectEnd) {
+    if (point.x > rectStart.x && point.x < rectEnd.x && point.y > rectStart.y && point.y < rectEnd.y)
+        return true;
+    return false;
+}
 
 bool isPositionNear(const glm::vec2& pos1, const glm::vec2& pos2, f32 dist) {
     return glm::distance(pos1, pos2) <= dist;

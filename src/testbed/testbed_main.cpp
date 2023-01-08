@@ -172,10 +172,6 @@ void drawGameState() {
         if (light.type == LIGHT_DIRECTIONAL)
             Shapes3D::DrawLine(light.position, light.position + glm::normalize(light.target-light.position), {1.0, 1.0, 1.0, 1.0});
     }
-
-    #if 0
-    Shapes3D::DrawLine(gs.grassSpawnExclusion.max, gs.grassSpawnExclusion.min, glm::vec4(0,0,0,1), 2.0f);
-    #endif
 }
 
 glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
@@ -201,15 +197,18 @@ void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, co
     for (u32 i = 0; i < numGrassInstancesToSpawn; i++) {
         glm::vec2 randomPointBetweenVerts = glm::vec2(0);
         // pick random point. If point is within "excluded" region, pick another point
-        while (randomPointBetweenVerts == glm::vec2(0) || Math::isOverlappingRect2D(exclusionMax, exclusionMin, randomPointBetweenVerts, randomPointBetweenVerts+spawnNeighborLeniency)) {            
+        do {
             glm::vec3 point = RandomPointBetweenVertices(planeVerts);
             randomPointBetweenVerts = glm::vec2(point.x, point.z);
-        }
+        } while (Math::isPointInRectangle(randomPointBetweenVerts, exclusionMin, exclusionMax));
         grassTransforms.push_back(Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(0.5)));
     }
 }
 
 void init_grass(GameState& gs) {
+    // area where grass CANNOT spawn
+    gs.grassSpawnExclusion = BoundingBox({-5.39, 8, -0.43}, 
+                                         {6.67, 8, 6.9});
     //  init grass transforms
     WorldEntity* islandModel = gs.GetEntity("island");
     if (islandModel) {
@@ -224,8 +223,6 @@ void init_grass(GameState& gs) {
     Model grassModel = Model(grassShader, ResPath("other/island_wip/grass2.obj").c_str(), ResPath("other/island_wip/").c_str());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
-    // area where grass CANNOT spawn
-    gs.grassSpawnExclusion = BoundingBox({5.4,8,6.83}, {-4.53,8,-0.52});
 }
 
 void init_main_pond(GameState& gs) {
@@ -256,7 +253,7 @@ void testbed_init() {
     gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "island"));
     
     Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
-    gs.entities.emplace_back(WorldEntity(Transform({10,7.5,3}), treeModel, "tree"));
+    gs.entities.emplace_back(WorldEntity(Transform({10,7.5,3}, glm::vec3(0.7)), treeModel, "tree"));
 
     // Init water
     init_main_pond(gs);
@@ -287,6 +284,7 @@ void testbed_tick() {
     drawGameState();
     drawImGuiDebug();
 
+    // red is x, green is y, blue is z
     Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
