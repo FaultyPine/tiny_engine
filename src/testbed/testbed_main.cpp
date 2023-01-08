@@ -149,7 +149,7 @@ void drawGameState() {
             waveShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
             waveShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
         }
-        gs.waterTexture.bindUnit(0);
+        waveShader.ActivateSamplers();
         gs.waveEntity.model.Draw(gs.waveEntity.transform);
     }
 
@@ -165,9 +165,23 @@ void drawGameState() {
     }
 
     #if 0
-    Shapes3D::DrawLine(gs.grassSpawnInclusion.min, gs.grassSpawnInclusion.max);
     Shapes3D::DrawLine(gs.grassSpawnExclusion.max, gs.grassSpawnExclusion.min, glm::vec4(0,0,0,1), 2.0f);
     #endif
+}
+
+glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
+    // pick two verts and pick a random spot between those two points to spawn it in
+    u32 randPointIdx1 = GetRandom(0, planeVerts.size());
+    u32 randPointIdx2 = GetRandom(0, planeVerts.size());
+    while (randPointIdx2 == randPointIdx1) {
+        // don't pick two of the same vertex
+        randPointIdx2 = GetRandom(0, planeVerts.size());
+    }
+    const Vertex& vert1 = planeVerts.at(randPointIdx1);
+    const Vertex& vert2 = planeVerts.at(randPointIdx2);
+    // after picking two random vertices, pick a random amount [0,1] and lerp between those to find this "random" grass spawn position
+    glm::vec3 point = Math::Lerp(vert1.position, vert2.position, GetRandomf(0.0f, 1.0f));
+    return point;
 }
 
 void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, const std::vector<Vertex>& planeVerts, std::vector<Transform>& grassTransforms, u32 numGrassInstancesToSpawn) {
@@ -178,18 +192,8 @@ void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, co
     for (u32 i = 0; i < numGrassInstancesToSpawn; i++) {
         glm::vec2 randomPointBetweenVerts = glm::vec2(0);
         // pick random point. If point is within "excluded" region, pick another point
-        while (randomPointBetweenVerts == glm::vec2(0) || Math::isOverlappingRect2D(exclusionMax, exclusionMin, randomPointBetweenVerts, randomPointBetweenVerts+spawnNeighborLeniency)) {
-            // pick two verts and pick a random spot between those two points to spawn it in
-            u32 randPointIdx1 = GetRandom(0, planeVerts.size());
-            u32 randPointIdx2 = GetRandom(0, planeVerts.size());
-            while (randPointIdx2 == randPointIdx1) {
-                // don't pick two of the same vertex
-                randPointIdx2 = GetRandom(0, planeVerts.size());
-            }
-            const Vertex& vert1 = planeVerts.at(randPointIdx1);
-            const Vertex& vert2 = planeVerts.at(randPointIdx2);
-            // after picking two random vertices, pick a random amount [0,1] and lerp between those to find this "random" grass spawn position
-            glm::vec3 point = Math::Lerp(vert1.position, vert2.position, GetRandomf(0.0f, 1.0f));
+        while (randomPointBetweenVerts == glm::vec2(0) || Math::isOverlappingRect2D(exclusionMax, exclusionMin, randomPointBetweenVerts, randomPointBetweenVerts+spawnNeighborLeniency)) {            
+            glm::vec3 point = RandomPointBetweenVertices(planeVerts);
             randomPointBetweenVerts = glm::vec2(point.x, point.z);
         }
         grassTransforms.push_back(Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(0.5)));
@@ -197,16 +201,7 @@ void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, co
 }
 
 void init_grass(GameState& gs) {
-    Shader grassShader = Shader(ResPath("shaders/grass.vs").c_str(), ResPath("shaders/grass.fs").c_str());
-    Model grassModel = Model(grassShader, ResPath("other/island_wip/grass_blade.obj").c_str(), ResPath("other/island_wip/").c_str());
-    Transform grassTf = Transform({0,0,0}, {1,1,1});
-    gs.grass = WorldEntity(grassTf, grassModel, "grass");
     //  init grass transforms
-    // area where grass CAN spawn
-    gs.grassSpawnInclusion = BoundingBox();
-    // area where grass CANNOT spawn
-    gs.grassSpawnExclusion = BoundingBox({5.4,8,6.83}, {-4.53,8,-0.52});
-    
     WorldEntity* islandModel = gs.GetEntity("island");
     if (islandModel) {
         Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
@@ -216,10 +211,20 @@ void init_grass(GameState& gs) {
         }
     }
 
+    Shader grassShader = Shader(ResPath("shaders/grass.vs").c_str(), ResPath("shaders/grass.fs").c_str());
+    Model grassModel = Model(grassShader, ResPath("other/island_wip/grass2.obj").c_str(), ResPath("other/island_wip/").c_str());
+    Transform grassTf = Transform({0,0,0}, {1,1,1});
+    gs.grass = WorldEntity(grassTf, grassModel, "grass");
+    // area where grass CANNOT spawn
+    gs.grassSpawnExclusion = BoundingBox({5.4,8,6.83}, {-4.53,8,-0.52});
 }
 
 void init_main_pond(GameState& gs) {
     Shader waterShader = Shader(ResPath("shaders/water.vs").c_str(), ResPath("shaders/water.fs").c_str());
+    waterShader.use();
+    waterShader.setUniform("numActiveWaves", 3);
+    gs.waterTexture = LoadTexture(ResPath("other/water.png"));
+    waterShader.AddSampler(gs.waterTexture, "waterTexture");
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
     WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "waterPlane");
@@ -227,10 +232,6 @@ void init_main_pond(GameState& gs) {
     gs.waves[0] = Wave(0.2, 8.7, 0.05, glm::vec2(1,1));
     gs.waves[1] = Wave(0.5, 2.0, 0.09, glm::vec2(0,1));
     gs.waves[2] = Wave(0.8, 1.0, 0.1, glm::vec2(1,0.4));
-    waterShader.use();
-    waterShader.setUniform("numActiveWaves", 3);
-    gs.waterTexture = LoadTexture(ResPath("other/water.png"));
-    waterShader.setUniform("waterTexture", 0);
 }
 
 void testbed_init() {
@@ -265,7 +266,7 @@ void testbed_tick() {
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
-    //testbed_orbit_light(mainLight, 35, 25, 0.2);
+    testbed_orbit_light(mainLight, 35, 25, 0.2);
 
     // render normal scene
     #if 0

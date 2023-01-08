@@ -18,13 +18,14 @@ void Mesh::Delete() {
     GLCall(glDeleteVertexArrays(1, &VAO));
     GLCall(glDeleteBuffers(1, &VBO));
     GLCall(glDeleteBuffers(1, &EBO));
-    for (auto& m : materials) {
+    for (Material& m : materials) {
         m.Delete();
     }
 }
 
-void ConfigureVertexAttrib(u32 attributeLoc, u32 attributeSize, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
-    GLCall(glVertexAttribPointer(attributeLoc, attributeSize, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+void ConfigureVertexAttrib(u32 attributeLoc, u32 attributeSizeBytes, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
+    // this retrieves the value of GL_ARRAY_BUFFER (VBO) and associates it with the current VAO
+    GLCall(glVertexAttribPointer(attributeLoc, attributeSizeBytes, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
     // glEnableVertexAttribArray enables vertex attribute for currently bound vertex array object
     // glEnableVertexArrayAttrib ^ but you provide the vertex array obj explicitly
     GLCall(glEnableVertexAttribArray(attributeLoc));
@@ -43,13 +44,14 @@ void Mesh::initMesh() {
         GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
     }
 
-    // put data into buffers
+    // put data into VBO
     GLCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));  
     if (!indices.empty()) {
         GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW));
     }
 
-    // tell ogl where vertex attributes are
+    // bind vertex attributes to VAO
+    // also stores reference to VBO when glVertexAttribPointer is called
     ConfigureVertexAttrib( // vert positions
         0, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
     ConfigureVertexAttrib( // vert normals
@@ -167,8 +169,7 @@ void Mesh::DrawInstanced(const Shader& shader, const std::vector<Transform>& tra
 }
 
 
-BoundingBox Mesh::GetMeshBoundingBox()
-{
+BoundingBox Mesh::GetMeshBoundingBox() {
     // Get min and max vertex to construct bounds (AABB)
     glm::vec3 minVertex = glm::vec3(0);
     glm::vec3 maxVertex = glm::vec3(0);

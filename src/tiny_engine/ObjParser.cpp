@@ -31,7 +31,10 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
             prop.color = vec4(colorvec, mat.dissolve);
         }
         if (!texnames[i]->empty()) {
-            prop.texture = LoadTexture(texdir + *texnames[i]);
+            // Assume that textures are stored in "texdir"
+            std::string filename = std::filesystem::path(*texnames[i]).filename().string();
+            std::string path = std::filesystem::path(texdir).append(filename).string();
+            prop.texture = LoadTexture(path);
             prop.texture.type = types[i];
             prop.hasTexture = true;
         }
@@ -94,11 +97,6 @@ Vertex GetVertexFromTinyIdx(const tinyobj::index_t& tinyobjIdx, const tinyobj::a
     return v;
 }
 Mesh MeshConvert(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const std::vector<Material>& allMaterials) {
-
-    // assert all material id's are the same... not currently supporting different materials on a single mesh
-    bool isOnlyOneMaterialUsed = shape.mesh.material_ids.empty() || std::equal(shape.mesh.material_ids.begin() + 1, shape.mesh.material_ids.end(), shape.mesh.material_ids.begin());
-    ASSERT("Multiple materials not supported for single mesh" && isOnlyOneMaterialUsed);
-
     std::vector<Material> materials = {};
     std::vector<s32> usedMaterialIds = {};
     std::vector<Vertex> vertices = {};

@@ -21,9 +21,8 @@ out vec2 fragTexCoord;
 //out vec4 fragColor;
 //out vec3 fragNormalWS;
 //out vec4 fragPosLightSpace;
-//flat out int materialId;
+flat out int materialId;
 //out vec3 fragPositionOS;
-flat out int instanceID;
 
 float cnoise(vec2 P);
 
@@ -33,7 +32,7 @@ float GetGrassSway() {
     // -------- vertex displacement ------------
     float perlinNoise = cnoise(vec2(time*speed-gl_InstanceID));
 
-    float height = vertexTexCoord.y;
+    float height = pow(vertexTexCoord.y, 4);
     float sway = perlinNoise * height * strength;
     return sway;
 }
@@ -53,16 +52,16 @@ mat4 Billboard(mat4 modelViewMat) {
 
 void main()
 {
-    instanceID = gl_InstanceID;
     mat4 modelMat = instanceModelMats[gl_InstanceID];
     mat4 modelView = viewMat * modelMat;
-    modelView = Billboard(modelView);
+    //modelView = Billboard(modelView);
     mat4 mvp = projectionMat * modelView;
     
     vec3 vertPos = vertexPosition;
     vertPos.xz += GetGrassSway();
 
     fragTexCoord = vertexTexCoord;
+    materialId = vertexMaterialId;
 
     gl_Position = mvp*vec4(vertPos, 1.0);
 }

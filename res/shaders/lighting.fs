@@ -70,7 +70,7 @@ uniform Light lights[MAX_LIGHTS];
 uniform int numActiveLights;
 uniform vec3 viewPos;
 uniform sampler2D depthMap;
-const float ambientLightIntensity = 0.07;
+uniform float ambientLightIntensity = 0.6;
 
 vec3 GetViewDir() {
     return normalize(viewPos - fragPositionWS);
@@ -123,10 +123,8 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
 }
 
 vec3 calculateLighting() {
-    // Texel color fetching from texture sampler
-    vec3 diffuseColor = GetDiffuseMaterial().rgb;
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
-    vec3 ambientLight = GetAmbientMaterial().rgb * diffuseColor * ambientLightIntensity;
+    vec3 ambientLight = GetAmbientMaterial().rgb * ambientLightIntensity;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
@@ -173,18 +171,22 @@ vec3 calculateLighting() {
     float shadow = GetShadow(fragPosLightSpace, sunLightDir, normal);
     vec3 lighting = shadow * (specularLight + diffuseLight);
     lighting += ambientLight; // add ambient on top of everything
-    return lighting * diffuseColor;
+    return lighting;
 }
 // =========================================================================
 
 
 void main() {
+    // Texel color fetching from texture sampler
+    vec3 diffuseColor = GetDiffuseMaterial().rgb;
 
     // colored lighting
-    vec4 lighting = vec4(calculateLighting(), 1.0); // lighting always has 1 for alpha
+    vec3 lighting = calculateLighting();
+    vec3 col = lighting * diffuseColor;
+    float alpha = 1.0;
 
     // lighting includes diffuse, specular, and ambient light along with base diffuse color
-    finalColor = lighting;
+    finalColor = vec4(col, alpha);
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));
