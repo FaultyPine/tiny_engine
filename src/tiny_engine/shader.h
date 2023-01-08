@@ -2,29 +2,35 @@
 #define SHADER_H
 
 #include "pch.h"
-
-// cachedUniformLocs is a map with keys being the shader ID and value being a
-// map of uniform names mapped to uniform locations
-
-// the alternative to this is having each shader carry it's cached uniforms map
-// to prevent uniform name collisions, but i'd like to keep the shader class as a
-// fancy wrapper on just the u32 ID
-
-
+#include "texture.h"
 
 struct Shader {
-    u32 ID;
+    u32 ID = 0;
+    #define MAX_SAMPLERS 32
+    // shaders store their own textures. TODO: make this a shared ptr to a texture
+    s32 samplerIds[MAX_SAMPLERS] = {0};
+    s32 currentSamplerUnit = 0;
+
 
     Shader() { ID = 0; }
     Shader(u32 id) { ID = id; }
-
-
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
+
     void Delete() const { glDeleteProgram(ID); }
     bool isValid() const { return ID != 0; }
     /// Takes vertex/fragment shader code (as a string)
     static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) {
         return Shader(CreateShaderProgFromStr(vsCodeStr, fsCodeStr));
+    }
+    inline void ActivateSamplers() {
+        for (s32 i = 0; i < currentSamplerUnit; i++) {
+            Texture::bindUnit(i, samplerIds[i]);
+        }
+    }
+    inline void AddSampler(const Texture& texture, const char* uniformName) {
+        setUniform(uniformName, currentSamplerUnit);
+        samplerIds[currentSamplerUnit] = texture.id;
+        currentSamplerUnit++;
     }
 
     // use/activate the shader

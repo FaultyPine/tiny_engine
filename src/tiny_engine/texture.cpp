@@ -1,4 +1,5 @@
 #include "texture.h"
+#include "shader.h"
 
 
 std::string GetTexMatTypeString(TextureMaterialType type) {

@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "stb_image.h"
-#include "tiny_engine/shader.h"
 
 enum TextureMaterialType {
     DIFFUSE = 0,
@@ -118,6 +117,11 @@ struct Texture {
         bind();
         activate(0);
     }
+    static void bindUnit(u32 textureUnit, u32 id) {
+        activate(textureUnit);
+        GLCall(glBindTexture(GL_TEXTURE_2D, id));
+        activate(0);
+    }
     void bind() const { GLCall(glBindTexture(GL_TEXTURE_2D, id)); }
     static void activate(u32 textureUnit) { GLCall(glActiveTexture(GL_TEXTURE0 + textureUnit)); }
 };
@@ -132,6 +136,7 @@ struct MaterialProp {
     }
     void Delete() { texture.Delete(); }
 };
+struct Shader;
 struct Material {
     MaterialProp diffuseMat = {};
     MaterialProp ambientMat = {};
