@@ -16,13 +16,13 @@ Features:
 - sprite rendering
 - spritesheet parsing/animating
 - .obj file parsing/mesh rendering
-- 2d vector shape drawing (sqaures, circles, lines)
+- 2d vector shape drawing (squares, circles, lines)
 - deterministic randomness
 
 ### TODO:
 - Learn how to use Perforce
 - make sure pch works with msvc
-- instancing
+- ~~instancing~~
 - 3D particles
 - Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units
 - Try making the island/waterfall scene!
@@ -33,12 +33,15 @@ Features:
     - ~~pond -> water (shader/mesh/tex/etc)~~
     - grass on island
         - grass spawning algorithm
-            - blue noise + "grass area" <- polygon? list of circles?
     - waterfall flowing into pond
         - waterfall shader/mesh/particles
 
+- Resource system
+    - load from filesystem
+    - store things like Shader, Mesh, Model, etc objects
+    - allow access to these things through shared pointers
 
-- HDR & Bloom
+- HDR/Tonemapping & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
