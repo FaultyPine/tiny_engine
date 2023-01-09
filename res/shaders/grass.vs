@@ -6,9 +6,10 @@ layout (location = 1) in vec3 vertexNormal;
 layout (location = 2) in vec2 vertexTexCoord;
 layout (location = 3) in vec4 vertexColor;
 layout (location = 4) in int  vertexMaterialId;
+layout (location = 5) in mat4 instanceModelMat;
 
 // Input uniform values
-uniform mat4 instanceModelMats[100];
+//uniform mat4 instanceModelMats[100];
 uniform int numInstances;
 uniform mat4 viewMat;
 uniform mat4 projectionMat;
@@ -52,7 +53,10 @@ mat4 Billboard(mat4 modelViewMat) {
 
 void main()
 {
-    mat4 modelMat = instanceModelMats[gl_InstanceID];
+    //mat4 modelMat = instanceModelMats[gl_InstanceID];
+    mat4 modelMat = instanceModelMat;
+    
+    
     mat4 modelView = viewMat * modelMat;
     //modelView = Billboard(modelView);
     mat4 mvp = projectionMat * modelView;

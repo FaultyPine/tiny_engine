@@ -23,12 +23,32 @@ void Mesh::Delete() {
     }
 }
 
-void ConfigureVertexAttrib(u32 attributeLoc, u32 attributeSizeBytes, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
+void ConfigureVertexAttrib(u32 attributeLoc, u32 numComponentsInType, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
     // this retrieves the value of GL_ARRAY_BUFFER (VBO) and associates it with the current VAO
-    GLCall(glVertexAttribPointer(attributeLoc, attributeSizeBytes, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+    GLCall(glVertexAttribPointer(attributeLoc, numComponentsInType, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
     // glEnableVertexAttribArray enables vertex attribute for currently bound vertex array object
     // glEnableVertexArrayAttrib ^ but you provide the vertex array obj explicitly
     GLCall(glEnableVertexAttribArray(attributeLoc));
+}
+
+void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) {
+    if (instanceVBO != 0) return;
+    GLCall(glBindVertexArray(VAO));
+
+    GLCall(glGenBuffers(1, &instanceVBO));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanceVBO));
+    GLCall(glBufferData(GL_ARRAY_BUFFER, sizeofSingleComponent*numComponents, instanceDataBuffer, GL_STATIC_DRAW));
+
+    u32 numFloatsInComponent = sizeofSingleComponent / 16;
+    u32 instancedVertexAttribute = 5;
+    for (usize i = 0; i < numFloatsInComponent; i++) {
+        ConfigureVertexAttrib( // instance data
+            instancedVertexAttribute+i, numFloatsInComponent, GL_FLOAT, false, sizeofSingleComponent, (void*)(i*16));
+        GLCall(glVertexAttribDivisor(instancedVertexAttribute+i, 1));  // update vertex attribute on every new instance of the mesh, not on every vertex
+    }
+
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCall(glBindVertexArray(0));
 }
 
 void Mesh::initMesh() {
@@ -63,7 +83,8 @@ void Mesh::initMesh() {
     ConfigureVertexAttrib( // material id
         4, 1, GL_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialId));
 
-    // unbind vert array
+    // unbind
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
     GLCall(glBindVertexArray(0));
 }
 
@@ -147,6 +168,7 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
 
 void Mesh::DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms) const {
     ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    ASSERT(instanceVBO != 0 && "Tried to instance mesh that has not had EnableInstance called");
     if (!isVisible) return;
 
     shader.use();
@@ -162,11 +184,11 @@ void Mesh::DrawInstanced(const Shader& shader, const std::vector<Transform>& tra
     
     // instance uniforms
     shader.setUniform("numInstances", (s32)transforms.size());
-    for (u32 i = 0; i < transforms.size(); i++) {
+    /*for (u32 i = 0; i < transforms.size(); i++) {
         const Transform& tf = transforms.at(i);
         glm::mat4 model = tf.ToModelMatrix();
         shader.setUniform(TextFormat("instanceModelMats[%i]", i), model);
-    }
+    }*/
 
     OGLDrawInstanced(VAO, indices.size(), vertices.size(), transforms.size());
 }

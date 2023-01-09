@@ -22,6 +22,7 @@ struct Vertex {
 };
 struct Mesh {
     u32 VAO, VBO, EBO; // vert array obj, vert buf obj, element buf obj
+    u32 instanceVBO; // extra vert data for instanced rendering
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
     //std::vector<Texture> textures = {};
@@ -44,6 +45,7 @@ struct Mesh {
     // draw mesh with specified shader
     void Draw(const Shader& shader, const Transform& tf) const;
     void Draw(const Shader& shader, const glm::mat4& mvp) const;
+    void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
     void DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms) const;
    
 private:    

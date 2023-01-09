@@ -22,7 +22,9 @@ Features:
 ### TODO:
 - Learn how to use Perforce
 - make sure pch works with msvc
-- ~~instancing~~
+- instancing
+    - allow data to be passed through extra vertex attributes
+        "Instanced arrays" section: https://learnopengl.com/Advanced-OpenGL/Instancing
 - 3D particles
 - Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units
 - Try making the island/waterfall scene!

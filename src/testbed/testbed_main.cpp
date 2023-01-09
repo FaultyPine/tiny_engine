@@ -215,12 +215,18 @@ void init_grass(GameState& gs) {
         Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
         if (grassSpawnMesh) {
             grassSpawnMesh->isVisible = false;
-            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 100);
+            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 400);
         }
     }
 
     Shader grassShader = Shader(ResPath("shaders/grass.vs").c_str(), ResPath("shaders/grass.fs").c_str());
     Model grassModel = Model(grassShader, ResPath("other/island_wip/grass2.obj").c_str(), ResPath("other/island_wip/").c_str());
+    glm::mat4* transformMatrices = new glm::mat4[gs.grassTransforms.size()];
+    for (u32 i = 0; i < gs.grassTransforms.size(); i++) {
+        transformMatrices[i] = gs.grassTransforms.at(i).ToModelMatrix();
+    }
+    grassModel.EnableInstancing(transformMatrices, sizeof(glm::mat4), gs.grassTransforms.size());
+    delete transformMatrices;
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
 }

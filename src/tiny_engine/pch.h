@@ -49,6 +49,8 @@ typedef unsigned long u64;
 typedef long s64;
 typedef float f32;
 typedef double f64;
+typedef unsigned long long usize;
+typedef signed long long isize;
 #define PATH_MAX 260
 
 // debug
