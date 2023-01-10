@@ -22,9 +22,8 @@ Features:
 ### TODO:
 - Learn how to use Perforce
 - make sure pch works with msvc
-- instancing
-    - allow data to be passed through extra vertex attributes
-        "Instanced arrays" section: https://learnopengl.com/Advanced-OpenGL/Instancing
+- ~~instancing~~
+    - ~~allow data to be passed through extra vertex attributes~~
 - 3D particles
 - Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units
 - Try making the island/waterfall scene!
@@ -33,8 +32,8 @@ Features:
     - Make rock bigger, waterfall starts high up - mostly out of view
     - ~~pond in middle~~, area near pond is green, rest of island is white
     - ~~pond -> water (shader/mesh/tex/etc)~~
-    - grass on island
-        - grass spawning algorithm
+    - ~~grass on island~~
+        - ~~grass spawning algorithm~~
     - waterfall flowing into pond
         - waterfall shader/mesh/particles
 - PBR shading
