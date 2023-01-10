@@ -57,7 +57,7 @@ struct GameState {
     
     // grass
     WorldEntity grass;
-    std::vector<Transform> grassTransforms = {};
+    std::vector<glm::mat4> grassTransforms = {};
     BoundingBox grassSpawnExclusion = {};
 
     // shadows/depth tex

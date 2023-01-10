@@ -99,7 +99,7 @@ void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& mo
 }
 
 
-void Model::DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms, const std::vector<Light>& lights) const {
+void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights) const {
     // this is hardcoded in the (grass) shader right now. 
     // TODO: refactor instancing to put instance-relevant data in a vertex attribute
     // instead of relying on gl_InstanceID to index into big uniform arrays
@@ -121,7 +121,7 @@ void Model::DrawInstanced(const Shader& shader, const std::vector<Transform>& tr
         }
         shader.setUniform("numActiveLights", (s32)lights.size());
 
-        mesh.DrawInstanced(shader, transforms);
+        mesh.DrawInstanced(shader, numInstances);
     }
 }
 

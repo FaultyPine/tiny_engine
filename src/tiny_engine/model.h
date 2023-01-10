@@ -24,9 +24,9 @@ struct Model {
     }
     
     // instanced drawing
-    void DrawInstanced(const Shader& shader, const std::vector<Transform>& transforms, const std::vector<Light>& lights = {}) const;
-    void DrawInstanced(const std::vector<Transform>& transforms, const std::vector<Light>& lights = {}) const {
-        DrawInstanced(cachedShader, transforms, lights);
+    void DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights = {}) const;
+    void DrawInstanced(u32 numInstances, const std::vector<Light>& lights = {}) const {
+        DrawInstanced(cachedShader, numInstances, lights);
     }
     void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) {
         for (Mesh& m : meshes) m.EnableInstancing(instanceDataBuffer, sizeofSingleComponent, numComponents);

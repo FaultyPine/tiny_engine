@@ -30,9 +30,7 @@ float cnoise(vec2 P);
 float GetGrassSway() {
     float speed = 0.5;
     float strength = 0.5;
-    // -------- vertex displacement ------------
     float perlinNoise = cnoise(vec2(time*speed-gl_InstanceID));
-
     float height = pow(vertexTexCoord.y, 4);
     float sway = perlinNoise * height * strength;
     return sway;
