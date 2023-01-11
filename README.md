@@ -20,10 +20,10 @@ Features:
 - deterministic randomness
 
 Written with this engine:  
-[Part Of The Pack](https://faultypine.itch.io/part-of-the-pack)
-![image](https://user-images.githubusercontent.com/53064235/211900902-6c979f44-357a-4449-adf0-40598d9a7edb.png)
-Simple nature scene I used to implement & test 3D features
-![Capture](https://user-images.githubusercontent.com/53064235/211901373-47841a5b-5ea7-49e9-afac-28dd2b46d4aa.PNG)
+[Part Of The Pack](https://faultypine.itch.io/part-of-the-pack)  
+![image](https://user-images.githubusercontent.com/53064235/211900902-6c979f44-357a-4449-adf0-40598d9a7edb.png)  
+Simple nature scene I used to implement & test 3D features  
+![Capture](https://user-images.githubusercontent.com/53064235/211901373-47841a5b-5ea7-49e9-afac-28dd2b46d4aa.PNG)  
 
 
 
