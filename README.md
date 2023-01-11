@@ -58,8 +58,9 @@ Features:
 - Event system
 - ~~Job System (threading)~~
     - lock free queue: https://jbseg.medium.com/lock-free-queues-e48de693654b
-- Intrusive profiling API - using chrome://tracing as the visualizing backend
+- ~~Intrusive profiling API - using chrome://tracing as the visualizing backend~~
     - https://perfetto.dev/docs/instrumentation/tracing-sdk
+    - https://gist.github.com/TheCherno/31f135eea6ee729ab5f26a6908eb3a5e
 
 
 

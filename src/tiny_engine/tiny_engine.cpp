@@ -9,6 +9,7 @@
 #include "input.h"
 #include "sprite.h"
 #include "math.h"
+#include "tiny_profiler.h"
 
 
 static f32 deltaTime = 0.0f;
@@ -28,6 +29,7 @@ void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
 void TerminateGame() {
     GLTTerminate();
     glfwTerminate();
+    Profiler::Instance().endSession();
 }
 void OverwriteRandomSeed(u64 seed) {
     randomSeed = seed;
@@ -123,6 +125,8 @@ bool ShouldCloseWindow() {
 }
 
 void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName) {
+    Profiler::Instance().beginSession("Profile");
+
     s8 cwd[PATH_MAX];
     #ifdef _MSC_VER
     std::cout << "CWD: " << getcwd(cwd, PATH_MAX) << "\n";

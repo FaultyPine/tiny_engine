@@ -13,6 +13,7 @@
 #include "tiny_engine/external/imgui/tiny_imgui.h"
 #include "tiny_engine/model.h"
 #include "tiny_engine/shapes.h"
+#include "tiny_engine/tiny_profiler.h"
 
 void testbed_inputpoll() {
     Camera& cam = Camera::GetMainCamera();
@@ -118,6 +119,7 @@ void drawImGuiDebug() {
 }
 
 void DepthPrePass() {
+    PROFILE_FUNCTION();
     GameState& gs = GameState::get();
     ShadowMap& shadowMap = gs.shadowMap;
     Sprite& depthSprite = gs.depthSprite; 
@@ -140,11 +142,16 @@ void DepthPrePass() {
 }
 
 void drawGameState() {
+    PROFILE_FUNCTION();
+
     DepthPrePass();
 
     GameState& gs = GameState::get();
-    for (auto& ent : gs.entities) {
-        ent.model.Draw(ent.transform, gs.lights);
+    {
+        PROFILE_SCOPE("EntityDrawing");
+        for (auto& ent : gs.entities) {
+            ent.model.Draw(ent.transform, gs.lights);
+        }
     }
 
     // Waves
@@ -164,6 +171,7 @@ void drawGameState() {
 
     // grass
     if (gs.grass.isValid()) {
+        PROFILE_SCOPE("GrassInstancing");
         gs.grass.model.DrawInstanced(gs.grassTransforms.size());
     }
 
@@ -207,6 +215,7 @@ void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, co
 }
 
 void init_grass(GameState& gs) {
+    PROFILE_FUNCTION();
     // area where grass CANNOT spawn
     gs.grassSpawnExclusion = BoundingBox({-5.39, 8, -0.43}, 
                                          {6.67, 8, 6.9});
@@ -243,6 +252,7 @@ void init_main_pond(GameState& gs) {
 }
 
 void testbed_init() {
+    PROFILE_FUNCTION();
     InitImGui();
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
@@ -256,6 +266,9 @@ void testbed_init() {
     
     Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({10,7.5,3}, glm::vec3(0.7)), treeModel, "tree"));
+    
+    Model bushModel = Model(lightingShader, ResPath("other/island_wip/bush.obj").c_str(), ResPath("other/island_wip/").c_str());
+    gs.entities.emplace_back(WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "tree"));
 
     // Init water
     init_main_pond(gs);
@@ -270,16 +283,14 @@ void testbed_init() {
     //gs.lights.push_back(meshPointLight);
 }
 
-
-void testbed_tick() {
-    GameState& gs = GameState::get();
+void testbed_gametick(GameState& gs) {
     testbed_inputpoll();
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
     testbed_orbit_light(mainLight, 55, 25, 0.2);
-
-    // render normal scene
+}
+void testbed_render(const GameState& gs) {
     #if 0
     SetWireframeDrawing(true);
     #endif
@@ -290,6 +301,13 @@ void testbed_tick() {
     Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
+}
+
+void testbed_tick() {
+    PROFILE_FUNCTION();
+    GameState& gs = GameState::get();
+    testbed_gametick(gs);
+    testbed_render(gs);
 }
 void testbed_terminate() {
     ImGuiTerminate();

@@ -10,3 +10,4 @@ build.ninja
 **/imgui.ini
 *.sln
 *.pdb
+profiler_results.json
