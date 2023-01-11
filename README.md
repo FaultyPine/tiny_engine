@@ -19,6 +19,11 @@ Features:
 - 2d vector shape drawing (squares, circles, lines)
 - deterministic randomness
 
+Written with this engine:  
+Part Of The Pack  
+![image](https://user-images.githubusercontent.com/53064235/211900902-6c979f44-357a-4449-adf0-40598d9a7edb.png)
+
+
 ### TODO:
 - Learn how to use Perforce
 - make sure pch works with msvc
