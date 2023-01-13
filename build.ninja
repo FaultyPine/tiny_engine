@@ -15,6 +15,7 @@ rule link
   description = LINK $out
 build $builddir/main.obj: compile src/main.cpp
 build $builddir/testbed_main.obj: compile src/testbed/testbed_main.cpp
+build $builddir/cubemap.obj: compile src/tiny_engine/cubemap.cpp
 build $builddir/framebuffer.obj: compile src/tiny_engine/framebuffer.cpp
 build $builddir/input.obj: compile src/tiny_engine/input.cpp
 build $builddir/job_system.obj: compile src/tiny_engine/job_system.cpp
@@ -25,6 +26,7 @@ build $builddir/ObjParser.obj: compile src/tiny_engine/ObjParser.cpp
 build $builddir/postprocessing.obj: compile src/tiny_engine/postprocessing.cpp
 build $builddir/shader.obj: compile src/tiny_engine/shader.cpp
 build $builddir/shapes.obj: compile src/tiny_engine/shapes.cpp
+build $builddir/skybox.obj: compile src/tiny_engine/skybox.cpp
 build $builddir/sprite.obj: compile src/tiny_engine/sprite.cpp
 build $builddir/spritesheet.obj: compile src/tiny_engine/spritesheet.cpp
 build $builddir/texture.obj: compile src/tiny_engine/texture.cpp
@@ -50,10 +52,11 @@ build $builddir/particles.obj: compile src/tiny_engine/particles/particles.cpp
 build $builddir/particle_behaviors.obj: compile $
     src/tiny_engine/particles/particle_behaviors.cpp
 build $builddir/TinyEngine.exe: link $builddir/main.obj $
-    $builddir/testbed_main.obj $builddir/framebuffer.obj $
-    $builddir/input.obj $builddir/job_system.obj $builddir/math.obj $
-    $builddir/mesh.obj $builddir/model.obj $builddir/ObjParser.obj $
-    $builddir/postprocessing.obj $builddir/shader.obj $builddir/shapes.obj $
+    $builddir/testbed_main.obj $builddir/cubemap.obj $
+    $builddir/framebuffer.obj $builddir/input.obj $builddir/job_system.obj $
+    $builddir/math.obj $builddir/mesh.obj $builddir/model.obj $
+    $builddir/ObjParser.obj $builddir/postprocessing.obj $
+    $builddir/shader.obj $builddir/shapes.obj $builddir/skybox.obj $
     $builddir/sprite.obj $builddir/spritesheet.obj $builddir/texture.obj $
     $builddir/tiny_audio.obj $builddir/tiny_engine.obj $
     $builddir/tiny_fs.obj $builddir/tiny_lights.obj $builddir/tiny_text.obj $

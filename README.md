@@ -32,19 +32,21 @@ Simple nature scene I used to implement & test 3D features
 - make sure pch works with msvc
 - ~~instancing~~
     - ~~allow data to be passed through extra vertex attributes~~
-- 3D particles
-- Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units
+- ~~Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units~~
 - Try making the island/waterfall scene!
     - ~~Floating island~~
     - ~~Rock for waterfall~~
-    - Make rock bigger, waterfall starts high up - mostly out of view
     - ~~pond in middle~~, area near pond is green, rest of island is white
     - ~~pond -> water (shader/mesh/tex/etc)~~
     - ~~grass on island~~
         - ~~grass spawning algorithm~~
-    - waterfall flowing into pond
+    - waterfall
+        - flowing into pond
+        - Make rock bigger, waterfall starts high up - mostly out of view
         - waterfall shader/mesh/particles
-- PBR shading
+            - 3D particles - extension of 2d particle system
+- ~~Skybox~~
+- PBR lighting???
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc objects
@@ -74,7 +76,7 @@ Simple nature scene I used to implement & test 3D features
 
 
 ## Personal Notes:
-- MTL:
+- MTL File Format:
 Ka: specifies ambient color     values between 0 and 1 for the RGB components.
 Kd: specifies diffuse color
 Ks: specifies specular color

@@ -106,7 +106,6 @@ struct Texture {
     // when we pass texture id to our shader, it needs to use the glUniform1i (<- signed) which is why this is s32 not u32
     s32 id = 0; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
     f32 width, height = 0.0;
-    TextureMaterialType type = TextureMaterialType::DIFFUSE;
     std::string texpath = "";
 
     Texture() {}
@@ -169,9 +168,7 @@ u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels
 
 Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props = TextureProperties::None(), 
-                    TextureMaterialType texType = TextureMaterialType::OTHER, 
                     bool flipVertically = false);
-Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, 
-                    TextureProperties props, TextureMaterialType texType = TextureMaterialType::DIFFUSE);
+Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props);
 
 #endif

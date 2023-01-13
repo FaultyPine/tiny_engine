@@ -46,6 +46,7 @@ struct Mesh {
     // draw mesh with specified shader
     void Draw(const Shader& shader, const Transform& tf) const;
     void Draw(const Shader& shader, const glm::mat4& mvp) const;
+    void MinimalDraw(const Shader& shader) const;
     void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
     void DrawInstanced(const Shader& shader, u32 numInstances) const;
    

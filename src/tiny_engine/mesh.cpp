@@ -43,6 +43,7 @@ void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent,
     // just send that into a vertex attribute as normal
     // but if its something like a mat4, it'll take up multiple
     // vertex attribute slots since we can only pass a max of 4 floats in one attribute
+    // TODO: verify this works for all data types (float, vec2/3/4, mat2/3/4)
     u32 numFloatsInComponent = sizeofSingleComponent / 4;
     u32 numVec4sInComponent = std::max(1u, numFloatsInComponent / 4);
     for (usize i = 0; i < numVec4sInComponent; i++) {
@@ -190,6 +191,13 @@ void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
     shader.setUniform("numInstances", (s32)numInstances);
 
     OGLDrawInstanced(VAO, indices.size(), vertices.size(), numInstances);
+}
+
+void Mesh::MinimalDraw(const Shader& shader) const {
+    ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    if (!isVisible) return;
+    shader.use();
+    OGLDrawDefault(VAO, indices.size(), vertices.size());
 }
 
 

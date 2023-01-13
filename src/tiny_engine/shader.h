@@ -28,12 +28,12 @@ struct Shader {
         }
     }
     /// attempts to add the texture to the sampler list. If the texture id alrady exists, does nothing
-    inline bool TryAddSampler(const Texture& texture, const char* uniformName) const {
+    inline bool TryAddSampler(s32 texture, const char* uniformName) const {
         std::vector<s32>& shaderSamplers = samplerIDs[ID];
         // don't add if this texture is already tracked
-        if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture.id) != shaderSamplers.end()) return false;
+        if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture) != shaderSamplers.end()) return false;
         // this sampler needs to be added
-        shaderSamplers.push_back(texture.id);
+        shaderSamplers.push_back(texture);
         use();
         setUniform(uniformName, (s32)shaderSamplers.size()-1);
         return true;

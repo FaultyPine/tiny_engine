@@ -82,7 +82,7 @@ void ShadowMap::EndRender() const {
 }
 void SetShadowUniforms(Shader& shader, const Light& light, const Framebuffer& fb) {
     shader.use();
-    shader.TryAddSampler(fb.GetTexture(), "depthMap");
+    shader.TryAddSampler(fb.GetTexture().id, "depthMap");
     shader.ActivateSamplers();
     shader.setUniform("lightSpaceMatrix", light.GetLightViewProjMatrix());
 }

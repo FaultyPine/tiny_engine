@@ -32,10 +32,9 @@ u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels
 }
 
 
-Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props, TextureMaterialType texType) {
+Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props) {
     u32 texture = 0;
     if (imgData) {
-        //std::cout << "Loaded img " << imgPath << "\n";
         GLCall(glGenTextures(1, &texture));
         GLCall(glBindTexture(GL_TEXTURE_2D, texture));
         // wrapping mode
@@ -56,7 +55,6 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
     }
     Texture ret;
     ret.id = texture;
-    ret.type = texType;
     ret.height = (u32)height;
     ret.width = (u32)width;
     return ret;
@@ -65,7 +63,6 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
 // Note: May crash with invalid path/image. Should this return an optional?
 Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props, 
-                    TextureMaterialType texType, 
                     bool flipVertically) {
     s32 width, height, numChannels;
     u8* data = LoadImageData(imgPath.c_str(), &width, &height, &numChannels, flipVertically);
@@ -73,7 +70,7 @@ Texture LoadTexture(const std::string& imgPath,
     if (props.isNone) {
         props = numChannels == 3 ? TextureProperties::RGB_LINEAR() : TextureProperties::RGBA_LINEAR();
     }
-    Texture ret = GenTextureFromImg(data, width, height, props, texType);
+    Texture ret = GenTextureFromImg(data, width, height, props);
     ret.texpath = imgPath;
     stbi_image_free(data);
     std::cout << "Loaded texture " << ret.texpath << " channels: " << numChannels << "\n";
@@ -100,7 +97,7 @@ void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
    #define SET_MATERIAL_UNIFORMS(matType, matVar) \
         shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
         if (matVar.hasTexture) { \
-            shader.TryAddSampler(matVar.texture, TextFormat("materials[%i].%s.tex", matIdx, #matVar)); \
+            shader.TryAddSampler(matVar.texture.id, TextFormat("materials[%i].%s.tex", matIdx, #matVar)); \
         } \
         shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
 
