@@ -6,6 +6,7 @@
 #include "tiny_engine/tiny_engine.h"
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/framebuffer.h"
+#include "tiny_engine/skybox.h"
 
 struct WorldEntity {
     Transform transform = {};
@@ -63,6 +64,8 @@ struct GameState {
     // shadows/depth tex
     ShadowMap shadowMap;
     Sprite depthSprite;
+
+    Skybox skybox = {};
 
     static GameState& get() {
         static GameState gs;

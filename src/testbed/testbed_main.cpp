@@ -129,12 +129,13 @@ void DepthPrePass() {
     }
 
     shadowMap.BeginRender();
+    const Light& sunlight = gs.lights[0];
     for (auto& ent : gs.entities) {
-        shadowMap.RenderToShadowMap(gs.lights[0], ent.model, ent.transform);
+        shadowMap.RenderToShadowMap(sunlight, ent.model, ent.transform);
     }
     shadowMap.EndRender();
 
-    #if 0
+    #if 1
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
     depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
@@ -143,10 +144,10 @@ void DepthPrePass() {
 
 void drawGameState() {
     PROFILE_FUNCTION();
+    GameState& gs = GameState::get();
 
     DepthPrePass();
 
-    GameState& gs = GameState::get();
     {
         PROFILE_SCOPE("EntityDrawing");
         for (auto& ent : gs.entities) {
@@ -179,6 +180,10 @@ void drawGameState() {
         light.Visualize();
         if (light.type == LIGHT_DIRECTIONAL)
             Shapes3D::DrawLine(light.position, light.position + glm::normalize(light.target-light.position), {1.0, 1.0, 1.0, 1.0});
+    }
+    
+    { PROFILE_SCOPE("Skybox draw");
+    gs.skybox.Draw();
     }
 }
 
@@ -241,7 +246,7 @@ void init_main_pond(GameState& gs) {
     waterShader.use();
     waterShader.setUniform("numActiveWaves", 3);
     gs.waterTexture = LoadTexture(ResPath("other/water.png"));
-    waterShader.TryAddSampler(gs.waterTexture, "waterTexture");
+    waterShader.TryAddSampler(gs.waterTexture.id, "waterTexture");
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
     WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "waterPlane");
@@ -281,6 +286,16 @@ void testbed_init() {
     //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
     gs.lights.push_back(meshLight);
     //gs.lights.push_back(meshPointLight);
+
+    { PROFILE_SCOPE("Skybox Init");
+    gs.skybox = Skybox({
+        ResPath("skybox/right.jpg").c_str(),
+        ResPath("skybox/left.jpg").c_str(),
+        ResPath("skybox/top.jpg").c_str(),
+        ResPath("skybox/bottom.jpg").c_str(),
+        ResPath("skybox/front.jpg").c_str(),
+        ResPath("skybox/back.jpg").c_str()}, TextureProperties::RGB_LINEAR());
+    }
 }
 
 void testbed_gametick(GameState& gs) {
