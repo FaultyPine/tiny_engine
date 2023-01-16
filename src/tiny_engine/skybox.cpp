@@ -3,19 +3,61 @@
 static Shader skyboxShader = {};
 static Mesh skyboxCube = {};
 
+static f32 skyboxVertices[] = {
+    // positions          
+    -1.0f,  1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
 
-Skybox::Skybox(const std::vector<const char*> facesPaths, TextureProperties props) {
+    -1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+
+    -1.0f,  1.0f, -1.0f,
+    1.0f,  1.0f, -1.0f,
+    1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+    1.0f, -1.0f,  1.0f
+};
+
+Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties props) {
     cubemap = LoadCubemap(facesPaths, props);
     if (!skyboxShader.isValid() && !skyboxCube.isValid()) {
         skyboxShader = Shader(ResPath("shaders/skybox.vs"), ResPath("shaders/skybox.fs"));
         skyboxShader.use();
         skyboxShader.setUniform("skybox", 0);
         std::vector<Vertex> vertices = {};
-        u32 numSkyboxVerts = 0;
-        f32* skyboxVerts = GetCubemapCubeVertices(&numSkyboxVerts);
-        for (u32 i = 0; i < numSkyboxVerts; i+=3) {
+        for (u32 i = 0; i < ARRAY_SIZE(skyboxVertices); i+=3) {
             Vertex v = {};
-            v.position = glm::vec3(skyboxVerts[i+0],skyboxVerts[i+1],skyboxVerts[i+2]);
+            v.position = glm::vec3(skyboxVertices[i+0],skyboxVertices[i+1],skyboxVertices[i+2]);
             vertices.push_back(v);
         }
         skyboxCube = Mesh(vertices, {}, {}, "Skybox");

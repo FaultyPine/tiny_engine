@@ -14,6 +14,7 @@ uniform int numInstances;
 uniform mat4 viewMat;
 uniform mat4 projectionMat;
 uniform float time;
+uniform mat4 lightSpaceMatrix;
 
 // Output vertex attributes (to fragment shader)
 
@@ -22,18 +23,25 @@ out vec2 fragTexCoord;
 //out vec4 fragColor;
 //out vec3 fragNormalWS;
 //out vec4 fragPosLightSpace;
+out vec4 fragPosLightSpace;
 flat out int materialId;
 //out vec3 fragPositionOS;
 
 float cnoise(vec2 P);
 
-float GetGrassSway() {
+vec2 windDirBase = vec2(0.5, 0.5);
+
+vec2 GetGrassSway() {
+    vec3 posWS = (instanceModelMat * vec4(vertexPosition, 1.0)).xyz;
+    vec2 windDir = normalize( windDirBase + (cnoise(vec2(time))+1)/2 );
     float speed = 0.5;
-    float strength = 0.5;
-    float perlinNoise = cnoise(vec2(time*speed-gl_InstanceID));
+    float strength = 0.7;
+    // todo: this is good perlin noise, but perlin isn't necessarily what i want here i think....
+    float perlinNoise = cnoise(posWS.xz + (time*speed)*-windDir);
+    perlinNoise = (perlinNoise+1) / 2;
     float height = pow(vertexTexCoord.y, 4);
     float sway = perlinNoise * height * strength;
-    return sway;
+    return sway * windDir;
 }
 mat4 Billboard(mat4 modelViewMat) {
     // To create a "billboard" effect,
@@ -51,16 +59,15 @@ mat4 Billboard(mat4 modelViewMat) {
 
 void main()
 {
-    //mat4 modelMat = instanceModelMats[gl_InstanceID];
-    mat4 modelMat = instanceModelMat;
-    
-    
-    mat4 modelView = viewMat * modelMat;
-    //modelView = Billboard(modelView);
+    mat4 modelView = viewMat * instanceModelMat;
+    modelView = Billboard(modelView);
     mat4 mvp = projectionMat * modelView;
     
     vec3 vertPos = vertexPosition;
     vertPos.xz += GetGrassSway();
+
+    vec3 fragPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
+    fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
 
     fragTexCoord = vertexTexCoord;
     materialId = vertexMaterialId;

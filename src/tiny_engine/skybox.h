@@ -12,7 +12,7 @@
 struct Skybox {
     Cubemap cubemap = {};
     Skybox(){}
-    Skybox(const std::vector<const char*> facesPaths, TextureProperties props = TextureProperties::RGB_LINEAR());
+    Skybox(const std::vector<const char*>& facesPaths, TextureProperties props = TextureProperties::RGB_LINEAR());
     /// Ensure this is the last thing drawn in the scene for it to have the proper effect
     void Draw();
 };

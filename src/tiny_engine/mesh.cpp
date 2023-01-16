@@ -1,6 +1,7 @@
 #include "mesh.h"
 #include "tiny_engine/camera.h"
 #include "tiny_engine/math.h"
+#include "tiny_engine/tiny_engine.h"
 
 Mesh::Mesh(const std::vector<Vertex>& verts, 
             const std::vector<u32>& idxs, 
@@ -143,6 +144,7 @@ void Mesh::Draw(const Shader& shader, const Transform& tf) const {
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
     shader.setUniform("farClip", Camera::GetMainCamera().farClip);
+    shader.setUniform("time", GetTimef());
     // mvp uniform
     Set3DMatrixUniforms(shader, tf);
     // material uniforms
@@ -160,6 +162,7 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
     shader.setUniform("farClip", Camera::GetMainCamera().farClip);
+    shader.setUniform("time", GetTimef());
     // mvp uniform
     shader.setUniform("mvp", mvp);
     // material uniforms
@@ -180,6 +183,7 @@ void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
     shader.setUniform("farClip", Camera::GetMainCamera().farClip);
+    shader.setUniform("time", GetTimef());
 
     // material uniforms
     for (u32 i = 0; i < materials.size(); i++) {

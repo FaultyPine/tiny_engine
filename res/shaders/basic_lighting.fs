@@ -25,6 +25,8 @@ struct MaterialProperty {
 };
 struct Material {
     MaterialProperty diffuseMat;
+    // TODO: don't use ambient material, ambient should always just be a color. 
+    // If you really want an ambient "texture", use diffuse
     MaterialProperty ambientMat;
     MaterialProperty specularMat;
     MaterialProperty normalMat;
@@ -69,7 +71,6 @@ struct Light {
 uniform Light lights[MAX_LIGHTS];
 uniform int numActiveLights;
 uniform vec3 viewPos;
-uniform sampler2D depthMap;
 uniform float ambientLightIntensity = 0.15;
 
 vec3 GetViewDir() {
@@ -81,6 +82,7 @@ vec3 GetNormals() {
     return vertNormals + normalMapNormals;
 }
 
+uniform sampler2D depthMap;
 float PCFShadow(vec2 projCoords, float shadowBias, float currentDepth, int resolution) {
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(depthMap, 0);
@@ -109,7 +111,7 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
 
 
     // depth value from shadow map
-    float depthMapDepth = texture(depthMap, projCoords.xy).r;
+    //float depthMapDepth = texture(depthMap, projCoords.xy).r;
     // [0,1] current depth of this fragment
     float currentDepth = projCoords.z;
     // 1.0 is in shadow, 0 is out of shadow

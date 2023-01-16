@@ -3,7 +3,6 @@
 #include "ObjParser.h"
 #include "camera.h"
 #include "tiny_engine/math.h"
-#include "tiny_engine/tiny_engine.h"
 
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
@@ -66,7 +65,6 @@ void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Li
         shader.setUniform("modelMat", model);
         glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
         shader.setUniform("normalMat", matNormal);
-        shader.setUniform("time", GetTimef());
 
         for (const Light& light : lights) {
             if (light.enabled)
@@ -86,7 +84,6 @@ void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& mo
         shader.setUniform("modelMat", modelMat);
         glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(modelMat)));
         shader.setUniform("normalMat", matNormal);
-        shader.setUniform("time", GetTimef());
 
         for (const Light& light : lights) {
             if (light.enabled)
@@ -113,7 +110,6 @@ void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vec
         shader.setUniform("viewMat", view);
         shader.setUniform("projectionMat", projection);
         shader.setUniform("viewPos", cam.cameraPos);
-        shader.setUniform("time", GetTimef());
 
         for (const Light& light : lights) {
             if (light.enabled)

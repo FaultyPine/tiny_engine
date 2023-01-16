@@ -52,6 +52,7 @@ struct ShadowMap {
     }
     bool isValid() const { return fb.isValid(); }
     void BeginRender() const;
+    void SetShadowUniforms(Shader& shader, const Light& light) const;
     void RenderToShadowMap(const Light& light, Model& model, const Transform& tf) const;
     void EndRender() const;
 

@@ -9,6 +9,5 @@ struct Cubemap {
 };
 
 Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TextureProperties props);
-f32* GetCubemapCubeVertices(u32* numElements);
 
 #endif

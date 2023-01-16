@@ -80,7 +80,7 @@ void ShadowMap::EndRender() const {
     // bind default fb
     Framebuffer::BindDefaultFrameBuffer();
 }
-void SetShadowUniforms(Shader& shader, const Light& light, const Framebuffer& fb) {
+void ShadowMap::SetShadowUniforms(Shader& shader, const Light& light) const {
     shader.use();
     shader.TryAddSampler(fb.GetTexture().id, "depthMap");
     shader.ActivateSamplers();
@@ -91,7 +91,7 @@ void ShadowMap::RenderToShadowMap(const Light& light, Model& model, const Transf
     glm::mat4 lightMat = light.GetLightViewProjMatrix();
     glm::mat4 modelMat = tf.ToModelMatrix();
     glm::mat4 mvp = lightMat * modelMat;
-    SetShadowUniforms(model.cachedShader, light, fb);
+    SetShadowUniforms(model.cachedShader, light);
     // draw model to depth tex/fb
     model.Draw(depthShader, mvp, modelMat);
 }

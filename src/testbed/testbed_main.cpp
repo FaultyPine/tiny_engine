@@ -86,8 +86,8 @@ void drawImGuiDebug() {
     }
     if (ImGui::CollapsingHeader("Main Pond") && gs.waveEntity.isValid()) {
         if (ImGui::CollapsingHeader("Wave Plane")) {
-            ImGui::DragFloat3("Wave pos", &gs.waveEntity.transform.position[0], 0.01f);
-            ImGui::DragFloat3("Wave scale", &gs.waveEntity.transform.scale[0], 0.01f);
+            //ImGui::DragFloat3("Wave pos", &gs.waveEntity.transform.position[0], 0.01f);
+            //ImGui::DragFloat3("Wave scale", &gs.waveEntity.transform.scale[0], 0.01f);
         }
         for (u32 i = 0; i < NUM_WAVES; i++) {
             Wave& wave = gs.waves[i];
@@ -133,9 +133,10 @@ void DepthPrePass() {
     for (auto& ent : gs.entities) {
         shadowMap.RenderToShadowMap(sunlight, ent.model, ent.transform);
     }
+    shadowMap.SetShadowUniforms(gs.grass.model.cachedShader, sunlight);
     shadowMap.EndRender();
 
-    #if 1
+    #if 0
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
     depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
@@ -148,8 +149,7 @@ void drawGameState() {
 
     DepthPrePass();
 
-    {
-        PROFILE_SCOPE("EntityDrawing");
+    { PROFILE_SCOPE("EntityDrawing");
         for (auto& ent : gs.entities) {
             ent.model.Draw(ent.transform, gs.lights);
         }
@@ -174,6 +174,16 @@ void drawGameState() {
     if (gs.grass.isValid()) {
         PROFILE_SCOPE("GrassInstancing");
         gs.grass.model.DrawInstanced(gs.grassTransforms.size());
+    }
+    // waterfall
+    WorldEntity* island = gs.GetEntity("island");
+    if (island) {
+        Mesh* waterfallMesh = island->model.GetMesh("WaterfallPlane_Plane.001");
+        if (waterfallMesh) {
+            waterfallMesh->isVisible = true;
+            waterfallMesh->Draw(gs.waterfallShader, Transform({0,0,0}));
+            waterfallMesh->isVisible = false;
+        }
     }
 
     for (Light& light : gs.lights) {
@@ -203,6 +213,7 @@ glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
 }
 
 void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, const std::vector<Vertex>& planeVerts, std::vector<glm::mat4>& grassTransforms, u32 numGrassInstancesToSpawn) {
+    PROFILE_FUNCTION();
     constexpr f32 spawnNeighborLeniency = 0.5f;
     constexpr f32 grassSpawnHeight = 7.6; // ew hardcoded
     glm::vec2 exclusionMin = glm::vec2(spawnExclusion.min.x, spawnExclusion.min.z);
@@ -230,12 +241,12 @@ void init_grass(GameState& gs) {
         Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
         if (grassSpawnMesh) {
             grassSpawnMesh->isVisible = false;
-            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 1000);
+            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 7000);
         }
     }
 
     Shader grassShader = Shader(ResPath("shaders/grass.vs").c_str(), ResPath("shaders/grass.fs").c_str());
-    Model grassModel = Model(grassShader, ResPath("other/island_wip/grass2.obj").c_str(), ResPath("other/island_wip/").c_str());
+    Model grassModel = Model(grassShader, ResPath("other/island_wip/grass_blade.obj").c_str(), ResPath("other/island_wip/").c_str());
     grassModel.EnableInstancing(gs.grassTransforms.data(), sizeof(glm::mat4), gs.grassTransforms.size());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
@@ -256,8 +267,18 @@ void init_main_pond(GameState& gs) {
     gs.waves[2] = Wave(0.8, 1.0, 0.1, glm::vec2(1,0.4));
 }
 
+void init_waterfall(GameState& gs, Mesh& waterfallMesh) {
+    // disable normal drawing of this mesh so we can do it
+    // manually with our custom waterfall shader
+    waterfallMesh.isVisible = false;
+    gs.waterfallShader = Shader(ResPath("shaders/waterfall.vs"), ResPath("shaders/waterfall.fs"));
+    Texture waterfallTex = LoadTexture(ResPath("noise.jpg"));
+    gs.waterfallShader.TryAddSampler(waterfallTex.id, "waterfallTex");
+}
+
 void testbed_init() {
     PROFILE_FUNCTION();
+    
     InitImGui();
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
@@ -275,11 +296,17 @@ void testbed_init() {
     Model bushModel = Model(lightingShader, ResPath("other/island_wip/bush.obj").c_str(), ResPath("other/island_wip/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "tree"));
 
-    // Init water
+    // pond
     init_main_pond(gs);
 
-    // Init grass
+    // grass
     init_grass(gs);
+
+    // waterfall
+    Mesh* waterfallMesh = testModel.GetMesh("WaterfallPlane_Plane.001");
+    if (waterfallMesh) {
+        init_waterfall(gs, *waterfallMesh);
+    }
 
     // Init lights
     Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 50, -22), glm::vec3(0, 10, 0), glm::vec4(1));

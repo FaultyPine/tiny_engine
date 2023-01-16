@@ -46,7 +46,7 @@ struct Wave {
 };
 
 struct GameState {
-    // TODO: use hashmap
+    // TODO: use hashmap w/int IDs
     std::vector<WorldEntity> entities = {};
     std::vector<Light> lights = {};
 
@@ -55,9 +55,11 @@ struct GameState {
     Wave waves[NUM_WAVES];
     WorldEntity waveEntity = {};
     Texture waterTexture;
+    // Waterfall
+    Shader waterfallShader = {};
     
     // grass
-    WorldEntity grass;
+    WorldEntity grass = {};
     std::vector<glm::mat4> grassTransforms = {};
     BoundingBox grassSpawnExclusion = {};
 
