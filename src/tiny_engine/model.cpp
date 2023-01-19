@@ -94,7 +94,11 @@ void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& mo
         mesh.Draw(shader, mvp);
     }
 }
-
+void Model::DrawMinimal(const Shader& shader) const {
+    for (const Mesh& mesh : meshes) {
+        mesh.DrawMinimal(shader);
+    }
+}
 
 void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights) const {
     // this is hardcoded in the (grass) shader right now. 

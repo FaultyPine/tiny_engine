@@ -24,6 +24,7 @@ inline glm::vec3 Lerp(glm::vec3 a, glm::vec3 b, f32 t) {
 }
 
 glm::vec2 RandomPointInCircle(f32 radius);
+glm::vec3 RandomPointInSphere(f32 radius);
 
 template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }
 template<typename T> inline T MIN(T x, T y) { return x < y ? x : y; }

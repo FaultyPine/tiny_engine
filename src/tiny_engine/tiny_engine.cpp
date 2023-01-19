@@ -139,6 +139,7 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+    glfwWindowHint(GLFW_SAMPLES, 4); // ask for multisampled buffers so we can do multisampling if we want
 #ifdef TINY_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
@@ -187,6 +188,8 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_MULTISAMPLE);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); 
     glfwSetCursorPosCallback(window, mouse_callback);

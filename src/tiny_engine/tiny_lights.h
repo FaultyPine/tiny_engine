@@ -27,6 +27,9 @@ struct Light {
         Transform tf = Transform(position, glm::vec3(0.2), 0, {0,1,0});
         Shapes3D::DrawCube(tf, type == LightType::LIGHT_DIRECTIONAL ? glm::vec4(1,1,0,1) : glm::vec4(0.8));
     }
+    glm::vec3 Direction() const {
+        return type == LightType::LIGHT_DIRECTIONAL ? glm::normalize(target-position) : glm::vec3(0);
+    }
     glm::mat4 GetLightViewProjMatrix() const;
 };
 

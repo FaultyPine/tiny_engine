@@ -33,7 +33,7 @@ struct Mesh {
     
     Mesh(){}
     Mesh( const std::vector<Vertex>& verts, 
-        const std::vector<u32>& idxs, 
+        const std::vector<u32>& idxs = {}, 
         const std::vector<Material>& mats = {},
         const std::string& name = "");
     void Delete();
@@ -46,7 +46,7 @@ struct Mesh {
     // draw mesh with specified shader
     void Draw(const Shader& shader, const Transform& tf) const;
     void Draw(const Shader& shader, const glm::mat4& mvp) const;
-    void MinimalDraw(const Shader& shader) const;
+    void DrawMinimal(const Shader& shader) const;
     void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
     void DrawInstanced(const Shader& shader, u32 numInstances) const;
    

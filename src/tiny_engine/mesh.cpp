@@ -197,7 +197,7 @@ void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
     OGLDrawInstanced(VAO, indices.size(), vertices.size(), numInstances);
 }
 
-void Mesh::MinimalDraw(const Shader& shader) const {
+void Mesh::DrawMinimal(const Shader& shader) const {
     ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
     if (!isVisible) return;
     shader.use();

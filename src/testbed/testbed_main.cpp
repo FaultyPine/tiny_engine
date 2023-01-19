@@ -14,6 +14,7 @@
 #include "tiny_engine/model.h"
 #include "tiny_engine/shapes.h"
 #include "tiny_engine/tiny_profiler.h"
+#include "tiny_engine/particles/particle_behaviors.h"
 
 void testbed_inputpoll() {
     Camera& cam = Camera::GetMainCamera();
@@ -124,7 +125,7 @@ void DepthPrePass() {
     ShadowMap& shadowMap = gs.shadowMap;
     Sprite& depthSprite = gs.depthSprite; 
     if (!shadowMap.isValid()) {
-        shadowMap = ShadowMap(1024);
+        shadowMap = ShadowMap(2048);
         depthSprite = Sprite(shadowMap.fb.GetTexture());
     }
 
@@ -146,8 +147,6 @@ void DepthPrePass() {
 void drawGameState() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-
-    DepthPrePass();
 
     { PROFILE_SCOPE("EntityDrawing");
         for (auto& ent : gs.entities) {
@@ -185,14 +184,17 @@ void drawGameState() {
             waterfallMesh->isVisible = false;
         }
     }
+    gs.waterfallParticles.Draw();
 
-    for (Light& light : gs.lights) {
+    /*for (Light& light : gs.lights) {
         light.Visualize();
         if (light.type == LIGHT_DIRECTIONAL)
-            Shapes3D::DrawLine(light.position, light.position + glm::normalize(light.target-light.position), {1.0, 1.0, 1.0, 1.0});
-    }
+            Shapes3D::DrawLine(light.position, light.position + light.Direction(), {1.0, 1.0, 1.0, 1.0});
+    }*/
     
     { PROFILE_SCOPE("Skybox draw");
+    gs.skybox.skyboxShader.use();
+    gs.skybox.skyboxShader.setUniform("sunDirection", gs.lights[0].Direction());
     gs.skybox.Draw();
     }
 }
@@ -274,6 +276,18 @@ void init_waterfall(GameState& gs, Mesh& waterfallMesh) {
     gs.waterfallShader = Shader(ResPath("shaders/waterfall.vs"), ResPath("shaders/waterfall.fs"));
     Texture waterfallTex = LoadTexture(ResPath("noise.jpg"));
     gs.waterfallShader.TryAddSampler(waterfallTex.id, "waterfallTex");
+
+    Shader waterfallParticlesShader = Shader(ResPath("shaders/default_3d.vs"), ResPath("shaders/default_3d.fs"));
+    Model waterfallParticleModel = Model(waterfallParticlesShader, {Shapes3D::GenCubeMesh()});
+    gs.waterfallParticles = ParticleSystem(waterfallParticleModel, 30, true);
+    gs.waterfallParticles
+                        //.AddBehavior(new ParticleEmitTickInterval(35))
+                        .AddBehavior(new ParticleEmitBurst(20))
+                        .AddBehavior(new ParticlesSpreadOut())
+                        //.AddBehavior(new ParticleSetVelocity(glm::vec3(0, 0.1, 0)))
+                        .AddBehavior(new ParticleSetSize(glm::vec3(0.2)))
+                        .AddBehavior(new ParticleDecay(0.02));
+                        //.AddBehavior(new ParticleAlphaDecay(0.005));
 }
 
 void testbed_init() {
@@ -331,11 +345,13 @@ void testbed_gametick(GameState& gs) {
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
     testbed_orbit_light(mainLight, 55, 25, 0.2);
+    gs.waterfallParticles.Tick({0,10,0});
 }
 void testbed_render(const GameState& gs) {
     #if 0
     SetWireframeDrawing(true);
     #endif
+    DepthPrePass();
     drawGameState();
     drawImGuiDebug();
 

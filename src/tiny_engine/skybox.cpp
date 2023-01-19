@@ -1,7 +1,5 @@
 #include "skybox.h"
 
-static Shader skyboxShader = {};
-static Mesh skyboxCube = {};
 
 static f32 skyboxVertices[] = {
     // positions          
@@ -48,6 +46,9 @@ static f32 skyboxVertices[] = {
     1.0f, -1.0f,  1.0f
 };
 
+Shader Skybox::skyboxShader;
+Mesh Skybox::skyboxCube;
+
 Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties props) {
     cubemap = LoadCubemap(facesPaths, props);
     if (!skyboxShader.isValid() && !skyboxCube.isValid()) {
@@ -76,6 +77,6 @@ void Skybox::Draw() {
     skyboxShader.setUniform("projection", Camera::GetMainCamera().GetProjectionMatrix());
     GLCall(glActiveTexture(GL_TEXTURE0));
     GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id));
-    skyboxCube.MinimalDraw(skyboxShader);
+    skyboxCube.DrawMinimal(skyboxShader);
     GLCall(glDepthFunc(GL_LESS));
 }

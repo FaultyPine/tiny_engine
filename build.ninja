@@ -49,8 +49,6 @@ build $builddir/imgui_tables.obj: compile $
 build $builddir/imgui_widgets.obj: compile $
     src/tiny_engine/external/imgui/imgui_widgets.cpp
 build $builddir/particles.obj: compile src/tiny_engine/particles/particles.cpp
-build $builddir/particle_behaviors.obj: compile $
-    src/tiny_engine/particles/particle_behaviors.cpp
 build $builddir/TinyEngine.exe: link $builddir/main.obj $
     $builddir/testbed_main.obj $builddir/cubemap.obj $
     $builddir/framebuffer.obj $builddir/input.obj $builddir/job_system.obj $
@@ -63,4 +61,4 @@ build $builddir/TinyEngine.exe: link $builddir/main.obj $
     $builddir/imgui.obj $builddir/imgui_demo.obj $builddir/imgui_draw.obj $
     $builddir/imgui_impl_glfw.obj $builddir/imgui_impl_opengl3.obj $
     $builddir/imgui_tables.obj $builddir/imgui_widgets.obj $
-    $builddir/particles.obj $builddir/particle_behaviors.obj
+    $builddir/particles.obj

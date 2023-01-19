@@ -7,6 +7,7 @@
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/framebuffer.h"
 #include "tiny_engine/skybox.h"
+#include "tiny_engine/particles/particles.h"
 
 struct WorldEntity {
     Transform transform = {};
@@ -57,6 +58,7 @@ struct GameState {
     Texture waterTexture;
     // Waterfall
     Shader waterfallShader = {};
+    ParticleSystem waterfallParticles = {};
     
     // grass
     WorldEntity grass = {};

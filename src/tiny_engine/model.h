@@ -22,6 +22,8 @@ struct Model {
     void Draw(const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights = {}) const {
         Draw(cachedShader, mvp, modelMat, lights);
     }
+
+    void DrawMinimal(const Shader& shader) const;
     
     // instanced drawing
     void DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights = {}) const;
@@ -38,7 +40,7 @@ struct Model {
         }
         //cachedShader.Delete(); // other meshes may be using the same shader...
     }
-    inline bool isValid() { return !meshes.empty(); }
+    inline bool isValid() const { return !meshes.empty(); }
 
     Mesh* GetMesh(const std::string& name);
 

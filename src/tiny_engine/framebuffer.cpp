@@ -45,14 +45,14 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
 }
 
 
-static const char* depthFragShaderStr = R"(
+static const char* depthFrag = R"(
 #version 330 core
 void main() {
     // this happens implicitly, explicitly putting this here for clarity
     gl_FragDepth = gl_FragCoord.z;
 }
 )";
-static const char* depthVertShaderStr = R"(
+static const char* depthVert = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
 uniform mat4 mvp;
@@ -65,7 +65,7 @@ void main() {
 ShadowMap::ShadowMap(u32 resolution) {
     fb = Framebuffer(resolution, resolution, Framebuffer::FramebufferAttachmentType::DEPTH);
     // this shader renders our scene from the perspective of a light
-    depthShader = Shader::CreateShaderFromStr(depthVertShaderStr, depthFragShaderStr);
+    depthShader = Shader::CreateShaderFromStr(depthVert, depthFrag);
 }
 void ShadowMap::BeginRender() const {
     fb.Bind();
@@ -83,15 +83,15 @@ void ShadowMap::EndRender() const {
 void ShadowMap::SetShadowUniforms(Shader& shader, const Light& light) const {
     shader.use();
     shader.TryAddSampler(fb.GetTexture().id, "depthMap");
-    shader.ActivateSamplers();
     shader.setUniform("lightSpaceMatrix", light.GetLightViewProjMatrix());
 }
 void ShadowMap::RenderToShadowMap(const Light& light, Model& model, const Transform& tf) const {
+    SetShadowUniforms(model.cachedShader, light);
     depthShader.use();
     glm::mat4 lightMat = light.GetLightViewProjMatrix();
     glm::mat4 modelMat = tf.ToModelMatrix();
     glm::mat4 mvp = lightMat * modelMat;
-    SetShadowUniforms(model.cachedShader, light);
+    depthShader.setUniform("mvp", mvp);
     // draw model to depth tex/fb
-    model.Draw(depthShader, mvp, modelMat);
+    model.DrawMinimal(depthShader);
 }

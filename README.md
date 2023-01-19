@@ -27,7 +27,7 @@ Simple nature scene I used to implement & test 3D features
 
 
 
-### TODO:
+### TODO/Topics to Experiment With:
 - Learn how to use Perforce
 - make sure pch works with msvc
 - ~~instancing~~
@@ -50,17 +50,19 @@ Simple nature scene I used to implement & test 3D features
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc objects
-    - allow access to these things through shared pointers
-
+    - allow access to these things through ids or shared pointers
 - HDR/Tonemapping & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
-    - Space partitioning (BSP/Quadtree/Octree)
+- Space partitioning (BSP/Quadtree/Octree)
 - animation
     - .obj files don't support animation... might need to implement gltf or collada or fbx support
     - https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation
     - https://www.youtube.com/watch?v=f3Cr8Yx3GGA
+- Portals! (And utilizing that to make "non-euclidean" spaces)
+- 3D World Wrapping (I.E. Manifold garden)
+- (Visualizing) L-Systems
 
 ### Possible future features:
 - ~~debug line drawing~~
