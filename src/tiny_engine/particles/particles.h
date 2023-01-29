@@ -58,9 +58,13 @@ struct ParticleSystem {
     }
     ParticleSystem(u32 maxParticles, bool isStartingActive) {
         isActive = isStartingActive;
-        for (u32 i = 0; i < maxParticles; i++)
-            particles.emplace_back(Particle());
-        AddBehavior(new DefaultParticleBehavior());
+        Particle pDefault = Particle();
+        particles.resize(maxParticles, pDefault);
+        //for (u32 i = 0; i < maxParticles; i++) {
+        //    Particle p = Particle();
+        //    particles[i] = p;
+        //}
+        AddBehavior(new DefaultParticleBehavior);
     }
     ParticleSystem() {}
     void Tick(glm::vec3 position);
@@ -69,7 +73,8 @@ struct ParticleSystem {
     }
     void Draw() const;
     ParticleSystem& AddBehavior(ParticleBehavior* behavior) {
-        behaviors.emplace_back(std::shared_ptr<ParticleBehavior>(behavior));
+        std::shared_ptr<ParticleBehavior> behaviorPtr = std::shared_ptr<ParticleBehavior>(behavior); 
+        behaviors.push_back(behaviorPtr);
         return *this;
     }
     void Reset();
@@ -78,6 +83,8 @@ struct ParticleSystem {
     Sprite particleSprite = {};
     Model particleModel = {};
     std::vector<std::shared_ptr<ParticleBehavior>> behaviors = {};
+    // TODO: possible memory crash bugfix. Try using a normal array instead of vector
+    // and have max particles as a template arg
     std::vector<Particle> particles = {};
 
 private:

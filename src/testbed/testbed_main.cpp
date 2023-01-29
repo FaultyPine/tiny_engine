@@ -184,7 +184,7 @@ void drawGameState() {
             waterfallMesh->isVisible = false;
         }
     }
-    gs.waterfallParticles.Draw();
+    //gs.waterfallParticles.Draw();
 
     /*for (Light& light : gs.lights) {
         light.Visualize();
@@ -277,17 +277,19 @@ void init_waterfall(GameState& gs, Mesh& waterfallMesh) {
     Texture waterfallTex = LoadTexture(ResPath("noise.jpg"));
     gs.waterfallShader.TryAddSampler(waterfallTex.id, "waterfallTex");
 
+    /*
     Shader waterfallParticlesShader = Shader(ResPath("shaders/default_3d.vs"), ResPath("shaders/default_3d.fs"));
     Model waterfallParticleModel = Model(waterfallParticlesShader, {Shapes3D::GenCubeMesh()});
-    gs.waterfallParticles = ParticleSystem(waterfallParticleModel, 30, true);
+    gs.waterfallParticles = ParticleSystem(waterfallParticleModel, 10, true);
     gs.waterfallParticles
-                        //.AddBehavior(new ParticleEmitTickInterval(35))
-                        .AddBehavior(new ParticleEmitBurst(20))
-                        .AddBehavior(new ParticlesSpreadOut())
-                        //.AddBehavior(new ParticleSetVelocity(glm::vec3(0, 0.1, 0)))
-                        .AddBehavior(new ParticleSetSize(glm::vec3(0.2)))
-                        .AddBehavior(new ParticleDecay(0.02));
+                        .AddBehavior(new ParticleEmitTickInterval(35))
+                        //.AddBehavior(new ParticleEmitBurst(20))
+                        //.AddBehavior(new ParticlesSpreadOut())
+                        .AddBehavior(new ParticleSetVelocity(glm::vec3(0, 0.1, 0)))
+                        .AddBehavior(new ParticleSetSize(glm::vec3(1)))
+                        .AddBehavior(new ParticleDecay(0.01f));
                         //.AddBehavior(new ParticleAlphaDecay(0.005));
+    */
 }
 
 void testbed_init() {
@@ -345,7 +347,7 @@ void testbed_gametick(GameState& gs) {
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
     testbed_orbit_light(mainLight, 55, 25, 0.2);
-    gs.waterfallParticles.Tick({0,10,0});
+    //gs.waterfallParticles.Tick({0,15,0});
 }
 void testbed_render(const GameState& gs) {
     #if 0

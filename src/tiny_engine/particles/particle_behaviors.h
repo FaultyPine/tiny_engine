@@ -60,7 +60,9 @@ struct ParticleEmitTickInterval : ParticleBehavior {
         this->everyXTicks = everyXTicks;
     }
     u32 ShouldEmitParticle() override {
-        return GetFrameCount() % everyXTicks == 0;
+        u32 framecount = GetFrameCount();
+        bool shouldEmit = framecount % everyXTicks == 0;
+        return shouldEmit ? 1 : 0;
     }
 };
 struct ParticleEmitBurst : ParticleBehavior {

@@ -26,17 +26,24 @@ u32 FirstUnusedParticle(const std::vector<P>& particles) {
 }
 
 void ParticleSystem::TrySpawnNewParticles(glm::vec3 position) {
-    u32 numNewParticles = 0;
     // add up all particles we should emit
+    u32 numNewParticles = 0;
     for (auto& behavior : behaviors) {
         numNewParticles += behavior->ShouldEmitParticle();
     }
+    if (numNewParticles) {
+        std::cout << "Spawning " << numNewParticles << " particles. Adjusted numNewParticles: " << Math::MIN(numNewParticles, (u32)particles.size()) << "\n";
+    }
+    numNewParticles = Math::MIN(numNewParticles, (u32)particles.size());
+
     for (u32 i = 0; i < numNewParticles; i++) {
         Particle newParticle = Particle();
-        // allow all behaviors to modify the particle before spawning it in
-        for (auto& behavior : behaviors)
+        // allow all behaviors to modify the new particle before spawning it in
+        for (auto& behavior : behaviors) {
             behavior->InitializeParticle(newParticle, position);
+        }
         u32 firstUnusedParticleIdx = FirstUnusedParticle(particles);
+        std::cout << "New particle " << firstUnusedParticleIdx << " life: " << newParticle.life << "\n";
         // "emitting" a particle just means overwriting a dead one in the pool with a new one
         particles.at(firstUnusedParticleIdx) = newParticle;
     }
@@ -45,6 +52,7 @@ void ParticleSystem::TrySpawnNewParticles(glm::vec3 position) {
 void ParticleSystem::Tick(glm::vec3 position) {    
     if (!isActive) return;
     TrySpawnNewParticles(position);
+    // TODO: Don't tick dead/unused particles
     for (std::shared_ptr<ParticleBehavior> behavior : behaviors) {
         behavior->OnTick(particles);
     }
@@ -53,10 +61,13 @@ void ParticleSystem::Tick(glm::vec3 position) {
 void ParticleSystem::Draw() const {
     if (!isActive) return;
     for (const Particle& particle : particles) {
+        if (particle.life <= 0.0f) continue;
+        
         if (particleSprite.isValid()) {
             particleSprite.DrawSprite(Camera::GetMainCamera(), particle.position-particle.size, particle.size, particle.rotation, {0.0, 0.0, 1.0}, particle.color, true);
         }
         if (particleModel.isValid()) {
+            std::cout << particle.life << "\n";
             particleModel.cachedShader.use();
             particleModel.cachedShader.setUniform("color", particle.color);
             particleModel.Draw(particle.GetTransform());
@@ -67,8 +78,9 @@ void ParticleSystem::Draw() const {
 void ParticleSystem::Reset() {
     u32 maxParticles = particles.size();
     particles.clear();
-    for (u32 i = 0; i < maxParticles; i++)
-        particles.emplace_back(Particle());
+    for (u32 i = 0; i < maxParticles; i++) {
+        particles.at(i) = Particle();
+    }
     // reset behaviors (if behaviors track their own variables, these should be reset here)
     for (auto& behavior : behaviors) behavior->Reset();
 }
