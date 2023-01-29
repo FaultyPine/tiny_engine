@@ -27,6 +27,11 @@ void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
     Camera::GetMainCamera().screenHeight = screenHeight;
 }
 void TerminateGame() {
+    frameCount = 0;
+    deltaTime = 0;
+    lastFrameTime = 0;
+    randomSeed = 0;
+
     GLTTerminate();
     glfwTerminate();
     Profiler::Instance().endSession();

@@ -37,16 +37,14 @@ glm::vec2 RandomPointInCircle(f32 radius) {
     return ret;
 }
 glm::vec3 RandomPointInSphere(f32 radius) {
-    f32 u = GetRandomf(0,1);
-    f32 x1 = GetRandomf(0,1);
-    f32 x2 = GetRandomf(0,1);
-    f32 x3 = GetRandomf(0,1);
+    f32 x1 = GetRandomf(-1,1);
+    f32 x2 = GetRandomf(-1,1);
+    f32 x3 = GetRandomf(-1,1);
 
     f32 mag = sqrt(x1*x1 + x2*x2 + x3*x3);
     x1 /= mag; x2 /= mag; x3 /= mag;
 
-    // Math.cbrt is cube root
-    f32 c = std::cbrt(u);
+    f32 c = std::cbrt(radius);
 
     return glm::vec3(x1*c, x2*c, x3*c);
 }
