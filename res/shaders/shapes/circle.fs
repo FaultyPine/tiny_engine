@@ -4,7 +4,7 @@ out vec4 FragColor;
 
 in vec2 TexCoords;
 
-uniform vec4 spriteColor;
+uniform vec4 color;
 uniform int isHollow;
 
 
@@ -22,5 +22,5 @@ void main()
     }
 
     if (circle == 0) discard;
-    FragColor = spriteColor * circle;
+    FragColor = color * circle;
 }  

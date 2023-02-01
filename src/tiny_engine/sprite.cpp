@@ -4,7 +4,7 @@
 
 Sprite::Sprite(const Texture& mainTex) {
     this->mainTex = mainTex;
-    this->shader = Shader(ResPath("shaders/default_sprite.vs").c_str(), ResPath("shaders/default_sprite.fs").c_str());
+    this->shader = Shader(ResPath("shaders/default_sprite.vs"), ResPath("shaders/default_sprite.fs"));
     initRenderData();
 }
 Sprite::Sprite(const Shader& shader, const Texture& mainTex) {
@@ -26,28 +26,15 @@ void AdjustDimensionsForSceenSize(glm::vec2& position, glm::vec2& size) {
 void Sprite::DrawSprite(const Camera& cam, glm::vec2 position, 
                 glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize,
                 bool shouldFlipY) const {
-    if (!isValid()) {
-        std::cout << "Tried to draw invalid sprite!\n";
-        exit(1);
-        return;
-    }
+    ASSERT(isValid() && "Tried to draw invalid sprite!\n");
 
     if (adjustToScreensize) {
         AdjustDimensionsForSceenSize(position, size);
     }
 
     // set up transform of the actual sprite
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(position, 0.0f));  
-
-    // rotate from center of sprite
-    model = glm::translate(model, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.0f)); 
-    model = glm::rotate(model, glm::radians(rotate), rotationAxis); 
-    model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f));
-
-    model = glm::scale(model, glm::vec3(size, 1.0f)); 
-    
-    glm::mat4 projection = glm::ortho(0.0f, (f32)cam.screenWidth, (f32)cam.screenHeight, 0.0f, -1.0f, 1.0f);  
+    glm::mat4 model = Math::Position2DToModelMat(position, size, rotate, rotationAxis);
+    glm::mat4 projection = cam.GetProjectionMatrix();
     
     shader.use();
     shader.setUniform("model", model);

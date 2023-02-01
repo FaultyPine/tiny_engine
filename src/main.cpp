@@ -11,23 +11,45 @@
 
 // game includes
 //#include "PartOfThePack/potp_main.h"
+#define TESTBED3D 0
 #include "testbed/testbed_main.h"
+#define OTHERGAME 1
+#include "game/game_main.h"
 
 void preLoopInit() {
     InitGame(800, 600, 4, 3, "Tiny Engine"); 
 
     //Potp::MainInit();
+    #if TESTBED3D
     testbed_init();
+    #endif
+
+    #if OTHERGAME
+    game_init();
+    #endif
 }
 
 void gameTick() {
     //Potp::MainUpdate();
+    #if TESTBED3D
     testbed_tick();
+    #endif
+
+    #if OTHERGAME
+    game_tick();
+    #endif
 }
 
 void endGame() {
     //Potp::Terminate();
+    #if TESTBED3D
     testbed_terminate();
+    #endif
+
+    #if OTHERGAME
+    game_terminate();
+    #endif
+
     TerminateGame();
 }
 

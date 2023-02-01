@@ -5,6 +5,7 @@
 #include "shader.h"
 #include "texture.h"
 #include "camera.h"
+#include "tiny_types.h"
 
 struct Sprite {
     Sprite() { }
@@ -21,6 +22,10 @@ struct Sprite {
                     glm::vec3 rotationAxis = glm::vec3(0.0, 0.0, 1.0),
                     glm::vec4 color = glm::vec4(1.0f), bool adjustToScreensize = false,
                     bool shouldFlipY = false) const;
+    void DrawSprite(const Transform2D& tf, glm::vec4 color = glm::vec4(1.0f), 
+                    bool adjustToScreensize = false, bool shouldFlipY = false) const {
+        DrawSprite(Camera::GetMainCamera(), tf.position, tf.scale, tf.rotation, {0,0,1}, color, adjustToScreensize, shouldFlipY);
+    }
 
     bool isValid() const { return mainTex.id != 0; }
     inline f32 GetTextureWidth() const { return mainTex.width; }

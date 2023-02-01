@@ -20,19 +20,21 @@ struct Camera {
     f32 FOV = 45.0f;
     f32 nearClip = 0.1f;
     f32 farClip = 100.0f;
-    bool isSwivelable = true;
+    bool isSwivelable = false;
     enum Projection {
         PERSPECTIVE,
         ORTHOGRAPHIC
     };
-    Projection projection = PERSPECTIVE;
+    Projection projection = ORTHOGRAPHIC;
 
     inline glm::mat4 GetProjectionMatrix() const {
         f32 aspect = (f32)screenWidth / screenHeight;
-        if (projection == PERSPECTIVE)
+        if (projection == PERSPECTIVE) {
             return glm::perspective(glm::radians(FOV), aspect, nearClip, farClip);
-        else
-            return glm::ortho(0.0f, (f32)screenWidth, (f32)screenHeight, 0.0f, nearClip, farClip); 
+        }
+        else {
+            return glm::ortho(0.0f, (f32)screenWidth, (f32)screenHeight, 0.0f, -1.0f, 1.0f); 
+        }
     }
     inline glm::mat4 GetViewMatrix() const {
         return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -55,6 +57,14 @@ struct Camera {
         glm::vec3 newUp = glm::cross(forward, side);
         cameraFront = forward;
         cameraUp = newUp;
+    }
+    inline void SetMode2D() {
+        isSwivelable = false;
+        projection = ORTHOGRAPHIC;
+    }
+    inline void SetMode3D() {
+        isSwivelable = true;
+        projection = PERSPECTIVE;
     }
     /// returns glm::vec2(minScreenWidth, minScreenHeight)
     glm::vec2 GetMinScreenDimensions() const { return glm::vec2(minScreenWidth, minScreenHeight); }

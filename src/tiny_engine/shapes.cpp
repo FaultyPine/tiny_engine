@@ -7,9 +7,10 @@
 #include "math.h"
 
 // shader var is just called "shader" after this macro
-#define SHAPE_SHADER(shaderName, vertShaderPath, fragShaderPath) static Shader shaderName; \
+#define SHAPE_SHADER(shaderName, vertShaderPath, fragShaderPath) \
+static Shader shaderName; \
 if (shaderName.ID == 0) \
-    shaderName = Shader(ResPath(vertShaderPath).c_str(), ResPath(fragShaderPath).c_str())
+    shaderName = Shader(ResPath(vertShaderPath), ResPath(fragShaderPath))
 
 
 namespace Shapes3D {
@@ -306,37 +307,33 @@ void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color, bool i
 
 // to draw vector shapes, just draw a quad and then use the shader to actually derive the shape
 void DrawShape(const glm::mat4& model, const glm::vec4& color, const Shader& shader) {
-    static Shader staticShader = {};
     static u32 quadVAO = 0;
-    if (staticShader.ID != shader.ID) {
-        staticShader = shader; // re-set shader when we are trying to draw a different shape
-        if (quadVAO == 0) { // only need to init vert data once
-            static const f32 tex_quad[] = { 
-                // pos      // tex
-                0.0f, 1.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 1.0f, 0.0f,
-                0.0f, 0.0f, 0.0f, 0.0f, 
+    if (quadVAO == 0) { // only need to init vert data once
+        static const f32 tex_quad[] = { 
+            // pos      // tex
+            0.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 0.0f, 
 
-                0.0f, 1.0f, 0.0f, 1.0f,
-                1.0f, 1.0f, 1.0f, 1.0f,
-                1.0f, 0.0f, 1.0f, 0.0f
-            };
+            0.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 0.0f, 1.0f, 0.0f
+        };
 
-            u32 VBO = 0;
-            GLCall(glGenVertexArrays(1, &quadVAO));
-            GLCall(glGenBuffers(1, &VBO));
-            
-            GLCall(glBindVertexArray(quadVAO));
-            GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-            GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(tex_quad), tex_quad, GL_STATIC_DRAW));
+        u32 VBO = 0;
+        GLCall(glGenVertexArrays(1, &quadVAO));
+        GLCall(glGenBuffers(1, &VBO));
+        
+        GLCall(glBindVertexArray(quadVAO));
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(tex_quad), tex_quad, GL_STATIC_DRAW));
 
-            // vec2 position, vec2 texcoords, all contained in a vec4
-            GLCall(glEnableVertexAttribArray(0));
-            GLCall(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)0));
-            
-            GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-            GLCall(glBindVertexArray(0));
-        }
+        // vec2 position, vec2 texcoords, all contained in a vec4
+        GLCall(glEnableVertexAttribArray(0));
+        GLCall(glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(f32), (void*)0));
+        
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
+        GLCall(glBindVertexArray(0));
     }
 
     glm::mat4 projection = Camera::GetMainCamera().GetProjectionMatrix();
@@ -355,17 +352,7 @@ void DrawShape(const glm::vec2& pos, const glm::vec2& size, f32 rotationDegrees,
                 const glm::vec3& rotationAxis, const glm::vec4& color, const Shader& shader) {
 
     // set up transform of the actual sprite
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(pos.x, pos.y, 0.0f));  
-
-    // rotation is about the "middle" of the shape. 
-    // if you want rotation about some other part of the shape, use the overloaded DrawShape and make
-    // your own model matrix
-    model = glm::translate(model, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.0f)); 
-    model = glm::rotate(model, glm::radians(rotationDegrees), rotationAxis); 
-    model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f));
-
-    model = glm::scale(model, glm::vec3(size.x, size.y, 1.0f)); 
+    glm::mat4 model = Math::Position2DToModelMat(pos, size, rotationDegrees, rotationAxis);
     DrawShape(model, color, shader);
 }
 

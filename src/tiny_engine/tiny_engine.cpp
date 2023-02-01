@@ -11,6 +11,8 @@
 #include "math.h"
 #include "tiny_profiler.h"
 
+// false for 3d
+constexpr bool isMode2D = true;
 
 static f32 deltaTime = 0.0f;
 static f32 lastFrameTime = 0.0f;
@@ -184,9 +186,14 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
 
     // For 2D games, don't depth test so that the order they are drawn in makes sense
     // (subsequent draws overwrite previous draws)
-    //glDepthFunc(GL_NEVER);
-    // comment out above line and comment in below line for proper 3D depth testing
-    glEnable(GL_DEPTH_TEST);
+    if (isMode2D) {
+        glDepthFunc(GL_NEVER);
+        Camera::GetMainCamera().SetMode2D();
+    }
+    else {
+        glEnable(GL_DEPTH_TEST);
+        Camera::GetMainCamera().SetMode3D();
+    }
 
     glEnable(GL_STENCIL_TEST);  
    

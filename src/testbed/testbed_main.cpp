@@ -296,6 +296,7 @@ void testbed_init() {
     PROFILE_FUNCTION();
     
     InitImGui();
+    Camera::GetMainCamera().SetMode3D();
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
     Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vs").c_str(), ResPath("shaders/basic_lighting.fs").c_str());
