@@ -7,6 +7,7 @@
 #include "tiny_engine/tiny_fs.h"
 #include "PoissonGenerator.h"
 #include "rundata.h"
+#include "QuadTree.h"
 
 void PollInputs() {
     if (Keyboard::isKeyDown(GLFW_KEY_ESCAPE)) {
@@ -40,6 +41,7 @@ void DrawGame(GameState& gs, NonGameState& ngs) {
     for (auto& npc : gs.npcs) {
         ngs.character.DrawSprite(npc.tf);
     }
+    gs.tree.Draw();
     DrawDebug();
 }
 
@@ -52,10 +54,11 @@ void game_init() {
     GameState& gs = Rundata::Instance().gs;
     u32 screenWidth = Camera::GetScreenWidth();
     u32 screenHeight = Camera::GetScreenHeight();
+    gs.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
 
     ngs.character = Sprite(LoadTexture(ResPath("other/awesomeface.png")));
 
-    u32 numChars = 50;
+    u32 numChars = 4;
     // points is a vector of xyz in the range 0-1
     PoissonGenerator::DefaultPRNG PRNG;
 	const auto Points = PoissonGenerator::generatePoissonPoints( numChars, PRNG );
@@ -66,7 +69,10 @@ void game_init() {
         ent.tf = Transform2D(pos, glm::vec2(10));
         ent.desiredPosition = glm::vec2(Points[i+1].x*screenWidth, Points[i+1].y*screenHeight);
         gs.npcs.push_back(ent);
+        Node nodeToInsert = Node(pos, &gs.npcs.back());
+        gs.tree.insert(nodeToInsert);
     }
+    std::cout << "Finished init\n";
 
 }
 
@@ -77,10 +83,18 @@ void EntitiesTick(GameState& gs) {
     for (auto& npc : gs.npcs) {
         glm::vec2 moveDelta = glm::normalize(npc.desiredPosition - npc.tf.position) * moveSpeed;
         npc.tf.position += moveDelta * GetDeltaTime();
+
         if (glm::distance(npc.tf.position, npc.desiredPosition) <= 1.0f) {
             npc.desiredPosition = glm::vec2(GetRandomf(0.0, 1.0) * screenWidth, GetRandomf(0.0, 1.0) * screenHeight);
         }
     }
+
+    // update quadtree with new positions
+    gs.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
+    for (auto& npc : gs.npcs) {
+        gs.tree.insert(Node(npc.tf.position, &npc));
+    }
+   
 }
 
 void game_tick() {
