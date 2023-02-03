@@ -48,7 +48,8 @@ struct BoundingBox {
 struct BoundingBox2D {
     BoundingBox2D(){}
     BoundingBox2D(glm::vec2 mn, glm::vec2 mx) {min = mn; max = mx;}
-    glm::vec2 min, max = glm::vec2(0);
+    glm::vec2 min = glm::vec2(0);
+    glm::vec2 max = glm::vec2(0);
 };
 
 #endif
