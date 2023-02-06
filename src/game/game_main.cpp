@@ -5,6 +5,7 @@
 #include "tiny_engine/shapes.h"
 #include "tiny_engine/external/imgui/tiny_imgui.h"
 #include "tiny_engine/tiny_fs.h"
+#include "tiny_engine/tiny_profiler.h"
 #include "PoissonGenerator.h"
 #include "rundata.h"
 #include "QuadTree.h"
@@ -31,15 +32,16 @@ void PollInputs() {
 }
 void DrawDebug() {
     ImGuiBeginFrame();
-    ImGui::Text("Hello!");
+    ImGui::Text("%.3fms (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGuiEndFrame();
 }
 
 
 void DrawGame(GameState& gs, NonGameState& ngs) {
+    PROFILE_FUNCTION();
     glm::vec2 screenSize = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
     for (auto& npc : gs.npcs) {
-        ngs.character.DrawSprite(npc.tf);
+        //ngs.character.DrawSprite(npc.tf);
     }
     gs.tree.Draw();
     DrawDebug();
@@ -49,6 +51,7 @@ void DrawGame(GameState& gs, NonGameState& ngs) {
 
 
 void game_init() {
+    PROFILE_FUNCTION();
     InitImGui();
     NonGameState& ngs = Rundata::Instance().ngs;
     GameState& gs = Rundata::Instance().gs;
@@ -58,7 +61,7 @@ void game_init() {
 
     ngs.character = Sprite(LoadTexture(ResPath("other/awesomeface.png")));
 
-    u32 numChars = 4;
+    u32 numChars = 20;
     // points is a vector of xyz in the range 0-1
     PoissonGenerator::DefaultPRNG PRNG;
 	const auto Points = PoissonGenerator::generatePoissonPoints( numChars, PRNG );
@@ -77,6 +80,7 @@ void game_init() {
 }
 
 void EntitiesTick(GameState& gs) {
+    PROFILE_FUNCTION();
     u32 screenWidth = Camera::GetScreenWidth();
     u32 screenHeight = Camera::GetScreenHeight();
     constexpr f32 moveSpeed = 50.0f;
@@ -89,12 +93,21 @@ void EntitiesTick(GameState& gs) {
         }
     }
 
-    // update quadtree with new positions
-    gs.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
-    for (auto& npc : gs.npcs) {
-        gs.tree.insert(Node(npc.tf.position, &npc));
+    { PROFILE_SCOPE("QuadTreeRefresh");
+        // update quadtree with new positions
+        gs.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
+        for (auto& npc : gs.npcs) {
+            gs.tree.insert(Node(npc.tf.position, &npc));
+        }
     }
-   
+
+    const BoundingBox2D searchArea = BoundingBox2D({100, 100}, {250, 250});
+    std::vector<NPC*> npcsInRange = {};
+    gs.tree.search(searchArea, npcsInRange);
+    for (auto& x : npcsInRange) {
+        Shapes2D::DrawCircle(x->tf.position, 5.0f, glm::vec4(1, 0, 0, 1));
+    }
+    Shapes2D::DrawWireframeSquare(searchArea.min, searchArea.max, glm::vec4(1, 0, 0, 1), 3.0f);
 }
 
 void game_tick() {

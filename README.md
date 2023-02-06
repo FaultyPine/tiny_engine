@@ -51,6 +51,8 @@ Simple nature scene I used to implement & test 3D features
     - load from filesystem
     - store things like Shader, Mesh, Model, etc objects
     - allow access to these things through ids or shared pointers
+- Logging system (reference Dolphin emulator's system)
+- Shader hot reload
 - HDR/Tonemapping & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
