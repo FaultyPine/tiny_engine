@@ -50,6 +50,14 @@ struct BoundingBox2D {
     BoundingBox2D(glm::vec2 mn, glm::vec2 mx) {min = mn; max = mx;}
     glm::vec2 min = glm::vec2(0);
     glm::vec2 max = glm::vec2(0);
+
+    bool isInBounds(glm::vec2 point) {
+        return (point.x >= min.x && point.x <= max.x
+            && point.y >= min.y && point.y <= max.y);
+    }
+    bool isIntersecting(BoundingBox2D other) {
+        return Math::isOverlappingRect2D(min, max, other.min, other.max);
+    }
 };
 
 #endif

@@ -23,8 +23,9 @@ void DrawShape(const glm::vec2& pos, const glm::vec2& size,
             const glm::vec4& color, const Shader& shader);
 
 
-void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color, bool isHollow = false);
+void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color = glm::vec4(1), bool isHollow = false);
 
+void DrawWireframeSquare(const glm::vec2& start, const glm::vec2& end, glm::vec4 color, f32 width);
 void DrawSquare(const glm::vec2& pos, const glm::vec2& size, 
             f32 rotationDegrees, const glm::vec3& rotationAxis, 
             const glm::vec4& color, bool isHollow = false);

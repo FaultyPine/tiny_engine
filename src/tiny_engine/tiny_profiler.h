@@ -13,6 +13,10 @@
 // chrome tracing event format
 // https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview#
 
+// HOW TO USE:
+// Enable profiling -> run game -> close game -> open google chrome -> enter chrome://tracing into
+// URL -> drag profiling_results.json onto that window
+
 #define PROFILING 0
 #if PROFILING
     #define PROFILE_SCOPE(name) InstrumentationTimer timer##__LINE__(name)

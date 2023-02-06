@@ -309,7 +309,7 @@ void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color, bool i
 void DrawShape(const glm::mat4& model, const glm::vec4& color, const Shader& shader) {
     static u32 quadVAO = 0;
     if (quadVAO == 0) { // only need to init vert data once
-        static const f32 tex_quad[] = { 
+        /*static const f32 tex_quad[] = { 
             // pos      // tex
             0.0f, 1.0f, 0.0f, 1.0f,
             1.0f, 0.0f, 1.0f, 0.0f,
@@ -318,6 +318,16 @@ void DrawShape(const glm::mat4& model, const glm::vec4& color, const Shader& sha
             0.0f, 1.0f, 0.0f, 1.0f,
             1.0f, 1.0f, 1.0f, 1.0f,
             1.0f, 0.0f, 1.0f, 0.0f
+        };*/
+        static const f32 tex_quad[] = { 
+            // pos      // tex
+            -1.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, -1.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 
+
+            -1.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, -1.0f, 1.0f, 0.0f
         };
 
         u32 VBO = 0;
@@ -358,30 +368,85 @@ void DrawShape(const glm::vec2& pos, const glm::vec2& size, f32 rotationDegrees,
 
 
 void DrawLine(const glm::vec2& origin, const glm::vec2& dest, const glm::vec4& color, f32 width) {
-    SHAPE_SHADER(shader, "shaders/shapes/shape.vs", "shaders/shapes/line.fs");
+        static Shader shader;
+    if (!shader.isValid()) {
+        shader = Shader::CreateShaderFromStr(
+R"(
+#version 330 core
+layout (location = 0) in vec3 vertPos;
+layout (location = 1) in vec4 vertColor;
+out vec4 color;
+uniform mat4 mvp;
+void main(){
+    color = vertColor;
+	gl_Position = mvp * vec4(vertPos, 1.0);
+}
+)",
+R"(
+#version 330 core
+out vec4 FragColor;
+in vec4 color;
+void main(){
+	FragColor = color;
+}
+)"
+        );
+    }
+    static u32 quadVAO = 0;
+    static u32 VBO = 0;
+    const f32 lineVerts[] = {
+        origin.x, origin.y, 0.0f, // vert pos
+        color.r, color.g, color.b, color.a, // vert col
+
+        dest.x,   dest.y,   0.0f,
+        color.r, color.g, color.b, color.a,
+    };
+    if (quadVAO == 0) {
+        GLCall(glGenVertexArrays(1, &quadVAO));
+        GLCall(glGenBuffers(1, &VBO));
+        
+        GLCall(glBindVertexArray(quadVAO));
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(lineVerts), lineVerts, GL_DYNAMIC_DRAW));
+
+        // this shader has vert attributes: vec3 vertPos  vec3 vertNormal  vec2 vertTexCoord  vec3 vertColor
+        GLCall(glEnableVertexAttribArray(0));
+        GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)0));
+        GLCall(glEnableVertexAttribArray(1));
+        GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)(3 * sizeof(f32))));
+        
+
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
+        GLCall(glBindVertexArray(0));
+    }
+    else {
+        // each update, reupload the vertex data to the gpu since the line positions may have changed
+        //GLCall(glBindVertexArray(quadVAO));
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+        // copy into gpu vertex buffer with offset 0
+        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVerts), lineVerts));
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
+    }
+    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
+    glm::mat4 view = glm::mat4(1);
+    glm::mat4 model = glm::mat4(1); // specifying start/end pos in vertex data, don't need anything here
+    glm::mat4 mvp = proj * view * model;
     shader.use();
-    // draw a non-hollow square that has
-    // 'top-left' corner at our origin 
-    f32 hypotenuse = glm::distance(dest, origin);
-    f32 yDelta = dest.y - origin.y;
-    f32 xDelta = dest.x - origin.x;
-    glm::vec2 lineSize = {width, hypotenuse};
+    shader.setUniform("mvp", mvp);
 
-    // square starts at origin and extends downward at first...
-    glm::vec2 beginningDir = glm::normalize(glm::vec2(0.0, 1.0));
-    glm::vec2 destDir = glm::normalize(dest - origin);
-    
-    // get angle we need to rotate to align square with dest
-    f32 dot = beginningDir.x * destDir.x + beginningDir.y * destDir.y;
-    f32 det = beginningDir.x * destDir.y - beginningDir.y * destDir.x;
-    f32 theta = atan2(det , dot); // radians
+    GLCall(glBindVertexArray(quadVAO));
+    glLineWidth(width);
+    GLCall(glDrawArrays(GL_LINES, 0, 2));
+    glLineWidth(1.0);
+    GLCall(glBindVertexArray(0));
+}
 
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(origin.x, origin.y, 0.0f));  
-    model = glm::rotate(model, theta, {0.0, 0.0, 1.0}); 
-    model = glm::scale(model, glm::vec3(lineSize.x, lineSize.y, 1.0f)); 
+void DrawWireframeSquare(const glm::vec2& start, const glm::vec2& end, glm::vec4 color, f32 width) {
+    Shapes2D::DrawLine(start, glm::vec2(end.x, start.y), color, width);
+    Shapes2D::DrawLine(start, glm::vec2(start.x, end.y), color, width);
 
-    Shapes2D::DrawShape(model, color, shader);
+    Shapes2D::DrawLine(end, glm::vec2(end.x, start.y), color, width);
+    Shapes2D::DrawLine(end, glm::vec2(start.x, end.y), color, width);
 }
 
     
