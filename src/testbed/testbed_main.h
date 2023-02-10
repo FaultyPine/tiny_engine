@@ -54,6 +54,7 @@ struct GameState {
     // Main pond
     #define NUM_WAVES 8
     Wave waves[NUM_WAVES];
+    s32 numActiveWaves = 0;
     WorldEntity waveEntity = {};
     Texture waterTexture;
     // Waterfall

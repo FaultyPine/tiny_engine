@@ -57,6 +57,14 @@ void testbed_inputpoll() {
         }
     }
 
+
+    if (Keyboard::isKeyPressed(GLFW_KEY_R)) {
+        Shader::ReloadShaders();
+        GameState& gs = GameState::get();
+        
+    }
+
+
 }
 
 void testbed_orbit_cam(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) {
@@ -149,7 +157,7 @@ void drawGameState() {
     GameState& gs = GameState::get();
 
     { PROFILE_SCOPE("EntityDrawing");
-        for (auto& ent : gs.entities) {
+        for (const auto& ent : gs.entities) {
             ent.model.Draw(ent.transform, gs.lights);
         }
     }
@@ -158,6 +166,7 @@ void drawGameState() {
     Shader& waveShader = gs.waveEntity.model.cachedShader;
     if (gs.waveEntity.isValid()) {
         waveShader.use();
+        waveShader.setUniform("numActiveWaves", gs.numActiveWaves);
         for (u32 i = 0; i < NUM_WAVES; i++) {
             Wave& wave = gs.waves[i];
             waveShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
@@ -256,8 +265,6 @@ void init_grass(GameState& gs) {
 
 void init_main_pond(GameState& gs) {
     Shader waterShader = Shader(ResPath("shaders/water.vs").c_str(), ResPath("shaders/water.fs").c_str());
-    waterShader.use();
-    waterShader.setUniform("numActiveWaves", 3);
     gs.waterTexture = LoadTexture(ResPath("other/water.png"));
     waterShader.TryAddSampler(gs.waterTexture.id, "waterTexture");
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
@@ -267,6 +274,7 @@ void init_main_pond(GameState& gs) {
     gs.waves[0] = Wave(0.2, 8.7, 0.05, glm::vec2(1,1));
     gs.waves[1] = Wave(0.5, 2.0, 0.09, glm::vec2(0,1));
     gs.waves[2] = Wave(0.8, 1.0, 0.1, glm::vec2(1,0.4));
+    gs.numActiveWaves = 3;
 }
 
 void init_waterfall(GameState& gs, Mesh& waterfallMesh) {
@@ -296,22 +304,20 @@ void testbed_init() {
     PROFILE_FUNCTION();
     
     InitImGui();
-    Camera::GetMainCamera().SetMode3D();
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
-    Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vs").c_str(), ResPath("shaders/basic_lighting.fs").c_str());
-    Model testModel;
-    //testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
-    testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
-    //testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
-    //testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
+    Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vs"), ResPath("shaders/basic_lighting.fs"));
+    //Model testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
+    Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
+    //Model testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
+    //Model testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "island"));
     
     Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({10,7.5,3}, glm::vec3(0.7)), treeModel, "tree"));
     
     Model bushModel = Model(lightingShader, ResPath("other/island_wip/bush.obj").c_str(), ResPath("other/island_wip/").c_str());
-    gs.entities.emplace_back(WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "tree"));
+    gs.entities.emplace_back(WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "bush"));
 
     // pond
     init_main_pond(gs);
@@ -320,8 +326,7 @@ void testbed_init() {
     init_grass(gs);
 
     // waterfall
-    Mesh* waterfallMesh = testModel.GetMesh("WaterfallPlane_Plane.001");
-    if (waterfallMesh) {
+    if (Mesh* waterfallMesh = testModel.GetMesh("WaterfallPlane_Plane.001")) {
         init_waterfall(gs, *waterfallMesh);
     }
 

@@ -4,48 +4,34 @@
 #include "pch.h"
 #include "texture.h"
 
-// map of shader id -> list of sampler ids
-// putting this outside the shader object to keep Shaders a wrapper around an ID
-static std::unordered_map<u32, std::vector<s32>> samplerIDs = {};
 
 struct Shader {
+    // ID is not necessarily the OpenGL shader id!
+    // it is an index into a list of OGL shader ids which we can
+    // change to facilitate shader hot reloading
     u32 ID = 0;
+    bool valid = false;
 
-    Shader() { ID = 0; }
-    Shader(u32 id) { ID = id; }
+    Shader() {}
+    Shader(u32 id);
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
+    static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr);
 
-    void Delete() const { glDeleteProgram(ID); }
-    bool isValid() const { return ID != 0; }
+    void Delete() const;
+    bool isValid() const { return valid; }
+    u32 GetOpenGLProgramID();
+
     /// Takes vertex/fragment shader code (as a string)
-    static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) {
-        return Shader(CreateShaderProgFromStr(vsCodeStr, fsCodeStr));
-    }
-    inline void ActivateSamplers() const {
-        const std::vector<s32>& shaderSamplers = samplerIDs[ID];
-        for (s32 i = 0; i < shaderSamplers.size(); i++) {
-            Texture::bindUnit(i, shaderSamplers.at(i));
-        }
-    }
+    void ActivateSamplers() const;
     /// attempts to add the texture to the sampler list. If the texture id alrady exists, does nothing
-    inline bool TryAddSampler(s32 texture, const char* uniformName) const {
-        std::vector<s32>& shaderSamplers = samplerIDs[ID];
-        // don't add if this texture is already tracked
-        if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture) != shaderSamplers.end()) return false;
-        // this sampler needs to be added
-        shaderSamplers.push_back(texture);
-        use();
-        setUniform(uniformName, (s32)shaderSamplers.size()-1);
-        return true;
-    }
+    bool TryAddSampler(s32 texture, const char* uniformName) const;
 
     // use/activate the shader
-    inline void use() const {
-        ASSERT("Invalid shader ID!\n" && ID);
-        glUseProgram(ID); 
-    }
+    void use() const;
     s32 getLoc(const std::string& uniformName) const;
 
+    // reloads all shaders
+    static void ReloadShaders();
 
     // utility uniform functions
 
@@ -112,8 +98,7 @@ struct Shader {
     }
 
 private:
-    static u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource);
-    static u32 CreateShaderProgFromStr(const s8* vsSource, const s8* fsSource);
+    void InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath = "", const std::string& fragmentPath = "");
 };
 
 
