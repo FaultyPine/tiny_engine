@@ -11,8 +11,6 @@
 #include "math.h"
 #include "tiny_profiler.h"
 
-// false for 3d
-constexpr bool isMode2D = true;
 
 static f32 deltaTime = 0.0f;
 static f32 lastFrameTime = 0.0f;
@@ -83,6 +81,17 @@ f32 GetDeltaTime() {
 }
 u32 GetFrameCount() { return frameCount; }
 
+void SetMode2D() {
+    // For 2D games, don't depth test so that the order they are drawn in makes sense
+    // (subsequent draws overwrite previous draws)
+    glDepthFunc(GL_NEVER);
+    Camera::GetMainCamera().SetMode2D();
+}
+void SetMode3D() {
+    glEnable(GL_DEPTH_TEST);
+    Camera::GetMainCamera().SetMode3D();
+}
+
 void ClearGLBuffers() {
     // clear gl buffer
     ClearGLColorBuffer();
@@ -131,7 +140,7 @@ bool ShouldCloseWindow() {
     return glfwWindowShouldClose(glob_glfw_window);
 }
 
-void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName) {
+void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName, bool false2DTrue3D) {
     Profiler::Instance().beginSession("Profile");
 
     s8 cwd[PATH_MAX];
@@ -184,15 +193,11 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
 
     glfwSetWindowAspectRatio(window, aspectRatioW, aspectRatioH);
 
-    // For 2D games, don't depth test so that the order they are drawn in makes sense
-    // (subsequent draws overwrite previous draws)
-    if (isMode2D) {
-        glDepthFunc(GL_NEVER);
-        Camera::GetMainCamera().SetMode2D();
+    if (false2DTrue3D) {
+        SetMode3D();
     }
     else {
-        glEnable(GL_DEPTH_TEST);
-        Camera::GetMainCamera().SetMode3D();
+        SetMode2D();
     }
 
     glEnable(GL_STENCIL_TEST);  

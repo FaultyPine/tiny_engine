@@ -29,7 +29,7 @@ Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 colo
     return light;
 }
 
-void UpdateLightValues(Shader shader, Light light) {
+void UpdateLightValues(const Shader& shader, Light light) {
     s32 lightIdx = light.globalIndex;
     ASSERT(lightIdx < MAX_NUM_LIGHTS); 
     shader.use();

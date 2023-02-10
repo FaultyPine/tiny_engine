@@ -36,6 +36,6 @@ struct Light {
 // Create a light and get shader locations
 Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color);
 // Send light properties to shader
-void UpdateLightValues(Shader shader, Light light);
+void UpdateLightValues(const Shader& shader, Light light);
 
 #endif

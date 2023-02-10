@@ -7,6 +7,8 @@
 void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height);
 
 void CloseGameWindow();
+void SetMode2D();
+void SetMode3D();
 
 // returns the current GLFW time
 f64 GetTime();
@@ -27,7 +29,8 @@ bool ShouldCloseWindow();
 
 void TerminateGame();
 
-void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName);
+void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH,
+            const s8* windowName, bool false2DTrue3D);
 void ClearGLBuffers();
 void ClearGLColorBuffer();
 void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 maxHeight);

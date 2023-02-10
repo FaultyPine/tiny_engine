@@ -11,13 +11,14 @@
 
 // game includes
 //#include "PartOfThePack/potp_main.h"
-#define TESTBED3D 0
+#define TESTBED3D 1
 #include "testbed/testbed_main.h"
-#define OTHERGAME 1
+#define OTHERGAME 0
 #include "game/game_main.h"
 
 void preLoopInit() {
-    InitGame(800, 600, 4, 3, "Tiny Engine"); 
+    bool is3D = true;
+    InitGame(800, 600, 4, 3, "Tiny Engine", is3D); 
 
     //Potp::MainInit();
     #if TESTBED3D
