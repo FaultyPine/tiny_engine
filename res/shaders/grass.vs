@@ -31,7 +31,11 @@ float cnoise(vec2 P);
 
 vec2 windDirBase = vec2(0.5, 0.5);
 
-vec2 GetGrassSway() {
+void GetGrassSway(inout vec3 vertPos) {
+    //vec3 posWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
+    //vec2 uv = posWS.xz * _WindDistortionMap.xy + _WindDistortionMap_ST.zw + _WindFrequency * time;
+    //vec2 windSample = (texture(_WindDistortionMap, vec4(uv, 0, 0)).xy * 2 - 1) * _WindStrength;
+
     vec3 posWS = (instanceModelMat * vec4(vertexPosition, 1.0)).xyz;
     vec2 windDir = normalize( windDirBase + (cnoise(vec2(time))+1)/2 );
     float speed = 0.5;
@@ -41,7 +45,7 @@ vec2 GetGrassSway() {
     perlinNoise = (perlinNoise+1) / 2;
     float height = pow(vertexTexCoord.y, 4);
     float sway = perlinNoise * height * strength;
-    return sway * windDir;
+    vertPos.xz += sway * windDir;
 }
 mat4 Billboard(mat4 modelViewMat) {
     // To create a "billboard" effect,
@@ -64,7 +68,7 @@ void main()
     mat4 mvp = projectionMat * modelView;
     
     vec3 vertPos = vertexPosition;
-    vertPos.xz += GetGrassSway();
+    GetGrassSway(vertPos);
 
     vec3 fragPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
     fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);

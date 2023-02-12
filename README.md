@@ -45,14 +45,15 @@ Simple nature scene I used to implement & test 3D features
         - Make rock bigger, waterfall starts high up - mostly out of view
         - waterfall shader/mesh/particles
             - 3D particles - extension of 2d particle system
+- better grass sway w/distortion texture to emulate wind better
+- outline postprocessing shader
 - ~~Skybox~~
 - PBR lighting???
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc objects
     - allow access to these things through ids or shared pointers
-- Logging system (reference Dolphin emulator's system)
-- Shader hot reload
+- ~~Shader hot reload~~
 - HDR/Tonemapping & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
