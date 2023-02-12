@@ -24,7 +24,7 @@ struct Shader {
     /// Takes vertex/fragment shader code (as a string)
     void ActivateSamplers() const;
     /// attempts to add the texture to the sampler list. If the texture id alrady exists, does nothing
-    bool TryAddSampler(s32 texture, const char* uniformName) const;
+    void TryAddSampler(s32 texture, const char* uniformName) const;
 
     // use/activate the shader
     void use() const;

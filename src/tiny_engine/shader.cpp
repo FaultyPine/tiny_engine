@@ -163,14 +163,20 @@ void Shader::ActivateSamplers() const {
         Texture::bindUnit(i, shaderSamplers.at(i));
     }
 }
-bool Shader::TryAddSampler(s32 texture, const char* uniformName) const {
+void Shader::TryAddSampler(s32 texture, const char* uniformName) const {
     std::vector<s32>& shaderSamplers = samplerIDs[ID];
     // if this texture is NOT already tracked
     if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture) == shaderSamplers.end()) {
         // this sampler needs to be added
         shaderSamplers.push_back(texture);
     }
-    use();
-    setUniform(uniformName, (s32)shaderSamplers.size()-1);
-    return true;
+    // find texture in sampler list and set uniform.
+    // doing this here to help support shader hot-reloading. When shaders are reloaded the sampler
+    // uniforms need to be re-set with the appropriate textures
+    auto samplerFound = std::find(shaderSamplers.begin(), shaderSamplers.end(), texture);
+    if (samplerFound != shaderSamplers.end()) {
+        s32 samplerIndex = samplerFound - shaderSamplers.begin();
+        use();
+        setUniform(uniformName, samplerIndex);
+    }
 }
