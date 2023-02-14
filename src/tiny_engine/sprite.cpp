@@ -34,7 +34,7 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
 
     // set up transform of the actual sprite
     glm::mat4 model = Math::Position2DToModelMat(position, size, rotate, rotationAxis);
-    glm::mat4 projection = cam.GetProjectionMatrix();
+    glm::mat4 projection = cam.GetOrthographicProjection();
     
     shader.use();
     shader.setUniform("model", model);
@@ -42,11 +42,12 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
     shader.setUniform("projection", projection);
     // Texture unit indexes are bound to samplers, not texture objects.
     // https://stackoverflow.com/questions/46122353/opengl-texture-is-all-black-when-rendered-with-shader
-    shader.setUniform("mainTex", 0);
+    //shader.setUniform("mainTex", 0);
     shader.setUniform("shouldFlipY", shouldFlipY);
-
-    Texture::activate(0); // not technically necessary since we're just using one texture in sprite frag shader (unit 0 is activated by default)
-    mainTex.bind();
+    shader.TryAddSampler(mainTex.id, "mainTex");
+    shader.ActivateSamplers();
+    //Texture::activate(0); // not technically necessary since we're just using one texture in sprite frag shader (unit 0 is activated by default)
+    //mainTex.bind();
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);

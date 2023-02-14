@@ -21,7 +21,7 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
         // if its a depth texture, everything outside our texture should default to 1
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        f32 borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        constexpr f32 borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);  
     }
     else {
@@ -37,10 +37,20 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
     }
     // attach texture to framebuffer
     GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, type, GL_TEXTURE_2D, texture, 0));
-    GLCall(glBindTexture(GL_TEXTURE_2D, 0));
+
+    if (type == COLOR) {
+        // to make sure opengl can do depth (or stencil) testing, gotta add a depth/stencil attachment
+        GLCall(glGenRenderbuffers(1, &renderBufferObjectID));
+        GLCall(glBindRenderbuffer(GL_RENDERBUFFER, renderBufferObjectID)); 
+        GLCall(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size.x, size.y));  
+        // attach the renderbuffer object to the depth and stencil attachment of the framebuffer
+        GLCall(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBufferObjectID));
+        GLCall(glBindRenderbuffer(GL_RENDERBUFFER, 0));
+    }
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
+    GLCall(glBindTexture(GL_TEXTURE_2D, 0));
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));  
 }
 
@@ -80,13 +90,12 @@ void ShadowMap::EndRender() const {
     // bind default fb
     Framebuffer::BindDefaultFrameBuffer();
 }
-void ShadowMap::SetShadowUniforms(Shader& shader, const Light& light) const {
+void ShadowMap::ReceiveShadows(Shader& shader, const Light& light) const {
     shader.use();
     shader.TryAddSampler(fb.GetTexture().id, "depthMap");
     shader.setUniform("lightSpaceMatrix", light.GetLightViewProjMatrix());
 }
-void ShadowMap::RenderToShadowMap(const Light& light, Model& model, const Transform& tf) const {
-    SetShadowUniforms(model.cachedShader, light);
+void ShadowMap::RenderShadowCaster(const Light& light, Model& model, const Transform& tf) const {
     depthShader.use();
     glm::mat4 lightMat = light.GetLightViewProjMatrix();
     glm::mat4 modelMat = tf.ToModelMatrix();

@@ -8,6 +8,7 @@
 #include "tiny_engine/framebuffer.h"
 #include "tiny_engine/skybox.h"
 #include "tiny_engine/particles/particles.h"
+#include "tiny_engine/framebuffer.h"
 
 struct WorldEntity {
     Transform transform = {};
@@ -65,10 +66,15 @@ struct GameState {
     WorldEntity grass = {};
     std::vector<glm::mat4> grassTransforms = {};
     BoundingBox grassSpawnExclusion = {};
+    Texture windTexture = {};
 
     // shadows/depth tex
     ShadowMap shadowMap;
     Sprite depthSprite;
+
+    // postprocessing
+    Framebuffer postprocessingFB;
+    Sprite framebufferSprite;
 
     Skybox skybox = {};
 

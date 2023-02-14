@@ -83,12 +83,17 @@ void testbed_orbit_light(Light& light, f32 orbitRadius, f32 orbitHeight, f32 spe
     light.position.z = z;
 }
 
-
+static f32 windStrength = 0.8;
+static f32 windFrequency = 13.5;
+static f32 windUVScale = 185.0;
 void drawImGuiDebug() {
     GameState& gs = GameState::get();
     ImGuiBeginFrame();
     
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::DragFloat("wind str", &windStrength, 0.01f);
+    ImGui::DragFloat("wind freq", &windFrequency, 0.01f);
+    ImGui::DragFloat("wind uvscale", &windUVScale, 1.0f);
     if (ImGui::CollapsingHeader("Grass spawn planes")) {
         ImGui::DragFloat3("Grass ex min", &gs.grassSpawnExclusion.min[0], 0.01f);
         ImGui::DragFloat3("Grass ex max", &gs.grassSpawnExclusion.max[0], 0.01f);
@@ -140,9 +145,10 @@ void DepthPrePass() {
     shadowMap.BeginRender();
     const Light& sunlight = gs.lights[0];
     for (auto& ent : gs.entities) {
-        shadowMap.RenderToShadowMap(sunlight, ent.model, ent.transform);
+        shadowMap.ReceiveShadows(ent.model.cachedShader, sunlight);
+        shadowMap.RenderShadowCaster(sunlight, ent.model, ent.transform);
     }
-    shadowMap.SetShadowUniforms(gs.grass.model.cachedShader, sunlight);
+    shadowMap.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
     shadowMap.EndRender();
 
     #if 0
@@ -181,6 +187,11 @@ void drawGameState() {
     // grass
     if (gs.grass.isValid()) {
         PROFILE_SCOPE("GrassInstancing");
+        gs.grass.model.cachedShader.use();
+        gs.grass.model.cachedShader.setUniform("_WindStrength", windStrength);
+        gs.grass.model.cachedShader.setUniform("_WindFrequency", windFrequency);
+        gs.grass.model.cachedShader.setUniform("_WindUVScale", windUVScale);
+        gs.grass.model.cachedShader.TryAddSampler(gs.windTexture.id, "windTexture");
         gs.grass.model.DrawInstanced(gs.grassTransforms.size());
     }
     // waterfall
@@ -201,11 +212,13 @@ void drawGameState() {
             Shapes3D::DrawLine(light.position, light.position + light.Direction(), {1.0, 1.0, 1.0, 1.0});
     }*/
     
+    #if 1
     { PROFILE_SCOPE("Skybox draw");
     gs.skybox.skyboxShader.use();
     gs.skybox.skyboxShader.setUniform("sunDirection", gs.lights[0].Direction());
     gs.skybox.Draw();
     }
+    #endif
 }
 
 glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
@@ -261,6 +274,7 @@ void init_grass(GameState& gs) {
     grassModel.EnableInstancing(gs.grassTransforms.data(), sizeof(glm::mat4), gs.grassTransforms.size());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
+    gs.windTexture = LoadTexture(ResPath("other/distortion.png"));
 }
 
 void init_main_pond(GameState& gs) {
@@ -355,12 +369,27 @@ void testbed_gametick(GameState& gs) {
     testbed_orbit_light(mainLight, 55, 25, 0.2);
     //gs.waterfallParticles.Tick({0,15,0});
 }
-void testbed_render(const GameState& gs) {
+void testbed_render(GameState& gs) {
     #if 0
     SetWireframeDrawing(true);
     #endif
+
     DepthPrePass();
+    if (!gs.postprocessingFB.isValid()) {
+        gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
+        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vs"), ResPath("shaders/outline.fs"));
+        //gs.shadowMap.ReceiveShadows(postprocessingShader, gs.lights[0]);
+        gs.framebufferSprite = Sprite(postprocessingShader, gs.postprocessingFB.GetTexture());
+    }
+    gs.postprocessingFB.Bind();
+    ClearGLBuffers();
     drawGameState();
+    gs.postprocessingFB.BindDefaultFrameBuffer();
+    gs.framebufferSprite.GetShader().use();
+    //gs.framebufferSprite.setShaderUniform("_OutlineScale", outlineScale);
+    //gs.framebufferSprite.setShaderUniform("_DepthThreshold", depthThreshold);
+    gs.framebufferSprite.DrawSprite(Transform2D({0,0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}), glm::vec4(1), false, true);
+    
     drawImGuiDebug();
 
     // red is x, green is y, blue is z

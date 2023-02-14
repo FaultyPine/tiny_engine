@@ -30,22 +30,20 @@ flat out int materialId;
 float cnoise(vec2 P);
 
 vec2 windDirBase = vec2(0.5, 0.5);
+uniform sampler2D windTexture;
+uniform float _WindStrength;
+uniform float _WindFrequency;
+uniform float _WindUVScale;
 
-void GetGrassSway(inout vec3 vertPos) {
-    //vec3 posWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
-    //vec2 uv = posWS.xz * _WindDistortionMap.xy + _WindDistortionMap_ST.zw + _WindFrequency * time;
-    //vec2 windSample = (texture(_WindDistortionMap, vec4(uv, 0, 0)).xy * 2 - 1) * _WindStrength;
-
-    vec3 posWS = (instanceModelMat * vec4(vertexPosition, 1.0)).xyz;
-    vec2 windDir = normalize( windDirBase + (cnoise(vec2(time))+1)/2 );
-    float speed = 0.5;
-    float strength = 0.7;
-    // todo: this is good perlin noise, but perlin isn't necessarily what i want here i think....
-    float perlinNoise = cnoise(posWS.xz + (time*speed)*-windDir);
-    perlinNoise = (perlinNoise+1) / 2;
+void GetGrassSway(inout vec3 vertPosOS) {
     float height = pow(vertexTexCoord.y, 4);
-    float sway = perlinNoise * height * strength;
-    vertPos.xz += sway * windDir;
+    vec3 posWS = (instanceModelMat*vec4(vertPosOS, 1.0)).xyz;
+    vec2 windDir = normalize( windDirBase + (cnoise(vec2(time))+1)/2 );
+
+    vec2 uv = posWS.xz + (_WindFrequency * time);
+    vec2 windSample = (texture(windTexture, uv/_WindUVScale).xy * 2 -1) * _WindStrength;
+    vec2 wind = normalize(windSample);
+    vertPosOS.xz += windSample * height * windDir;
 }
 mat4 Billboard(mat4 modelViewMat) {
     // To create a "billboard" effect,

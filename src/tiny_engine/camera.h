@@ -36,6 +36,13 @@ struct Camera {
             return glm::ortho(0.0f, (f32)screenWidth, (f32)screenHeight, 0.0f, -1.0f, 1.0f); 
         }
     }
+    inline glm::mat4 GetOrthographicProjection() const {
+        return glm::ortho(0.0f, (f32)screenWidth, (f32)screenHeight, 0.0f, -1.0f, 1.0f); 
+    }
+    inline glm::mat4 GetPerspectiveProjection() const {
+        f32 aspect = (f32)screenWidth / screenHeight;
+        return glm::perspective(glm::radians(FOV), aspect, nearClip, farClip);
+    }
     inline glm::mat4 GetViewMatrix() const {
         return glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
     }

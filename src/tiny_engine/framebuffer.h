@@ -14,7 +14,7 @@ struct Framebuffer {
         DEPTH = GL_DEPTH_ATTACHMENT,
     };
     Framebuffer(){}
-    Framebuffer(f32 width, f32 height, FramebufferAttachmentType type);
+    Framebuffer(f32 width, f32 height, FramebufferAttachmentType type = FramebufferAttachmentType::COLOR);
 
     inline bool isValid() const { return framebufferID != 0; }
     inline void Bind() const {
@@ -23,12 +23,13 @@ struct Framebuffer {
     }
     static void BindDefaultFrameBuffer() {
         GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0)); 
-        GLCall(glViewport(0, 0, (f32)Camera::GetMainCamera().GetScreenWidth(), (f32)Camera::GetMainCamera().GetScreenHeight()));
+        GLCall(glViewport(0, 0, (f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight()));
     }
     void Delete() { 
         GLCall(glDeleteFramebuffers(1, &framebufferID));
         GLCall(glDeleteTextures(1, &texture));
-        framebufferID, texture = 0;
+        GLCall(glDeleteRenderbuffers(1, &renderBufferObjectID));
+        framebufferID = 0; texture = 0; renderBufferObjectID = 0;
         size = glm::vec2(0);
     }
     static void ClearDepth() { GLCall(glClear(GL_DEPTH_BUFFER_BIT)); }
@@ -39,6 +40,7 @@ struct Framebuffer {
     FramebufferAttachmentType type = COLOR;
 private:
     u32 framebufferID = 0;
+    u32 renderBufferObjectID = 0;
     u32 texture = 0;
     glm::vec2 size = glm::vec2(0);
 };
@@ -52,8 +54,10 @@ struct ShadowMap {
     }
     bool isValid() const { return fb.isValid(); }
     void BeginRender() const;
-    void SetShadowUniforms(Shader& shader, const Light& light) const;
-    void RenderToShadowMap(const Light& light, Model& model, const Transform& tf) const;
+    // makes the passed in shader "receive" shadows (just gets shadow uniforms set)
+    void ReceiveShadows(Shader& shader, const Light& light) const;
+    // makes passed in model cast shadows (just renders the model into the depth texture)
+    void RenderShadowCaster(const Light& light, Model& model, const Transform& tf) const;
     void EndRender() const;
 
     Framebuffer fb;
