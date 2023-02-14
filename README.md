@@ -47,6 +47,14 @@ Simple nature scene I used to implement & test 3D features
             - 3D particles - extension of 2d particle system
 - better grass sway w/distortion texture to emulate wind better
 - outline postprocessing shader
+    - generate normals texture for postprocessing
+        - at this point i would be generating depth and
+        normals as seperate g-buffers... shouldn't I just 
+        commit and go full deferred at that point? ....
+        I need to actually build a renderer....
+        - maybe a full deferred renderer is a bit much.
+        - I think it would be best to just have the 
+            depth prepass also render normals (multiple render targets)
 - ~~Skybox~~
 - PBR lighting???
 - Resource system
@@ -81,6 +89,10 @@ Simple nature scene I used to implement & test 3D features
 
 
 ## Personal Notes:
+- OSX Retina Screen 1/4 render bug:
+    http://disq.us/p/1osvm46: "For OSX retina device users, you may have to double the screen height and width when you create a framebuffer. Otherwise when you want to draw the screen using a framebuffer, some weird thing may occur (like I found only 1/4 of the previous content is rendered on the screen, which is the left corner).
+    The reason of this might be that OSX uses 4 pixels to represent one under retina display. And GLFW aware of this problem while some other functions do not. So when you create a 800 x 600 window, it might actually be a 1600 x 1200 window..."
+
 - MTL File Format:
 Ka: specifies ambient color     values between 0 and 1 for the RGB components.
 Kd: specifies diffuse color
