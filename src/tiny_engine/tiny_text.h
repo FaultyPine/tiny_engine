@@ -1,7 +1,7 @@
 #ifndef TINY_TEXT_H
 #define TINY_TEXT_H
 
-#include "tiny_engine/pch.h"
+#include "pch.h"
 
 struct GLTtext;
 GLTtext* CreateText(const char* msg);

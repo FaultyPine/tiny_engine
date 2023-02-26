@@ -38,7 +38,6 @@ SOURCE_DIR = "src"
 BUILD_DIR = "build"
 USE_MSVC = True
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
-PCH_FILE = "src/tiny_engine/pch.h"
 
 
 

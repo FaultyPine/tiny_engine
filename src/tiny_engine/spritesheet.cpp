@@ -1,5 +1,6 @@
+#include "pch.h"
 #include "spritesheet.h"
-
+#include "tiny_engine/tiny_engine.h"
 
 
 Spritesheet::Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, TextureProperties props) {
@@ -85,7 +86,6 @@ Sprite Spritesheet::GetCurrentSprite() const {
     return this->sprites.at(spritesheetIdx);
 }
 
-void Spritesheet::Draw(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize) const {
-    this->GetCurrentSprite().DrawSprite(cam, position, size, rotate, rotationAxis, color, adjustToScreensize);
+void Spritesheet::Draw(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize) const {
+    this->GetCurrentSprite().DrawSprite(position, size, rotate, rotationAxis, color, adjustToScreensize);
 }

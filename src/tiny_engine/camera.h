@@ -19,7 +19,7 @@ struct Camera {
     u32 maxScreenHeight = 975;
     f32 FOV = 45.0f;
     f32 nearClip = 0.1f;
-    f32 farClip = 100.0f;
+    f32 farClip = 500.0f;
     bool isSwivelable = false;
     enum Projection {
         PERSPECTIVE,
@@ -27,7 +27,7 @@ struct Camera {
     };
     Projection projection = ORTHOGRAPHIC;
 
-    inline glm::mat4 GetProjectionMatrix() const {
+    glm::mat4 GetProjectionMatrix() const {
         f32 aspect = (f32)screenWidth / screenHeight;
         if (projection == PERSPECTIVE) {
             return glm::perspective(glm::radians(FOV), aspect, nearClip, farClip);
@@ -50,7 +50,7 @@ struct Camera {
         static Camera mainCamera;
         return mainCamera;
     }
-    inline static void UpdateCamera() {
+    static void UpdateCamera() {
         Camera& cam = GetMainCamera();
         MouseInput& mouseInput = MouseInput::GetMouse();
         if (cam.isSwivelable) {

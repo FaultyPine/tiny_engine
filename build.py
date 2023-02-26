@@ -30,7 +30,7 @@ def build():
         shutil.copy(src, dst)
     else:
         print(f"{src} doesn't exist, didn't copy.")
-    print("Built!")
+    print(f"Built {dst}!")
     print(f"Build took {elapsed} seconds")
 
 # returns the number of debug exe's exist
@@ -42,6 +42,17 @@ def get_current_exe_iteration():
         name = APP_NAME + str(iteration) + ".exe"
     return iteration
 
+def clean():
+    # remove generated pch and all files or folders in build/
+    if os.path.exists("pch.pch"):
+        os.remove("pch.pch")
+    for root, dirs, files in os.walk(BUILD_DIR):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+    print("Cleaned!")
+#for Live++
 def clean_debug_executables():
     print("Cleaning debug executables...")
     iteration = 0
@@ -95,13 +106,13 @@ if len(args) > 0:
         build_pch()
     elif args[0] == "regen":
         generate_ninja_build(True)
-
+    elif args[0] == "clean":
+        clean()
     elif args[0] == "run":
         run_app()
 
     elif args[0] == "norun":
         build()
-        print("Built!")
 
     elif args[0] == "livepp":
         if (len(args) > 1 and args[1] == "clean"):

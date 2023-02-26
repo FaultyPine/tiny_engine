@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "tiny_audio.h"
 
 #define MINIAUDIO_IMPLEMENTATION

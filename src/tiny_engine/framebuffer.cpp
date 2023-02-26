@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "framebuffer.h"
 #include "tiny_engine.h"
 
@@ -91,11 +92,13 @@ void ShadowMap::EndRender() const {
     Framebuffer::BindDefaultFrameBuffer();
 }
 void ShadowMap::ReceiveShadows(Shader& shader, const Light& light) const {
+    if (!shader.isValid()) return;
     shader.use();
     shader.TryAddSampler(fb.GetTexture().id, "depthMap");
     shader.setUniform("lightSpaceMatrix", light.GetLightViewProjMatrix());
 }
 void ShadowMap::RenderShadowCaster(const Light& light, Model& model, const Transform& tf) const {
+    if (!depthShader.isValid()) return;
     depthShader.use();
     glm::mat4 lightMat = light.GetLightViewProjMatrix();
     glm::mat4 modelMat = tf.ToModelMatrix();

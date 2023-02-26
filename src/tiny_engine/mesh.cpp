@@ -1,7 +1,9 @@
+#include "pch.h"
 #include "mesh.h"
 #include "tiny_engine/camera.h"
 #include "tiny_engine/math.h"
 #include "tiny_engine/tiny_engine.h"
+#include "shader.h"
 
 Mesh::Mesh(const std::vector<Vertex>& verts, 
             const std::vector<u32>& idxs, 

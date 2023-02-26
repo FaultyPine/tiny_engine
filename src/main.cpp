@@ -1,10 +1,10 @@
 // pch's have to be the first thing. If this errors, rebuild again.
-#include "tiny_engine/pch.h"
+#include "pch.h"
 
 // external implementation files
 #include <glad/glad.c>
 #define STB_IMAGE_IMPLEMENTATION
-#include "tiny_engine/stb_image.h"
+#include "tiny_engine/external/stb_image.h"
 #undef STB_IMAGE_IMPLEMENTATION
 
 #include "tiny_engine/tiny_engine.h"
@@ -14,12 +14,14 @@
 #define TESTBED3D 1
 #include "testbed/testbed_main.h"
 #define OTHERGAME 0
-#include "game/game_main.h"
+#include "game/game_main.h" 
+#define TETRIS 0
+#include "tetris/tetris_main.h"
 
 void preLoopInit() {
     bool is3D = true;
     InitGame(1280, 720, 16, 9, "Tiny Engine", is3D); 
-
+    
     //Potp::MainInit();
     #if TESTBED3D
     testbed_init();
@@ -27,6 +29,10 @@ void preLoopInit() {
 
     #if OTHERGAME
     game_init();
+    #endif
+
+    #if TETRIS
+    tetris_init();
     #endif
 }
 
@@ -39,6 +45,10 @@ void gameTick() {
     #if OTHERGAME
     game_tick();
     #endif
+
+    #if TETRIS
+    tetris_tick();
+    #endif
 }
 
 void endGame() {
@@ -49,6 +59,10 @@ void endGame() {
 
     #if OTHERGAME
     game_terminate();
+    #endif
+
+    #if TETRIS
+    tetris_terminate();
     #endif
 
     TerminateGame();

@@ -1,7 +1,8 @@
+#include "pch.h"
 #include "ObjParser.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_engine/tiny_obj_loader.h"
+#include "tiny_engine/external/tiny_obj_loader.h"
 
 #include "tiny_engine/texture.h"
 #include "tiny_engine/mesh.h" // for Vertex
@@ -22,7 +23,6 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
     const std::string* texnames[] = {&mat.diffuse_texname, &mat.ambient_texname, &mat.specular_texname, &mat.normal_texname};
     TextureMaterialType types[] = {TextureMaterialType::DIFFUSE, TextureMaterialType::AMBIENT, TextureMaterialType::SPECULAR, TextureMaterialType::NORMAL};
     ASSERT(ARRAY_SIZE(props) == ARRAY_SIZE(materialTypes) && ARRAY_SIZE(materialTypes) == ARRAY_SIZE(texnames));
-
     for (u32 i = 0; i < ARRAY_SIZE(props); i++) {
         MaterialProp& prop = *props[i];
         const f32* color = materialTypes[i];
@@ -32,8 +32,8 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
         }
         if (!texnames[i]->empty()) {
             // Assume that textures are stored in "texdir"
-            std::string filename = std::filesystem::path(*texnames[i]).filename().string();
-            std::string path = std::filesystem::path(texdir).append(filename).string();
+            std::filesystem::path filename = std::filesystem::path(*texnames[i]);
+            std::string path = std::filesystem::path(texdir).append(filename.string()).string();
             prop.texture = LoadTexture(path, TextureProperties::None(), true); // flip image upside down
             prop.hasTexture = true;
         }

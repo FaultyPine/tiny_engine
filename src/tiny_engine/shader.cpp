@@ -1,4 +1,6 @@
+#include "pch.h"
 #include "shader.h"
+#include "texture.h"
 
 // TODO: There's a lot of static tracking stuff here meant to make Shaders
 // a simple wrapper on an ID... But is there a better way to structure this?
@@ -41,8 +43,9 @@ u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource) {
     if (!success) {
         s8 infoLog[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "shader linking failed. vs = " << vsSource << " fs = " << fsSource << "\n" << infoLog << "\n";
-        ASSERT(false);
+        std::cout << "shader linking failed. vs = " << vertexShader << " fs = " << fragShader << "\n" << infoLog << "\n";
+        return 0xDEADBEEF;
+        //ASSERT(false);
     }
     // delete vert/frag shader after we've linked them to the program object
     glDeleteShader(vertexShader);
@@ -144,10 +147,12 @@ void Shader::ReloadShaders() {
             // TODO: check if (either frag/vert) file timestamp changed
             bool wasShaderFilesChanged = true;
             if (wasShaderFilesChanged) {
+                u32 newShaderProgram = CreateShaderFromFiles(shaderLocations.first, shaderLocations.second);
+                std::cout << "New reloaded shader " << newShaderProgram << "\n";
+
                 u32 oldOGLShaderProgram = oglIDAndPaths.first;
                 glDeleteProgram(oldOGLShaderProgram);
                 cachedUniformLocs.erase(oldOGLShaderProgram);
-                u32 newShaderProgram = CreateShaderFromFiles(shaderLocations.first, shaderLocations.second);
                 oglIDAndPaths.first = newShaderProgram;                
             }
         }

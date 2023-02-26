@@ -1,7 +1,7 @@
 #pragma once
 
+#include "pch.h"
 #include "tiny_engine/sprite.h"
-#include "tiny_engine/pch.h"
 #include "tiny_engine/tiny_types.h"
 #include "QuadTree.h"
 
@@ -12,24 +12,15 @@ struct NPC {
     glm::vec2 desiredPosition;
 };
 
-// things like positions, flags, things that affect the gamestate directly
-struct GameState {
-    std::vector<NPC> npcs = {};
-    QuadTree<NPC*> tree = {};
-};
-
-// things that do not affect gamestate (textures, shaders, sounds, etc)
-struct NonGameState {
-    Sprite character;
-};
-
 struct Rundata {
-    GameState gs;
-    NonGameState ngs;
+    QuadTree<NPC*> tree = {};
+    std::vector<NPC> npcs = {};
+    Sprite character;
+
 
 
     static Rundata& Instance() {
-        static Rundata rd;
+        static Rundata rd; 
         return rd;
     }
 };

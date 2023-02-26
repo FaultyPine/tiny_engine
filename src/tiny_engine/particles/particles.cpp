@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "particles.h"
 #include "tiny_engine/tiny_engine.h"
 
@@ -64,7 +65,7 @@ void ParticleSystem::Draw() const {
         if (particle.life <= 0.0f) continue;
         
         if (particleSprite.isValid()) {
-            particleSprite.DrawSprite(Camera::GetMainCamera(), particle.position-particle.size, particle.size, particle.rotation, {0.0, 0.0, 1.0}, particle.color, true);
+            particleSprite.DrawSprite(particle.position-particle.size, particle.size, particle.rotation, {0.0, 0.0, 1.0}, particle.color, true);
         }
         if (particleModel.isValid()) {
             std::cout << particle.life << "\n";

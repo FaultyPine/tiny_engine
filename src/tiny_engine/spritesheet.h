@@ -38,8 +38,7 @@ struct Spritesheet {
     void SetFrame(s32 frame);
     inline void SetDefaultFramerate(u32 defaultFramerate) { this->defaultFramerate = defaultFramerate; }
     void Tick();
-    void Draw(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize = false) const;
+    void Draw(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize = false) const;
 private:
     std::vector<Sprite> sprites = {};
     // animation

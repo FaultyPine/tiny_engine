@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "tiny_lights.h"
 #include "tiny_engine.h"
 #include "camera.h"
@@ -5,8 +6,8 @@
 // TODO: this is hardcoded... ideally this would take a list of transforms and maybe some
 // camera frustum info and calculate the optimal size of the projection matrix
 glm::mat4 Light::GetLightViewProjMatrix() const {
-    const f32 boxScale = 15.0f;
-    glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, Camera::GetMainCamera().nearClip, Camera::GetMainCamera().farClip);
+    const f32 boxScale = 30.0f;
+    glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, 0.01f, 500.0f);
     glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
     glm::mat4 lightMat = lightProj * lightView;
     return lightMat;

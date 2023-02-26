@@ -1,7 +1,7 @@
 #ifndef TINY_PARTICLES_H
 #define TINY_PARTICLES_H
 
-#include "tiny_engine/pch.h"
+#include "pch.h"
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/texture.h"
 #include "tiny_engine/tiny_fs.h"

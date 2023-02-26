@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "cubemap.h"
 
 
@@ -25,7 +26,7 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
         else {
             GLCall(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, (s32)props.texFormat, width, height, 0, (s32)props.imgFormat, (s32)props.imgDataType, data));
         }
-        stbi_image_free(data);
+        free(data);
     }
 
     GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, (s32)props.texWrapMode));

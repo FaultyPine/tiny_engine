@@ -1,10 +1,11 @@
+#include "pch.h"
 #include "math.h"
 
 #include "tiny_engine/tiny_engine.h"
 
 namespace Math {
 
- 
+
 bool isOverlappingRectSize2D(const glm::vec2& pos1, const glm::vec2& size1, const glm::vec2& pos2, const glm::vec2& size2) {
     glm::vec2 r1 = pos1 + size1;
     glm::vec2 r2 = pos2 + size2;
@@ -58,6 +59,31 @@ f32 InvLerp(f32 a, f32 b, f32 v) {
 f32 Remap(f32 v, f32 iMin, f32 iMax, f32 oMin, f32 oMax) {
     f32 t = InvLerp(iMin, iMax, v);
     return Lerp(oMin, oMax, t);
+}
+
+
+glm::mat4 Position3DToModelMat(const glm::vec3& position, const glm::vec3& scale, f32 rotation, const glm::vec3& rotationAxis) {
+    glm::mat4 model = glm::mat4(1);
+    model = glm::translate(model, position);
+    model = glm::scale(model, scale);
+    model = glm::rotate(model, glm::radians(rotation), rotationAxis); 
+    return model;
+}
+
+glm::mat4 Position2DToModelMat(const glm::vec2& position, const glm::vec2& scale, f32 rotation, const glm::vec3& rotationAxis) {
+    // set up transform of the actual sprite
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(position.x, position.y, 0.0f));  
+
+    // rotation is about the "middle" of the shape. 
+    // if you want rotation about some other part of the shape, use the overloaded DrawShape and make
+    // your own model matrix
+    model = glm::translate(model, glm::vec3(0.5f * scale.x, 0.5f * scale.y, 0.0f)); 
+    model = glm::rotate(model, glm::radians(rotation), rotationAxis); 
+    model = glm::translate(model, glm::vec3(-0.5f * scale.x, -0.5f * scale.y, 0.0f));
+
+    model = glm::scale(model, glm::vec3(scale.x, scale.y, 1.0f));  
+    return model;
 }
 
 

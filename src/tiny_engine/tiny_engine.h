@@ -4,7 +4,8 @@
 #include "pch.h"
 
 
-void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height);
+#define TINY_DEBUG
+#define TARGET_FPS 60
 
 void CloseGameWindow();
 void SetMode2D();

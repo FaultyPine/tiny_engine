@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "shapes.h"
 
 #include "camera.h"

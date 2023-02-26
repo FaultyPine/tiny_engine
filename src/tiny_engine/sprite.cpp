@@ -1,6 +1,10 @@
+#include "pch.h"
 #include "sprite.h"
 #include "tiny_engine/tiny_fs.h"
 #include "tiny_engine/math.h"
+#include "camera.h"
+#include "tiny_types.h"
+
 
 Sprite::Sprite(const Texture& mainTex) {
     this->mainTex = mainTex;
@@ -12,6 +16,16 @@ Sprite::Sprite(const Shader& shader, const Texture& mainTex) {
     this->shader = shader;
     initRenderData();
 }
+void Sprite::Delete() {
+    glDeleteVertexArrays(1, &quadVAO);
+    shader.Delete();
+    mainTex.Delete();
+}
+
+template<typename T>
+void Sprite::setShaderUniform(const char* name, T val) const {
+    shader.setUniform(name, val);
+}
 
 void AdjustDimensionsForSceenSize(glm::vec2& position, glm::vec2& size) {
     const Camera& cam = Camera::GetMainCamera();
@@ -22,10 +36,12 @@ void AdjustDimensionsForSceenSize(glm::vec2& position, glm::vec2& size) {
     position.y = Math::Remap(position.y, 0, screenMin.y, 0, cam.GetScreenHeight());
 }
 
-
-void Sprite::DrawSprite(const Camera& cam, glm::vec2 position, 
-                glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool adjustToScreensize,
-                bool shouldFlipY) const {
+void Sprite::DrawSprite(const Transform2D& tf, glm::vec4 color, 
+                    bool adjustToScreensize, bool shouldFlipY) const {
+    DrawSprite(tf.position, tf.scale, tf.rotation, {0,0,1}, color, adjustToScreensize, shouldFlipY);
+}
+void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, 
+    bool adjustToScreensize, bool shouldFlipY) const {
     ASSERT(isValid() && "Tried to draw invalid sprite!\n");
 
     if (adjustToScreensize) {
@@ -33,6 +49,7 @@ void Sprite::DrawSprite(const Camera& cam, glm::vec2 position,
     }
 
     // set up transform of the actual sprite
+    Camera& cam = Camera::GetMainCamera();
     glm::mat4 model = Math::Position2DToModelMat(position, size, rotate, rotationAxis);
     glm::mat4 projection = cam.GetOrthographicProjection();
     

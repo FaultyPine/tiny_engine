@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "game_main.h"
 
 #include "tiny_engine/camera.h"
@@ -8,7 +9,6 @@
 #include "tiny_engine/tiny_profiler.h"
 #include "PoissonGenerator.h"
 #include "rundata.h"
-#include "QuadTree.h"
 
 void PollInputs() {
     if (Keyboard::isKeyDown(GLFW_KEY_ESCAPE)) {
@@ -37,13 +37,13 @@ void DrawDebug() {
 }
 
 
-void DrawGame(GameState& gs, NonGameState& ngs) {
+void DrawGame(Rundata& rd) {
     PROFILE_FUNCTION();
     glm::vec2 screenSize = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-    for (auto& npc : gs.npcs) {
-        //ngs.character.DrawSprite(npc.tf);
+    for (auto& npc : rd.npcs) {
+        //rd.character.DrawSprite(npc.tf);
     }
-    gs.tree.Draw();
+    rd.tree.Draw();
     DrawDebug();
 }
 
@@ -53,13 +53,12 @@ void DrawGame(GameState& gs, NonGameState& ngs) {
 void game_init() {
     PROFILE_FUNCTION();
     InitImGui();
-    NonGameState& ngs = Rundata::Instance().ngs;
-    GameState& gs = Rundata::Instance().gs;
+    Rundata& rd = Rundata::Instance();
     u32 screenWidth = Camera::GetScreenWidth();
     u32 screenHeight = Camera::GetScreenHeight();
-    gs.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
+    rd.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
 
-    ngs.character = Sprite(LoadTexture(ResPath("other/awesomeface.png")));
+    rd.character = Sprite(LoadTexture(ResPath("other/awesomeface.png")));
 
     u32 numChars = 20;
     // points is a vector of xyz in the range 0-1
@@ -71,20 +70,20 @@ void game_init() {
         glm::vec2 pos = glm::vec2(Points[i].x*screenWidth, Points[i].y*screenHeight);
         ent.tf = Transform2D(pos, glm::vec2(10));
         ent.desiredPosition = glm::vec2(Points[i+1].x*screenWidth, Points[i+1].y*screenHeight);
-        gs.npcs.push_back(ent);
-        Node nodeToInsert = Node(pos, &gs.npcs.back());
-        gs.tree.insert(nodeToInsert);
+        rd.npcs.push_back(ent);
+        Node nodeToInsert = Node(pos, &rd.npcs.back());
+        rd.tree.insert(nodeToInsert);
     }
     std::cout << "Finished init\n";
 
 }
 
-void EntitiesTick(GameState& gs) {
+void EntitiesTick(Rundata& rd) {
     PROFILE_FUNCTION();
     u32 screenWidth = Camera::GetScreenWidth();
     u32 screenHeight = Camera::GetScreenHeight();
     constexpr f32 moveSpeed = 50.0f;
-    for (auto& npc : gs.npcs) {
+    for (auto& npc : rd.npcs) {
         glm::vec2 moveDelta = glm::normalize(npc.desiredPosition - npc.tf.position) * moveSpeed;
         npc.tf.position += moveDelta * GetDeltaTime();
 
@@ -95,15 +94,15 @@ void EntitiesTick(GameState& gs) {
 
     { PROFILE_SCOPE("QuadTreeRefresh");
         // update quadtree with new positions
-        gs.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
-        for (auto& npc : gs.npcs) {
-            gs.tree.insert(Node(npc.tf.position, &npc));
+        rd.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
+        for (auto& npc : rd.npcs) {
+            rd.tree.insert(Node(npc.tf.position, &npc));
         }
     }
 
     const BoundingBox2D searchArea = BoundingBox2D({100, 100}, {250, 250});
     std::vector<NPC*> npcsInRange = {};
-    gs.tree.search(searchArea, npcsInRange);
+    rd.tree.search(searchArea, npcsInRange);
     for (auto& x : npcsInRange) {
         Shapes2D::DrawCircle(x->tf.position, 5.0f, glm::vec4(1, 0, 0, 1));
     }
@@ -111,12 +110,11 @@ void EntitiesTick(GameState& gs) {
 }
 
 void game_tick() {
-    NonGameState& ngs = Rundata::Instance().ngs;
-    GameState& gs = Rundata::Instance().gs;
+    Rundata& rd = Rundata::Instance();
 
     PollInputs();
-    EntitiesTick(gs);
-    DrawGame(gs, ngs);
+    EntitiesTick(rd);
+    DrawGame(rd);
 }
 void game_terminate() {
     ImGuiTerminate();

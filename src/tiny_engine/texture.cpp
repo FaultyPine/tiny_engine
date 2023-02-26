@@ -1,5 +1,7 @@
+#include "pch.h"
 #include "texture.h"
 #include "shader.h"
+#include "external/stb_image.h"
 
 
 std::string GetTexMatTypeString(TextureMaterialType type) {
@@ -25,9 +27,9 @@ void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment) {
 }
 
 
-u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically) {
+u8* LoadImageData(const std::string& imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically) {
     stbi_set_flip_vertically_on_load(shouldFlipVertically);
-    u8* data = stbi_load(imgPath, width, height, numChannels, 0);
+    u8* data = stbi_load(imgPath.c_str(), width, height, numChannels, 0);
     return data;
 }
 
@@ -51,7 +53,7 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
         GLCall(glGenerateMipmap(GL_TEXTURE_2D));
     }
     else {
-        ASSERT(false && "Failed to load texture. Invalid image data passed!\n");
+        return Texture();
     }
     Texture ret;
     ret.id = texture;
@@ -65,12 +67,31 @@ Texture LoadTexture(const std::string& imgPath,
                     TextureProperties props, 
                     bool flipVertically) {
     s32 width, height, numChannels;
-    u8* data = LoadImageData(imgPath.c_str(), &width, &height, &numChannels, flipVertically);
+    u8* data = LoadImageData(imgPath, &width, &height, &numChannels, flipVertically);
     // if we didn't specify texture properties, fetch them automatically
     if (props.isNone) {
-        props = numChannels == 3 ? TextureProperties::RGB_LINEAR() : TextureProperties::RGBA_LINEAR();
+        if (numChannels == 3) {
+            props = TextureProperties::RGB_LINEAR();
+        }
+        else if (numChannels == 4) {
+            props = TextureProperties::RGBA_LINEAR();
+        }
+        else if (numChannels == 1) {
+            // for L8 images   *UNTESTED*
+            props = TextureProperties::RGB_LINEAR();
+            props.texFormat = TextureProperties::TexFormat::RED;
+            props.imgDataType = TextureProperties::ImageDataType::UNSIGNED_BYTE;
+        }
+        else {
+            ASSERT(false && "Unknown number of channels in image!\n");
+        }
     }
     Texture ret = GenTextureFromImg(data, width, height, props);
+    if (ret.id == 0) {
+        // invalid texture
+        std::cout << "Couldn't load " << imgPath << "\n";
+        ASSERT(false && "failed to load texture!");
+    }
     ret.texpath = imgPath;
     stbi_image_free(data);
     std::cout << "Loaded texture " << ret.texpath << " channels: " << numChannels << "\n";

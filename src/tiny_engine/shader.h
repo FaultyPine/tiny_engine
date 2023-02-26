@@ -2,7 +2,6 @@
 #define SHADER_H
 
 #include "pch.h"
-#include "texture.h"
 
 
 struct Shader {

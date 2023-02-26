@@ -10,14 +10,21 @@ Libraries Used:
 - [GLtext](https://github.com/vallentin/glText) by Christian Vallentin 
 - [tiny_obj_loader](https://github.com/tinyobjloader/tinyobjloader)
 
-Features:
+Features/Included Implementations:
 - Postprocessing
 - Job System (multithreading)
+- deterministic randomness
 - sprite rendering
 - spritesheet parsing/animating
 - .obj file parsing/mesh rendering
-- 2d vector shape drawing (squares, circles, lines)
-- deterministic randomness
+- particle system
+- 2d and 3d vector shape drawing (squares, circles, lines, spheres, cubes)
+- .obj loading/rendering (w/material support)
+- shadow mapping
+- skybox
+- postprocessing
+- Profiling with chrome://tracing api
+- Shader hot reloading
 
 Written with this engine:  
 [Part Of The Pack](https://faultypine.itch.io/part-of-the-pack)  
@@ -29,7 +36,7 @@ Simple nature scene I used to implement & test 3D features
 
 ### TODO/Topics to Experiment With:
 - Learn how to use Perforce
-- make sure pch works with msvc
+- ~~make sure pch works with msvc~~
 - ~~instancing~~
     - ~~allow data to be passed through extra vertex attributes~~
 - ~~Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units~~
@@ -74,6 +81,13 @@ Simple nature scene I used to implement & test 3D features
 - Portals! (And utilizing that to make "non-euclidean" spaces)
 - 3D World Wrapping (I.E. Manifold garden)
 - (Visualizing) L-Systems
+
+#### Tetris
+
+[Engine Changes]
+- Z-index sprite ordering
+- asset hot-reloading
+- ^^^ (Renderer and Asset systems?)
 
 ### Possible future features:
 - ~~debug line drawing~~

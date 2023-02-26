@@ -54,7 +54,7 @@ struct MouseInput {
     f32 sensitivity = 0.1f;
     glm::vec2 mousePos = glm::vec2(0.0f, 0.0f);
     glm::vec3 GetNormalizedLookDir() {
-        glm::vec3 direction;
+        glm::vec3 direction = glm::vec3(0);
         direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
         direction.y = sin(glm::radians(pitch));
         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));

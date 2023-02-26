@@ -2,10 +2,10 @@
 #define MESH_H
 
 #include "pch.h"
-#include "shader.h"
 #include "texture.h"
 #include "tiny_types.h"
 
+ 
 struct Vertex {
     glm::vec3 position = glm::vec3(0);
     glm::vec3 normal = glm::vec3(0);

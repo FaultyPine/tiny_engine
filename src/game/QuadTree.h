@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tiny_engine/pch.h"
+#include "pch.h"
 #include "tiny_engine/tiny_types.h"
 #include <functional>
 
@@ -33,6 +33,9 @@ struct QuadTree {
     }
     QuadTree(BoundingBox2D bounds) : QuadTree() {
         this->bounds = bounds;
+    }
+    ~QuadTree() {
+        Clear();
     }
     void Clear() {
         children.clear();

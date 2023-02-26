@@ -41,9 +41,9 @@ void GetGrassSway(inout vec3 vertPosOS) {
     vec2 windDir = normalize( windDirBase + (cnoise(vec2(time))+1)/2 );
 
     vec2 uv = posWS.xz + (_WindFrequency * time);
-    vec2 windSample = (texture(windTexture, uv/_WindUVScale).xy * 2 -1) * _WindStrength;
-    vec2 wind = normalize(windSample);
-    vertPosOS.xz += windSample * height * windDir;
+    vec2 windSample = (texture(windTexture, uv/_WindUVScale).xy * 2 -1);
+    vec2 wind = normalize(windSample) * _WindStrength;
+    vertPosOS.xz += wind * height;
 }
 mat4 Billboard(mat4 modelViewMat) {
     // To create a "billboard" effect,

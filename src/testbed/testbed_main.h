@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tiny_engine/pch.h"
+#include "pch.h"
 #include "tiny_engine/model.h"
 #include "tiny_engine/tiny_types.h"
 #include "tiny_engine/tiny_engine.h"
@@ -67,6 +67,9 @@ struct GameState {
     std::vector<glm::mat4> grassTransforms = {};
     BoundingBox grassSpawnExclusion = {};
     Texture windTexture = {};
+    f32 windStrength = 0;
+    f32 windFrequency = 0;
+    f32 windUVScale = 0;
 
     // shadows/depth tex
     ShadowMap shadowMap;

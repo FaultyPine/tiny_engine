@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "testbed_main.h"
 
 #include "tiny_engine/camera.h"
@@ -75,7 +76,7 @@ void testbed_orbit_cam(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtP
     cam.cameraPos = glm::vec3(x, cameraOrbitHeight, z);
     cam.LookAt(lookAtPos);
 }
-void testbed_orbit_light(Light& light, f32 orbitRadius, f32 orbitHeight, f32 speedMultiplier) {
+void testbed_orbit_light(Light& light, f32 orbitRadius, f32 speedMultiplier) {
     f32 time = (f32)GetTime()*speedMultiplier;
     f32 x = sinf(time) * orbitRadius;
     f32 z = cosf(time) * orbitRadius;
@@ -83,17 +84,14 @@ void testbed_orbit_light(Light& light, f32 orbitRadius, f32 orbitHeight, f32 spe
     light.position.z = z;
 }
 
-static f32 windStrength = 0.8;
-static f32 windFrequency = 13.5;
-static f32 windUVScale = 185.0;
 void drawImGuiDebug() {
     GameState& gs = GameState::get();
     ImGuiBeginFrame();
     
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::DragFloat("wind str", &windStrength, 0.01f);
-    ImGui::DragFloat("wind freq", &windFrequency, 0.01f);
-    ImGui::DragFloat("wind uvscale", &windUVScale, 1.0f);
+    ImGui::DragFloat("wind str", &gs.windStrength, 0.01f);
+    ImGui::DragFloat("wind freq", &gs.windFrequency, 0.01f);
+    ImGui::DragFloat("wind uvscale", &gs.windUVScale, 1.0f);
     if (ImGui::CollapsingHeader("Grass spawn planes")) {
         ImGui::DragFloat3("Grass ex min", &gs.grassSpawnExclusion.min[0], 0.01f);
         ImGui::DragFloat3("Grass ex max", &gs.grassSpawnExclusion.max[0], 0.01f);
@@ -151,10 +149,10 @@ void DepthPrePass() {
     shadowMap.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
     shadowMap.EndRender();
 
-    #if 0
+    #if 1
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
-    depthSprite.DrawSprite(Camera::GetMainCamera(), {0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
+    depthSprite.DrawSprite({0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
     #endif
 }
 
@@ -170,7 +168,7 @@ void drawGameState() {
 
     // Waves
     Shader& waveShader = gs.waveEntity.model.cachedShader;
-    if (gs.waveEntity.isValid()) {
+    if (gs.waveEntity.isValid() && waveShader.isValid()) {
         waveShader.use();
         waveShader.setUniform("numActiveWaves", gs.numActiveWaves);
         for (u32 i = 0; i < NUM_WAVES; i++) {
@@ -188,9 +186,9 @@ void drawGameState() {
     if (gs.grass.isValid()) {
         PROFILE_SCOPE("GrassInstancing");
         gs.grass.model.cachedShader.use();
-        gs.grass.model.cachedShader.setUniform("_WindStrength", windStrength);
-        gs.grass.model.cachedShader.setUniform("_WindFrequency", windFrequency);
-        gs.grass.model.cachedShader.setUniform("_WindUVScale", windUVScale);
+        gs.grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
+        gs.grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
+        gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grass.model.cachedShader.TryAddSampler(gs.windTexture.id, "windTexture");
         gs.grass.model.DrawInstanced(gs.grassTransforms.size());
     }
@@ -214,9 +212,11 @@ void drawGameState() {
     
     #if 1
     { PROFILE_SCOPE("Skybox draw");
-    gs.skybox.skyboxShader.use();
-    gs.skybox.skyboxShader.setUniform("sunDirection", gs.lights[0].Direction());
-    gs.skybox.Draw();
+        if (gs.skybox.skyboxShader.isValid()) {
+            gs.skybox.skyboxShader.use();
+            gs.skybox.skyboxShader.setUniform("sunDirection", gs.lights[0].Direction());
+            gs.skybox.Draw();
+        }
     }
     #endif
 }
@@ -275,6 +275,9 @@ void init_grass(GameState& gs) {
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
     gs.windTexture = LoadTexture(ResPath("other/distortion.png"));
+    gs.windStrength = 0.09;
+    gs.windFrequency = 9.55;
+    gs.windUVScale = 500.0;
 }
 
 void init_main_pond(GameState& gs) {
@@ -321,6 +324,7 @@ void testbed_init() {
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
     Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vs"), ResPath("shaders/basic_lighting.fs"));
+
     //Model testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
     Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
     //Model testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
@@ -332,6 +336,9 @@ void testbed_init() {
     
     Model bushModel = Model(lightingShader, ResPath("other/island_wip/bush.obj").c_str(), ResPath("other/island_wip/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "bush"));
+    
+    //Model sponza = Model(lightingShader, ResPath("other/crytek-sponza/sponza.obj").c_str(), ResPath("other/crytek-sponza/").c_str());
+    //gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.06)), sponza, "sponza"));
 
     // pond
     init_main_pond(gs);
@@ -345,7 +352,7 @@ void testbed_init() {
     }
 
     // Init lights
-    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 50, -22), glm::vec3(0, 10, 0), glm::vec4(1));
+    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 100, -22), glm::vec3(0, 10, 0), glm::vec4(1));
     //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
     gs.lights.push_back(meshLight);
     //gs.lights.push_back(meshPointLight);
@@ -366,7 +373,7 @@ void testbed_gametick(GameState& gs) {
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
     Light& mainLight = gs.lights[0];
-    testbed_orbit_light(mainLight, 55, 25, 0.2);
+    testbed_orbit_light(mainLight, 200, 0.2);
     //gs.waterfallParticles.Tick({0,15,0});
 }
 void testbed_render(GameState& gs) {

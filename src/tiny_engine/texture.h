@@ -2,7 +2,6 @@
 #define TINY_TEXTURE_H
 
 #include "pch.h"
-#include "stb_image.h"
 
 enum TextureMaterialType {
     DIFFUSE = 0,
@@ -164,7 +163,7 @@ struct Material {
 
 void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4);
 
-u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);
+u8* LoadImageData(const std::string& imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);
 
 Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props = TextureProperties::None(), 
