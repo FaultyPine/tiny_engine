@@ -19,6 +19,9 @@ def run_app():
 
 def build():
     generate_ninja_build()
+    if not os.path.exists("pch.pch"):
+        build_pch()
+
     start_time = time.time()
     command(get_ninja_command()) # actual build
     elapsed = round(time.time() - start_time, 3)
