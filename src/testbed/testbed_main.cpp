@@ -149,7 +149,7 @@ void DepthPrePass() {
     shadowMap.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
     shadowMap.EndRender();
 
-    #if 1
+    #if 0
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
     depthSprite.DrawSprite({0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
@@ -358,6 +358,7 @@ void testbed_init() {
     //gs.lights.push_back(meshPointLight);
 
     { PROFILE_SCOPE("Skybox Init");
+    /*
     gs.skybox = Skybox({
         ResPath("skybox/right.jpg").c_str(),
         ResPath("skybox/left.jpg").c_str(),
@@ -365,6 +366,8 @@ void testbed_init() {
         ResPath("skybox/bottom.jpg").c_str(),
         ResPath("skybox/front.jpg").c_str(),
         ResPath("skybox/back.jpg").c_str()}, TextureProperties::RGB_LINEAR());
+    */
+    gs.skybox = Skybox({}, TextureProperties::RGB_LINEAR());
     }
 }
 

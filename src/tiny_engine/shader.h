@@ -31,6 +31,8 @@ struct Shader {
 
     // reloads all shaders
     static void ReloadShaders();
+    // reloads this shader
+    void Reload() const;
 
     // utility uniform functions
 

@@ -139,23 +139,31 @@ void Shader::use() const {
 }
 
  
+void ReloadShader(u32 shaderID) { // shader "id" (not opengl shader program id)
+    std::pair<u32, ShaderLocation>& oglIDAndPaths = loadedShaders.at(shaderID);
+    const ShaderLocation& shaderLocations = oglIDAndPaths.second;
+
+    // if shader locations are blank, this shader probably came from a string (cant reload)
+    if (shaderLocations.first.empty() || shaderLocations.second.empty()) return;
+
+    // TODO: check if (either frag/vert) file timestamp changed
+    bool wasShaderFilesChanged = true;
+    if (wasShaderFilesChanged) {
+        u32 newShaderProgram = CreateShaderFromFiles(shaderLocations.first, shaderLocations.second);
+        std::cout << "New reloaded shader " << newShaderProgram << "\n";
+
+        u32 oldOGLShaderProgram = oglIDAndPaths.first;
+        glDeleteProgram(oldOGLShaderProgram);
+        cachedUniformLocs.erase(oldOGLShaderProgram);
+        oglIDAndPaths.first = newShaderProgram;                
+    }
+}
+void Shader::Reload() const {
+    ReloadShader(this->ID);
+}
 void Shader::ReloadShaders() {
     for (auto& [shaderID, oglIDAndPaths] : loadedShaders) {
-        const ShaderLocation& shaderLocations = oglIDAndPaths.second;
-        // if shader locations are blank, this shader probably came from a string (cant reload)
-        if (!shaderLocations.first.empty() && !shaderLocations.second.empty()) {
-            // TODO: check if (either frag/vert) file timestamp changed
-            bool wasShaderFilesChanged = true;
-            if (wasShaderFilesChanged) {
-                u32 newShaderProgram = CreateShaderFromFiles(shaderLocations.first, shaderLocations.second);
-                std::cout << "New reloaded shader " << newShaderProgram << "\n";
-
-                u32 oldOGLShaderProgram = oglIDAndPaths.first;
-                glDeleteProgram(oldOGLShaderProgram);
-                cachedUniformLocs.erase(oldOGLShaderProgram);
-                oglIDAndPaths.first = newShaderProgram;                
-            }
-        }
+        ReloadShader(shaderID);
     }
     std::cout << "Reloaded shaders!\n";
 }
