@@ -13,11 +13,7 @@ struct Vertex {
     glm::vec3 color = glm::vec3(1);
     u32 materialId = 0;
     inline std::string str() {
-        std::string pos = "("  + VecToStr(position) + ")"; 
-        std::string norm = "(" + VecToStr(normal) + ", " + std::to_string(normal.z) + ")";
-        std::string tex = "("  + VecToStr(texCoords) + ")";
-        std::string col = "("  + VecToStr(color) + ")";
-        return "[Pos = " + pos + "  Normals = " + norm + "  TexCoords = " + tex + "  Colors = " + col + " ]";
+        return "[Pos = " + glm::to_string(position) + "  Normals = " + glm::to_string(normal) + "  TexCoords = " + glm::to_string(texCoords) + "  Colors = " + glm::to_string(color) + " ]";
     }
 };
 struct Mesh {
