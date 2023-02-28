@@ -11,15 +11,15 @@
 
 // game includes
 //#include "PartOfThePack/potp_main.h"
-#define TESTBED3D 1
-#include "testbed/testbed_main.h"
+#define TESTBED3D 0
+//#include "testbed/testbed_main.h"
 #define OTHERGAME 0
-#include "game/game_main.h" 
-#define TETRIS 0
+//#include "game/game_main.h" 
+#define TETRIS 1
 #include "tetris/tetris_main.h"
 
 void preLoopInit() {
-    bool is3D = true;
+    bool is3D = false;
     InitGame(1280, 720, 16, 9, "Tiny Engine", is3D); 
     
     //Potp::MainInit();

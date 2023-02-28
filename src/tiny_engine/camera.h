@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "input.h"
 
+// press this button to unlock the cursor from the window
+const s32 TAB_OUT_OF_WINDOW_KEY = GLFW_KEY_TAB;
 
 struct Camera {
     f32 speed = 6.5f;
@@ -56,6 +58,22 @@ struct Camera {
         if (cam.isSwivelable) {
             cam.cameraFront = mouseInput.GetNormalizedLookDir();
         }
+
+        if (Keyboard::isKeyPressed(TAB_OUT_OF_WINDOW_KEY)) {
+        // when "tabbing" in and out of the game, the cursor position jumps around weirdly
+        // so here we save the last cursor pos when we tab out, and re-set it when we tab back in
+        static glm::vec2 lastMousePos = glm::vec2(0);
+        if (glfwGetInputMode(glob_glfw_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
+            glfwSetInputMode(glob_glfw_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            cam.isSwivelable = true;
+            glfwSetCursorPos(glob_glfw_window, lastMousePos.x, lastMousePos.y);
+        }
+        else {
+            lastMousePos = {MouseInput::GetMouse().lastX, MouseInput::GetMouse().lastY};
+            glfwSetInputMode(glob_glfw_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);  
+            cam.isSwivelable = false;
+        }
+    }
     }
     inline void LookAt(glm::vec3 pos) {
         glm::vec3 diff = pos - cameraPos;

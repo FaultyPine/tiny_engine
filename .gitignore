@@ -10,4 +10,5 @@ build.ninja
 **/imgui.ini
 *.sln
 *.pdb
+*.pch
 profiler_results.json

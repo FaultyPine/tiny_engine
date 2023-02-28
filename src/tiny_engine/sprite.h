@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "shader.h"
 #include "texture.h"
+#include "tiny_types.h"
 
 struct Transform2D;
 

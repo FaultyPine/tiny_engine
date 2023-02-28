@@ -117,17 +117,5 @@ inline const char *TextFormat(const char *text, ...)
     return currentBuffer;
 }
 
-inline std::string VecToStr(const glm::vec2& vec) {
-    return std::string(TextFormat("%f %f", vec.x, vec.y));
-}
-inline std::string VecToStr(const glm::vec3& vec) {
-    return std::string(TextFormat("%f %f %f", vec.x, vec.y, vec.z));
-}
-inline std::string VecToStr(const glm::vec4& vec) {
-    return std::string(TextFormat("%f %f %f %f", vec.x, vec.y, vec.z, vec.w));
-}
-inline std::string Matrix4x4ToStr(const glm::mat4 mat) {
-    return glm::to_string(mat);
-}
 
 #endif

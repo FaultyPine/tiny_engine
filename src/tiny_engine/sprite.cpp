@@ -3,7 +3,6 @@
 #include "tiny_engine/tiny_fs.h"
 #include "tiny_engine/math.h"
 #include "camera.h"
-#include "tiny_types.h"
 
 
 Sprite::Sprite(const Texture& mainTex) {
