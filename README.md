@@ -74,6 +74,7 @@ Simple nature scene I used to implement & test 3D features
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
 - Space partitioning (BSP/Quadtree/Octree)
+- Custom allocators (bump, arena, frame, etc)
 - animation
     - .obj files don't support animation... might need to implement gltf or collada or fbx support
     - https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation
@@ -81,13 +82,9 @@ Simple nature scene I used to implement & test 3D features
 - Portals! (And utilizing that to make "non-euclidean" spaces)
 - 3D World Wrapping (I.E. Manifold garden)
 - (Visualizing) L-Systems
-
-#### Tetris
-
-[Engine Changes]
-- Z-index sprite ordering
-- asset hot-reloading
-- ^^^ (Renderer and Asset systems?)
+- Get UDB (time-travel debugging) working
+	- in general, research good debugging tools...
+	- https://werat.dev/blog/what-a-good-debugger-can-do/
 
 ### Possible future features:
 - ~~debug line drawing~~
