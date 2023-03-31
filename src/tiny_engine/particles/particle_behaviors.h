@@ -44,7 +44,7 @@ struct ParticleAlphaDecay : ParticleBehavior {
 };
 
 struct ParticlesSpreadOut : ParticleBehavior {
-    void ParticlesSpreadOut::InitializeParticle(Particle& particleToEmit, glm::vec3 particleSystemPosition) override {
+    void InitializeParticle(Particle& particleToEmit, glm::vec3 particleSystemPosition) override {
         f32 radius = 1.0f;
         glm::vec3 randomVelDir = Math::RandomPointInSphere(radius);
         particleToEmit.velocity = randomVelDir;
