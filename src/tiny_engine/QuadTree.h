@@ -49,6 +49,7 @@ struct QuadTree {
 
     BoundingBox2D bounds = {};
     Node<T> node = {};
+    // TODO: (?) access array of children with array-based tree lookups
     std::vector<QuadTree> children = {};
 
 private:

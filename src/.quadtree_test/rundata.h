@@ -3,7 +3,7 @@
 #include "pch.h"
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/tiny_types.h"
-#include "QuadTree.h"
+#include "tiny_engine/QuadTree.h"
 
 constexpr u32 MAX_ENTITIES = 500;
 
