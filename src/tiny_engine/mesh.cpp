@@ -89,7 +89,7 @@ void Mesh::initMesh() {
     ConfigureVertexAttrib( // vert color
         vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
     ConfigureVertexAttrib( // material id
-        vertexAttributeLocation++, 1, GL_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialId));
+        vertexAttributeLocation++, 1, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialId));
 
     // unbind
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
