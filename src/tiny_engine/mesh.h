@@ -22,7 +22,6 @@ struct Mesh {
     u32 vertexAttributeLocation = 0;
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
-    //std::vector<Texture> textures = {};
     std::vector<Material> materials = {};
     std::string name = "";
     bool isVisible = true;

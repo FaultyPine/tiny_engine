@@ -100,23 +100,19 @@ Texture LoadTexture(const std::string& imgPath,
 
 
 void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
-    #define MAT_DIFFUSE   0
-    #define MAT_AMBIENT   1
-    #define MAT_SPECULAR  2
-    #define MAT_NORMAL    3
     shader.use();
     s32 matPropIdx = 0;
-   #define SET_MATERIAL_UNIFORMS(matType, matVar) \
+   #define SET_MATERIAL_UNIFORMS(matVar) \
         shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
         if (matVar.hasTexture) { \
             shader.TryAddSampler(matVar.texture.id, TextFormat("materials[%i].%s.tex", matIdx, #matVar)); \
         } \
         shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
 
-    SET_MATERIAL_UNIFORMS(MAT_DIFFUSE, diffuseMat);
-    SET_MATERIAL_UNIFORMS(MAT_AMBIENT, ambientMat);
-    SET_MATERIAL_UNIFORMS(MAT_SPECULAR, specularMat);
-    SET_MATERIAL_UNIFORMS(MAT_NORMAL, normalMat);
+    SET_MATERIAL_UNIFORMS(diffuseMat);
+    SET_MATERIAL_UNIFORMS(ambientMat);
+    SET_MATERIAL_UNIFORMS(specularMat);
+    SET_MATERIAL_UNIFORMS(normalMat);
     shader.setUniform(TextFormat("materials[%i].shininess", matIdx), shininess);
     shader.setUniform("useNormalMap", normalMat.hasTexture);
 }

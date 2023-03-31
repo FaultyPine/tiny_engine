@@ -118,7 +118,7 @@ struct Texture {
     static void bindUnit(u32 textureUnit, u32 id) {
         activate(textureUnit);
         GLCall(glBindTexture(GL_TEXTURE_2D, id));
-        activate(0);
+        //activate(0);
     }
     void bind() const { GLCall(glBindTexture(GL_TEXTURE_2D, id)); }
     static void activate(u32 textureUnit) { GLCall(glActiveTexture(GL_TEXTURE0 + textureUnit)); }
@@ -131,6 +131,9 @@ struct MaterialProp {
     MaterialProp() {}
     MaterialProp(glm::vec4 col) {
         color = col;
+    }
+    MaterialProp(const Texture& tex) {
+        texture = tex;
     }
     void Delete() { texture.Delete(); }
 };
