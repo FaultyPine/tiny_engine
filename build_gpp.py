@@ -12,7 +12,7 @@ def get_linker_args_gpp():
         """)
     elif is_linux():
         return var_contents("""
-            -Llib/glfw/linux -ldl -lpthread -lglfw
+            -Llib/glfw/linux -lassimp -ldl -lpthread -lglfw
         """)
     else:
         print("Unknown platform! Couldn't get linker args")
@@ -20,7 +20,7 @@ def get_linker_args_gpp():
 
 def get_compiler_args_gpp():
     return var_contents("""
-        -ggdb -Iinclude -Isrc -std=c++11 -O0 -static-libstdc++ -static-libgcc
+        -ggdb -Iinclude -Isrc -std=c++17 -O0 -static-libstdc++ -static-libgcc
     """)
 PCH_FILE = "src/tiny_engine/pch.h"
 def build_pch_gpp():
@@ -59,7 +59,7 @@ def generate_ninja_build_gpp(force_overwrite):
         description="PCH $out"
     )
     # pch build
-    n.build(f"{PCH_FILE}.gch", "pch", f"{PCH_FILE}")
+    #n.build(f"{PCH_FILE}.gch", "pch", f"{PCH_FILE}")
     link_files = []
     # sources build
     for src_cpp in SOURCES:

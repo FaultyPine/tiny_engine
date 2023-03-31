@@ -2,9 +2,9 @@ from build_utils import *
 
 def get_linker_args_msvc():
     return var_contents("""
-        glfw3_mt.lib user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib -LIBPATH:lib/glfw/windows
+        glfw/windows/glfw3_mt.lib assimp/x64/assimp.lib user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib -LIBPATH:lib
         /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
-        /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO
+        /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
     """)
 
 def get_compiler_args_msvc(usePch: bool = False):

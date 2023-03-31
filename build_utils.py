@@ -36,7 +36,7 @@ APP_NAME = "TinyEngine"
 EXE_NAME = f"{APP_NAME}.exe" if is_windows() else f"{APP_NAME}.out"
 SOURCE_DIR = "src"
 BUILD_DIR = "build"
-USE_MSVC = True
+USE_MSVC = False if not is_windows() else True
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
 
 

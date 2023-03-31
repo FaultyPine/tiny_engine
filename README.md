@@ -85,6 +85,7 @@ Simple nature scene I used to implement & test 3D features
 - Get UDB (time-travel debugging) working
 	- in general, research good debugging tools...
 	- https://werat.dev/blog/what-a-good-debugger-can-do/
+    - https://rr-project.org/  (get this compiling under linux?)
 
 ### Possible future features:
 - ~~debug line drawing~~
