@@ -164,6 +164,9 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
 #if 1
     Assimp::Importer import;
+    //std::string extList = "";
+    //import.GetExtensionList(extList);
+    //std::cout << extList << "\n";
     //std::cout << aiGetVersionMajor() << "." << aiGetVersionMinor() << "." << aiGetVersionRevision() << "\n";
     const aiScene* scene = import.ReadFile(meshObjFile, aiProcess_Triangulate);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -268,9 +271,6 @@ void Model::DrawMinimal(const Shader& shader) const {
 }
 
 void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights) const {
-    // this is hardcoded in the (grass) shader right now. 
-    // TODO: refactor instancing to put instance-relevant data in a vertex attribute
-    // instead of relying on gl_InstanceID to index into big uniform arrays
     ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();

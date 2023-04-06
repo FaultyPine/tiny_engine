@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "framebuffer.h"
 #include "tiny_engine.h"
+#include "tiny_fs.h"
 
 Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype) {
     this->type = fbtype;
@@ -15,7 +16,6 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
     GLCall(glBindTexture(GL_TEXTURE_2D, texture));
 
     // texture setup
-    s32 component = type == DEPTH ? GL_DEPTH_COMPONENT : GL_RGB;
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
     if (type == DEPTH) {
@@ -29,8 +29,10 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)); 
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)); 
     }
+    s32 component = type == DEPTH ? GL_DEPTH_COMPONENT : GL_RGB;
+    s32 dataType = type == DEPTH ? GL_FLOAT : GL_UNSIGNED_BYTE;
     // generate texture to attach to framebuffer
-    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, component, width, height, 0, component, type == DEPTH ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL));
+    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, component, width, height, 0, component, dataType, NULL));
     if (type == DEPTH) {
         // disable color buffer if it's a depth tex
         glDrawBuffer(GL_NONE);
@@ -56,27 +58,10 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
 }
 
 
-static const char* depthFrag = R"(
-#version 330 core
-void main() {
-    // this happens implicitly, explicitly putting this here for clarity
-    gl_FragDepth = gl_FragCoord.z;
-}
-)";
-static const char* depthVert = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-uniform mat4 mvp;
-void main() {
-    gl_Position = mvp * vec4(aPos, 1.0);
-}  
-)";
-
-
 ShadowMap::ShadowMap(u32 resolution) {
     fb = Framebuffer(resolution, resolution, Framebuffer::FramebufferAttachmentType::DEPTH);
     // this shader renders our scene from the perspective of a light
-    depthShader = Shader::CreateShaderFromStr(depthVert, depthFrag);
+    depthShader = Shader(ResPath("shaders/depth.vert"), ResPath("shaders/depth.frag"));
 }
 void ShadowMap::BeginRender() const {
     fb.Bind();
@@ -94,7 +79,7 @@ void ShadowMap::EndRender() const {
 void ShadowMap::ReceiveShadows(Shader& shader, const Light& light) const {
     if (!shader.isValid()) return;
     shader.use();
-    shader.TryAddSampler(fb.GetTexture().id, "depthMap");
+    shader.TryAddSampler(fb.GetTexture().id, "shadowMap");
     shader.setUniform("lightSpaceMatrix", light.GetLightViewProjMatrix());
 }
 void ShadowMap::RenderShadowCaster(const Light& light, Model& model, const Transform& tf) const {
@@ -106,4 +91,49 @@ void ShadowMap::RenderShadowCaster(const Light& light, Model& model, const Trans
     depthShader.setUniform("mvp", mvp);
     // draw model to depth tex/fb
     model.DrawMinimal(depthShader);
+}
+
+
+Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height) {
+    Framebuffer fb;
+    fb.size = glm::vec2(width, height);
+
+    // generate and bind a framebuffer object
+    GLCall(glGenFramebuffers(1, &fb.framebufferID));
+    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, fb.framebufferID));
+
+    // generate our texture that we'll draw to
+    GLCall(glGenTextures(1, &fb.texture));
+    GLCall(glBindTexture(GL_TEXTURE_2D, fb.texture));
+
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE));
+
+    // using RGBA32F to ensure our depth values don't lose precision when going from the depth buffer
+    // to our texture. (normally textures might store the values with less precision than the depth buffer would)
+    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL));
+    GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.texture, 0));
+
+    // when rendering to this framebuffer, opengl needs a place to store depth values.
+    // it won't store them in the texture so this renderbuffer gives it a place to do depth stuff
+    // using a renderbuffer instead of a depth texture attachment since we won't need to sample these depth values
+    // since they're stored in the color texture attachment anyway and if you don't need to sample from it, renderbuffers are
+    // faster than textures (or so im told)
+    GLCall(glGenRenderbuffers(1, &fb.renderBufferObjectID));
+    GLCall(glBindRenderbuffer(GL_RENDERBUFFER, fb.renderBufferObjectID));
+    GLCall(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height));
+    // attach the renderbuffer object to the depth and stencil attachment of the framebuffer
+    GLCall(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fb.renderBufferObjectID));
+    GLCall(glBindRenderbuffer(GL_RENDERBUFFER, 0));
+    
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n";
+    GLCall(glBindTexture(GL_TEXTURE_2D, 0));
+    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+ 
+    return fb;
 }

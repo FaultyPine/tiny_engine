@@ -69,11 +69,34 @@ void testbed_orbit_light(Light& light, f32 orbitRadius, f32 speedMultiplier) {
     light.position.z = z;
 }
 
+static f32 _DepthThreshold = 1.002f;
+static f32 _DepthThickness = 1.001f;
+static f32 _DepthStrength = 1.0f;
+static f32 _ColorThreshold = 1.5f;
+static f32 _ColorThickness = 1.001f;
+static f32 _ColorStrength = 1.5f;
+static f32 _NormalThreshold = 2.7f;
+static f32 _NormalThickness = 1.001f;
+static f32 _NormalStrength = 1.0f;
+
 void drawImGuiDebug() {
     GameState& gs = GameState::get();
     ImGuiBeginFrame();
     
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+    ImGui::DragFloat("_DepthThreshold", &_DepthThreshold, 0.0001f);
+    ImGui::DragFloat("_DepthThickness", &_DepthThickness, 0.001f);
+    ImGui::DragFloat("_DepthStrength", &_DepthStrength, 0.001f);
+    ImGui::DragFloat("_ColorThreshold", &_ColorThreshold, 0.001f);
+    ImGui::DragFloat("_ColorThickness", &_ColorThickness, 0.001f);
+    ImGui::DragFloat("_ColorStrength", &_ColorStrength, 0.001f);
+    ImGui::DragFloat("_NormalThreshold", &_NormalThreshold, 0.001f);
+    ImGui::DragFloat("_NormalThickness", &_NormalThickness, 0.001f);
+    ImGui::DragFloat("_NormalStrength", &_NormalStrength, 0.001f);
+
+
+
     ImGui::DragFloat("wind str", &gs.windStrength, 0.01f);
     ImGui::DragFloat("wind freq", &gs.windFrequency, 0.01f);
     ImGui::DragFloat("wind uvscale", &gs.windUVScale, 1.0f);
@@ -81,19 +104,21 @@ void drawImGuiDebug() {
         ImGui::DragFloat3("Grass ex min", &gs.grassSpawnExclusion.min[0], 0.01f);
         ImGui::DragFloat3("Grass ex max", &gs.grassSpawnExclusion.max[0], 0.01f);
     }
-    if (ImGui::CollapsingHeader("Main Pond") && gs.waveEntity.isValid()) {
-        if (ImGui::CollapsingHeader("Wave Plane")) {
-            //ImGui::DragFloat3("Wave pos", &gs.waveEntity.transform.position[0], 0.01f);
-            //ImGui::DragFloat3("Wave scale", &gs.waveEntity.transform.scale[0], 0.01f);
-        }
-        for (u32 i = 0; i < NUM_WAVES; i++) {
-            Wave& wave = gs.waves[i];
-            if (ImGui::CollapsingHeader(TextFormat("Wave %i", i))) {
-                //ImGui::Text("Wave %i", i);
-                ImGui::DragFloat("Speed", &wave.waveSpeed, 0.01f);
-                ImGui::DragFloat("Wavelength", &wave.wavelength, 0.01f);
-                ImGui::DragFloat("Steepness", &wave.steepness, 0.01f);
-                ImGui::DragFloat2("Direction", &wave.direction[0], 0.1f);
+    if (WorldEntity* waveEntity = gs.GetEntity("PondEntity")) {
+        if (ImGui::CollapsingHeader("Main Pond") && waveEntity->isValid()) {
+            if (ImGui::CollapsingHeader("Wave Plane")) {
+                //ImGui::DragFloat3("Wave pos", &waveEntity.transform.position[0], 0.01f);
+                //ImGui::DragFloat3("Wave scale", &waveEntity.transform.scale[0], 0.01f);
+            }
+            for (u32 i = 0; i < NUM_WAVES; i++) {
+                Wave& wave = gs.waves[i];
+                if (ImGui::CollapsingHeader(TextFormat("Wave %i", i))) {
+                    //ImGui::Text("Wave %i", i);
+                    ImGui::DragFloat("Speed", &wave.waveSpeed, 0.01f);
+                    ImGui::DragFloat("Wavelength", &wave.wavelength, 0.01f);
+                    ImGui::DragFloat("Steepness", &wave.steepness, 0.01f);
+                    ImGui::DragFloat2("Direction", &wave.direction[0], 0.1f);
+                }
             }
         }
     }
@@ -115,13 +140,13 @@ void drawImGuiDebug() {
     ImGuiEndFrame();
 }
 
-void DepthPrePass() {
+void ShadowMapPrePass() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
     ShadowMap& shadowMap = gs.shadowMap;
     Sprite& depthSprite = gs.depthSprite; 
     if (!shadowMap.isValid()) {
-        shadowMap = ShadowMap(2048);
+        shadowMap = ShadowMap(1024);
         depthSprite = Sprite(shadowMap.fb.GetTexture());
     }
 
@@ -134,37 +159,92 @@ void DepthPrePass() {
     shadowMap.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
     shadowMap.EndRender();
 
-    #if 0
+#if 0
     // render depth tex to screen
     glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
     depthSprite.DrawSprite({0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
-    #endif
+#endif
+}
+
+void DepthAndNormsPrePass() {
+    PROFILE_FUNCTION();
+    GameState& gs = GameState::get();
+    if (!gs.depthAndNorms.isValid()) {
+        gs.depthAndNormsShader = Shader(ResPath("shaders/prepass.vert"), ResPath("shaders/prepass.frag"));
+        gs.depthAndNorms = CreateDepthAndNormalsFB((f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight());
+        gs.depthAndNormsSprite = Sprite(gs.depthAndNorms.GetTexture());
+    }
+
+    gs.depthAndNorms.Bind();
+    ClearGLBuffers();
+    glm::mat4 viewMat = Camera::GetMainCamera().GetViewMatrix();
+    glm::mat4 projMat = Camera::GetMainCamera().GetProjectionMatrix();
+    // render entities to a texture where the rgb of each pixel is the normals
+    // and the alpha channel is the depth
+    for (WorldEntity& ent : gs.entities) {
+        glm::mat4 modelMat = ent.transform.ToModelMatrix();
+        glm::mat4 mvp = projMat * viewMat * modelMat;
+        if (ent.hash == GetHash("PondEntity")) {
+            // ewwwwwwww insanely cringe special case handling... (same with the grass prepass shader)
+            // models with vertex displacement shaders need their own specialized
+            // shader with the vert shader being the one that displaces the verts
+            // and the frag shader being our prepass one
+            // might need to add a flag to each shader if it has vertex displacement
+            
+            gs.pondPrepassShader.use();
+            gs.pondPrepassShader.setUniform("mvp", mvp);
+            gs.pondPrepassShader.setUniform("numActiveWaves", gs.numActiveWaves);
+            for (u32 i = 0; i < NUM_WAVES; i++) {
+                Wave& wave = gs.waves[i];
+                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
+                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
+                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
+                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
+            }
+            ent.model.Draw(gs.pondPrepassShader, ent.transform);
+
+            continue;
+        }
+        gs.depthAndNormsShader.use();
+        gs.depthAndNormsShader.setUniform("mvp", mvp);
+        // draw model to texture
+        ent.model.DrawMinimal(gs.depthAndNormsShader);
+    }
+    gs.grassPrepassShader.use();
+    gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
+    gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
+    gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
+    gs.grassPrepassShader.TryAddSampler(gs.windTexture.id, "windTexture");
+    gs.grass.model.DrawInstanced(gs.grassPrepassShader, gs.grassTransforms.size());
+
+    Framebuffer::BindDefaultFrameBuffer();
+
+#if 0
+    // render depth tex to screen
+    glm::vec2 scrn = { Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight() };
+    glm::vec2 size = scrn / 3.0f;
+    gs.depthAndNormsSprite.DrawSprite({ scrn.x - size.x, 0 }, size, 0, { 0,0,1 }, { 1,1,1,1 }, false, true);
+#endif
 }
 
 void drawGameState() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
 
-    { PROFILE_SCOPE("EntityDrawing");
-        for (const auto& ent : gs.entities) {
-            ent.model.Draw(ent.transform, gs.lights);
+    // update Waves
+    if (WorldEntity* waveEntity = gs.GetEntity("PondEntity")) {
+        Shader& waveShader = waveEntity->model.cachedShader;
+        if (waveEntity->isValid() && waveShader.isValid()) {
+            waveShader.use();
+            waveShader.setUniform("numActiveWaves", gs.numActiveWaves);
+            for (u32 i = 0; i < NUM_WAVES; i++) {
+                Wave& wave = gs.waves[i];
+                waveShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
+                waveShader.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
+                waveShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
+                waveShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
+            }
         }
-    }
-
-    // Waves
-    Shader& waveShader = gs.waveEntity.model.cachedShader;
-    if (gs.waveEntity.isValid() && waveShader.isValid()) {
-        waveShader.use();
-        waveShader.setUniform("numActiveWaves", gs.numActiveWaves);
-        for (u32 i = 0; i < NUM_WAVES; i++) {
-            Wave& wave = gs.waves[i];
-            waveShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
-            waveShader.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
-            waveShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
-            waveShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
-        }
-        waveShader.ActivateSamplers();
-        gs.waveEntity.model.Draw(gs.waveEntity.transform);
     }
 
     // grass
@@ -177,24 +257,13 @@ void drawGameState() {
         gs.grass.model.cachedShader.TryAddSampler(gs.windTexture.id, "windTexture");
         gs.grass.model.DrawInstanced(gs.grassTransforms.size());
     }
-    // waterfall
-    WorldEntity* island = gs.GetEntity("island");
-    if (island) {
-        Mesh* waterfallMesh = island->model.GetMesh("WaterfallPlane_Plane.001");
-        if (waterfallMesh) {
-            waterfallMesh->isVisible = true;
-            waterfallMesh->Draw(gs.waterfallShader, Transform({0,0,0}));
-            waterfallMesh->isVisible = false;
+    
+    { PROFILE_SCOPE("EntityDrawing");
+        for (const auto& ent : gs.entities) {
+            ent.model.Draw(ent.transform, gs.lights);
         }
     }
-    //gs.waterfallParticles.Draw();
 
-    /*for (Light& light : gs.lights) {
-        light.Visualize();
-        if (light.type == LIGHT_DIRECTIONAL)
-            Shapes3D::DrawLine(light.position, light.position + light.Direction(), {1.0, 1.0, 1.0, 1.0});
-    }*/
-    
     #if 1
     { PROFILE_SCOPE("Skybox draw");
         if (gs.skybox.skyboxShader.isValid()) {
@@ -250,11 +319,12 @@ void init_grass(GameState& gs) {
         Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
         if (grassSpawnMesh) {
             grassSpawnMesh->isVisible = false;
-            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 7000);
+            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 10000);
         }
     }
 
-    Shader grassShader = Shader(ResPath("shaders/grass.vs").c_str(), ResPath("shaders/grass.fs").c_str());
+    Shader grassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/grass.frag").c_str());
+    gs.grassPrepassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/prepass.frag").c_str());
     Model grassModel = Model(grassShader, ResPath("other/island_wip/grass_blade.obj").c_str(), ResPath("other/island_wip/").c_str());
     grassModel.EnableInstancing(gs.grassTransforms.data(), sizeof(glm::mat4), gs.grassTransforms.size());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
@@ -266,29 +336,31 @@ void init_grass(GameState& gs) {
 }
 
 void init_main_pond(GameState& gs) {
-    Shader waterShader = Shader(ResPath("shaders/water.vs").c_str(), ResPath("shaders/water.fs").c_str());
+    Shader waterShader = Shader(ResPath("shaders/water.vert").c_str(), ResPath("shaders/water.frag").c_str());
+    gs.pondPrepassShader = Shader(ResPath("shaders/water.vert").c_str(), ResPath("shaders/prepass.frag").c_str());
     gs.waterTexture = LoadTexture(ResPath("other/water.png"));
     waterShader.TryAddSampler(gs.waterTexture.id, "waterTexture");
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
-    WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "waterPlane");
-    gs.waveEntity = waterPlaneEnt;
+    WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "PondEntity");
+    gs.entities.push_back(waterPlaneEnt);
     gs.waves[0] = Wave(0.2, 8.7, 0.05, glm::vec2(1,1));
     gs.waves[1] = Wave(0.5, 2.0, 0.09, glm::vec2(0,1));
     gs.waves[2] = Wave(0.8, 1.0, 0.1, glm::vec2(1,0.4));
     gs.numActiveWaves = 3;
 }
 
-void init_waterfall(GameState& gs, Mesh& waterfallMesh) {
-    // disable normal drawing of this mesh so we can do it
-    // manually with our custom waterfall shader
-    waterfallMesh.isVisible = false;
-    gs.waterfallShader = Shader(ResPath("shaders/waterfall.vs"), ResPath("shaders/waterfall.fs"));
+void init_waterfall(GameState& gs) {
+    Shader waterfallShader = Shader(ResPath("shaders/waterfall.vert"), ResPath("shaders/waterfall.frag"));
     Texture waterfallTex = LoadTexture(ResPath("noise.jpg"));
-    gs.waterfallShader.TryAddSampler(waterfallTex.id, "waterfallTex");
+    waterfallShader.TryAddSampler(waterfallTex.id, "waterfallTex");
 
+    Model waterfallModel = Model(waterfallShader, ResPath("other/island_wip/waterfall.obj").c_str(), ResPath("other/island_wip/").c_str());
+    Transform waterfallTf = Transform({0, 0, 0}, {1.0, 1.0, 1.0});
+    WorldEntity waterfallEnt = WorldEntity(waterfallTf, waterfallModel, "Waterfall");
+    gs.entities.push_back(waterfallEnt);
     /*
-    Shader waterfallParticlesShader = Shader(ResPath("shaders/default_3d.vs"), ResPath("shaders/default_3d.fs"));
+    Shader waterfallParticlesShader = Shader(ResPath("shaders/default_3d.vert"), ResPath("shaders/default_3d.frag"));
     Model waterfallParticleModel = Model(waterfallParticlesShader, {Shapes3D::GenCubeMesh()});
     gs.waterfallParticles = ParticleSystem(waterfallParticleModel, 10, true);
     gs.waterfallParticles
@@ -308,14 +380,14 @@ void testbed_init() {
     InitImGui();
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
-    Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vs"), ResPath("shaders/basic_lighting.fs"));
+    Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
 
     //Model testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
     Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
     //Model testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
     //Model testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "island"));
-    
+
     Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({10,7.5,3}, glm::vec3(0.7)), treeModel, "tree"));
     
@@ -332,9 +404,7 @@ void testbed_init() {
     init_grass(gs);
 
     // waterfall
-    if (Mesh* waterfallMesh = testModel.GetMesh("WaterfallPlane_Plane.001")) {
-        init_waterfall(gs, *waterfallMesh);
-    }
+    init_waterfall(gs);
 
     // Init lights
     Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 100, -22), glm::vec3(0, 10, 0), glm::vec4(1));
@@ -369,28 +439,49 @@ void testbed_render(GameState& gs) {
     SetWireframeDrawing(true);
     #endif
 
-    DepthPrePass();
+    ShadowMapPrePass();
+    DepthAndNormsPrePass();
+
     if (!gs.postprocessingFB.isValid()) {
         gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
-        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vs"), ResPath("shaders/outline.fs"));
+        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/outline.frag"));
+        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture().id, "depthNormals");
         //gs.shadowMap.ReceiveShadows(postprocessingShader, gs.lights[0]);
         gs.framebufferSprite = Sprite(postprocessingShader, gs.postprocessingFB.GetTexture());
     }
+
+    // draw game to postprocessing framebuffer
+#define USE_OUTLINE_SHADER
+
+#ifdef USE_OUTLINE_SHADER
     gs.postprocessingFB.Bind();
+#endif
     ClearGLBuffers();
     drawGameState();
+#ifdef USE_OUTLINE_SHADER
     gs.postprocessingFB.BindDefaultFrameBuffer();
-    gs.framebufferSprite.GetShader().use();
-    //gs.framebufferSprite.setShaderUniform("_OutlineScale", outlineScale);
-    //gs.framebufferSprite.setShaderUniform("_DepthThreshold", depthThreshold);
-    gs.framebufferSprite.DrawSprite(Transform2D({0,0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}), glm::vec4(1), false, true);
-    
-    drawImGuiDebug();
 
+    // draw postprocessing framebuffer to screen
+    gs.framebufferSprite.GetShader().use();
+    gs.framebufferSprite.GetShader().setUniform("_DepthThreshold", _DepthThreshold);
+    gs.framebufferSprite.GetShader().setUniform("_DepthThickness", _DepthThickness);
+    gs.framebufferSprite.GetShader().setUniform("_DepthStrength", _DepthStrength);
+    gs.framebufferSprite.GetShader().setUniform("_ColorThreshold", _ColorThreshold);
+    gs.framebufferSprite.GetShader().setUniform("_ColorThickness", _ColorThickness);
+    gs.framebufferSprite.GetShader().setUniform("_ColorStrength", _ColorStrength);
+    gs.framebufferSprite.GetShader().setUniform("_NormalThreshold", _NormalThreshold);
+    gs.framebufferSprite.GetShader().setUniform("_NormalThickness", _NormalThickness);
+    gs.framebufferSprite.GetShader().setUniform("_NormalStrength", _NormalStrength);
+    gs.framebufferSprite.GetShader().setUniform("viewDir", Camera::GetMainCamera().cameraFront);
+
+    gs.framebufferSprite.DrawSprite(Transform2D({0,0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}), glm::vec4(1), false, true);
+#endif
+
+    drawImGuiDebug();
     // red is x, green is y, blue is z
-    Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
-    Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
-    Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
+    //Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
+    //Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
+    //Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
 }
 
 void testbed_tick() {

@@ -7,7 +7,7 @@
 
 Sprite::Sprite(const Texture& mainTex) {
     this->mainTex = mainTex;
-    this->shader = Shader(ResPath("shaders/default_sprite.vs"), ResPath("shaders/default_sprite.fs"));
+    this->shader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/default_sprite.frag"));
     initRenderData();
 }
 Sprite::Sprite(const Shader& shader, const Texture& mainTex) {

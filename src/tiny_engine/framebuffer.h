@@ -38,7 +38,7 @@ struct Framebuffer {
     glm::vec2 GetSize() const { return size; }
     Texture GetTexture() const { return Texture(texture); }
     FramebufferAttachmentType type = COLOR;
-private:
+
     u32 framebufferID = 0;
     u32 renderBufferObjectID = 0;
     u32 texture = 0;
@@ -63,5 +63,7 @@ struct ShadowMap {
     Framebuffer fb;
     Shader depthShader;
 };
+
+Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height);
 
 #endif

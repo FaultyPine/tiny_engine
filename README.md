@@ -35,57 +35,32 @@ Simple nature scene I used to implement & test 3D features
 
 
 ### TODO/Topics to Experiment With:
-- Learn how to use Perforce
-- ~~make sure pch works with msvc~~
-- ~~instancing~~
-    - ~~allow data to be passed through extra vertex attributes~~
-- ~~Add sampler functionality to Shader class. Can add a sampler to a shader, and it'll keep track of it's texture units~~
-- Try making the island/waterfall scene!
-    - ~~Floating island~~
-    - ~~Rock for waterfall~~
-    - ~~pond in middle~~, area near pond is green, rest of island is white
-    - ~~pond -> water (shader/mesh/tex/etc)~~
-    - ~~grass on island~~
-        - ~~grass spawning algorithm~~
-    - waterfall
-        - flowing into pond
-        - Make rock bigger, waterfall starts high up - mostly out of view
-        - waterfall shader/mesh/particles
-            - 3D particles - extension of 2d particle system
+- shader includes... to clean up lighting code & allow other objects to poll lighting info without having to copy/paste same lighting code everywhere
+- serialize objects... I.E. store positions and whatnot so im not just hardcoding them
+    - will also allow me to change them while in-engine and save those changes
 - better grass sway w/distortion texture to emulate wind better
-- outline postprocessing shader
-    - generate normals texture for postprocessing
-        - at this point i would be generating depth and
-        normals as seperate g-buffers... shouldn't I just 
-        commit and go full deferred at that point? ....
-        I need to actually build a renderer....
-        - maybe a full deferred renderer is a bit much.
-        - I think it would be best to just have the 
-            depth prepass also render normals (multiple render targets)
-- ~~Skybox~~
-- PBR lighting???
+- PBR
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc objects
     - allow access to these things through ids or shared pointers
-- ~~Shader hot reload~~
 - HDR/Tonemapping & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
 - Space partitioning (BSP/Quadtree/Octree)
-- Custom allocators (bump, arena, frame, etc)
+- Custom allocators (arenas)
 - animation
     - .obj files don't support animation... might need to implement gltf or collada or fbx support
     - https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation
     - https://www.youtube.com/watch?v=f3Cr8Yx3GGA
+- Learn how to use Perforce
 - Portals! (And utilizing that to make "non-euclidean" spaces)
 - 3D World Wrapping (I.E. Manifold garden)
 - (Visualizing) L-Systems
-- Get UDB (time-travel debugging) working
-	- in general, research good debugging tools...
-	- https://werat.dev/blog/what-a-good-debugger-can-do/
-    - https://rr-project.org/  (get this compiling under linux?)
+- in general, research good debugging tools...
+- https://werat.dev/blog/what-a-good-debugger-can-do/
+- https://rr-project.org/  (get this compiling under linux? Did, but weird mouse issues...)
 
 ### Possible future features:
 - ~~debug line drawing~~

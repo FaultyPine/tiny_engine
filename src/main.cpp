@@ -19,7 +19,7 @@
 
 void preLoopInit() {
     bool is3D = true;
-    InitGame(1280, 720, 16, 9, "Tiny Engine", is3D); 
+    InitGame(1920, 1080, 16, 9, "Tiny Engine", is3D); 
     
     //Potp::MainInit();
     #if TESTBED3D

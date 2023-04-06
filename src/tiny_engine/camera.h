@@ -21,7 +21,7 @@ struct Camera {
     u32 maxScreenHeight = 975;
     f32 FOV = 45.0f;
     f32 nearClip = 0.1f;
-    f32 farClip = 500.0f;
+    f32 farClip = 100.0f;
     bool isSwivelable = false;
     enum Projection {
         PERSPECTIVE,

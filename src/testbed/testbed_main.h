@@ -47,6 +47,10 @@ struct Wave {
     Wave(){}
 };
 
+inline u32 GetHash(const std::string& str) {
+    return std::hash<std::string>{}(str);
+}
+
 struct GameState {
     // TODO: use hashmap w/int IDs
     std::vector<WorldEntity> entities = {};
@@ -56,14 +60,14 @@ struct GameState {
     #define NUM_WAVES 8
     Wave waves[NUM_WAVES];
     s32 numActiveWaves = 0;
-    WorldEntity waveEntity = {};
+    Shader pondPrepassShader;
     Texture waterTexture;
-    // Waterfall
-    Shader waterfallShader = {};
+    // Waterfall particles
     ParticleSystem waterfallParticles = {};
     
     // grass
     WorldEntity grass = {};
+    Shader grassPrepassShader;
     std::vector<glm::mat4> grassTransforms = {};
     BoundingBox grassSpawnExclusion = {};
     Texture windTexture = {};
@@ -74,6 +78,10 @@ struct GameState {
     // shadows/depth tex
     ShadowMap shadowMap;
     Sprite depthSprite;
+
+    Sprite depthAndNormsSprite;
+    Shader depthAndNormsShader;
+    Framebuffer depthAndNorms;
 
     // postprocessing
     Framebuffer postprocessingFB;
@@ -95,7 +103,7 @@ struct GameState {
     // TODO: return shared_ptr?
     // TODO: use hashmap
     WorldEntity* GetEntity(const char* name) {
-        u32 hash = std::hash<std::string>{}(std::string(name));
+        u32 hash = GetHash(std::string(name));
         for (auto& ent : entities) {
             if (ent.hash == hash) {
                 return &ent;

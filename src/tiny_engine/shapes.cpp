@@ -130,7 +130,7 @@ Mesh GenPlaneMesh(u32 resolution) {
         indices.push_back(i + 1);
     }
 
-    return Mesh(planeverts, indices, {});
+    return Mesh(planeverts, indices, {}, "GeneratedPlane");
 }
 
 void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color, f32 width) {
@@ -208,7 +208,7 @@ void main(){
 }
 
 void DrawCube(const Transform& tf, const glm::vec4& color) {
-    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vs", "shaders/shapes/default_3d.fs");
+    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
     static u32 cubeVAO = 0;
     static u32 cubeVBO = 0;
     // initialize (if necessary)
@@ -244,7 +244,7 @@ void DrawCube(const Transform& tf, const glm::vec4& color) {
 }
 
 void DrawPlane(const Transform& tf, const glm::vec4& color) {
-    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vs", "shaders/shapes/default_3d.fs");
+    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
     static u32 planeVAO = 0;
     static u32 planeVBO = 0;
     if (planeVAO == 0) {
@@ -291,7 +291,7 @@ namespace Shapes2D {
 void DrawSquare(const glm::vec2& pos, const glm::vec2& size, 
             f32 rotation, const glm::vec3& rotationAxis, 
             const glm::vec4& color, bool isHollow) {
-    SHAPE_SHADER(shader, "shaders/shapes/shape.vs", "shaders/shapes/square.fs");
+    SHAPE_SHADER(shader, "shaders/shapes/shape.vert", "shaders/shapes/square.frag");
     s32 hollow = isHollow ? 1 : 0;
     shader.use();
     shader.setUniform("isHollow", hollow);
@@ -299,7 +299,7 @@ void DrawSquare(const glm::vec2& pos, const glm::vec2& size,
 }
 
 void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color, bool isHollow) {
-    SHAPE_SHADER(shader, "shaders/shapes/shape.vs", "shaders/shapes/circle.fs");
+    SHAPE_SHADER(shader, "shaders/shapes/shape.vert", "shaders/shapes/circle.frag");
     s32 hollow = isHollow ? 1 : 0;
     shader.use();
     shader.setUniform("isHollow", hollow);

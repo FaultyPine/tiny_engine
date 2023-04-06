@@ -53,7 +53,7 @@ Mesh Skybox::skyboxCube;
 Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties props) {
     cubemap = LoadCubemap(facesPaths, props);
     if (!skyboxShader.isValid() && !skyboxCube.isValid()) {
-        skyboxShader = Shader(ResPath("shaders/skybox.vs"), ResPath("shaders/skybox.fs"));
+        skyboxShader = Shader(ResPath("shaders/skybox.vert"), ResPath("shaders/skybox.frag"));
         skyboxShader.use();
         skyboxShader.setUniform("skybox", 0);
         std::vector<Vertex> vertices = {};
