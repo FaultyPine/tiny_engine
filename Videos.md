@@ -1,7 +1,7 @@
 
 QuadTree Implementation:
 
-[![QuadTree Impl](http://img.youtube.com/vi/MUQfKFzIOeU/0.jpg)](http://www.youtube.com/watch?v=MUQfKFzIOeU "Quadtree video")
+[![QuadTree Impl](http://img.youtube.com/vi/eAJawYYe8UA/0.jpg)](http://www.youtube.com/watch?v=eAJawYYe8UA "Quadtree video")
 
 
 Outline/Sketch Effect
