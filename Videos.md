@@ -1,10 +1,13 @@
 
 QuadTree Implementation:
 
-[![QuadTree Impl](http://img.youtube.com/vi/eAJawYYe8UA/0.jpg)](http://www.youtube.com/watch?v=eAJawYYe8UA "Quadtree video")
+https://user-images.githubusercontent.com/53064235/216891116-b9521259-7010-4fa0-bd52-3d54e71d830e.mp4
 
-https://drive.google.com/file/d/1EwqMTWlpQn5l3hAtCVTY-0twKjplagxE/view?usp=share_link
 
 Outline/Sketch Effect
 
-[https://youtu.be/T6DNiBJQdPo](https://youtu.be/T6DNiBJQdPo)
+
+
+
+https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-8781-e4ad967f1b2d.mp4
+
