@@ -8,7 +8,7 @@ Libraries Used:
 - [GLFW](https://www.glfw.org/)
 - [miniaudio](https://github.com/mackron/miniaudio) by David Reid
 - [GLtext](https://github.com/vallentin/glText) by Christian Vallentin 
-- [tiny_obj_loader](https://github.com/tinyobjloader/tinyobjloader)
+- [imgui](https://github.com/ocornut/imgui) ImGui by Omar
 
 Features/Included Implementations:
 - Postprocessing

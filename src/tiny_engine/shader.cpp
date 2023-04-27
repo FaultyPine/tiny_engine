@@ -31,9 +31,85 @@ u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) {
     }
     return shaderID;
 }
-u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource) {
-    u32 vertexShader = CreateAndCompileShader(GL_VERTEX_SHADER, vsSource);
-    u32 fragShader = CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSource);
+
+bool ReadEntireFile(const char* filename, std::string& str) {
+    std::ifstream f(filename);
+    if (f) {
+        std::ostringstream ss;
+        ss << f.rdbuf();
+        str = ss.str();
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& includeIdentifier, const std::string& includeSearchDir) {
+    static bool isRecursiveCall = false;
+    std::string fullSourceCode = "";
+    std::string lineBuffer;
+    std::istringstream stream = std::istringstream(shaderSource);
+
+    while (std::getline(stream, lineBuffer)) {
+        // if include is in this line
+        if (lineBuffer.find(includeIdentifier) != lineBuffer.npos) {
+            // Remove the include identifier, this will cause the path to remain
+            lineBuffer.erase(0, includeIdentifier.size());
+            lineBuffer = lineBuffer.erase(0, 1);
+            lineBuffer.erase(lineBuffer.size() - 1, 1); // remove ""
+            // The include path is relative to the current shader file path
+            std::string path = includeSearchDir + lineBuffer;
+
+            std::string nextFile;
+            if (ReadEntireFile(path.c_str(), nextFile)) {
+                // recursively process included file
+                isRecursiveCall = true;
+                std::string recursiveShaderSource = ShaderPreprocessIncludes(nextFile.c_str(), includeIdentifier, includeSearchDir);
+                fullSourceCode += recursiveShaderSource;
+            }
+            else {
+                std::cout << "Failed to open shader include: " << path << "\n";
+                ASSERT(false);
+            }
+
+            // don't add the actual "#include blah.blah" line in the final source
+            continue;
+        }
+
+        fullSourceCode += lineBuffer + '\n';
+    }
+
+    // null terminate the very end of the file
+    if (!isRecursiveCall)
+        fullSourceCode += '\0';
+
+    return fullSourceCode;
+}
+
+std::string ShaderSourcePreprocess(const s8* shaderSource, const std::string& shaderPath) {
+    // take in original source code and run some procedure(s) on it and return the "processed" source code
+    std::string ret;
+    std::cout << shaderPath << "\n";
+    std::string includeSearchDir = shaderPath.substr(0, shaderPath.rfind('/')+1); // will look like "res/shaders/"
+    static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
+    ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir);
+    return ret;
+}
+
+
+u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") {
+    // preprocess both vert and frag shader source code before compiling
+#if 1
+    std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource, vertPath);
+    std::string fsSourcePreprocessed = ShaderSourcePreprocess(fsSource, fragPath);
+#else
+    std::string vsSourcePreprocessed = vsSource;
+    std::string fsSourcePreprocessed = fsSource;
+#endif
+    u32 vertexShader = CreateAndCompileShader(GL_VERTEX_SHADER, vsSourcePreprocessed.c_str());
+    u32 fragShader = CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSourcePreprocessed.c_str());
+
     u32 shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragShader);
@@ -81,7 +157,7 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
     }
     const char* vShaderCode = vertexCode.c_str();
     const char * fShaderCode = fragmentCode.c_str();
-    u32 shaderProgram = CreateShaderProgramFromStr(vShaderCode, fShaderCode);
+    u32 shaderProgram = CreateShaderProgramFromStr(vShaderCode, fShaderCode, vertexPath, fragmentPath);
     return shaderProgram;
 }
 
