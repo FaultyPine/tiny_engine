@@ -32,6 +32,15 @@ Written with this engine:
 Simple nature scene I used to implement & test 3D features  
 ![Capture](https://user-images.githubusercontent.com/53064235/211901373-47841a5b-5ea7-49e9-afac-28dd2b46d4aa.PNG)  
 
+QuadTree Implementation:  
+
+https://user-images.githubusercontent.com/53064235/216891116-b9521259-7010-4fa0-bd52-3d54e71d830e.mp4  
+
+Outline/Sketch Effect  
+
+https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-8781-e4ad967f1b2d.mp4  
+  
+
 
 
 ### TODO/Topics to Experiment With:
