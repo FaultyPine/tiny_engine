@@ -30,7 +30,7 @@ Written with this engine:
 [Part Of The Pack](https://faultypine.itch.io/part-of-the-pack)  
 ![image](https://user-images.githubusercontent.com/53064235/211900902-6c979f44-357a-4449-adf0-40598d9a7edb.png)  
 Simple nature scene I used to implement & test 3D features  
-![Screenshot 2023-04-26 235310](https://user-images.githubusercontent.com/53064235/234755284-065aab3a-b90a-4b3c-9d55-c282eaffccd4.png)
+![Screenshot 2023-04-26 235502](https://user-images.githubusercontent.com/53064235/234755544-509599a3-1df1-4656-bcd0-6be7c841b4fb.png)
 
 
 QuadTree Implementation:  
