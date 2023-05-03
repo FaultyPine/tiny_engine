@@ -17,10 +17,9 @@ struct Sprite {
     void DrawSprite(glm::vec2 position = glm::vec2(0), 
                     glm::vec2 size = glm::vec2(25.0f, 25.0f), f32 rotate = 0.0f, 
                     glm::vec3 rotationAxis = glm::vec3(0.0, 0.0, 1.0),
-                    glm::vec4 color = glm::vec4(1.0f), bool adjustToScreensize = false,
+                    glm::vec4 color = glm::vec4(1.0f),
                     bool shouldFlipY = false) const;
-    void DrawSprite(const Transform2D& tf, glm::vec4 color = glm::vec4(1.0f),
-        bool adjustToScreensize = false, bool shouldFlipY = false) const;
+    void DrawSprite(const Transform2D& tf, glm::vec4 color = glm::vec4(1.0f), bool shouldFlipY = false) const;
 
     bool isValid() const { return mainTex.id != 0; }
     inline f32 GetTextureWidth() const { return mainTex.width; }

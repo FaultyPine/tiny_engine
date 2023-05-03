@@ -10,15 +10,20 @@
 #include "tiny_engine/tiny_engine.h"
 
 // game includes
-//#include "PartOfThePack/potp_main.h"
-#define TESTBED3D 1
-#include "testbed/testbed_main.h"
+#define TESTBED3D 0
 #define QUADTREE_TEST 0
-//#include "quadtree_test/game_main.h" 
+#define CC_TEST 1
 
+#if TESTBED3D
+#include "testbed/testbed_main.h"
+#elif QUADTREE_TEST
+#include "quadtree_test/game_main.h" 
+#elif CC_TEST
+#include "cc/cc_main.h"
+#endif
 
 void preLoopInit() {
-    bool is3D = true;
+    bool is3D = false;
     InitGame(1920, 1080, 16, 9, "Tiny Engine", is3D); 
     
     //Potp::MainInit();
@@ -30,8 +35,8 @@ void preLoopInit() {
     game_init();
     #endif
 
-    #if TETRIS
-    tetris_init();
+    #if CC_TEST
+    cc_init();
     #endif
 }
 
@@ -45,8 +50,8 @@ void gameTick() {
     game_tick();
     #endif
 
-    #if TETRIS
-    tetris_tick();
+    #if CC_TEST
+    cc_tick();
     #endif
 }
 
@@ -60,8 +65,8 @@ void endGame() {
     game_terminate();
     #endif
 
-    #if TETRIS
-    tetris_terminate();
+    #if CC_TEST
+    cc_terminate();
     #endif
 
     TerminateGame();

@@ -26,36 +26,26 @@ void Sprite::setShaderUniform(const char* name, T val) const {
     shader.setUniform(name, val);
 }
 
-void AdjustDimensionsForSceenSize(glm::vec2& position, glm::vec2& size) {
-    const Camera& cam = Camera::GetMainCamera();
-    glm::vec2 screenMin = cam.GetMinScreenDimensions();
-    size.x = Math::Remap(size.x, 0, screenMin.x, 0, cam.GetScreenWidth()) /1.1;
-    size.y = Math::Remap(size.y, 0, screenMin.y, 0, cam.GetScreenHeight()) /1.1;
-    position.x = Math::Remap(position.x, 0, screenMin.x, 0, cam.GetScreenWidth());
-    position.y = Math::Remap(position.y, 0, screenMin.y, 0, cam.GetScreenHeight());
-}
 
-void Sprite::DrawSprite(const Transform2D& tf, glm::vec4 color, 
-                    bool adjustToScreensize, bool shouldFlipY) const {
-    DrawSprite(tf.position, tf.scale, tf.rotation, {0,0,1}, color, adjustToScreensize, shouldFlipY);
+void Sprite::DrawSprite(const Transform2D& tf, glm::vec4 color, bool shouldFlipY) const {
+    DrawSprite(tf.position, tf.scale, tf.rotation, {0,0,1}, color, shouldFlipY);
 }
-void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, 
-    bool adjustToScreensize, bool shouldFlipY) const {
+void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool shouldFlipY) const {
     ASSERT(isValid() && "Tried to draw invalid sprite!\n");
-
-    if (adjustToScreensize) {
-        AdjustDimensionsForSceenSize(position, size);
-    }
 
     // set up transform of the actual sprite
     Camera& cam = Camera::GetMainCamera();
     glm::mat4 model = Math::Position2DToModelMat(position, size, rotate, rotationAxis);
     glm::mat4 projection = cam.GetOrthographicProjection();
-    
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::translate(view, cam.cameraPos);
+
+
     shader.use();
     shader.setUniform("model", model);
     shader.setUniform("color", color);
     shader.setUniform("projection", projection);
+    shader.setUniform("view", view);
     // Texture unit indexes are bound to samplers, not texture objects.
     // https://stackoverflow.com/questions/46122353/opengl-texture-is-all-black-when-rendered-with-shader
     //shader.setUniform("mainTex", 0);

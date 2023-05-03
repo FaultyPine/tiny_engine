@@ -45,9 +45,12 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO/Topics to Experiment With:
-- shader includes... to clean up lighting code & allow other objects to poll lighting info without having to copy/paste same lighting code everywhere
+- ~~shader includes... to clean up lighting code & allow other objects to poll lighting info without having to copy/paste same lighting code everywhere~~
+- refactor shaders to use includes
 - serialize objects... I.E. store positions and whatnot so im not just hardcoding them
     - will also allow me to change them while in-engine and save those changes
+    - use rel pointers/arrays to make everything one big blob
+- Custom allocators (arenas)
 - better grass sway w/distortion texture to emulate wind better
 - PBR
 - Resource system
@@ -59,7 +62,6 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
 - Space partitioning (BSP/Quadtree/Octree)
-- Custom allocators (arenas)
 - animation
     - .obj files don't support animation... might need to implement gltf or collada or fbx support
     - https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation

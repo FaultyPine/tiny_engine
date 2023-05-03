@@ -9,7 +9,7 @@ const s32 TAB_OUT_OF_WINDOW_KEY = GLFW_KEY_TAB;
 
 struct Camera {
     f32 speed = 6.5f;
-    glm::vec3 cameraPos = glm::vec3(1);
+    glm::vec3 cameraPos = glm::vec3(0);
     glm::vec3 cameraFront = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
@@ -30,16 +30,20 @@ struct Camera {
     Projection projection = ORTHOGRAPHIC;
 
     glm::mat4 GetProjectionMatrix() const {
-        f32 aspect = (f32)screenWidth / screenHeight;
         if (projection == PERSPECTIVE) {
-            return glm::perspective(glm::radians(FOV), aspect, nearClip, farClip);
+            return GetPerspectiveProjection();
         }
         else {
-            return glm::ortho(0.0f, (f32)screenWidth, (f32)screenHeight, 0.0f, -1.0f, 1.0f); 
+            return GetOrthographicProjection();
         }
     }
     inline glm::mat4 GetOrthographicProjection() const {
-        return glm::ortho(0.0f, (f32)screenWidth, (f32)screenHeight, 0.0f, -1.0f, 1.0f); 
+        if (projection == PERSPECTIVE) {
+            return glm::ortho(0.0f, (f32)screenWidth, (f32)screenHeight, 0.0f, -1.0f, 1.0f); 
+        }
+        else {
+            return glm::ortho(-(f32)screenWidth / 2.0f, (f32)screenWidth / 2.0f, (f32)screenHeight / 2.0f, -(f32)screenHeight / 2.0f, -1.0f, 1.0f);
+        }
     }
     inline glm::mat4 GetPerspectiveProjection() const {
         f32 aspect = (f32)screenWidth / screenHeight;
