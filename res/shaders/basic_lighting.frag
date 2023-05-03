@@ -12,6 +12,7 @@ out vec4 finalColor;
 
 uniform float nearClip;
 uniform float farClip;
+uniform int shouldCrosshatch = 0;
 vec3 crosshatch(vec3 texColor);
 // ============================ MATERIALS ==================================
 
@@ -170,7 +171,9 @@ vec3 calculateLighting() {
     }
 
     float shadow = GetShadow(fragPosLightSpace, sunLightDir, normal);
-    shadow = crosshatch(vec3(shadow)).r;
+    if (shouldCrosshatch != 0) {
+        shadow = crosshatch(vec3(shadow)).r;
+    }
     vec3 lighting = shadow * (specularLight + diffuseLight);
     lighting += ambientLight; // add ambient on top of everything
     return lighting;
