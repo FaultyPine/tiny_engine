@@ -17,6 +17,8 @@
 #include "tiny_engine/tiny_profiler.h"
 #include "tiny_engine/particles/particle_behaviors.h"
 
+static bool USE_OUTLINE_SHADER = false;
+
 void testbed_inputpoll() {
     Camera& cam = Camera::GetMainCamera();
     f32 cameraSpeed = cam.speed * GetDeltaTime();
@@ -46,8 +48,10 @@ void testbed_inputpoll() {
 
     if (Keyboard::isKeyPressed(GLFW_KEY_R)) {
         Shader::ReloadShaders();
-        GameState& gs = GameState::get();
-        
+    }
+
+    if (Keyboard::isKeyPressed(GLFW_KEY_P)) {
+        USE_OUTLINE_SHADER = !USE_OUTLINE_SHADER;
     }
 
 
@@ -260,6 +264,8 @@ void drawGameState() {
     
     { PROFILE_SCOPE("EntityDrawing");
         for (const auto& ent : gs.entities) {
+            ent.model.cachedShader.use();
+            ent.model.cachedShader.setUniform("shouldCrosshatch", (int)USE_OUTLINE_SHADER);
             ent.model.Draw(ent.transform, gs.lights);
         }
     }
@@ -451,33 +457,35 @@ void testbed_render(GameState& gs) {
     }
 
     // draw game to postprocessing framebuffer
-#define USE_OUTLINE_SHADER
+    if (USE_OUTLINE_SHADER) {
+        gs.postprocessingFB.Bind();
+    }
 
-#ifdef USE_OUTLINE_SHADER
-    gs.postprocessingFB.Bind();
-#endif
     ClearGLBuffers();
     drawGameState();
-#ifdef USE_OUTLINE_SHADER
-    gs.postprocessingFB.BindDefaultFrameBuffer();
 
-    // draw postprocessing framebuffer to screen
-    gs.framebufferSprite.GetShader().use();
-    gs.framebufferSprite.GetShader().setUniform("_DepthThreshold", _DepthThreshold);
-    gs.framebufferSprite.GetShader().setUniform("_DepthThickness", _DepthThickness);
-    gs.framebufferSprite.GetShader().setUniform("_DepthStrength", _DepthStrength);
-    gs.framebufferSprite.GetShader().setUniform("_ColorThreshold", _ColorThreshold);
-    gs.framebufferSprite.GetShader().setUniform("_ColorThickness", _ColorThickness);
-    gs.framebufferSprite.GetShader().setUniform("_ColorStrength", _ColorStrength);
-    gs.framebufferSprite.GetShader().setUniform("_NormalThreshold", _NormalThreshold);
-    gs.framebufferSprite.GetShader().setUniform("_NormalThickness", _NormalThickness);
-    gs.framebufferSprite.GetShader().setUniform("_NormalStrength", _NormalStrength);
-    gs.framebufferSprite.GetShader().setUniform("viewDir", Camera::GetMainCamera().cameraFront);
+    if (USE_OUTLINE_SHADER) {
+        gs.postprocessingFB.BindDefaultFrameBuffer();
 
-    gs.framebufferSprite.DrawSprite(Transform2D({0,0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}), glm::vec4(1), false, true);
-#endif
+        // draw postprocessing framebuffer to screen
+        gs.framebufferSprite.GetShader().use();
+        gs.framebufferSprite.GetShader().setUniform("_DepthThreshold", _DepthThreshold);
+        gs.framebufferSprite.GetShader().setUniform("_DepthThickness", _DepthThickness);
+        gs.framebufferSprite.GetShader().setUniform("_DepthStrength", _DepthStrength);
+        gs.framebufferSprite.GetShader().setUniform("_ColorThreshold", _ColorThreshold);
+        gs.framebufferSprite.GetShader().setUniform("_ColorThickness", _ColorThickness);
+        gs.framebufferSprite.GetShader().setUniform("_ColorStrength", _ColorStrength);
+        gs.framebufferSprite.GetShader().setUniform("_NormalThreshold", _NormalThreshold);
+        gs.framebufferSprite.GetShader().setUniform("_NormalThickness", _NormalThickness);
+        gs.framebufferSprite.GetShader().setUniform("_NormalStrength", _NormalStrength);
+        gs.framebufferSprite.GetShader().setUniform("viewDir", Camera::GetMainCamera().cameraFront);
 
+        gs.framebufferSprite.DrawSprite(Transform2D({0,0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}), glm::vec4(1), true);
+    }
+
+#ifdef ENABLE_IMGUI
     drawImGuiDebug();
+#endif
     // red is x, green is y, blue is z
     //Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
     //Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
