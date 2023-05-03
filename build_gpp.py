@@ -22,7 +22,7 @@ def get_compiler_args_gpp():
     return var_contents("""
         -ggdb -Iinclude -Isrc -std=c++17 -O0 -static-libstdc++ -static-libgcc
     """)
-PCH_FILE = "src/tiny_engine/pch.h"
+PCH_FILE = "src/pch.h"
 def build_pch_gpp():
     PCH_COMMAND = f"g++ -x c++-header -o {PCH_FILE}.gch -c {PCH_FILE} {get_compiler_args_gpp()}"
     start_time = time.time()
