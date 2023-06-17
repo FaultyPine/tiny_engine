@@ -46,6 +46,7 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 ### TODO/Topics to Experiment With:
 - ~~shader includes... to clean up lighting code & allow other objects to poll lighting info without having to copy/paste same lighting code everywhere~~
+- rewrite default constructors to use = default;
 - refactor shaders to use includes
 - serialize objects... I.E. store positions and whatnot so im not just hardcoding them
     - will also allow me to change them while in-engine and save those changes

@@ -12,15 +12,15 @@ struct NPC {
     glm::vec2 desiredPosition;
 };
 
-struct Rundata {
+struct QTRundata {
     QuadTree<NPC*> tree = {};
-    std::vector<NPC> npcs = {};
+    std::array<NPC, MAX_ENTITIES> npcs = {};
     Sprite character;
 
 
 
-    static Rundata& Instance() {
-        static Rundata rd; 
+    static QTRundata& Instance() {
+        static QTRundata rd;
         return rd;
     }
 };

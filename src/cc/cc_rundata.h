@@ -2,11 +2,11 @@
 #include "pch.h"
 #include "guy.h"
 
-struct Rundata {
+struct CCRundata {
     GuyGroup guygroup;
     Guy player;
-    static Rundata& get() {
-        static Rundata rd;
+    static CCRundata& get() {
+        static CCRundata rd;
         return rd;
     }
 };

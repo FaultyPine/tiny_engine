@@ -11,8 +11,8 @@
 
 // game includes
 #define TESTBED3D 0
-#define QUADTREE_TEST 0
-#define CC_TEST 1
+#define QUADTREE_TEST 1
+#define CC_TEST 0
 
 #if TESTBED3D
 #include "testbed/testbed_main.h"
@@ -20,6 +20,7 @@
 #include "quadtree_test/game_main.h" 
 #elif CC_TEST
 #include "cc/cc_main.h"
+using namespace CC;
 #endif
 
 void preLoopInit() {

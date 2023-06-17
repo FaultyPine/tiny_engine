@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include <array>
 #include <fstream>
 #include <sstream>
 #ifndef _MSC_VER

@@ -9,7 +9,9 @@
 #include "tiny_engine/tiny_profiler.h"
 #include "tiny_engine/shader.h"
 
-#include "rundata.h"
+#include "cc_rundata.h"
+
+namespace CC {
 
 void PollInputs() {
     if (Keyboard::isKeyDown(GLFW_KEY_ESCAPE)) {
@@ -45,11 +47,11 @@ void UpdateGroup(GuyGroup* group) {
 
 }
 
-void Draw(Rundata& rd) {
+void Draw(CCRundata& rd) {
     DrawGuyGroup(&rd.guygroup);
     DrawDebug();
 }
-void Update(Rundata& rd) {
+void Update(CCRundata& rd) {
 
     UpdateGroup(&rd.guygroup);
 }
@@ -57,7 +59,7 @@ void Update(Rundata& rd) {
 void cc_init() {
     PROFILE_FUNCTION();
     InitImGui();
-    Rundata& rd = Rundata::get();
+    CCRundata& rd = CCRundata::get();
     GuyGroup& gg = rd.guygroup;
     MakeGuyGroup(&gg);
     for (int i = 0; i < 100; i++) {
@@ -67,7 +69,7 @@ void cc_init() {
 
 void cc_tick() {
     PROFILE_FUNCTION();
-    Rundata& rd = Rundata::get();
+    CCRundata& rd = CCRundata::get();
     PollInputs();
     Update(rd);
     Draw(rd);
@@ -75,3 +77,7 @@ void cc_tick() {
 void cc_terminate() {
     ImGuiTerminate();
 }
+
+
+
+} // namespace CC

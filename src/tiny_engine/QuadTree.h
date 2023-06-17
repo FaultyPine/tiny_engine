@@ -5,12 +5,12 @@
 #include <functional>
 
 template<typename T>
-struct Node {
+struct QuadTreeNode {
     glm::vec2 point = glm::vec2(0);
     T data;
     bool hasData = false;
-    Node(){}
-    Node(glm::vec2 pos, T _data) {
+    QuadTreeNode(){}
+    QuadTreeNode(glm::vec2 pos, T _data) {
         point = pos;
         data = _data;
         hasData = true;
@@ -42,13 +42,13 @@ struct QuadTree {
         node = {};
     }
     void Draw();
-    void insert(const Node<T>& node);
+    void insert(const QuadTreeNode<T>& node);
     void search(BoundingBox2D bounds, std::vector<T>& results);
-    void Transform(std::function<void(QuadTree<T>*)> func);
+    void Transform(std::function<void(QuadTreeNode<T>*)> func);
     u32 GetSize();
 
     BoundingBox2D bounds = {};
-    Node<T> node = {};
+    QuadTreeNode<T> node = {};
     // TODO: (?) access array of children with array-based tree lookups
     std::vector<QuadTree> children = {};
 
@@ -69,7 +69,7 @@ u32 QuadTree<T>::GetSize()  {
 }
 
 template <typename T>
-void QuadTree<T>::Transform(std::function<void(QuadTree<T>*)> func) {
+void QuadTree<T>::Transform(std::function<void(QuadTreeNode<T>*)> func) {
     func(this);
     for (auto& child : neighbors) {
         child.Transform(func);
@@ -120,7 +120,7 @@ QuadTree<T> QuadTree<T>::GenerateChildQuadTree(BoundingBox2D bounds, QuadTreeChi
 }
 
 template <typename T>
-void QuadTree<T>::insert(const Node<T>& nodeToInsert) {
+void QuadTree<T>::insert(const QuadTreeNode<T>& nodeToInsert) {
     glm::vec2 topLeft = bounds.min;
     glm::vec2 botRight = bounds.max;
     if (children.empty()) {
@@ -241,7 +241,7 @@ void QuadTree<T>::Draw() {
     //std::cout << glm::to_string(bounds.min) << " -> " << glm::to_string(bounds.max) << "\n"; 
     if (node.hasData) {
         Shapes2D::DrawCircle(node.point, 1.0f);
-        //std::cout << "Node pos: " << glm::to_string(node.point) << "\n";
+        //std::cout << "QuadTreeNode pos: " << glm::to_string(node.point) << "\n";
         //std::cout << " real ent pos: " << glm::to_string(node.data->tf.position) << "\n";
     }
 

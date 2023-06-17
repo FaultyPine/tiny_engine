@@ -8,7 +8,7 @@
 #include "tiny_engine/tiny_fs.h"
 #include "tiny_engine/tiny_profiler.h"
 #include "PoissonGenerator.h"
-#include "rundata.h"
+#include "qt_rundata.h"
 
 void PollInputs() {
     if (Keyboard::isKeyDown(GLFW_KEY_ESCAPE)) {
@@ -37,7 +37,7 @@ void DrawDebug() {
 }
 
 
-void DrawGame(Rundata& rd) {
+void DrawGame(QTRundata& rd) {
     PROFILE_FUNCTION();
     glm::vec2 screenSize = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
     for (auto& npc : rd.npcs) {
@@ -53,7 +53,7 @@ void DrawGame(Rundata& rd) {
 void game_init() {
     PROFILE_FUNCTION();
     InitImGui();
-    Rundata& rd = Rundata::Instance();
+    QTRundata& rd = QTRundata::Instance();
     u32 screenWidth = Camera::GetScreenWidth();
     u32 screenHeight = Camera::GetScreenHeight();
     rd.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
@@ -70,15 +70,15 @@ void game_init() {
         glm::vec2 pos = glm::vec2(Points[i].x*screenWidth, Points[i].y*screenHeight);
         ent.tf = Transform2D(pos, glm::vec2(10));
         ent.desiredPosition = glm::vec2(Points[i+1].x*screenWidth, Points[i+1].y*screenHeight);
-        rd.npcs.push_back(ent);
-        Node nodeToInsert = Node(pos, &rd.npcs.back());
+        rd.npcs[i] = ent;
+        QuadTreeNode nodeToInsert = QuadTreeNode(pos, &rd.npcs.back());
         rd.tree.insert(nodeToInsert);
     }
     std::cout << "Finished init\n";
 
 }
 
-void EntitiesTick(Rundata& rd) {
+void EntitiesTick(QTRundata& rd) {
     PROFILE_FUNCTION();
     u32 screenWidth = Camera::GetScreenWidth();
     u32 screenHeight = Camera::GetScreenHeight();
@@ -96,7 +96,7 @@ void EntitiesTick(Rundata& rd) {
         // update quadtree with new positions
         rd.tree = QuadTree<NPC*>(BoundingBox2D(glm::vec2(0), {screenWidth, screenHeight}));
         for (auto& npc : rd.npcs) {
-            rd.tree.insert(Node(npc.tf.position, &npc));
+            rd.tree.insert(QuadTreeNode(npc.tf.position, &npc));
         }
     }
 
@@ -110,7 +110,7 @@ void EntitiesTick(Rundata& rd) {
 }
 
 void game_tick() {
-    Rundata& rd = Rundata::Instance();
+    QTRundata& rd = QTRundata::Instance();
 
     PollInputs();
     EntitiesTick(rd);
