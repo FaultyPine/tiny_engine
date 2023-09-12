@@ -6,7 +6,7 @@
 #include "tiny_lights.h"
 
 struct Model {
-    Model(){}
+    Model() = default;
     Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir);
     Model(const Shader& shader, const std::vector<Mesh>& meshes);
 

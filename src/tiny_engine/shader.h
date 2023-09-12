@@ -11,7 +11,7 @@ struct Shader {
     u32 ID = 0;
     bool valid = false;
 
-    Shader() {}
+    Shader() = default;
     Shader(u32 id);
     Shader(const std::string& vertexPath, const std::string& fragmentPath);
     static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr);

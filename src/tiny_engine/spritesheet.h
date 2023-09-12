@@ -27,7 +27,7 @@ struct Spritesheet {
             Animation(-1);
         }
     };
-    Spritesheet(){}
+    Spritesheet() = default;
     Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, TextureProperties props);
 
     Animation GetCurrentAnimation() { return animation; } 

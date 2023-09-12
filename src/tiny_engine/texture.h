@@ -107,7 +107,7 @@ struct Texture {
     f32 width, height = 0.0;
     std::string texpath = "";
 
-    Texture() {}
+    Texture() = default;
     Texture(s32 id) { Texture(); this->id = id; }
     void Delete() { GLCall(glDeleteTextures(1, (const GLuint*)&id)); }
     void bindUnit(u32 textureUnit) const {
@@ -128,7 +128,7 @@ struct MaterialProp {
     bool hasTexture = false;
     glm::vec4 color = glm::vec4(1);
     Texture texture = {};
-    MaterialProp() {}
+    MaterialProp() = default;
     MaterialProp(glm::vec4 col) {
         color = col;
     }

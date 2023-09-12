@@ -26,7 +26,7 @@ struct Mesh {
     std::string name = "";
     bool isVisible = true;
     
-    Mesh(){}
+    Mesh() = default;
     Mesh( const std::vector<Vertex>& verts, 
         const std::vector<u32>& idxs = {}, 
         const std::vector<Material>& mats = {},

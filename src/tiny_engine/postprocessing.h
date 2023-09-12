@@ -11,7 +11,7 @@
 
 struct PostprocessingFB {
     PostprocessingFB(Shader shader, glm::vec2 size);
-    PostprocessingFB() {}
+    PostprocessingFB() = default;
 
     inline bool isValid() { return fb.isValid(); }
     inline void Bind() { fb.Bind(); }

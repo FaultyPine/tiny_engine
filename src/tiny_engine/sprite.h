@@ -9,7 +9,7 @@
 struct Transform2D;
 
 struct Sprite {
-    Sprite() { }
+    Sprite() = default;
     Sprite(const Texture& mainTex);
     Sprite(const Shader& shader, const Texture& mainTex);
     void Delete();

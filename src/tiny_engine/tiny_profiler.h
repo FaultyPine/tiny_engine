@@ -40,7 +40,7 @@ class Profiler
     std::mutex      m_lock;
     bool            m_activeSession = false;
  
-    Profiler() { }
+    Profiler() = default;
  
 public:
  

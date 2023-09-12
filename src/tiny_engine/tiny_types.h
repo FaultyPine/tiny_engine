@@ -42,13 +42,13 @@ struct Transform2D {
 };
 
 struct BoundingBox {
-    BoundingBox(){}
+    BoundingBox() = default;
     BoundingBox(glm::vec3 mn, glm::vec3 mx) {min = mn; max = mx;}
     glm::vec3 min, max = glm::vec3(0);
 };
 
 struct BoundingBox2D {
-    BoundingBox2D(){}
+    BoundingBox2D() = default;
     BoundingBox2D(glm::vec2 mn, glm::vec2 mx) {min = mn; max = mx;}
     glm::vec2 min = glm::vec2(0);
     glm::vec2 max = glm::vec2(0);

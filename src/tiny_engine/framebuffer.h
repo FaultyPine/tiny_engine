@@ -13,7 +13,7 @@ struct Framebuffer {
         COLOR = GL_COLOR_ATTACHMENT0,
         DEPTH = GL_DEPTH_ATTACHMENT,
     };
-    Framebuffer(){}
+    Framebuffer() = default;
     Framebuffer(f32 width, f32 height, FramebufferAttachmentType type = FramebufferAttachmentType::COLOR);
 
     inline bool isValid() const { return framebufferID != 0; }
@@ -46,7 +46,7 @@ struct Framebuffer {
 };
 
 struct ShadowMap {
-    ShadowMap(){}
+    ShadowMap() = default;
     ShadowMap(u32 resolution);
     void Delete() {
         fb.Delete();

@@ -9,7 +9,7 @@ struct QuadTreeNode {
     glm::vec2 point = glm::vec2(0);
     T data;
     bool hasData = false;
-    QuadTreeNode(){}
+    QuadTreeNode() = default;
     QuadTreeNode(glm::vec2 pos, T _data) {
         point = pos;
         data = _data;
@@ -27,7 +27,7 @@ enum QuadTreeChildDirection {
 template<typename T>
 struct QuadTree {
 
-    QuadTree(){}
+    QuadTree() = default;
     QuadTree(glm::vec2 min, glm::vec2 max) : QuadTree() {
         this->bounds = BoundingBox2D(min, max);
     }
