@@ -3,7 +3,7 @@ from build_utils import *
 def get_linker_args_msvc():
     return var_contents("""
         glfw/windows/glfw3_mt.lib assimp/x64/assimp.lib user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib -LIBPATH:lib
-        /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
+        /NODEFAULTLIB:libcmt.lib /machine:x64 /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
         /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
     """)
 
@@ -13,11 +13,12 @@ def get_compiler_args_msvc(usePch: bool = False):
     # Zi = produce .pbd file with debug info
     # EHsc = catch C++ exceptions
     # EHa = Enable c++ exceptions with SEH information
+    # Od = disable optimizations, faster compilation and simpler debugging
 
     # if we need args for a pch compile, don't "use" the pch
     pch_part = f"/Yupch.h" if usePch else ""
     return var_contents(f"""
-        /std:c++17 /Iinclude /Isrc /EHa /MT /Zi /FS /Gm- /nologo /MP {pch_part}
+        /std:c++17 /Iinclude /Isrc /EHa /MT /Zi /FS /Gm- /Od /nologo /MP {pch_part}
     """)
 def build_pch_msvc():
     pch_source = "src/pch.cpp"
