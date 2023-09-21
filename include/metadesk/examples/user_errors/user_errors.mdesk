@@ -1,0 +1,19 @@
+/*
+** Setup as input to the "user errors" example
+*/
+
+@foo @bar Foo:
+{
+  x, y, z,
+  a, b, c,
+  1, 2, 3,
+}
+
+[50 + 200]
+
+@baz Blah:
+{
+  x100 y200 z300
+}
+
+Example: [100 + 200]

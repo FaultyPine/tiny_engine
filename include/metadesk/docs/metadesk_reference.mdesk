@@ -1,0 +1,2717 @@
+title: "Metadesk Reference"
+publish
+
+////////////////////////////////
+//~ Layout for docs.
+
+@def HelperMacros: {}
+@def LinkedListMacros: {}
+@def MemoryOperations: {}
+@def Characters: {}
+@def Strings: {}
+@def MemoryManagement: {}
+@def Tokens: {}
+@def Parsing: {}
+@def Nodes: {}
+@def CodeLoc: {}
+@def StringGeneration: {}
+@def Map: {}
+@def ExpressionParser: {}
+@def CommandLineHelper: {}
+@def FileSystemHelper: {}
+
+main:
+{
+    @title "Helper Macros",
+    @paste HelperMacros,
+    
+    @title "Linked-List Macros",
+    @paste LinkedListMacros,
+    
+    @title "Memory Operations",
+    @paste MemoryOperations,
+    
+    @title "Characters",
+    @paste Characters,
+    
+    @title "Strings",
+    @paste Strings,
+    
+    @title "Memory Management",
+    @paste MemoryManagement,
+    
+    @title "Tokens",
+    @paste Tokens,
+    
+    @title "Parsing",
+    @paste Parsing,
+    
+    @title "Nodes",
+    @paste Nodes,
+    
+    @title "Code Locations",
+    @paste CodeLoc,
+    
+    @title "String Generation",
+    @paste StringGeneration,
+    
+    @title "Map",
+    @paste Map,
+    
+    @title "Expression Parser",
+    @paste ExpressionParser,
+    
+    @title "Command Line Helper",
+    @paste CommandLineHelper,
+    
+    @title "File System Helper",
+    @paste FileSystemHelper,
+}
+
+//~ Linkage Wrappers
+
+@send(HelperMacros)
+@doc("Specified before all Metadesk library functions. Expands to nothing by default. Can be overridden in usage code by using @code '#define MD_FUNCTION ...' (where @code '...' is whatever you want to be in front of all functions).")
+@macro MD_FUNCTION: {}
+
+@send(HelperMacros)
+@doc("Specified before all Metadesk library global variables. Expands to @code 'static' by default. Can be overridden in usage code by using @code '#define MD_GLOBAL ...' (where @code '...' is whatever you want to be in front of all global variable declarations).")
+@macro MD_GLOBAL: {}
+
+//~ Basic Utilities
+
+@send(HelperMacros)
+@doc("Will cause a crash when @code 'c' is false.")
+@macro MD_Assert:
+{
+    c,
+}
+
+@send(HelperMacros)
+@doc("Will cause a compilation failure when @code 'c' is false.")
+@macro MD_StaticAssert:
+{
+    c,
+    @doc("A label for this static assertion. Necessary for static asserts in C.")
+        label,
+}
+
+@send(HelperMacros)
+@doc("Treats @code 'a' as a static array to calculate the number of elements in the array. Does not work on pointers used to point at a number of elements.")
+@macro MD_ArrayCount:
+{
+    a,
+}
+
+@send(HelperMacros)
+@doc("Expands to an expression returning the lesser of @code 'a' and @code 'b'. Expands both arguments multiple times, so avoiding complex expressions for @code 'a' and @code 'b' is recommended.")
+@macro MD_Min: {a b}
+
+@send(HelperMacros)
+@doc("Expands to an expression returning the higher of @code 'a' and @code 'b'. Expands both arguments multiple times, so avoiding complex expressions for @code 'a' and @code 'b' is recommended.")
+@macro MD_Max: {a b}
+
+@send(HelperMacros)
+@doc("Equivalent to MD_Max.")
+@macro MD_ClampBot: {a b}
+
+@send(HelperMacros)
+@doc("Equivalent to MD_Min.")
+@macro MD_ClampTop: {a b}
+
+@send(HelperMacros)
+@doc("Expands to an expression returning a multiple of @code 'b' that is nearest to @code 'x', while still being larger.")
+@macro MD_AlignPow2: {x b}
+
+//~ Linked List Macros.
+
+@send(LinkedListMacros)
+@doc("Returns true if @code 'p' is a null pointer. Used as a helper in other linked list macros.")
+@macro MD_CheckNull: { p }
+
+@send(LinkedListMacros)
+@doc("Sets @code 'p' to a null pointer. Used as a helper in other linked list macros.")
+@macro MD_SetNull: { p }
+
+@send(LinkedListMacros)
+@doc("Returns true if @code 'p' is a nil MD_Node pointer. Used as a helper in other linked list macros.")
+@see(MD_NilNode)
+@see(MD_NodeIsNil)
+@macro MD_CheckNil: { p }
+
+@send(LinkedListMacros)
+@doc("Sets @code 'p' to a nil MD_Node pointer. Used as a helper in other linked list macros.")
+@see(MD_NilNode)
+@see(MD_NodeIsNil)
+@macro MD_SetNil: { p }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes @code 'n' into a singly-linked-list queue, with @code 'f' being a pointer to the first element in the queue, and @code 'l' being a pointer to the last element in the queue. Allows for overrides on both what is considered the zero-value, as well as what the name of the next pointer inside of the associated type is.")
+@macro MD_QueuePush_NZ:
+{
+    @doc("A pointer to the first element of the queue. When the queue is empty, this should be equivalent to a zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        f,
+    @doc("A pointer to the last element of the queue. When the queue is empty, this should be equivalent to a zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        l,
+    @doc("A pointer to the element that is to be added to the end of the queue.")
+        n,
+    @doc("The name of the next pointer member within the type used for the queue.")
+        next,
+    @doc("The name of a macro that accepts one argument, and returns whether it is considered the zero-value.")
+        zchk,
+    @doc("The name of a macro that accepts one argument, and assigns the zero-value to it.")
+        zset,
+}
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pops the first element out of the queue, with @code 'f' being a pointer to the first element in the queue, and @code 'l' being a pointer to the last element in the queue. Allows for overrides on both what is considered the zero-value, as well as what the name of the next pointer inside of the associated type is.")
+@macro MD_QueuePop_NZ:
+{
+    @doc("A pointer to the first element of the queue. When the queue is empty, this should be equivalent to a zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        f,
+    @doc("A pointer to the last element of the queue. When the queue is empty, this should be equivalent to a zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        l,
+    @doc("The name of the next pointer member within the type used for the queue.")
+        next,
+    @doc("The name of a macro that accepts one argument, and assigns the zero-value to it.")
+        zset,
+}
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes a new element onto the top of a singly-linked stack, with @code 'f' being a pointer to the top of the stack. Allows overriding the name of the pointer member inside of the type used for the stack, which is used to point at the next node in the chain.")
+@macro MD_StackPush_N:
+{
+    @doc("A pointer to the first element of the stack. When the stack is empty, this should be @code '0'.")
+        f,
+    @doc("A pointer to the new element to be added to the stack.")
+        n,
+    @doc("The name of the next pointer member within the type used for the stack.")
+        next,
+}
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pops the top of a singly-linked stack. Does not return the popped element, which should be grabbed before using this macro. Allows overriding both the name of the pointer member inside of the type used for the stack's links, and how the zero-value is checked.")
+@macro MD_StackPop_NZ:
+{
+    @doc("A pointer to the first element of the stack. When the stack is empty, this should be @code '0'.")
+        f,
+    @doc("The name of the next pointer member within the type used for the stack.")
+        next,
+    @doc("The name of a macro that accepts one argument, and returns whether it is considered the zero-value.")
+        zchk,
+}
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes a new element to the back of a doubly-linked-list, with @code 'f' being a pointer to the first element in the linked list, @code 'l' being a pointer to the last element in the linked list, and @code 'n' being the new element to add. Allows overriding the names of the pointer members used to store the next and previous links of a node, and the way that the zero-value is both checked for and set.")
+@macro MD_DblPushBack_NPZ:
+{
+    @doc("A pointer to the first element of the list. When the list is empty, this should be the zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        f,
+    @doc("A pointer to the last element of the list. When the list is empty, this should be the zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        l,
+    @doc("A pointer to the new element of the list to be added.")
+        n,
+    @doc("The name of the pointer member in the list's type to consider as encoding the next node in the list.")
+        next,
+    @doc("The name of the pointer member in the list's type to consider as encoding the previous node in the list.")
+        prev,
+    @doc("The name of a macro that accepts one argument, and returns whether it is considered the zero-value.")
+        zchk,
+    @doc("The name of a macro that accepts one argument, and assigns the zero-value to it.")
+        zset,
+}
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that removes an element from a doubly-linked-list, with @code 'f' being a pointer to the first element in the linked list, @code 'l' being a pointer to the last element in the linked list, and @code 'n' being the node to be removed. Allows overriding the names of the pointer members used to store the next and previous links of a node, and the way that the zero-value is both checked for and set.")
+@macro MD_DblRemove_NPZ:
+{
+    @doc("A pointer to the first element of the list. When the list is empty, this should be the zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        f,
+    @doc("A pointer to the last element of the list. When the list is empty, this should be the zero-value compatible with the @code 'zchk' and @code 'zset' arguments.")
+        l,
+    @doc("A pointer to the new element of the list to be removed.")
+        n,
+    @doc("The name of the pointer member in the list's type to consider as encoding the next node in the list.")
+        next,
+    @doc("The name of the pointer member in the list's type to consider as encoding the previous node in the list.")
+        prev,
+    @doc("The name of a macro that accepts one argument, and assigns the zero-value to it.")
+        zset,
+}
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes a node @code 'n' to the back of a singly-linked-list queue defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Null pointers are used to delimit the end of the list, and to encode that the list is empty. Expects that there exists a @code 'next' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the next node.")
+@macro MD_QueuePush: { f, l, n }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pops a node @code 'n' from the front of a singly-linked-list queue defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Null pointers are used to delimit the end of the list, and to encode that the list is empty. Expects that there exists a @code 'next' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the next node.")
+@macro MD_QueuePop:  { f, l }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes a node @code 'n' to the top of a singly-linked-list stack defined by @code 'f', a pointer to the top element of the stack. Null pointers are used to delimit the end of the stack, and an empty stack. Expects that there exists a @code 'next' member inside of the type of @code 'f' and @code 'n', which encodes the link to the next node.")
+@macro MD_StackPush: { f, n }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pops a node @code 'n' off the top of a singly-linked-list stack defined by @code 'f', a pointer to the top element of the stack. Null pointers are used to delimit the end of the stack, and an empty stack. Expects that there exists a @code 'next' member inside of the type of @code 'f', which encodes the link to the next node in the stack.")
+@macro MD_StackPop:  { f }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes a node @code 'n' to the back of a doubly-linked-list defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Null pointers are used to delimit the end of the list, and to encode that the list is empty. Expects that there exists a @code 'next' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the next node. Expects that there also exists a @code 'prev' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the previous node.")
+@macro MD_DblPushBack: { f, l, n }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes a node @code 'n' to the front of a doubly-linked-list defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Null pointers are used to delimit the end of the list, and to encode that the list is empty. Expects that there exists a @code 'next' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the next node. Expects that there also exists a @code 'prev' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the previous node.")
+@macro MD_DblPushFront: { f, l, n }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that removes a node @code 'n' from a doubly-linked-list defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Null pointers are used to delimit the end of the list, and to encode that the list is empty. Expects that there exists a @code 'next' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the next node. Expects that there also exists a @code 'prev' member inside of the type of @code 'f', @code 'l', and @code 'n', which encodes the link to the previous node.")
+@macro MD_DblRemove: { f, l, n }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes an MD_Node @code 'n' to the back of a doubly-linked-list defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Nil pointers, identical to those returned by MD_NilNode, are used to delimit the end of the list, and to encode that the list is empty.")
+@macro MD_NodeDblPushBack: { f, l, n }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that pushes an MD_Node @code 'n' to the front of a doubly-linked-list defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Nil pointers, identical to those returned by MD_NilNode, are used to delimit the end of the list, and to encode that the list is empty.")
+@macro MD_NodeDblPushFront: { f, l, n }
+
+@send(LinkedListMacros)
+@doc("Expands to an expression that removes an MD_Node @code 'n' from a doubly-linked-list defined by @code 'f', a pointer to the first element in the list, and @code 'l', a pointer to the last element in the list. Nil pointers, identical to those returned by MD_NilNode, are used to delimit the end of the list, and to encode that the list is empty.")
+@macro MD_NodeDblRemove: { f, l, n }
+
+//~ Memory Operations
+
+@send(MemoryOperations)
+@doc("A macro that expands to an overrideable @code 'memset' equivalent call that sets @code 'size' bytes at the address stored in @code 'memory' to @code 'byte_value'.")
+@macro MD_MemorySet: { memory, byte_value, size }
+
+@send(MemoryOperations)
+@doc("A macro that expands to an overrideable @code 'memset' equivalent call that zeroes @code 'size' bytes at the address stored in @code 'memory'.")
+@macro MD_MemoryZero: { memory, size }
+
+@send(MemoryOperations)
+@doc("A macro that expands to an overrideable @code 'memset' equivalent call that zeroes @code 'sizeof(*(struct_pointer))' bytes at the address stored in @code 'struct_pointer'.")
+@macro MD_MemoryZeroStruct: { struct_pointer }
+
+@send(MemoryOperations)
+@doc("A macro that expands to an overrideable @code 'memmove' equivalent call that copies @code 'size' bytes from @code 'source' to @code 'destination'. The ranges defined by the pointers and @code 'size' may overlap.")
+@macro MD_MemoryCopy: { destination, source, size }
+
+//~ Default Arena
+
+@send(MemoryManagement)
+@doc("The type used for the default arena allocator implementation. This type is used for MD_Arena if an override is not provided by usage code.")
+@see(MD_Arena)
+@struct MD_ArenaDefault:
+{
+    prev: *MD_ArenaDefault,
+    current: *MD_ArenaDefault,
+    base_pos: MD_u64,
+    pos: MD_u64,
+    cmt: MD_u64,
+    cap: MD_u64,
+    align: MD_u64,
+}
+
+//~ Abstract Arena
+
+@send(MemoryManagement)
+@doc("The name defined to refer to a memory arena allocator handle. Equivalent to @code 'MD_IMPL_Arena', which can be overridden by a custom arena implementation. If an override is not specified, then this type is equivalent to MD_ArenaDefault.")
+@see(MD_ArenaDefault)
+@opaque
+@struct MD_Arena:
+{
+}
+
+//~ Arena Helpers
+
+@send(MemoryManagement)
+@doc("This type is used for temporary lifetimes where a portion of an arena is treated like a stack temporarily. This type stores the position at which stack-like allocation began, so that everything pushed onto the arena during this temporary lifetime can be freed all at once.")
+@see(MD_Arena)
+@see(MD_ArenaBeginTemp)
+@see(MD_ArenaEndTemp)
+@see(MD_GetScratch)
+@see(MD_ReleaseScratch)
+@struct MD_ArenaTemp:
+{
+    @doc("The arena that is being used for temporary allocation.")
+        arena: *MD_Arena,
+    @doc("The position to which the arena should be restored when the associated temporary lifetime ends.")
+        pos: MD_u64,
+}
+
+//~ Basic Unicode string types.
+
+@send(Strings)
+@doc("This type is used as the fundamental string type in Metadesk, and as the type for byte granularity data blobs. Strings of this type are encoded in UTF-8.")
+@see(MD_String8List)
+@struct MD_String8:
+{
+    str: *MD_u8,
+    size: MD_u64,
+}
+
+@send(Strings)
+@doc("This type represents a string encoded in UTF-16.")
+@struct MD_String16:
+{
+    str: *MD_u16,
+    size: MD_u64,
+}
+
+@send(Strings)
+@doc("This type represents a string encoded in UTF-32.")
+@struct MD_String32:
+{
+    str: *MD_u32,
+    size: MD_u64,
+}
+
+@send(Strings)
+@doc("MD_String8Node forms one node in a linked list of strings. Generally used as a part of an MD_String8List data structure.")
+@struct MD_String8Node:
+{
+    @doc("The next node in the list, or null if this is the last node.")
+        next: *MD_String8Node,
+    @doc("The string value stored at this node.")
+        string: MD_String8,
+}
+
+@send(Strings)
+@doc("This type is implemented as a singly linked list with an MD_String8 at each node.")
+@see(MD_S8ListPush)
+@see(MD_S8Split)
+@see(MD_S8ListJoin)
+@struct MD_String8List:
+{
+    @doc("The number of nodes in the list.")
+        node_count: MD_u64,
+    @doc("The size of all strings in the list summed together.")
+        total_size: MD_u64,
+    @doc("A pointer to the first node in the list.")
+        first: *MD_String8Node,
+    @doc("A pointer to the last node in the list.")
+        last: *MD_String8Node,
+}
+
+@send(Strings)
+"""
+A sample loop over MD_String8List:
+"""
+
+@send(Strings) @code
+"""
+MD_String8List list;
+for(MD_String8Node *node = list.first; node != 0; node = node->next)
+{
+    MD_String8 string = node->string;
+    // ... work on string ...
+}
+"""
+
+@send(Strings)
+"""
+The @code node_count and @code total_size are automatically maintained by the helpers for inserting to the list, and are used in the string joining functions. Hand rolled code for building string lists should take those fields into consideration if the join functions need to work.
+"""
+
+@send(Strings)
+@doc("Used as optional parameters for MD_S8ListJoin.")
+@see(MD_S8ListJoin)
+@see(MD_String8List)
+@see(MD_String8)
+@struct MD_StringJoin:
+{
+    @doc("The string to insert before the joined strings in the list.")
+        pre: MD_String8,
+    @doc("The string to insert between each node in the string list.")
+        mid: MD_String8,
+    @doc("The string to insert after the joined strings in the list.")
+        post: MD_String8,
+}
+
+@send(Strings)
+@doc("These flags control matching rules in routines that perform matching on strings and MD_Node trees. Not all flags are within this @code 'enum'. These flags must not be overlapping with those in the MD_StringMatchFlags @code 'enum', nor those in the MD_NodeMatchFlags @code 'enum'. This allows all flags to be associated with their respective behaviors, but also be combined when appropriate.")
+@see(MD_Node)
+@see(MD_String8)
+@see(MD_S8Match)
+@see(MD_NodeMatch)
+@see(MD_NodeDeepMatch)
+@see(MD_StringMatchFlags)
+@see(MD_NodeMatchFlags)
+@prefix(MD_MatchFlag)
+@base_type(MD_u32)
+@flags MD_MatchFlags:
+{
+    @doc("For routines returning the location of a substring, alters the behavior to return the last match instead of the first match.")
+        FindLast: `1<<0`,
+}
+
+@send(Strings)
+@doc("These flags control matching rules in routines that perform matching on strings. These flags must not be overlapping with those in the MD_MatchFlags @code 'enum', nor those in the MD_NodeMatchFlags @code 'enum'. This allows all flags to be associated with their respective behaviors, but also be combined when appropriate.")
+@see(MD_Node)
+@see(MD_String8)
+@see(MD_S8Match)
+@see(MD_NodeMatch)
+@see(MD_NodeDeepMatch)
+@see(MD_MatchFlags)
+@see(MD_NodeMatchFlags)
+@prefix(MD_StringMatchFlag)
+@base_type(MD_u32)
+@flags MD_StringMatchFlags:
+{
+    @doc("When comparing strings, consider lower case letters equivalent to upper case equivalents in the ASCII range.")
+        CaseInsensitive: `1<<4`,
+    @doc("When comparing strings, do not require the strings to be the same length. If one of the strings is a prefix of another, the two strings will count as a match.")
+        RightSideSloppy: `1<<5`,
+    @doc("When comparing strings, consider forward slash and backward slash to be equivalents.")
+        SlashInsensitive: `1<<6`,
+};
+
+@send(Strings)
+@doc("These flags control matching rules in routines that perform matching on MD_Node trees. These flags must not be overlapping with those in the MD_MatchFlags @code 'enum', nor those in the MD_StringMatchFlags @code 'enum'. This allows all flags to be associated with their respective behaviors, but also be combined when appropriate.")
+@see(MD_Node)
+@see(MD_String8)
+@see(MD_S8Match)
+@see(MD_NodeMatch)
+@see(MD_NodeDeepMatch)
+@see(MD_StringMatchFlags)
+@see(MD_MatchFlags)
+@prefix(MD_NodeMatchFlag)
+@base_type(MD_u32)
+@flags MD_NodeMatchFlags:
+{
+    @doc("When comparing nodes with this flag set, differences in the order and names of tags on a node count as differences in the input nodes. Without this flag tags are ignored in tree comparisons.")
+        Tags: `1<<16`,
+    
+    @doc("When comparing nodes with this flag set in addition to @code 'MD_NodeMatchFlag_Tags', the differences in the arguments of each tag (the tag's children in the tree) count as differences in the input nodes. Tag arguments are compared with fully recursive compares, whether or not the compare routine would be recursive or not.")
+        TagArguments: `1<<17`,
+};
+
+@send(Strings)
+@doc("This type is used to report the results of consuming one character from a unicode encoded stream.")
+@see(MD_DecodeCodepointFromUtf8)
+@see(MD_DecodeCodepointFromUtf16)
+@struct MD_DecodedCodepoint:
+{
+    @doc("The codepoint of the consumed character.")
+        codepoint: MD_u32,
+    
+    @doc("The size of the character in the encoded stream, measured in 'units'. A unit is one byte in UTF-8, two bytes in UTF-16, and four bytes in UTF-32.")
+        advance: MD_u32,
+};
+
+@send(Strings)
+@doc("These constants control how MD_S8Stylize forms strings.")
+@enum MD_IdentifierStyle:
+{
+    @doc("Creates identifiers where each word begins with an upper-case letter, with each subsequent letter in the word being lower-case. With no word separators, creates identifiers that look like @code 'ExampleIdentifier'.")
+        UpperCamelCase,
+    @doc("Creates identifiers where each word begins with an upper-case letter, except the first word (which begins with a lower-case letter), with each subsequent letter in the word being lower-case. With no word separators, creates identifiers that look like @code 'exampleIdentifier'.")
+        LowerCamelCase,
+    @doc("All letters in all words are upper-case.")
+        UpperCase,
+    @doc("All letters in all words are lower-case.")
+        LowerCase,
+}
+
+//~ Node types that are used to build all ASTs.
+
+@send(Nodes)
+@doc("These constants distinguish major roles of MD_Node in the Metadesk abstract syntax tree data structure.")
+@enum MD_NodeKind:
+{
+    @doc("The @code 'Nil' node is a unique node representing the lack of information, for example iterating off the end of a list, or up to the parent of a root node results in Nil.")
+        Nil,
+    
+    @doc("A @code 'File' node represents parsed Metadesk source text.")
+        File,
+    
+    @doc("An @code 'ErrorMarker' node is generated when reporting errors. It is used to record the location of an error that occurred in the lexing phase of a parse.")
+        ErrorMarker,
+    
+    @doc("A @code 'Main' node represents the main structure of the metadesk abstract syntax tree. Some of these nodes have children which will also be @code 'Main' nodes. These nodes can be given their text by identifiers, numerics, string and character literals, and operator symbols.")
+        Main,
+    
+    @doc("A @code 'Tag' node represents a tag attached to a label node with the @code '@identifer' syntax. The children of a tag node represent the arguments placed in the tag.")
+        Tag,
+    
+    @doc("A @code 'List' node serves as the root of an externally chained list of nodes. Its children are nodes with the @code 'MD_NodeKind_Reference' kind.")
+        List,
+    
+    @doc("A @code 'Reference' node is an indirection to another node. The node field @code 'ref_target' contains a pointer to the referenced node. These nodes are typically used for creating externally chained linked lists that gather nodes from a parse tree.")
+        Reference,
+    
+    @doc("Not a real kind value given to nodes, this is always one larger than the largest enum value that can be given to a node.")
+        COUNT,
+};
+
+@send(Nodes)
+@doc("These flags are set on MD_Node to indicate particular details about the strings that were parsed to create the node.")
+@see(MD_Node)
+@see(MD_TokenKind)
+@prefix(MD_NodeFlag)
+@base_type(MD_u32)
+@flags MD_NodeFlags:
+{
+    @doc("This node's children open with @code '('")
+        HasParenLeft,
+    @doc("This node's children close with @code ')'")
+        HasParenRight,
+    @doc("This node's children open with @code '['")
+        HasBracketLeft,
+    @doc("This node's children close with @code ']'")
+        HasBracketRight,
+    @doc("This node's children open with @code '{'")
+        HasBraceLeft,
+    @doc("This node's children close with @code '}'")
+        HasBraceRight,
+    
+    @doc("The delimiter between this node and its next sibling is a @code ';'")
+        IsBeforeSemicolon,
+    @doc("The delimiter between this node and its previous sibling is a @code ';'")
+        IsAfterSemicolon,
+    
+    @doc("The delimiter between this node and its next sibling is a @code ','")
+        IsBeforeComma,
+    @doc("The delimiter between this node and its previous sibling is a @code ','")
+        IsAfterComma,
+    
+    @doc("This is a string literal, with @code `'` character(s) marking the boundaries.")
+        StringSingleQuote,
+    @doc(```This is a string literal, with @code '"' character(s) marking the boundaries.```)
+        StringDoubleQuote,
+    @doc("This is a string literal, with @code '`' character(s) marking the boundaries." "\"")
+        StringTick,
+    @doc("This is a string literal that used triplets (three of its boundary characters in a row, on either side) to mark its boundaries, making it multiline.")
+        StringTriplet,
+    
+    @doc("The label on this node comes from a token with the @code MD_TokenKind_Numeric kind.")
+        Numeric,
+    @doc("The label on this node comes from a token with the @code MD_TokenKind_Identifier kind.")
+        Identifier,
+    @doc("The label on this node comes from a token with the @code MD_TokenKind_StringLiteral kind.")
+        StringLiteral,
+}
+
+@send(Nodes)
+@doc("The @code `MD_Node` is the main 'lego-brick' for modeling the result of a Metadesk parse. Also used in some auxiliary data structures.")
+@struct MD_Node:
+{
+    @doc("The next sibling in the hierarchy, or the next tag in a list of tags, or next node in an externally chained linked list.")
+        next: *MD_Node,
+    @doc("The previous sibling in the hierarchy, or the previous tag in a list of tags, or previous node in an externally chained linked list.")
+        prev: *MD_Node,
+    @doc("The parent in the hierarchy, or root node of an externally chained linked list.")
+        parent: *MD_Node,
+    @doc("The first child in the hierarchy, or the first node in an externally chained linked list.")
+        first_child: *MD_Node,
+    @doc("The last child in the hierarchy, or the last node in an externally chained linked list.")
+        last_child: *MD_Node,
+    
+    @doc("The first tag attached to a node.")
+        first_tag: *MD_Node,
+    @doc("The last tag attached to a node.")
+        last_tag: *MD_Node,
+    
+    @doc("Indicates the role that the node plays in metadesk node graph.")
+        kind: MD_NodeKind,
+    @doc("Extra information about the source that generated this node in the parse.")
+        flags: MD_NodeFlags,
+    @doc("The string of the token labeling this node, after processing. Processing removing quote marks that delimits string literals and character literals")
+        string: MD_String8,
+    @doc("The raw string of the token labeling this node.")
+        raw_string: MD_String8,
+    @doc("A hash of the string field using the metadesk built in hash function.")
+        string_hash: MD_u64,
+    
+    @doc("The raw string of the comment token before this node, if there is one.")
+        prev_comment: MD_String8,
+    @doc("The raw string of the comment token after this node, if there is one.")
+        next_comment: MD_String8,
+    
+    @doc("The byte-offset into the string from which this node was parsed. Used for producing data for an MD_CodeLoc.")
+        offset: MD_u64,
+    
+    @doc("The external pointer from an @code 'MD_NodeKind_Reference' kind node in an externally linked list.")
+        ref_target: *MD_Node,
+}
+
+//~ Code Location Info.
+
+@send(CodeLoc)
+@doc("This type encodes source code locations using file, line, column coordinates.")
+@struct MD_CodeLoc:
+{
+    filename: MD_String8,
+    @doc("Line numbers are 1 based, the lowest valid location is on line number 1.")
+        line: MD_u32,
+    @doc("Column numbers are 1 based, the lowest valid location is on column number 1.")
+        column: MD_u32,
+}
+
+//~ String-To-Ptr and Ptr-To-Ptr tables
+
+@send(Map)
+@doc("An abstraction over the types of keys used in an MD_Map and the work of hashing those keys. Can be constructed from an MD_String8 or a @code 'void *'.")
+@struct MD_MapKey:
+{
+    @doc("The hash of the key. The hash function used is determined from the key type.")
+        hash: MD_u64,
+    @doc("For a non-empty MD_String8, the size of the string data. For a void*, zero.")
+        size: MD_u64,
+    @doc("For a non-empty MD_String8, points to the string data of the key. For a void*, the direct pointer value.")
+        ptr: *void,
+}
+
+@send(Map)
+@doc("A slot containing one (key,value) pair in an MD_Map.")
+@struct MD_MapSlot:
+{
+    @doc("The next slot in the same bucket of the MD_Map.")
+        next: *MD_MapSlot,
+    @doc("The key that maps to this slot.")
+        key: MD_MapKey;
+    @doc("The value part of the pair.")
+        value: *void;
+}
+
+@send(Map)
+@doc("The data used to form a table in an MD_Map. Stores pointers that form a linked list of all MD_MapSlot instances that mapped to this bucket.")
+@struct MD_MapBucket:
+{
+    first: *MD_MapSlot,
+    last: *MD_MapSlot,
+}
+
+@send(Map)
+@doc("The map is a chained hash table data structure. Data written to the map is a key-value pair. The key of a pair may either be a pointer, or a string. Both types may be mixed inside a single map. Keys stored with one type never match keys of the other type. The values of the pairs are pointers.")
+@struct MD_Map:
+{
+    buckets: *MD_MapBucket,
+    bucket_count: MD_u64,
+}
+
+//~ Tokens
+
+@send(Tokens)
+@doc("Flags encoding the kind of a token produced by the lexer.")
+@see(MD_TokenFromString)
+@prefix(MD_TokenKind)
+@flags MD_TokenKind:
+{
+    @doc("When this bit is set, the token follows C-like identifier rules. It may start with an alphabetic character or an underscore, and can contain alphanumeric characters or underscores inside it.")
+        Identifier,
+    
+    @doc("When this bit is set, the token follows C-like numeric literal rules.")
+        NumericLiteral,
+    
+    @doc("When this bit is set, the token was recognized as a string literal. These may be formed with C-like rules, with a single-quote or double-quote around the string contents. They may also be formed with Metadesk's additional rules. These rules allow using @code '`' characters to mark the boundaries of the string, and also using triplets of any of these characters (@code '```This is a string```') to allow newlines within the string's contents.")
+        StringLiteral,
+    
+    @doc("When this bit is set, the token was recognized as a symbolic character. Whether a character is considered symbolic is determined by the MD_CharIsSymbol function.")
+        Symbol,
+    
+    @doc("When this bit is set, the token is reserved for special uses by the Metadesk parser.")
+        Reserved,
+    
+    @doc("When this bit is set, the token was recognized as a comment. Comments can be formed in the traditional C-like ways, using @code '//' for single-line, or @code '/*' and @code '*/' for multiline. Metadesk differs, slightly, in that it allows nested multiline comments. So, every @code '/*' must be matched by a @code '*/'.")
+        Comment,
+    
+    @doc("When this bit is set, the token contains only whitespace.")
+        Whitespace,
+    
+    @doc("When this bit is set, the token is a newline character.")
+        Newline,
+    
+    @doc("When this bit is set, the token is a comment that was malformed syntactically.")
+        BrokenComment,
+    
+    @doc("When this bit is set, the token is a string literal that was malformed syntactically.")
+        BrokenStringLiteral,
+    
+    @doc("When this bit is set, the token contains a character in an encoding that is not supported by the parser Metadesk.")
+        BadCharacter,
+}
+
+@send(Tokens)
+@doc("Used to group several MD_TokenKind flags; used in the parser.")
+@see(MD_TokenKind)
+@see(MD_Token)
+@see(MD_TokenFromString)
+@prefix(MD_TokenGroup)
+@flags MD_TokenGroups:
+{
+    Comment: `MD_TokenKind_Comment`,
+    Whitespace: `(MD_TokenKind_Whitespace|MD_TokenKind_Newline)`,
+    Irregular: `(MD_TokenGroup_Comment|MD_TokenGroup_Whitespace)`,
+    Regular: `~MD_TokenGroup_Irregular`,
+    Label: `(MD_TokenKind_Identifier|MD_TokenKind_Numeric|MD_TokenKind_StringLiteral|MD_TokenKind_Symbol)`,
+    Error: `(MD_TokenKind_BrokenComment|MD_TokenKind_BrokenStringLiteral|MD_TokenKind_BadCharacter)`,
+}
+
+@send(Tokens)
+@doc("The type used for encoding data about any token produced by the lexer.")
+@struct MD_Token:
+{
+    kind: MD_TokenKind;
+    @doc("Flags that should be attached to an MD_Node that uses this token to define its string. Only includes flags that can be understood by the lexer; is not the comprehensive set of node flags that a node needs.")
+        node_flags: MD_NodeFlags;
+    @doc("The contents of this token, not including any boundary characters.")
+        string: MD_String8;
+    @doc("The full contents of the string used to form this token, including all boundary characters.")
+        raw_string: MD_String8;
+}
+
+//~ Parsing State
+
+@send(Parsing)
+@doc("This type distinguishes the roles of messages, including errors and warnings.")
+@enum MD_MessageKind:
+{
+    @doc("The message does not have a particular role.")
+        Null,
+    
+    @doc("The message is not suggesting that anything wrong occurred, but is instead just providing additional information.")
+        Note,
+    
+    @doc("The message is a warning.")
+        Warning,
+    @doc("The message has information about a non-catastrophic error. Reasonable results may still have been produced, but something illegal was encountered.")
+        Error,
+    @doc("The message has information about a catastrophic error, meaning that the output of whatever the error was for cannot be trusted, and should be treated as a complete failure.")
+        FatalError,
+}
+
+@send(Parsing)
+@doc("This type encodes information about messages.")
+@struct MD_Message:
+{
+    @doc("A pointer to the next error, in a chain of errors. This is @code '0' when it is the last error in a chain.")
+        next: *MD_Message,
+    @doc("The node that this message refers to.")
+        node: *MD_Node,
+    @doc("This message's kind.")
+        kind: MD_MessageKind,
+    @doc("The message contents.")
+        string: MD_String8,
+}
+
+@send(Parsing)
+@doc("This type is for a chain of error messages, with data about the entire list.")
+@struct MD_MessageList:
+{
+    @doc("""The most severe message kind in this chain, where a message kind is more severe than another if it has a higher numeric value (if it is defined later in MD_MessageKind) than another.""")
+        max_message_kind: MD_MessageKind;
+    @doc("The number of errors in this list.")
+        node_count: MD_u64;
+    @doc("The first error in the list.")
+        first: *MD_Message;
+    @doc("The last error in the list.")
+        last: *MD_Message;
+}
+
+@send(Parsing)
+@doc("An @code 'enum' to describe how a list of nodes should be delimited.")
+@see(MD_ParseNodeSet)
+@enum
+MD_ParseSetRule:
+{
+    @doc("The list of nodes stops being parsed when a delimiter, meaning a set closing symbol or an implicitly-delimited set closer, is encountered in the token stream.")
+        EndOnDelimiter,
+    @doc("The list of nodes is never terminated until there are no tokens remaining in the token stream; used when parsing entire files.")
+        Global,
+}
+
+@send(Parsing)
+@doc("This type is used to return results from all MD_Node parsing functions.")
+@see(MD_ParseWholeFile)
+@see(MD_ParseWholeString)
+@see(MD_ParseOneNode)
+@see(MD_ParseNodeSet)
+@struct MD_ParseResult:
+{
+    @doc("The root node of the Metadesk tree that was parsed.")
+        node: *MD_Node;
+    @doc("The number of bytes that were parsed. Skipping this many bytes in the parse input string will provide the point at which the parser stopped parsing.")
+        string_advance: MD_u64;
+    @doc("A list of messages (especially errors) that were encountered during the parse. If this list contains an MD_Message with @code 'MD_MessageKind_FatalError' set as its MD_MessageKind, then the output of the parser should not be trusted.")
+        errors: MD_MessageList;
+};
+
+//~ Expression Parser
+
+@send(ExpressionParser)
+@doc("This type determines how an operator entered into the expression system is parsed.")
+@enum MD_ExprOprKind:
+{
+    Null,
+    @doc("The operator is parsed as a prefix unary operator.")
+        Prefix,
+    @doc("The operator is parsed as a postfix unary operator.")
+        Postfix,
+    @doc("The operator is parsed as a left-to-right binary operator.")
+        Binary,
+    @doc("The operator is parsed as a right-to-left binary operator.")
+        BinaryRightAssociative,
+    COUNT,
+};
+
+@send(ExpressionParser)
+@doc("This type carries the primary information regarding an operator in an expression system.")
+@see(MD_ExprOprKind)
+@struct MD_ExprOpr:
+{
+    @doc("Internal - used in forming chains of operators.")
+        next: *MD_ExprOpr;
+    @doc("User data set on the creation of the operator.")
+        op_id: MD_u32;
+    @doc("Determines what kind of associativity the operator has.")
+        kind: MD_ExprOprKind;
+    @doc("Determines the precedence level of the operator.")
+        precedence: MD_u32;
+    @doc("The string of the operator.")
+        string: MD_String8;
+    @doc("User data set on the creation of the operator.")
+        op_ptr: *void;
+};
+
+@send(ExpressionParser)
+@doc("A simple linked list of MD_ExprOpr nodes. This type is used to gather operators before they are baked down to an optimized operator table.")
+@see(MD_ExprBakeOprTableFromList)
+@struct MD_ExprOprList:
+{
+    @doc("First node of the chain.")
+        first: *MD_ExprOpr;
+    @doc("Last node of the chain.")
+        last: *MD_ExprOpr;
+    @doc("The number of nodes in the chain.")
+        count: MD_u64;
+};
+
+@send(ExpressionParser)
+@doc("An operator table determines the set of operators that will be understood by the parser. It's exact structure is likely to get rearranged whenever it is upgraded to provide faster operator lookups, so it's contents should all be considered 'internal'.")
+@see(MD_ExprBakeOprTableFromList)
+@opaque
+@struct MD_ExprOprTable:
+{
+};
+
+@send(ExpressionParser)
+@doc("An expression node used as the output type from the expression parser.")
+@struct MD_Expr:
+{
+    @doc("The parent node in the expression tree, null for the root node.")
+        parent: *MD_Expr;
+    @doc("The left operand of binary operators - also the operand of unary operators.")
+        left: *MD_Expr;
+    @doc("The right operand of binary operators - null for unary operators.")
+        right: *MD_Expr;
+    @doc("If this expression node is an operator this points to the operator's primary data. If this expression node is a leaf then this pointer is null.")
+        op: *MD_ExprOpr;
+    @doc("A pointer to the metadesk node directly responsible for generating this node of the expression.")
+        md_node: *MD_Node;
+};
+
+@send(ExpressionParser)
+@doc("The expression parser returns this, a combined expression node tree and a list of error messages.")
+@struct MD_ExprParseResult:
+{
+    @doc("The root of the expression tree.")
+        expr: *MD_Expr;
+    @doc("The list of parser errors.")
+        errors: MD_MessageList;
+};
+
+@send(ExpressionParser)
+@doc("The parse context used in expression parsing. Currently considered entirely internal.")
+@opaque
+@struct MD_ExprParseCtx:
+{
+};
+
+//~ String Generation Types
+
+@send(StringGeneration)
+@prefix(MD_GenerateFlag)
+@base_type(MD_u32)
+@doc("These flags are used to control what is generated in an MD_Node tree string generation function.")
+@flags MD_GenerateFlags:
+{
+    @doc("This turns on the code that generates strings associated with tags attached to nodes. This will not enable string generation for tag arguments, which is separately controlled by the @code 'MD_GenerateFlag_TagArguments' flag.")
+        Tags,
+    @doc("This turns on the code that generates strings associated with tags arguments. Does nothing if @code 'MD_GenerateFlag_Tags' is not set.")
+        TagArguments,
+    @doc("This enables recursive descent on the input MD_Node tree, generating strings for all children recursively.")
+        Children,
+    @doc("This enables string generation for comments that were identified by the Metadesk parser as being attached to nodes.")
+        Comments,
+    @doc("This enables string generation relating to each node's MD_NodeKind value.")
+        NodeKind,
+    @doc("This enables string generation relating to each node's MD_NodeFlags value.")
+        NodeFlags,
+    @doc("This enables string generation for the 64-bit hash associated with the string of an MD_Node, which is generated by the parser automatically.")
+        StringHash,
+    @doc("This enables string generation for the source code coordinates of the originally-parsed MD_Node structure.")
+        Location,
+    
+    @doc("A mask used to generate strings for the entire tree structure of an MD_Node tree. Skips comments, location, and other metadata.")
+        Tree: `MD_GenerateFlag_Tags | MD_GenerateFlag_TagArguments | MD_GenerateFlag_Children`,
+    @doc("A mask used to generate everything.")
+        All: `0xffffffff`
+}
+
+//~ Command line parsing helper types.
+
+@send(CommandLineHelper)
+@doc("A type used to encode parsed command line options, that can have values associated with them.")
+@see(MD_CmdLine)
+@see(MD_MakeCmdLineFromOptions)
+@struct MD_CmdLineOption:
+{
+    @doc("A pointer to the next option, if this is within a chain of options. Will be @code '0' if this is the last option in a chain.")
+        next: *MD_CmdLineOption;
+    @doc("The name of this option.")
+        name: MD_String8;
+    @doc("The values associated with this option.")
+        values: MD_String8List;
+};
+
+@send(CommandLineHelper)
+@doc("The type encoding a fully parsed set of command line options.")
+@see(MD_MakeCmdLineFromOptions)
+@struct MD_CmdLine:
+{
+    @doc("The list of all command line arguments that were not parsed as flags with optional values. Can be used as a list of unstructured input strings; for example, to be considered as input file paths.")
+        inputs: MD_String8List;
+    @doc("The first option that was parsed, forming the head of a chain of options.")
+        first_option: *MD_CmdLineOption;
+    @doc("The last option that was parsed.")
+        last_option: *MD_CmdLineOption;
+};
+
+//~ File system access types.
+
+@send(FileSystemHelper)
+@prefix(MD_FileFlag)
+@base_type(MD_u32)
+@doc("Flags encoding certain properties of a file.")
+@see(MD_FileInfo)
+@see(MD_FileIterBegin)
+@see(MD_FileIterNext)
+@see(MD_FileIterEnd)
+@flags MD_FileFlags:
+{
+    @doc("The associated file is a directory.")
+        Directory,
+}
+
+@send(FileSystemHelper)
+@doc("Encodes general metadata about a file.")
+@see(MD_FileFlags)
+@see(MD_FileIterBegin)
+@see(MD_FileIterNext)
+@see(MD_FileIterEnd)
+@struct MD_FileInfo:
+{
+    flags: MD_FileFlags;
+    @doc("The name of the file. This includes the extension of the file, but does not include the directory in which the file is stored.")
+        filename: MD_String8;
+    @doc("The size of the file, in bytes.")
+        file_size: MD_u64;
+};
+
+@send(FileSystemHelper)
+@doc("An opaque iterator type used to store operating-system-specific state, when iterating files.")
+@see(MD_FileIterBegin)
+@see(MD_FileIterNext)
+@see(MD_FileIterEnd)
+@opaque
+@struct MD_FileIter: {}
+
+//~ Arena
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaRelease)
+@see(MD_ArenaClear)
+@see(MD_PushArray)
+@see(MD_ArenaTemp)
+@see(MD_ArenaBeginTemp)
+@see(MD_ArenaEndTemp)
+@doc("Returns a newly allocated MD_Arena, which can be used as a bucket for memory allocation.")
+@func MD_ArenaAlloc:
+{
+    return: *MD_Arena,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaAlloc)
+@doc("Releases an MD_Arena allocated originally with MD_ArenaAlloc.")
+@func MD_ArenaRelease:
+{
+    arena: *MD_Arena,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaAlloc)
+@doc("Allocates a block of memory on @code 'arena' that is @code 'size' bytes large.")
+@func MD_ArenaPush:
+{
+    @doc("The arena from which the block of memory should be allocated.")
+        arena: *MD_Arena,
+    @doc("The number of bytes to allocate.")
+        size: MD_u64,
+    @doc("A pointer to the beginning of the allocated block, or @code '0' on failure.")
+        return: *void,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaPush)
+@doc("Pops @code 'size' bytes off of @code 'arena', freeing that space for more allocations.")
+@func MD_ArenaPutBack:
+{
+    @doc("The arena to pop bytes from.")
+        arena: *MD_Arena,
+    @doc("The number of bytes to pop.")
+        size: MD_u64,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaAlloc)
+@doc("Sets the auto-alignment value for @code 'arena'. Calls to MD_ArenaPush will automatically align to this value.")
+@func MD_ArenaSetAlign:
+{
+    @doc("The arena to set alignment for.")
+        arena: *MD_Arena,
+    @doc("The number of bytes to which allocations should align.")
+        boundary: MD_u64,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaAlloc)
+@see(MD_ArenaPush)
+@doc("Pushes the required number of bytes onto @code 'arena' in order to guarantee that the following call to MD_ArenaPush returns an allocation that is aligned to @code 'boundary' bytes.")
+@func MD_ArenaPushAlign:
+{
+    @doc("The arena to use.")
+        arena: *MD_Arena,
+    @doc("The number of bytes to which the arena's next allocation should align.")
+        boundary: MD_u64,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaPutBack)
+@see(MD_ArenaRelease)
+@doc("Pops all bytes off of @code 'arena', freeing that space for more allocations. Does not deallocate the arena entirely (for that, use MD_ArenaRelease); this function is to be used when more allocations are expected on the same arena, but all of the present allocations are no longer needed.")
+@func MD_ArenaClear:
+{
+    @doc("The arena to clear.")
+        arena: *MD_Arena,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaAlloc)
+@see(MD_ArenaPush)
+@doc("A helper macro for easily allocating blocks of memory for @code 'c' instances of type @code 'T' onto arena @code 'a'.")
+@macro MD_PushArray:
+{
+    @doc("The arena to use for allocation.")
+        a,
+    @doc("The type that should be allocated.")
+        T,
+    @doc("The number of instances of @code 'T' to allocate.")
+        c,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaAlloc)
+@see(MD_ArenaPush)
+@see(MD_MemoryZero)
+@doc("A helper macro for easily allocating blocks of memory for @code 'c' instances of type @code 'T' onto arena @code 'a', with the returned block of memory being guaranteed to be zero-initialized.")
+@macro MD_PushArrayZero:
+{
+    @doc("The arena to use for allocation.")
+        a,
+    @doc("The type that should be allocated.")
+        T,
+    @doc("The number of instances of @code 'T' to allocate.")
+        c,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaTemp)
+@see(MD_ArenaEndTemp)
+@see(MD_ArenaPush)
+@see(MD_ArenaPutBack)
+@doc("Initializes an MD_ArenaTemp instance for @code 'arena' which can be used for temporary memory allocations. MD_ArenaEndTemp should be called once with the return value of this function, to avoid leaving temporary allocations as being allocated within the memory belonging to @code 'arena'. This function, along with MD_ArenaEndTemp, can be useful for using an arena like a stack.")
+@func MD_ArenaBeginTemp:
+{
+    arena: *MD_Arena,
+    return: MD_ArenaTemp,
+}
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaTemp)
+@see(MD_ArenaBeginTemp)
+@see(MD_ArenaPush)
+@see(MD_ArenaPutBack)
+@doc("Pops all bytes allocated onto the arena stored in @code 'temp', after @code 'temp' was constructed with MD_ArenaBeginTemp.")
+@func MD_ArenaEndTemp:
+{
+    temp: MD_ArenaTemp,
+}
+
+//~ Arena Scratch Pool
+
+@send(MemoryManagement)
+@see(MD_Arena)
+@see(MD_ArenaTemp)
+@see(MD_ReleaseScratch)
+@doc("Retrieves an arena for temporary stack-like scratch memory allocation from a thread-local set of arenas.")
+@func MD_GetScratch:
+{
+    @doc("Scratch arenas already obtained from previous calls to MD_GetScratch—generally arenas that have been passed into a function that could be scratch arenas—that should not be returned. Most often used when a passed arena, which could be a scratch arena, is being used to push results onto, and one desires a separate channel for scratch allocation that is not required to be allocated onto the arena which is being used for results.")
+        conflicts: **MD_Arena,
+    @doc("The number of MD_Arena pointers pointed to by @code 'conflicts'.")
+        count: MD_u64,
+    return: MD_ArenaTemp,
+}
+
+@send(MemoryManagement)
+@doc("Expands to MD_ArenaEndTemp. Equivalent in usage, just used as the symmetric counterpart for MD_GetScratch.")
+@see(MD_Arena)
+@see(MD_ArenaTemp)
+@see(MD_GetScratch)
+@see(MD_ArenaEndTemp)
+@macro MD_ReleaseScratch:(scratch)
+
+//~ Characters
+
+@send(Characters)
+@doc("Returns whether an ASCII character is alphabetic.")
+@func MD_CharIsAlpha:
+{
+    c: MD_u8,
+    return: MD_b32,
+}
+
+@send(Characters)
+@doc("Returns whether an ASCII character is alphabetic and upper-case.")
+@func MD_CharIsAlphaUpper:
+{
+    c: MD_u8,
+    return: MD_b32,
+}
+
+@send(Characters)
+@doc("Returns whether an ASCII character is alphabetic and lower-case.")
+@func MD_CharIsAlphaLower:
+{
+    c: MD_u8,
+    return: MD_b32,
+}
+
+@send(Characters)
+@doc("Returns whether an ASCII character is numeric.")
+@func MD_CharIsDigit:
+{
+    c: MD_u8,
+    return: MD_b32,
+}
+
+@send(Characters)
+@doc(```
+     Returns whether an ASCII character is a non-reserved symbol as defined by the Metadesk grammar: @code '~', @code '!', @code '$', @code '%', @code '^', @code '&', @code '*', @code '-', @code '=', @code '+', @code '<', @code '.',  @code '>', @code '/', @code '?', or @code '|'.
+     ```)
+@func MD_CharIsUnreservedSymbol:
+{
+    c: MD_u8,
+    return: MD_b32,
+}
+
+@send(Characters)
+@doc(```
+     Returns whether an ASCII character is a reserved symbol as defined by the Metadesk grammar: @code '{', @code '}', @code '(', @code ')', @code '\\', @code '[', @code ']', @code '#', @code ',', @code ';', @code ':', or @code '@'.
+     ```)
+@func MD_CharIsReservedSymbol:
+{
+    c: MD_u8,
+    return: MD_b32,
+}
+
+@send(Characters)
+@doc("Return whether an ASCII character is whitespace.")
+@func MD_CharIsSpace:
+{
+    c: MD_u8,
+    return: MD_b32,
+}
+
+@send(Characters)
+@doc("Return the alphabetic uppercase equivalent of an ASCII character, or just returns the passed-in character if it is not alphabetic.")
+@func MD_CharToUpper:
+{
+    c: MD_u8,
+    return: MD_u8,
+}
+
+@send(Characters)
+@doc("Return the alphabetic lowercase equivalent of an ASCII character, or just returns the passed-in character if it is not alphabetic.")
+@func MD_CharToLower:
+{
+    c: MD_u8,
+    return: MD_u8,
+}
+
+@send(Characters)
+@doc("Return a @code '/' if @code '\\' is passed in, otherwise just returns the passed character.")
+@func MD_CharToForwardSlash:
+{
+    c: MD_u8,
+    return: MD_u8,
+}
+
+//~ Strings
+
+@send(Strings)
+@doc("Calculates the number of bytes in a C-string by checking for a null-terminator.")
+@func MD_CalculateCStringLength:
+{
+    cstr: *char,
+    return: MD_u64,
+}
+
+@send(Strings)
+@doc("Constructs an MD_String8.")
+@func MD_S8:
+{
+    @doc("The base pointer of the returned MD_String8.")
+        str: *MD_u8,
+    @doc("The size of the returned MD_String8.")
+        size: MD_u64,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Constructs an MD_String8 from a C-string by calling MD_CalculateCStringLength.")
+@macro MD_S8CString: { s }
+
+@send(Strings)
+@doc("Constructs an MD_String8 from a C-string literal by using @code 'sizeof'. In C++, the equivalent can be done with the user-defined literal code provided in the library, which uses @code '_md' as a suffix on a string literal.")
+@macro MD_S8Lit: { s }
+
+@send(Strings)
+@doc("Constructs an MD_String8 from a C-string literal by using @code 'sizeof'. Differs from MD_S8Lit in that it does not expand with @code '(MD_String8)' before the brace initializer, allowing it to be used in C for static initializations.")
+@macro MD_S8LitComp: { s }
+
+@send(Strings)
+@doc("Constructs an MD_String8 from two pointers into the same buffer, corresponding to the beginning and one past the last byte of a string.")
+@func MD_S8Range:
+{
+    first: *MD_u8,
+    opl: *MD_u8,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Returns an MD_String8 encoding a sub-range of the passed MD_String8.")
+@func MD_S8Substring:
+{
+    @doc("The string for which the substring is returned.")
+        str: MD_String8,
+    @doc("The offset, from the passed string's base, of the first character of the returned substring.")
+        min: MD_u64,
+    @doc("The offset, from the passed string's base, of one byte past the last character of the returned substring.")
+        max: MD_u64
+        return: MD_String8,
+}
+
+@send(Strings)
+@doc("Returns a sub-range of the passed MD_String8, skipping the first @code 'min' bytes.")
+@func MD_S8Skip:
+{
+    @doc("The string for which the substring is returned.")
+        str: MD_String8,
+    @doc("The new minimum offset, relative to the base of @code 'str'. Also the number of bytes to skip at the beginning of @code 'str'.")
+        min: MD_u64,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Returns a sub-range of the passed MD_String8, chopping off the last @code 'nmax' bytes.")
+@func MD_S8Chop:
+{
+    @doc("The string for which the substring is returned.")
+        str: MD_String8,
+    @doc("The number of bytes to chop off at the end of @code 'str'.")
+        nmax: MD_u64,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Returns a prefix of the passed MD_String8.")
+@func MD_S8Prefix:
+{
+    @doc("The string for which the substring is returned.")
+        str: MD_String8,
+    @doc("The desired size of the returned prefix.")
+        size: MD_u64,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Returns a suffix of the passed MD_String8.")
+@func MD_S8Suffix:
+{
+    @doc("The string for which the substring is returned.")
+        str: MD_String8,
+    @doc("The desired size of the returned suffix.")
+        size: MD_u64,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Compares the passed strings @code 'a' and @code 'b', and determines whether or not the two strings match. The passed MD_MatchFlags argument will modify the string matching algorithm; for example, allowing case insensitivity. Return @code '1' if the strings are found to match, and @code '0' otherwise.")
+@func MD_S8Match:
+{
+    @doc("The first string to compare.")
+        a: MD_String8,
+    @doc("The second string to compare.")
+        b: MD_String8,
+    @doc("Controls for the string matching algorithm.")
+        flags: MD_MatchFlags,
+    @doc("@code '1' if the strings match, or @code '0' otherwise.")
+        return: MD_b32,
+}
+
+@send(Strings)
+@doc("Searches @code 'str' for an occurrence of @code 'substring'. The passed @code 'flags' can be used to modify the matching rules. Returns the position at which the search ended; if the return value is equivalent to @code 'str.size', then the substring was not found.")
+@func MD_S8FindSubstring:
+{
+    @doc("The string to search within for the substring.")
+        str: MD_String8,
+    @doc("The 'needle' string to find within @code 'str'.")
+        substring: MD_String8,
+    @doc("The first position, in bytes relative to the base of @code 'str', to conduct the search from.")
+        start_pos: MD_u64,
+    @doc("Controls for the string matching algorithm.")
+        flags: MD_MatchFlags,
+    @doc("The last position at which the substring was searched for. Will be equal to @code 'str.size' if the substring was not found. If it is less than that, the substring was found at the returned offset.")
+        return: MD_u64,
+}
+
+@send(Strings)
+@doc("Copies @code 'string' by allocating an entirely new portion of memory and copying the passed string's memory to the newly allocated memory. Returns the copy of @code 'string' using the new memory.")
+@func MD_S8Copy:
+{
+    arena: *MD_Arena,
+    string: MD_String8,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Allocates a new string, with the contents of the string being determined by a mostly-standard C formatting string passed in @code 'fmt', with a variable-argument list being passed in @code 'args'. Used when composing variable argument lists at multiple levels, and when you need to pass a @code 'va_list'. The format string is non-standard because it allows @code '%S' as a specifier for MD_String8 arguments. Before this call, it is expected that you call @code 'va_start' on the passed @code 'va_list', and also that you call @code 'va_end' after the function returns. If you just want to pass variable arguments yourself (instead of a @code 'va_list'), then see MD_S8Fmt.")
+@see(MD_S8Fmt)
+@see(MD_S8Copy)
+@func MD_S8FmtV:
+{
+    arena: *MD_Arena,
+    fmt: *char,
+    args: va_list,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Allocates a new string, with the contents of the string being determined by a mostly-standard C formatting string passed in @code 'fmt', with variable arguments fitting the expected ones in @code 'fmt' being passed in after. The format string is non-standard because it allows @code '%S' as a specifier for MD_String8 arguments. If you are composing this with your own variable-arguments call, use MD_S8FmtV instead.")
+@see(MD_S8FmtV)
+@see(MD_S8Copy)
+@func MD_S8Fmt:
+{
+    arena: *MD_Arena,
+    fmt: *char,
+    "...",
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("This is a helper macro that is normally used with passing an MD_String8 into a @code 'printf' like function, usually used in combination with the @code '%.*s' format specifier. Metadesk uses length-based strings, not null-terminated (like many C functions expect), so this is often convenient when interacting with C-like APIs. This will expand to passing the size of the passed string first, a comma, and the pointer to the base of the string being passed immediately after.")
+@see(MD_String8)
+@macro MD_S8VArg: { s }
+
+@send(Strings)
+@doc("Pushes a new MD_String8 to an MD_String8List by allocating a new MD_String8Node, filling it with @code 'string', and modifying the existing list elements in @code 'list' to end with the newly allocated node.")
+@see(MD_String8List)
+@see(MD_String8Node)
+@see(MD_String8)
+@func MD_S8ListPush:
+{
+    arena: *MD_Arena,
+    list: *MD_String8List,
+    string: MD_String8,
+}
+
+@send(Strings)
+@doc("Pushes a new MD_String8 to an MD_String8List by allocating a new MD_String8Node, filling it with a C-style format string defined by @code 'fmt' and the variadic arguments following it, and modifying the existing list elements in @code 'list' to end with the newly allocated node.")
+@see(MD_String8List)
+@see(MD_String8Node)
+@see(MD_String8)
+@func MD_S8ListPushFmt:
+{
+    arena: *MD_Arena,
+    list: *MD_String8List,
+    fmt: *char,
+    "...",
+}
+
+@send(Strings)
+@doc("Pushes an MD_String8List to another MD_String8List. This will zero all memory in @code 'to_push', so you cannot expect @code 'to_push' to retain any of the list elements it had before this call. This is because no strings nor nodes are copied, so the nodes in @code 'to_push' are repurposed for being a part of @code 'list'.")
+@see(MD_String8List)
+@see(MD_String8Node)
+@see(MD_String8)
+@see(MD_S8ListPush)
+@func MD_S8ListConcat:
+{
+    list: *MD_String8List,
+    to_push: *MD_String8List,
+}
+
+@send(Strings)
+@doc("Divides @code 'string' into an MD_String8List, each node of which corresponds to a substring of @code 'string' that was separated by an occurrence of one of the 'splitter's passed in @code 'splits'.")
+@see(MD_String8)
+@see(MD_String8List)
+@see(MD_String8Node)
+@see(MD_S8ListJoin)
+@func MD_S8Split:
+{
+    @doc("The arena to use for allocation.")
+        arena: *MD_Arena,
+    @doc("The string to search for splitting strings, and to subdivide.")
+        string: MD_String8,
+    @doc("The number of splitting strings to search for.")
+        split_count: MD_u32,
+    @doc("A pointer to an array of strings stored as MD_String8 objects, each corresponding to a string pattern that should split @code 'string'.")
+        splits: *MD_String8,
+    @doc("A list containing all of the strings separated by the passed splitter strings. None of the strings will contain the splitter strings themselves.")
+        return: MD_String8List
+}
+
+@send(Strings)
+@doc("Returns a new MD_String8 that contains the contents of each string in @code 'list', in order, with the @code 'separator' string inserted between each string.")
+@see(MD_String8)
+@see(MD_String8List)
+@see(MD_String8Node)
+@see(MD_S8Split)
+@func MD_S8ListJoin:
+{
+    @doc("The arena to use for allocation.")
+        arena: *MD_Arena,
+    @doc("The list to join.")
+        list: MD_String8List,
+    @doc("Optional join parameters.")
+        join: *MD_StringJoin,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Provided an MD_String8 @code 'string' in a traditional identifier style, attempts heuristically to return a transformed version of @code 'string' to a new identifier style. Cannot be fully correct in all cases.")
+@see(MD_IdentifierStyle)
+@func MD_S8Stylize:
+{
+    @doc("The arena to use for allocation.")
+        arena: *MD_Arena,
+    @doc("The string to attempt to transform.")
+        string: MD_String8,
+    @doc("The style that each word should have.")
+        style: MD_IdentifierStyle,
+    @doc("A string to separate each word in the returned string.")
+        separator: MD_String8,
+    return: MD_String8
+}
+
+//~ Unicode Conversions
+
+@send(Strings)
+@func MD_DecodeCodepointFromUtf8:
+{
+    // TODO(rjf): @docs
+    str: MD_u8,
+    max: MD_u64,
+    return: MD_DecodedCodepoint,
+}
+
+@send(Strings)
+@func MD_DecodeCodepointFromUtf16:
+{
+    // TODO(rjf): @docs
+    str: *MD_u16,
+    max: MD_u64,
+    return: MD_DecodedCodepoint,
+}
+
+@send(Strings)
+@func MD_Utf8FromCodepoint:
+{
+    // TODO(rjf): @docs
+    out: *MD_u8,
+    codepoint: MD_u32,
+    return: MD_u32,
+}
+
+@send(Strings)
+@func MD_Utf16FromCodepoint:
+{
+    // TODO(rjf): @docs
+    out: *MD_u16,
+    codepoint: MD_u32,
+    return: MD_u32,
+}
+
+@send(Strings)
+@doc("Converts a UTF-16 string, encoded into an MD_String16 object, into a UTF-8 string. Allocates the required storage for the UTF-8 string onto @code 'arena'.")
+@func MD_S8FromS16:
+{
+    @doc("The arena to use for memory allocation.")
+        arena: *MD_Arena,
+    @doc("The UTF-16 string to convert.")
+        str: MD_String16,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Converts a UTF-8 string, encoded into an MD_String8 object, into a UTF-16 string. Allocates the required storage for the UTF-16 string onto @code 'arena'.")
+@func MD_S16FromS8:
+{
+    @doc("The arena to use for memory allocation.")
+        arena: *MD_Arena,
+    @doc("The UTF-8 string to convert.")
+        str: MD_String8,
+    return: MD_String16,
+}
+
+@send(Strings)
+@doc("Converts a UTF-32 string, encoded into an MD_String32 object, into a UTF-8 string. Allocates the required storage for the UTF-8 string onto @code 'arena'.")
+@func MD_S8FromS32:
+{
+    @doc("The arena to use for memory allocation.")
+        arena: *MD_Arena,
+    @doc("The UTF-32 string to convert.")
+        str: MD_String32,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Converts a UTF-8 string, encoded into an MD_String8 object, into a UTF-32 string. Allocates the required storage for the UTF-32 string onto @code 'arena'.")
+@func MD_S32FromS8:
+{
+    @doc("The arena to use for memory allocation.")
+        arena: *MD_Arena,
+    @doc("The UTF-8 string to convert.")
+        str: MD_String8,
+    return: MD_String32,
+}
+
+//~ String Skipping/Chopping Helpers
+
+@send(Strings)
+@doc("Searches @code 'string' for the last @code '.' character occurring in the string, and chops the @code '.' and anything following after it off of the returned string.")
+@see(MD_S8Chop)
+@func MD_PathChopLastPeriod:
+{
+    string: MD_String8,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Searches @code 'string' for the last @code '/' or @code '\\' character occurring in the string, and skips it and anything before it in the returned string.")
+@see(MD_S8Skip)
+@func MD_PathSkipLastSlash:
+{
+    string: MD_String8,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Searches @code 'string' for the last @code '.' character, and returns the substring starting at the character after it, to the end of the string. For usual file naming schemes where the extension of a file is encoded by any characters following the last @code '.' of a filename, this will return the extension.")
+@see(MD_PathChopLastSlash)
+@see(MD_S8Suffix)
+@see(MD_S8Substring)
+@see(MD_S8Chop)
+@func MD_PathSkipLastPeriod:
+{
+    string: MD_String8,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Searches @code 'string' for the last @code '/' or @code '\\' character, and returns the substring that ends with that character. For usual file naming schemes where folders are encoded with @code '/' or @code '\\' characters, this will return the entire path to the passed filename, not including the filename itself.")
+@see(MD_PathSkipLastPeriod)
+@see(MD_S8Prefix)
+@see(MD_S8Substring)
+@see(MD_S8Skip)
+@func MD_PathChopLastSlash:
+{
+    string: MD_String8,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Returns the equivalent of @code 'string' with all leading whitespace skipped.")
+@see(MD_S8Substring)
+@see(MD_S8ChopWhitespace)
+@see(MD_S8Skip)
+@see(MD_S8Chop)
+@func MD_S8SkipWhitespace:
+{
+    string: MD_String8,
+    return: MD_String8,
+}
+
+@send(Strings)
+@doc("Returns the equivalent of @code 'string' with all trailing whitespace chopped.")
+@see(MD_S8Substring)
+@see(MD_S8SkipWhitespace)
+@see(MD_S8Skip)
+@see(MD_S8Chop)
+@func MD_S8ChopWhitespace:
+{
+    string: MD_String8,
+    return: MD_String8,
+}
+
+//~ Numeric Strings
+
+@send(Strings)
+@doc("Returns @code '1' if @code 'string' appears to encode an integer value with a base of @code 'radix', or @code '0' otherwise.")
+@func MD_StringIsU64:
+{
+    string: MD_String8,
+    radix: MD_u32,
+    return: MD_b32,
+}
+
+@send(Strings)
+@doc("Returns @code '1' if @code 'string' appears to encode an integer value in C-style syntax, or @code '0' otherwise.")
+@func MD_StringIsCStyleInt:
+{
+    string: MD_String8,
+    return: MD_b32,
+}
+
+@send(Strings)
+@doc("Parses @code 'string' as an integer with a base defined by @code 'radix'. Returns the parsed value.")
+@func MD_U64FromString:
+{
+    string: MD_String8,
+    radix: MD_u32,
+    return: MD_u64,
+}
+
+@send(Strings)
+@doc("Parses @code 'string' as an integer with a base defined by C-like rules: If the numeric part of the string begins with @code '0x', then it will be parsed as base-16. If it begins with @code '0b', it will be parsed as base-2. Otherwise, it will be parsed as base 10. Returns the parsed value.")
+@func MD_CStyleIntFromString:
+{
+    string: MD_String8,
+    return: MD_i64,
+}
+
+@send(Strings)
+@doc("Parses @code 'string' as a floating point number, and returns the parsed value.")
+@func MD_F64FromString:
+{
+    string: MD_String8,
+    return: MD_f64,
+}
+
+@send(Strings)
+@doc("Builds and returns a string on @code 'arena' that is the textual representation of @code 'x'.")
+@func MD_CStyleHexStringFromU64:
+{
+    arena: *MD_Arena,
+    x: MD_u64,
+    @doc("Determines whether or not the alphabetic characters used in the hex textual representation are upper-case or lower-case.")
+        caps: MD_b32,
+    return: MD_String8,
+}
+
+//~ Enum/Flag Strings
+
+@send(Nodes)
+@doc("Returns a string that contains a name matching @code 'kind'.")
+@func MD_StringFromNodeKind:
+{
+    kind: MD_NodeKind,
+    return: MD_String8,
+}
+
+@send(Nodes)
+@doc("Builds a string list for all bits set in @code 'flags', with each string being the name of one of the flags that is set.")
+@func MD_StringListFromNodeFlags:
+{
+    arena: *MD_Arena,
+    flags: MD_NodeFlags,
+    return: MD_String8List,
+}
+
+//~ Map Table Data Structure
+
+@send(Map)
+@doc("Returns a 64-bit hash of the input string. Used in implementing string-to-slot mapping in MD_MapKeyStr.")
+@see(MD_MapKeyStr)
+@func MD_HashStr:
+{
+    string: MD_String8,
+    return: MD_u64,
+}
+
+@send(Map)
+@doc("Returns a 64-bit hash of the passed pointer. Used in implementing pointer-to-slot mapping in MD_MapKeyPtr.")
+@see(MD_MapKeyPtr)
+@func MD_HashPtr:
+{
+    p: *void,
+}
+
+@send(Map)
+@doc("Constructs a new MD_Map on @code 'arena' with the specified @code 'bucket_count'.")
+@see(MD_MapMake)
+@func MD_MapMakeBucketCount:
+{
+    arena: *MD_Arena,
+    bucket_count: MD_u64,
+    return: MD_Map,
+}
+
+@send(Map)
+@doc("Constructs a new MD_Map on @code 'arena' with a default bucket count that fits common cases. MD_MapMakeBucketCount can be used as an alternative for constructing an MD_Map with a specific number of buckets.")
+@see(MD_MapMakeBucketCount)
+@func MD_MapMake:
+{
+    arena: *MD_Arena,
+    return: MD_Map,
+}
+
+@send(Map)
+@doc("Forms an MD_Map key from a string.")
+@see(MD_HashStr)
+@func MD_MapKeyStr:
+{
+    string: MD_String8,
+    return: MD_MapKey,
+}
+
+@send(Map)
+@doc("Forms an MD_Map key from a pointer.")
+@see(MD_HashPtr)
+@func MD_MapKeyPtr:
+{
+    ptr: *void,
+    return: MD_MapKey,
+}
+
+@send(Map)
+@doc("Returns a pointer to the stored MD_MapSlot that is associated with @code 'key' inside of @code 'map', if it exists.")
+@see(MD_MapSlot)
+@see(MD_MapScan)
+@see(MD_MapKeyStr)
+@see(MD_MapKeyPtr)
+@func MD_MapLookup:
+{
+    map: *MD_Map,
+    key: MD_MapKey,
+    return: *MD_MapSlot,
+}
+
+@send(Map)
+@doc("Given a pointer to an existing MD_MapSlot (constructed from a function like MD_MapLookup), scans to the next MD_MapSlot in the table's hash-chain that uses the same key. Useful in cases when you are mapping one key to multiple values, instead of assuming a one-to-one mapping.")
+@see(MD_MapLookup)
+@see(MD_MapKeyStr)
+@see(MD_MapKeyPtr)
+@func MD_MapScan:
+{
+    first_slot: *MD_MapSlot,
+    key: MD_MapKey,
+    return: *MD_MapSlot,
+}
+
+@send(Map)
+@doc("Inserts a new value associated with @code 'key' into @code 'map'. Allocates a new slot for the value with @code 'arena'.")
+@func MD_MapInsert:
+{
+    arena: *MD_Arena,
+    map: *MD_Map,
+    key: MD_MapKey,
+    val: *void,
+    return: *MD_MapSlot,
+}
+
+@send(Map)
+@doc("Overwrites the first existing slot associated with @code 'key' with a new value, or allocates a new slot if an existing slot does not already exist.")
+@func MD_MapOverwrite:
+{
+    arena: *MD_Arena,
+    map: *MD_Map,
+    key: MD_MapKey,
+    val: *void,
+    return: *MD_MapSlot,
+}
+
+//~ Parsing
+
+@send(Tokens) @func
+@doc("Produces a single token, given some input string.")
+@see(MD_Token)
+@see(MD_TokenKind)
+MD_TokenFromString:
+{
+    string: MD_String8;
+    return: MD_Token;
+}
+
+@send(Tokens) @func
+@doc("Returns the number of bytes that can be skipped, when skipping over certain token kinds.")
+@see(MD_Token)
+@see(MD_TokenKind)
+MD_LexAdvanceFromSkips:
+{
+    string: MD_String8;
+    skip_kinds: MD_TokenKind;
+    return: MD_u64;
+}
+
+@send(Parsing) @func
+@doc("Constructs a default MD_ParseResult, which indicates that nothing was parsed.")
+@see(MD_ParseResult)
+MD_ParseResultZero:
+{
+    return: MD_ParseResult;
+}
+
+@send(Parsing) @func
+@doc("Parses a single Metadesk node set, starting at @code 'offset' bytes into @code 'string'. Parses the associated set delimiters in accordance with @code 'rule'.")
+@see(MD_ParseSetRule)
+MD_ParseNodeSet:
+{
+    @doc("The arena onto which the parser should allocate memory.")
+        arena: *MD_Arena,
+    @doc("The string containing the source text to parse.")
+        string: MD_String8;
+    @doc("The offset into @code 'string' where this function should start parsing.")
+        offset: MD_u64;
+    @doc("The parent node for which the set's children are being parsed.")
+        parent: *MD_Node;
+    @doc("The rule to use for determining the end of the set.")
+        rule: MD_ParseSetRule;
+    return: MD_ParseResult;
+}
+
+@send(Parsing) @func
+@doc("Parses a single Metadesk subtree, starting at @code 'offset' bytes into @code 'string'.")
+MD_ParseOneNode:
+{
+    @doc("The arena onto which the parser should allocate memory.")
+        arena: *MD_Arena,
+    @doc("The string containing the source text to parse.")
+        string: MD_String8;
+    @doc("The offset into @code 'string' where this function should start parsing.")
+        offset: MD_u64;
+    return: MD_ParseResult;
+}
+
+@send(Parsing) @func
+@doc("Parses an entire string encoding Metadesk. Parents all parsed nodes with a node with @code 'MD_NodeKind_File' set as its kind.")
+@see(MD_NodeKind)
+MD_ParseWholeString:
+{
+    @doc("The arena onto which the parser should allocate memory.")
+        arena: *MD_Arena,
+    @doc("The filename to associate with the parse.")
+        filename: MD_String8;
+    @doc("The string that contains the text to parse.")
+        contents: MD_String8;
+    return: MD_ParseResult;
+}
+
+@send(Parsing) @func
+@doc("Uses the C standard library to load the file associated with @code 'filename', and parses all of it to return a single tree for the whole file.")
+MD_ParseWholeFile:
+{
+    @doc("The arena onto which the parser should allocate memory.")
+        arena: *MD_Arena,
+    @doc("The filename for the file to be loaded and parsed.")
+        filename: MD_String8;
+    return: MD_ParseResult;
+}
+
+//~ Messages (Errors/Warnings)
+
+@send(Parsing)
+@doc("Constructs an MD_Node on @code 'arena' for the purpose of marking the location at which an error in source text input occurred.")
+@see(MD_MakeNode)
+@see(MD_MakeNodeError)
+@func
+MD_MakeErrorMarkerNode:
+{
+    @doc("The arena onto which the returned message should be allocated.")
+        arena: *MD_Arena,
+    @doc("The string that was being parsed, in which an error was found.")
+        parse_contents: MD_String8,
+    @doc("The offset, in bytes, into @code 'parse_contents' where the error occurred.")
+        offset: MD_u64,
+    return: *MD_Node,
+}
+
+@send(Parsing) @func
+@doc("Allocates and initializes an MD_Message associated with a particular MD_Node.")
+@see(MD_Message)
+MD_MakeNodeError:
+{
+    @doc("The arena onto which the returned message should be allocated.")
+        arena: *MD_Arena,
+    @doc("The node associated with the message.")
+        node: *MD_Node;
+    @doc("The message kind, encoding its severity.")
+        kind: MD_MessageKind;
+    @doc("The string for the message.")
+        str: MD_String8;
+    return: *MD_Message
+}
+
+@send(Parsing) @func
+@doc("Allocates and initializes an MD_Message associated with a user-controlled pointer.")
+@see(MD_Message)
+MD_MakeDetachedError:
+{
+    @doc("The arena onto which the returned message should be allocated.")
+        arena: *MD_Arena,
+    @doc("The node associated with the message.")
+        node: *MD_Node;
+    @doc("The message kind, encoding its severity.")
+        kind: MD_MessageKind;
+    @doc("The string for the message.")
+        str: MD_String8;
+    return: *MD_Message
+}
+
+@send(Parsing) @func
+@doc("Allocates and initializes an MD_Message associated with a particular MD_Token.")
+@see(MD_Message)
+MD_MakeTokenError:
+{
+    arena: *MD_Arena,
+    @doc("The entire string that is being parsed. The parser used a substring of this string to form @code 'token'.")
+        parse_contents: MD_String8;
+    @doc("The token associated with this message.")
+        token: MD_Token;
+    @doc("The message kind, encoding its severity.")
+        kind: MD_MessageKind;
+    @doc("The string for the message.")
+        str: MD_String8;
+    return: *MD_Message;
+}
+
+@send(Parsing) @func
+@doc("Pushes a constructed MD_Message into an MD_MessageList.")
+@see(MD_Message)
+@see(MD_MessageList)
+MD_MessageListPush:
+{
+    list: *MD_MessageList;
+    error: *MD_Message;
+}
+
+@send(Parsing) @func
+@see(MD_Message)
+@see(MD_MessageList)
+@doc("Pushes the contents of @code 'to_push' into @code 'list'. Zeroes @code 'to_push'; the memory used in forming @code 'to_push' will be used in @code 'list', and nothing will be copied.")
+MD_MessageListConcat:
+{
+    list: *MD_MessageList;
+    to_push: *MD_MessageList;
+}
+
+//~ Location Conversion
+
+@send(CodeLoc)
+@doc("Calculates a position in a source code file in filename/line/column coordinates, provided a filename, a base pointer for the file's contents, and an offset into the file's contents.")
+@see(MD_CodeLocFromNode)
+@func MD_CodeLocFromFileOffset:
+{
+    filename: MD_String8,
+    base: *MD_u8,
+    offset: MD_u64,
+    return: MD_CodeLoc,
+};
+
+@send(CodeLoc)
+@doc("Calculates a position in a source code file in filename/line/column coordinates, provided a parsed MD_Node.")
+@see(MD_CodeLocFromFileOffset)
+@func MD_CodeLocFromNode:
+{
+    node: *MD_Node,
+    return: MD_CodeLoc,
+};
+
+//~ Tree/List Building
+
+@send(Nodes)
+@doc("Returns @code '1' if the @code 'node' is nil, or @code '0' otherwise. A nil node pointer is not equivalent to a null pointer. It can still be dereferenced, and is treated as a dummy placeholder node value.")
+@see(MD_NilNode)
+@func MD_NodeIsNil:
+{
+    node: *MD_Node,
+    return: MD_b32,
+}
+
+@send(Nodes)
+@doc("Returns a nil node pointer.")
+@see(MD_NodeIsNil)
+@func MD_NilNode:
+{
+    return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Links @code 'new_child' up as being a child of @code 'parent', inserting it into the end of @code `parent`'s children list.")
+@func MD_PushChild:
+{
+    parent: *MD_Node,
+    new_child: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Links @code 'tag' up as being a tag of @code 'node', inserting it into the end of @code `node`'s tag list.")
+@func MD_PushTag:
+{
+    node: *MD_Node,
+    tag: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Creates a new reference node, pointing at @code 'target', and links it up as a child of @code 'list'.")
+@func MD_PushNewReference:
+{
+    list: *MD_Node,
+    target: *MD_Node,
+    return: *MD_Node,
+}
+
+//~ Introspection Helpers
+
+@send(Nodes)
+@doc("Finds a node in the range defined by @code 'first' and @code 'one_past_last', with the string matching @code 'string' in accordance with @code 'flags', or returns a nil node pointer if it is not found.")
+@see(MD_NodeAtIndex)
+@see(MD_S8Match)
+@func MD_FirstNodeWithString:
+{
+    @doc("The first node in the range to search.")
+        first: *MD_Node,
+    @doc("The string to search for.")
+        string: MD_String8,
+    @doc("Controls what is considered a match, when doing string matching.")
+        flags: MD_MatchFlags,
+    @doc("The found node, or a nil node pointer if no node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds the @code 'n'th node in the range defined by @code 'first' and @code 'one_past_last', or returns a nil node pointer if it is not found. @code '0' would match @code 'first', @code '1' would match @code 'first->next', and so on.")
+@see(MD_FirstNodeWithString)
+@func MD_NodeAtIndex:
+{
+    @doc("The first node in the range to search.")
+        first: *MD_Node,
+    @doc("The index to search for.")
+        n: int,
+    @doc("The found node, or a nil node pointer if no node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Given a starting node @code 'first', will scan across the node's siblings in-order to find a node that has flags that overlap the passed @code 'flags'. Useful when, for example, finding the set of node ranges delimited by commas or semicolons inside of a single MD_Node children list.")
+@see(MD_NodeFlags)
+@func MD_FirstNodeWithFlags:
+{
+    first: *MD_Node,
+    flags: MD_NodeFlags,
+    return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds the child index of @code 'node', with @code '0' being the first child, @code '1' being the second, and so on.")
+@see(MD_NodeAtIndex)
+@func MD_IndexFromNode:
+{
+    node: *MD_Node,
+    return: int,
+}
+
+@send(Nodes)
+@doc("Finds the highest-most node in the parent chain of @code 'node', starting with @code 'node'. If @code 'node' has no parent, then @code 'node' is returned.")
+@func MD_RootFromNode:
+{
+    @doc("The node for which the root is to be found.")
+        node: *MD_Node,
+    @doc("The found root.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds a child of @code 'node' with a string matching @code 'child_string', where the rules of matching are determined by @code 'flags'.")
+@see(MD_FirstNodeWithString)
+@see(MD_TagFromString)
+@func MD_ChildFromString:
+{
+    @doc("The parent whose children are to be searched.")
+        node: *MD_Node,
+    @doc("The string that the found child should match.")
+        child_string: MD_String8,
+    @doc("Controls what is considered a string match.")
+        flags: MD_MatchFlags,
+    @doc("The found node, or a nil node pointer if no node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds a tag on @code 'node' with a string matching @code 'tag_string', where the rules of matching are determined by @code 'flags'.")
+@see(MD_FirstNodeWithString)
+@see(MD_ChildFromString)
+@func MD_TagFromString:
+{
+    @doc("The parent whose tags are to be searched.")
+        node: *MD_Node,
+    @doc("The string that the found tag should match.")
+        tag_string: MD_String8,
+    @doc("Controls what is considered a string match.")
+        flags: MD_MatchFlags,
+    @doc("The found node, or a nil node pointer if no node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds a child of @code 'node' with an index matching @code 'n'. Returns a nil node pointer if no such child is found.")
+@see(MD_NodeAtIndex)
+@see(MD_IndexFromNode)
+@see(MD_TagFromIndex)
+@func MD_ChildFromIndex:
+{
+    @doc("The node whose children are to be searched.")
+        node: *MD_Node,
+    @doc("The index that the return value should match.")
+        n: int,
+    @doc("The found node, or a nil node pointer if no such node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds a tag on @code 'node' with an index matching @code 'n'. Returns a nil node pointer if no such tag is found.")
+@see(MD_NodeAtIndex)
+@see(MD_IndexFromNode)
+@see(MD_ChildFromIndex)
+@func MD_TagFromIndex:
+{
+    @doc("The node whose tags are to be searched.")
+        node: *MD_Node,
+    @doc("The index that the return value should match.")
+        n: int,
+    @doc("The found node, or a nil node pointer if no such node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds the @code 'n'th tag argument of the tag matching @code 'tag_string' on @code 'node', with the matching on @code 'tag_string' being controlled by @code 'flags'. Returns a nil node pointer if no such node was found.")
+@func MD_TagArgFromIndex:
+{
+    @doc("The node whose tags are to be searched.")
+        node: *MD_Node,
+    @doc("The string that the found tag should match.")
+        tag_string: MD_String8,
+    @doc("Controls what is considered a string match.")
+        flags: MD_MatchFlags,
+    @doc("The index that the return value should match.")
+        n: int,
+    @doc("The found node, or a nil node pointer if no such node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Finds the tag argument with a string matching @code 'arg_string', of the tag matching @code 'tag_string', on @code 'node'. Matching @code 'tag_string' is controlled by @code 'tag_str_flags'. Matching @code 'arg_string' is controlled by @code 'arg_str_flags'. Returns a nil node pointer if no such node was found.")
+@func MD_TagArgFromString:
+{
+    @doc("The node whose tags are to be searched.")
+        node: *MD_Node,
+    @doc("The string that the found tag should match.")
+        tag_string: MD_String8,
+    @doc("Controls what is considered a string match, when finding the appropriate tag.")
+        tag_str_flags: MD_MatchFlags,
+    @doc("The string that the found tag argument should match.")
+        arg_string: int,
+    @doc("Controls what is considered a string match, when finding the appropriate tag argument.")
+        arg_str_flags: MD_MatchFlags,
+    @doc("The found node, or a nil node pointer if no such node was found.")
+        return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Returns @code '1' if @code 'node' has a child with a string matching @code 'string', with the matching rules being controlled by @code 'flags', or @code '0' otherwise.")
+@see(MD_ChildFromIndex)
+@see(MD_ChildFromString)
+@see(MD_NodeHasTag)
+@func MD_NodeHasChild:
+{
+    @doc("The node whose children are to be searched.")
+        node: *MD_Node,
+    @doc("The string that should match a child in @code 'node'.")
+        string: MD_String8,
+    @doc("Controls what is considered a match, when comparing against @code 'string'.")
+        flags: MD_MatchFlags,
+    @doc("@code '1' if a suitable child was found, or @code '0' otherwise.")
+        return: MD_b32,
+}
+
+@send(Nodes)
+@doc("Returns @code '1' if @code 'node' has a tag with a string matching @code 'tag_string', with the matching rules being controlled by @code 'flags', or @code '0' otherwise.")
+@see(MD_TagFromIndex)
+@see(MD_TagFromString)
+@see(MD_NodeHasChild)
+@func MD_NodeHasTag:
+{
+    @doc("The node whose tags are to be searched.")
+        node: *MD_Node,
+    @doc("The string that should match a tag in @code 'node'.")
+        tag_string: MD_String8,
+    @doc("Controls what is considered a match, when comparing against @code 'tag_string'.")
+        flags: MD_MatchFlags,
+    @doc("@code '1' if a suitable tag was found, or @code '0' otherwise.")
+        return: MD_b32,
+}
+
+@send(Nodes)
+@doc("Returns the number of children of @code 'node'.")
+@func MD_ChildCountFromNode:
+{
+    node: *MD_Node,
+    return: MD_i64,
+}
+
+@send(Nodes)
+@doc("Returns the number of tags on @code 'node'.")
+@func MD_TagCountFromNode:
+{
+    node: *MD_Node,
+    return: MD_i64,
+}
+
+@send(Nodes)
+@doc("If @code 'node' is of kind @code 'MD_NodeKind_Reference', will follow the chain of @code 'ref_target's until the final referenced node.")
+@func MD_ResolveNodeFromReference:
+{
+    node: *MD_Node,
+    return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Moves to the next sibling of @code 'node', unless it is @code 'opl', in which case it returns a nil node.")
+@see(MD_NilNode)
+@func MD_NodeNextWithLimit:
+{
+    node: *MD_Node,
+    opl: *MD_Node,
+    return: *MD_Node,
+}
+
+@send(Nodes)
+@doc("Gets the string of the comment that immediately preceded @code 'node', if any.")
+@func MD_PrevCommentFromNode:
+{
+    node: *MD_Node,
+    return: MD_String8,
+}
+
+@send(Nodes)
+@doc("Gets the string of the comment that immediately followed @code 'node', if any.")
+@func MD_NextCommentFromNode:
+{
+    node: *MD_Node,
+    return: MD_String8,
+}
+
+@send(Nodes)
+@doc("A helper macro for building for-loops over entire lists of nodes. Place inside of the parentheses of a for-loop, e.g. @code 'for(MD_EachNode(child, node->first_child))', to use.")
+@macro MD_EachNode:
+{
+    @doc("The name of the iterator node, as it will be available in the for-loop.")
+        it,
+    @doc("The first node to iterate on.")
+        first,
+};
+
+//~ Error/Warning Helpers
+
+@send(Nodes)
+@doc("Returns a string encoding the name of the passed @code 'kind' value.")
+@see(MD_MessageKind)
+@func MD_StringFromMessageKind:
+{
+    kind: MD_MessageKind,
+    return: MD_String8,
+}
+
+@send(Nodes)
+@doc('Returns the format string for code locations that matches normal encodings of code locations (in error or warning messages by compilers, namely). This string is @code `"%.*s:%i:%i"`. Used with @code "MD_CodeLocVArg", can be used for easily printing code locations.')
+@see(MD_CodeLocVArg)
+@macro MD_FmtCodeLoc: {}
+
+@send(Nodes)
+@doc("Expands to the appropriate C format string arguments for an MD_CodeLoc @code 'loc' matching the format string for code-locations provided by MD_FmtCodeLoc.")
+@see(MD_FmtCodeLoc)
+@macro MD_CodeLocVArg: {loc}
+
+@send(Nodes)
+@doc("Provides a standard way to format a message string that is associated with an MD_CodeLoc and an MD_MessageKind.")
+@func MD_FormatMessage:
+{
+    @doc("The arena to use for allocating the string.")
+        arena: *MD_Arena,
+    @doc("The location to associate this message with.")
+        loc: MD_CodeLoc,
+    @doc("The MD_MessageKind to associate this message with.")
+        kind: MD_MessageKind,
+    @doc("The contents of the message.")
+        string: MD_String8,
+    return: MD_String8,
+}
+
+@send(Nodes)
+@doc("Formats and prints a standardly-formatted string that is associated with an MD_CodeLoc and MD_MessageKind, in the same format that MD_FormatMessage uses. Relies on @code 'MD_DISABLE_PRINT_HELPERS' not being set, as it relies on @code 'fprintf' and the passed @code 'FILE *'.")
+@see(MD_FormatMessage)
+@see(MD_PrintMessageFmt)
+@func MD_PrintMessage:
+{
+    @doc("The output file stream to which the formatted message is printed.")
+        file: *FILE,
+    @doc("The location to associate this message with.")
+        loc: MD_CodeLoc,
+    @doc("The MD_MessageKind to associate this message with.")
+        kind: MD_MessageKind,
+    @doc("The contents of the message.")
+        string: MD_String8,
+}
+
+@send(Nodes)
+@doc("Formats and prints a standardly-formatted string (being derived from a C-style format-string) that is associated with an MD_CodeLoc and MD_MessageKind, in the same format that MD_FormatMessage uses. Relies on @code 'MD_DISABLE_PRINT_HELPERS' not being set, as it relies on @code 'fprintf' and the passed @code 'FILE *'.")
+@see(MD_FormatMessage)
+@see(MD_PrintMessage)
+@func MD_PrintMessageFmt:
+{
+    @doc("The output file stream to which the formatted message is printed.")
+        file: *FILE,
+    @doc("The location to associate this message with.")
+        loc: MD_CodeLoc,
+    @doc("The MD_MessageKind to associate this message with.")
+        kind: MD_MessageKind,
+    @doc("The C-style format C-string for the message.")
+        fmt: *char,
+    "...",
+}
+
+@send(Nodes)
+@doc("Uses @code 'fprintf' to print a C-style comment that specifies the location of the code that was used to generate it. Useful when correlating generated code with associated generator code.")
+@macro MD_PrintGenNoteCComment:
+{
+    @doc("The @code 'FILE*' to which the comment is printed.")
+        f
+}
+
+//~ Tree Comparison/Verification
+
+@send(Nodes)
+@doc("Compares the passed MD_Node nodes @code 'a' and @code 'b' non-recursively, and determines whether or not they match. @code 'flags' determines the rules used in the matching algorithm, including tag-sensitivity and case-sensitivity.")
+@see(MD_S8Match)
+@see(MD_MatchFlags)
+@func MD_NodeMatch:
+{
+    a: *MD_Node,
+    b: *MD_Node,
+    flags: MD_MatchFlags,
+    return: MD_b32,
+}
+
+@send(Nodes)
+@doc("Compares the passed MD_Node trees @code 'a' and @code 'b' recursively, and determines whether or not they and their children match. @code 'flags' determines the rules used in the matching algorithm, including tag-sensitivity and case-sensitivity.")
+@see(MD_NodeMatch)
+@see(MD_S8Match)
+@see(MD_MatchFlags)
+@func MD_NodeDeepMatch:
+{
+    a: *MD_Node,
+    b: *MD_Node,
+    flags: MD_MatchFlags,
+    return: MD_b32,
+}
+
+//~ Expression Parser
+
+@send(ExpressionParser)
+@doc("Pushes a new operator onto the back of an operator list. All of the pushes on a list should be allocated on the same arena.")
+@see(MD_ExprOprList)
+@see(MD_ExprOprKind)
+@func MD_ExprOprPush:
+{
+    arena: *MD_Arena,
+    @doc("The list accumulating the operators.")
+        list: *MD_ExprOprList,
+    @doc("This operator's association rule.")
+        kind: MD_ExprOprKind,
+    @doc("This precedence level. Higher precedence means 'more tightly binding'.")
+        precedence: MD_u64,
+    @doc("The string for this operator. It should parse as a single Metadesk token, either a symbol token or an identifier token.")
+        op_string: MD_String8,
+    @doc("User data. Intended for statically allocated ids like enums for operator switches.")
+        op_id: MD_u32,
+    @doc("User data. Intended for dynamically allocated ids like pointers to some other structure.")
+        op_ptr: *void,
+}
+
+@send(ExpressionParser)
+@doc("Convert a simple list of operators into an operator table - and performing correctness checks along the way.")
+@see(MD_ExprOprList)
+@func MD_ExprBakeOprTableFromList:
+{
+    arena: *MD_Arena,
+    @doc("The list of operators to bake into a table.")
+        list: *MD_ExprOprList,
+    return: MD_ExprOprTable,
+}
+
+@send(ExpressionParser)
+@doc("Get an operator info pointer from an operator table by looking up it's operator kind and name.")
+@func MD_ExprOprFromKindString:
+{
+    @doc("The table of operators to look into.")
+        table: *MD_ExprOprTable,
+    @doc("Which kind of operator to find. If this is MD_ExprOprKind_Null then any kind of operator can match.")
+        kind: MD_ExprOprKind,
+    @doc("The name of the operator to find.")
+        s: MD_String8,
+    return: *MD_ExprOpr,
+}
+
+@send(ExpressionParser)
+@doc("Create an expression tree from a range of Metadesk nodes.")
+@func MD_ExprParse:
+{
+    arena: *MD_Arena,
+    @doc("The operator table that controls the parse.")
+        op_table: *MD_ExprOprTable,
+    @doc("The first Metadesk node in the range to parse.")
+        first: *MD_Node,
+    @doc("The last Metadesk node in the range to parse.")
+        one_past_last: *MD_Node,
+    return: MD_ExprParseResult,
+}
+
+@send(ExpressionParser)
+@doc("Allocates and initializes a leaf expression node. Currently considered entirely internal.")
+@func MD_Expr_NewLeaf:
+{
+}
+
+@send(ExpressionParser)
+@doc("Allocates and initializes an operator expression node. Currently considered entirely internal.")
+@func MD_Expr_NewOpr:
+{
+}
+
+@send(ExpressionParser)
+@doc("Initializes an expression parser context. Currently considered entirely internal.")
+@func MD_ExprParse_MakeContext:
+{
+}
+
+@send(ExpressionParser)
+@doc("Parser helper: The root call for a parse of a range of metadesk nodes. Currently considered entirely internal.")
+@func MD_ExprParse_TopLevel:
+{
+}
+
+@send(ExpressionParser)
+@doc("Parse helper: Tries to consume the next node as an operator and return the operator's primary info pointer. Currently considered entirely internal.")
+@func MD_ExprParse_OprConsume:
+{
+}
+
+@send(ExpressionParser)
+@doc("Parse helper: Handles leaves, prefix operators, and parentheses. Currently considered entirely internal.")
+@func MD_ExprParse_Atom:
+{
+}
+
+@send(ExpressionParser)
+@doc("Parse helper: Core of the parsing loop, puts together binary operators, does precedence checking, etc. Currently considered entirely internal.")
+@func MD_ExprParse_MinPrecedence:
+{
+}
+
+//~ String Generation
+
+@send(StringGeneration)
+@doc("Writes to @code 'out', writing legal Metadesk strings that document details of @code 'node'.")
+@func MD_DebugDumpFromNode:
+{
+    @doc("The arena to use for string allocation.")
+        arena: *MD_Arena,
+    @doc("The string list to push to.")
+        out: *MD_String8List,
+    @doc("The node for which details are printed.")
+        node: *MD_Node,
+    @doc("The indentation level to generate strings for, with each indentation level implying one occurrence of @code 'indent_string'.")
+        indent: int,
+    @doc("The string to output per-indentation level.")
+        indent_string: MD_String8,
+    @doc("Used to control which aspects of @code 'node' are generated.")
+        flags: MD_GenerateFlags,
+}
+
+@send(StringGeneration)
+@doc("Writes to @code 'out', writing legal Metadesk strings that attempt to reconstruct the code that was parsed to form @code 'node' as closely as possible.")
+@func MD_ReconstructionFromNode:
+{
+    @doc("The arena to use for string allocation.")
+        arena: *MD_Arena,
+    @doc("The string list to push to.")
+        out: *MD_String8List,
+    @doc("The node for which details are printed.")
+        node: *MD_Node,
+    @doc("The indentation level to generate strings for, with each indentation level implying one occurrence of @code 'indent_string'.")
+        indent: int,
+    @doc("The string to output per-indentation level.")
+        indent_string: MD_String8,
+}
+
+//~ Command Line Argument Helper
+
+@send(CommandLineHelper)
+@doc("Converts a traditional C-style @code 'argc, argv' pair into an MD_String8List.")
+@see(MD_MakeCmdLineFromOptions)
+@func MD_StringListFromArgCV:
+{
+    @doc("The arena to allocate with.")
+        arena: *MD_Arena,
+    @doc("The number of command line arguments. Traditionally referred to as @code 'argc'.")
+        argument_count: int;
+    @doc("A pointer to the command line arguments. Traditionally referred to as @code 'argv'.")
+        arguments: **char;
+    return: MD_String8List;
+}
+
+@send(CommandLineHelper)
+@doc("Parses an MD_String8List as a set of command line options.")
+@see(MD_CmdLine)
+@see(MD_StringListFromArgCV)
+@see(MD_CmdLineValuesFromString)
+@see(MD_CmdLineB32FromString)
+@func MD_MakeCmdLineFromOptions:
+{
+    @doc("The arena to allocate with.")
+        arena: *MD_Arena,
+    @doc("An MD_String8List encoding the list of command line arguments. Can be produced from a traditional @code 'argc' and @code 'argv' pair using MD_StringListFromArgCV.")
+        options: MD_String8List;
+    return: MD_CmdLine;
+}
+
+@send(CommandLineHelper)
+@doc("Gets the list of values associated with @code 'name' in the parsed command line arguments.")
+@see(MD_CmdLine)
+@see(MD_MakeCmdLineFromOptions)
+@see(MD_CmdLineB32FromString)
+@see(MD_CmdLineI64FromString)
+@func MD_CmdLineValuesFromString:
+{
+    @doc("Parsed command line data from MD_MakeCmdLineFromOptions.")
+        cmdln: MD_CmdLine;
+    @doc("The name of the command line option.")
+        name: MD_String8;
+    return: MD_String8List;
+}
+
+@send(CommandLineHelper)
+@doc("Determines whether a command line argument explicitly passed an option matching @code 'name'.")
+@see(MD_CmdLine)
+@see(MD_MakeCmdLineFromOptions)
+@see(MD_CmdLineB32FromString)
+@see(MD_CmdLineValuesFromString)
+@func MD_CmdLineB32FromString:
+{
+    @doc("Parsed command line data from MD_MakeCmdLineFromOptions.")
+        cmdln: MD_CmdLine;
+    @doc("The name of the command line option.")
+        name: MD_String8;
+    return: MD_b32;
+}
+
+@send(CommandLineHelper)
+@see(MD_MakeCmdLineFromOptions)
+@see(MD_CmdLineValuesFromString)
+@see(MD_CmdLineB32FromString)
+@doc("Gets the list of values associated with @code 'name' in the parsed command line arguments, treats them as a string representation of a 64-bit signed integer value, and returns that integer value.")
+@func MD_CmdLineI64FromString:
+{
+    @doc("Parsed command line data from MD_MakeCmdLineFromOptions.")
+        cmdln: MD_CmdLine;
+    @doc("The name of the command line option.")
+        name: MD_String8;
+    return: MD_i64;
+}
+
+//~ File System
+
+@send(FileSystemHelper)
+@doc("Uses the C standard library to load the contents of the file with @code 'filename' into an MD_String8.")
+@func MD_LoadEntireFile:
+{
+    @doc("The arena to use for allocating.")
+        arena: *MD_Arena,
+    @doc("The filename of the file that is to be loaded.")
+        filename: MD_String8,
+    return: MD_String8,
+}
+
+@send(FileSystemHelper)
+@doc("Uses lower level operating system APIs to begin iterating a file-system directory. Initializes the opaque structure @code 'it' to do so.")
+@see(MD_FileIter)
+@see(MD_FileIterEnd)
+@see(MD_FileIterNext)
+@func MD_FileIterBegin:
+{
+    it: *MD_FileIter,
+    path: MD_String8,
+}
+
+@send(FileSystemHelper)
+@doc("Uses lower level operating system APIs to retrieve the next file in a file-system directory, and advance to the next one, with state being stored in @code 'it'. Requires calling MD_FileIterBegin on @code 'it' first. Returns the iterated file's information.")
+@see(MD_FileIter)
+@see(MD_FileIterBegin)
+@see(MD_FileIterEnd)
+@func MD_FileIterNext:
+{
+    arena: *MD_Arena,
+    it: *MD_FileIter,
+    return: MD_FileInfo,
+}
+
+@send(FileSystemHelper)
+@doc("Uses lower level operating system APIs to end iterating a file-system directory. Call once @code 'it' is done being used.")
+@func MD_FileIterEnd:
+{
+    it: *MD_FileIter,
+}

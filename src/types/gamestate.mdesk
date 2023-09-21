@@ -1,0 +1,24 @@
+
+@type(basic) u8: 1;
+@type(basic) u16: 2;
+@type(basic) u32: 4;
+@type(basic) f32: 4;
+
+@type(enum: U32)
+@doc("This is some example enum")
+States:
+{
+    IDLE,
+    RUNNING,
+    LOADING,
+    FINISHED,
+}
+
+@type(struct)
+Vec3:
+{
+    x: f32,
+    y: f32,
+    z: f32,
+}
+

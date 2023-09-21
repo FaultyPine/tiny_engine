@@ -1,0 +1,15 @@
+find structs
+enumerate fields & spit them out as-is
+base default values(?) - default ctors? Or maybe all default ctors memset self to 0
+#include in mdesk files
+
+
+uses of reflection that need to be supported:
+- enumerate fields
+	- when parsing struct, also add the struct into a map of struct type -> DescribedType which holds name of struct and all it's members info (name/type/size/offset)
+- when parsing struct, we are building a DescribedType struct. This should be a global. There is only one definition of any of these types, and you should be able to use that global definition to check types against each other
+- can get info about some member of some struct: get describedType of your struct with GetTypeInfo, then find the MemberInfo by either indexing into the fields list with offsetof or using some kind of cached mapping of fields? Search by name ( :/ )?
+- inheritence? Would just be marking one DescribedType as being a child and give some sort of ID as the parent. When spitting it into the file just slap the parent name there... don't need to worry about much else.
+- With this kind of system, I think member functions won't be supported. They could for sure.... but I like the C-ness of that and it's one less thing to worry about. (Did D4 type system allow non-default member funcs? I don't rlly remember seeing stuff other than SetToDefaults and whatnot)
+
+GetTypeInfo(type) -> DescribedType

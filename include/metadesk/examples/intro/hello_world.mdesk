@@ -1,0 +1,20 @@
+////////////////////////////////
+// The Hello World file
+
+hello world!
+"hello world!"
+
+(hello world!)
+[hello world!]
+{hello world!}
+
+hello: world!
+hello: (world!)
+
+@exclaim "hello world"
+@message
+{
+ @recipient world
+ @contents  hello
+ @punctuate !
+}
