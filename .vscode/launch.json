@@ -4,7 +4,7 @@
         "name": "(gdb) Launch",
         "type": "cppvsdbg",
         "request": "launch",
-        "program": "${workspaceFolder}\\PartOfThePack.exe",
+        "program": "${workspaceFolder}\\TinyEngine.exe",
         "args": [],
         "stopAtEntry": false,
         "preLaunchTask": "build",
