@@ -1,11 +1,21 @@
 #pragma once
 
+#include "pch.h"
+
+#define TINY_ALLOC(size) malloc(size)
+#define TINY_DELETE(ptr) free(ptr)
+
+#define KILOBYTES_BYTES(kb) (kb*1024)
+#define MEGABYTES_BYTES(mb) (mb*KILOBYTES_BYTES(1024))
+#define GIGABYTES_BYTES(gb) (gb*MEGABYTES_BYTES(1024))
+
+// ARENAS
 
 struct Arena {
-    unsigned char* backing_mem;
-    size_t backing_mem_size;
-    size_t offset;
-    size_t prev_offset;
+    unsigned char* backing_mem = 0;
+    size_t backing_mem_size = 0;
+    size_t offset = 0;
+    size_t prev_offset = 0;
 };
 
 

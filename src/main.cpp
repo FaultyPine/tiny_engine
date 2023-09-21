@@ -9,67 +9,59 @@
 
 #include "tiny_engine/tiny_engine.h"
 
-// game includes
-#define TESTBED3D 0
-#define QUADTREE_TEST 1
-#define CC_TEST 0
-
+#define TESTBED3D 1
 #if TESTBED3D
 #include "testbed/testbed_main.h"
-#elif QUADTREE_TEST
-#include "quadtree_test/game_main.h" 
-#elif CC_TEST
-#include "cc/cc_main.h"
-using namespace CC;
 #endif
 
+#if 0
+#include "metadesk/source/md.h"
+#include "metadesk/source/md.c"
+void PrintMDNodes(MD_Node* root, u32 treeLevel = 0)
+{
+    // Iterate through each top-level node
+    for(MD_EachNode(node, root))
+    {
+        for (u32 i = 0; i < treeLevel; i++) printf("\t");
+        printf("/ %.*s\n", MD_S8VArg(node->string));
+
+        // Print the name of each of the node's tags
+        for(MD_EachNode(tag, node->first_tag))
+        {
+            for (u32 i = 0; i < treeLevel; i++) printf("\t");
+            printf("|-- Tag %.*s\n", MD_S8VArg(tag->string));
+        }
+
+        // Print the name of each of the node's children
+        for(MD_EachNode(child, node->first_child))
+        {
+            PrintMDNodes(child, ++treeLevel);
+            for (u32 i = 0; i < treeLevel; i++) printf("\t");
+            printf("|-- Child %.*s\n", MD_S8VArg(child->string));
+        }
+    }
+}
+#endif
+
+
 void preLoopInit() {
-    bool is3D = false;
+    bool is3D = true;
     InitGame(1920, 1080, 16, 9, "Tiny Engine", is3D); 
-    
-    //Potp::MainInit();
     #if TESTBED3D
     testbed_init();
-    #endif
-
-    #if QUADTREE_TEST
-    game_init();
-    #endif
-
-    #if CC_TEST
-    cc_init();
     #endif
 }
 
 void gameTick() {
-    //Potp::MainUpdate();
     #if TESTBED3D
     testbed_tick();
-    #endif
-
-    #if QUADTREE_TEST
-    game_tick();
-    #endif
-
-    #if CC_TEST
-    cc_tick();
     #endif
 }
 
 void endGame() {
-    //Potp::Terminate();
     #if TESTBED3D
     testbed_terminate();
     #endif
-
-    #if QUADTREE_TEST
-    game_terminate();
-    #endif
-
-    #if CC_TEST
-    cc_terminate();
-    #endif
-
     TerminateGame();
 }
 
@@ -138,7 +130,6 @@ int main(int argc, char *argv[]) {
 #ifdef LIVEPP_ACTIVE
 LivePPInit();
 #endif
-
     while(!ShouldCloseWindow()) {
 #ifdef LIVEPP_ACTIVE
 LivePPTick();

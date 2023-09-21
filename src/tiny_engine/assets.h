@@ -24,12 +24,18 @@ of the program.
 
 */
 
-struct Assets {
-    // load an asset from a filepath. A unique identifier is returned which can be used to retrieve this asset using Get
+namespace Assets
+{
+    struct AssetID
+    {
+        u32 id = 0;
+        operator bool() { return id != 0; }
+    };
     u32 Load(const char* filepath);
     void Unload(u32 id);
+    void* Get(u32 id);
+}
 
-};
 
 
 #endif

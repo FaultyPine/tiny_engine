@@ -24,7 +24,7 @@ Features/Included Implementations:
 - skybox
 - postprocessing
 - Profiling with chrome://tracing api
-- Shader hot reloading
+- Shader hot reloading & #include parser
 
 Written with this engine:  
 [Part Of The Pack](https://faultypine.itch.io/part-of-the-pack)  
@@ -45,19 +45,18 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO/Topics to Experiment With:
-- ~~shader includes... to clean up lighting code & allow other objects to poll lighting info without having to copy/paste same lighting code everywhere~~
-- rewrite default constructors to use = default;
+- Reflection with Metadesk
 - refactor shaders to use includes
+- Resource system
+    - load from filesystem
+    - store things like Shader, Mesh, Model, etc objects
+    - allow access to these things through ids or shared pointers
 - serialize objects... I.E. store positions and whatnot so im not just hardcoding them
     - will also allow me to change them while in-engine and save those changes
     - use rel pointers/arrays to make everything one big blob
 - Custom allocators (arenas)
 - better grass sway w/distortion texture to emulate wind better
 - PBR
-- Resource system
-    - load from filesystem
-    - store things like Shader, Mesh, Model, etc objects
-    - allow access to these things through ids or shared pointers
 - HDR/Tonemapping & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
@@ -67,24 +66,15 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
     - .obj files don't support animation... might need to implement gltf or collada or fbx support
     - https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation
     - https://www.youtube.com/watch?v=f3Cr8Yx3GGA
-- Learn how to use Perforce
+- Perforce?
 - Portals! (And utilizing that to make "non-euclidean" spaces)
 - 3D World Wrapping (I.E. Manifold garden)
 - (Visualizing) L-Systems
+- get linux build on feature parity
 - in general, research good debugging tools...
-- https://werat.dev/blog/what-a-good-debugger-can-do/
-- https://rr-project.org/  (get this compiling under linux? Did, but weird mouse issues...)
-
-### Possible future features:
-- ~~debug line drawing~~
-- ~~Postprocessing~~
+    - https://werat.dev/blog/what-a-good-debugger-can-do/
+    - https://rr-project.org/  (get this compiling under linux? Did, but weird mouse issues...)
 - Event system
-- ~~Job System (threading)~~
-    - lock free queue: https://jbseg.medium.com/lock-free-queues-e48de693654b
-- ~~Intrusive profiling API - using chrome://tracing as the visualizing backend~~
-    - https://perfetto.dev/docs/instrumentation/tracing-sdk
-    - https://gist.github.com/TheCherno/31f135eea6ee729ab5f26a6908eb3a5e
-
 
 
 
