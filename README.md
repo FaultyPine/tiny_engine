@@ -9,8 +9,10 @@ Libraries Used:
 - [miniaudio](https://github.com/mackron/miniaudio) by David Reid
 - [GLtext](https://github.com/vallentin/glText) by Christian Vallentin 
 - [imgui](https://github.com/ocornut/imgui) ImGui by Omar
+- [metadesk](https://dion.systems/metadesk) Metadesk by Dion Systems
 
 Features/Included Implementations:
+- type reflection/metadata system
 - Postprocessing
 - Job System (multithreading)
 - deterministic randomness

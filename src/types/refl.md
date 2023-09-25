@@ -1,3 +1,15 @@
+
+---------------------------------
+# Metadesk reflection system notes:
+
+type_metadata.c and type_metadata.h contain the actual code for generating 
+the output .c and .h files that contain our generated types
+
+
+-----------------------------
+
+
+
 find structs
 enumerate fields & spit them out as-is
 base default values(?) - default ctors? Or maybe all default ctors memset self to 0

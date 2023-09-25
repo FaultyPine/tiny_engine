@@ -50,6 +50,9 @@
 
 #include "md.c"
 
+#include <filesystem>
+#include <iostream>
+
 static MD_Arena *arena = 0;
 
 FILE *error_file = 0;
@@ -208,14 +211,17 @@ gen_check_and_do_duplicate_symbol_error(MD_Node *new_node)
 void
 gen_gather_types_and_maps(MD_Node *list)
 {
+    // for each parsed FILE passed in
     for(MD_EachNode(ref, list->first_child))
     {
+        // topmost root node of a parsed file
         MD_Node *root = MD_ResolveNodeFromReference(ref);
         for(MD_EachNode(node, root->first_child))
         {
             // gather type
             MD_Node *type_tag =  MD_TagFromString(node, MD_S8Lit("type"), 0);
             
+            // if we are a @type
             if (!MD_NodeIsNil(type_tag))
             {
                 gen_check_and_do_duplicate_symbol_error(node);
@@ -253,7 +259,7 @@ gen_gather_types_and_maps(MD_Node *list)
                 }
             }
             
-            // gather map
+            // if we are an @map
             if (MD_NodeHasTag(node, MD_S8Lit("map"), 0))
             {
                 gen_check_and_do_duplicate_symbol_error(node);
@@ -315,6 +321,8 @@ gen_equip_basic_type_size(void)
             // extract the size
             int size = 0;
             
+            // this size_node is the size label on basic types
+            // @type(basic) u32: 4;   <- that 4 is the size_node
             MD_Node *size_node = type->node->first_child;
             MD_Node *error_at = 0;
             if (MD_NodeIsNil(size_node))
@@ -361,9 +369,11 @@ gen_equip_struct_members(void)
             GEN_TypeMember *last_member = 0;
             int member_count = 0;
             
+            // this is the node for the "name" of the struct (like "Vector2")
             MD_Node *type_root_node = type->node;
             for (MD_EachNode(member_node, type_root_node->first_child))
             {
+                // the "x" or "y" in Vector2
                 MD_Node *type_name_node = member_node->first_child;
                 
                 // missing type node?
@@ -377,7 +387,10 @@ gen_equip_struct_members(void)
                 }
                 
                 // has type node:
+
+                // the "x" or "y" in Vector2
                 MD_String8 type_name = type_name_node->string;
+                // fetches type info from the type_map from the type's name
                 GEN_TypeInfo *type_info = gen_resolve_type_info_from_string(type_name);
                 
                 // could not resolve type?
@@ -393,6 +406,7 @@ gen_equip_struct_members(void)
                 {
                     GEN_TypeMember *array_count = 0;
                     MD_Node *array_tag = MD_TagFromString(type_name_node, MD_S8Lit("array"), 0);
+                    // if we're an array struct member
                     if (!MD_NodeIsNil(array_tag))
                     {
                         MD_Node *array_count_referencer = array_tag->first_child;
@@ -404,6 +418,7 @@ gen_equip_struct_members(void)
                         }
                         else
                         {
+                            // if we have a array count referencer, it must be a member of that same struct
                             MD_Node *array_count_member_node =
                                 MD_ChildFromString(type_root_node, array_count_referencer->string, 0);
                             if (MD_NodeIsNil(array_count_member_node))
@@ -427,6 +442,8 @@ gen_equip_struct_members(void)
                                 }
                                 if (array_count == 0)
                                 {
+                                    // ensuring the reference count variable for an array is declared before
+                                    // the array declaration
                                     MD_CodeLoc loc = MD_CodeLocFromNode(array_count_referencer);
                                     MD_PrintMessageFmt(error_file, loc, MD_MessageKind_Error,
                                                        "'%.*s' comes after this array",
@@ -513,7 +530,6 @@ gen_equip_enum_members(void)
     {
         if (type->kind == GEN_TypeKind_Enum)
         {
-            
             // build the list
             MD_b32 got_list = 1;
             GEN_TypeEnumerant *first_enumerant = 0;
@@ -522,9 +538,11 @@ gen_equip_enum_members(void)
             
             int next_implicit_value = 0;
             
+            // actual enum
             MD_Node *type_root_node = type->node;
             for (MD_EachNode(enumerant_node, type_root_node->first_child))
             {
+                // each value of enum
                 MD_Node *value_node = enumerant_node->first_child;
                 int value = 0;
                 
@@ -878,8 +896,9 @@ gen_type_definitions_from_types(FILE *out)
             case GEN_TypeKind_Struct:
             {
                 MD_String8 struct_name = type->node->string;
-                fprintf(out, "typedef struct %.*s %.*s;\n",
-                        MD_S8VArg(struct_name), MD_S8VArg(struct_name));
+                // don't need typedef struct in c++ 
+                //fprintf(out, "typedef struct %.*s %.*s;\n",
+                        //MD_S8VArg(struct_name), MD_S8VArg(struct_name));
                 fprintf(out, "struct %.*s\n", MD_S8VArg(struct_name));
                 fprintf(out, "{\n");
                 for (GEN_TypeMember *member = type->first_member;
@@ -890,33 +909,28 @@ gen_type_definitions_from_types(FILE *out)
                     MD_String8 member_name = member->node->string;
                     if (member->array_count != 0)
                     {
-                        fprintf(out, "%.*s *%.*s;\n", MD_S8VArg(type_name), MD_S8VArg(member_name));
+                        fprintf(out, "\t%.*s *%.*s;\n", MD_S8VArg(type_name), MD_S8VArg(member_name));
                     }
                     else
                     {
-                        fprintf(out, "%.*s %.*s;\n", MD_S8VArg(type_name), MD_S8VArg(member_name));
+                        fprintf(out, "\t%.*s %.*s;\n", MD_S8VArg(type_name), MD_S8VArg(member_name));
                     }
                 }
                 fprintf(out, "};\n");
-            }break;
+            } break;
             
             case GEN_TypeKind_Enum:
             {
                 MD_String8 enum_name = type->node->string;
                 GEN_TypeInfo *underlying_type = type->underlying_type;
                 
-                // enum header
+                // cpp style enum
+                MD_String8 underlying_type_name = MD_S8Lit("int");
                 if (underlying_type != 0)
                 {
-                    MD_String8 underlying_type_name = underlying_type->node->string;
-                    fprintf(out, "typedef %.*s %.*s;\n",
-                            MD_S8VArg(underlying_type_name), MD_S8VArg(enum_name));
-                    fprintf(out, "enum\n");
+                    underlying_type_name = underlying_type->node->string;
                 }
-                else
-                {
-                    fprintf(out, "typedef enum %.*s\n", MD_S8VArg(enum_name));
-                }
+                fprintf(out, "enum %.*s : %.*s\n", MD_S8VArg(enum_name), MD_S8VArg(underlying_type_name));
                 fprintf(out, "{\n");
                 
                 // enum body
@@ -925,22 +939,41 @@ gen_type_definitions_from_types(FILE *out)
                      enumerant = enumerant->next)
                 {
                     MD_String8 member_name = enumerant->node->string;
-                    fprintf(out, "%.*s_%.*s = %d,\n",
-                            MD_S8VArg(enum_name), MD_S8VArg(member_name), enumerant->value);
+                    fprintf(out, "\t%.*s = %d,\n", MD_S8VArg(member_name), enumerant->value);
                 }
                 
                 // enum footer
-                if (underlying_type != 0)
-                {
-                    fprintf(out, "};\n");
-                }
-                else
-                {
-                    fprintf(out, "} %.*s;\n", MD_S8VArg(enum_name));
-                }
+                fprintf(out, "};\n");
                 
-            }break;
+            } break;
+            case GEN_TypeKind_Basic:
+            {
+                MD_Node* basic_type_basic = type->node->first_tag->first_child;
+                // if we have tags after "basic", treat it as a typedef
+                if (MD_S8Match(basic_type_basic->string, MD_S8Lit("basic"), 0) && !MD_NodeIsNil(basic_type_basic->next))
+                {
+                    // specifying a tag after "basic" on an @type specifies the underlying typedef
+                    MD_Node* typedef_tag = basic_type_basic->next;
+                    MD_String8 typedef_underlying_type_name = { typedef_tag->string.str, 0 };
+                    // things like "unsigned int" will not show up in the same string. 
+                    // Need to traverse ->next to get names with more than one word
+                    int are_spaces_in_type = 0;
+                    for (MD_EachNode(type_word, typedef_tag))
+                    {
+                        typedef_underlying_type_name.size += type_word->string.size + 1; // + 1 for space
+                        are_spaces_in_type = 1;
+                    }
+                    // if there were spaces in our type name, our size is 1 too big
+                    if (are_spaces_in_type)
+                    {
+                        typedef_underlying_type_name.size--;
+                    }
+                    MD_String8 typedef_alias_type_name = type->node->string;
+                    fprintf(out, "typedef %.*s %.*s;\n", MD_S8VArg(typedef_underlying_type_name), MD_S8VArg(typedef_alias_type_name));
+                }
+            } break;
         }
+        fprintf(out, "\n");
     }
     
     fprintf(out, "\n");
@@ -1012,7 +1045,7 @@ gen_struct_member_tables_from_types(FILE *out)
                 {
                     array_count_member_index = member->array_count->member_index;
                 }
-                fprintf(out, "{\"%.*s\", %d, %d, &%.*s_type_info},\n",
+                fprintf(out, "\t{\"%.*s\", %d, %d, &%.*s_type_info},\n",
                         MD_S8VArg(member_name), (int)member_name.size,
                         array_count_member_index, MD_S8VArg(member_type_name));
             }
@@ -1046,7 +1079,7 @@ gen_enum_member_tables_from_types(FILE *out)
             {
                 MD_String8 enumerant_name = enumerant->node->string;
                 int value = enumerant->value;
-                fprintf(out, "{\"%.*s\", %d, %d},\n",
+                fprintf(out, "\t{\"%.*s\", %d, %d},\n",
                         MD_S8VArg(enumerant_name), (int)enumerant_name.size,
                         value);
             }
@@ -1175,7 +1208,7 @@ gen_function_definitions_from_maps(FILE *out)
                     {
                         map_has_an_implicit_case = 1;
                         MD_String8 in_expr = enumerant->node->string;
-                        fprintf(out, "case %.*s_%.*s:\n", MD_S8VArg(in_type), MD_S8VArg(in_expr));
+                        fprintf(out, "case %.*s:\n", MD_S8VArg(in_expr));
                     }
                 }
                 
@@ -1207,7 +1240,7 @@ gen_function_definitions_from_maps(FILE *out)
                     val_expr = MD_S8Fmt(scratch.arena, "&%.*s_type_info", MD_S8VArg(out_expr));
                 }
                 
-                fprintf(out, "case %.*s_%.*s:\n", MD_S8VArg(in_type), MD_S8VArg(in_expr));
+                fprintf(out, "case %.*s:\n", MD_S8VArg(in_expr));
                 fprintf(out, "{\n");
                 fprintf(out, "result = %.*s;\n", MD_S8VArg(val_expr));
                 fprintf(out, "}break;\n");
@@ -1225,6 +1258,8 @@ gen_function_definitions_from_maps(FILE *out)
 }
 
 
+
+
 //~ main //////////////////////////////////////////////////////////////////////
 
 int
@@ -1236,6 +1271,12 @@ main(int argc, char **argv)
     // output stream routing
     error_file = stderr;
     
+    //printf("Recursive dirs\n");
+    //for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("C:/Dev/tiny_engine/src/types/metadesk"))
+    //    std::cout << dirEntry << std::endl;
+    //printf("Recursive dirs END\n");
+
+
     // parse all files passed to the command line
     MD_Node *list = MD_MakeList(arena);
     for (int i = 1; i < argc; i += 1)
@@ -1285,6 +1326,7 @@ main(int argc, char **argv)
         FILE *h = fopen("meta_types.h", "wb");
         fprintf(h, "#if !defined(META_TYPES_H)\n");
         fprintf(h, "#define META_TYPES_H\n");
+        fprintf(h, "#include \"type_info.h\"\n");
         gen_type_definitions_from_types(h);
         gen_function_declarations_from_maps(h);
         gen_type_info_declarations_from_types(h);
@@ -1295,6 +1337,7 @@ main(int argc, char **argv)
     // generate definitions file
     {
         FILE *c = fopen("meta_types.c", "wb");
+        fprintf(c, "#include \"meta_types.h\"\n");
         gen_struct_member_tables_from_types(c);
         gen_enum_member_tables_from_types(c);
         gen_type_info_definitions_from_types(c);
@@ -1310,6 +1353,7 @@ main(int argc, char **argv)
     
     // print diagnostics of the parse analysis
 #if 1
+    printf("---- PARSE ANALYSIS ----\n");
     for (GEN_TypeInfo *type = first_type;
          type != 0;
          type = type->next)

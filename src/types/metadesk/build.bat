@@ -1,5 +1,5 @@
 @echo off
 
 call "vsdev.bat"
-cl type_metadata.c
-type_metadata.exe types.mdesk
+REM /TP forces C++ compilation mode despite .c extension
+cl type_metadata.c /Zi /TP /std:c++17 /EHsc
