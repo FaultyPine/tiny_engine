@@ -1,7 +1,7 @@
 {
     "configurations": [
     {
-        "name": "(gdb) Launch",
+        "name": "Tiny Engine",
         "type": "cppvsdbg",
         "request": "launch",
         "program": "${workspaceFolder}\\TinyEngine.exe",
@@ -11,6 +11,18 @@
         "cwd": "${workspaceFolder}",
         "environment": [],
         "externalConsole": false
-    }
+    },
+    {
+        "name": "MD Types",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}\\src\\types\\metadesk\\type_metadata.exe",
+        "args": ["test_types.type"],
+        "stopAtEntry": false,
+        "preLaunchTask": "build_types",
+        "cwd": "${workspaceFolder}\\src\\types\\metadesk",
+        "environment": [],
+        "externalConsole": false
+    },
     ]
 }

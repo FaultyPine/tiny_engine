@@ -9,14 +9,17 @@
 
 #include "tiny_engine/tiny_engine.h"
 
-#define TESTBED3D 1
+#define TESTBED3D 0
 #if TESTBED3D
 #include "testbed/testbed_main.h"
 #endif
 
-#if 0
+#define META_TESTING 1
+#if META_TESTING
 #include "metadesk/source/md.h"
 #include "metadesk/source/md.c"
+#include "types/metadesk/meta_types.cpp"
+
 void PrintMDNodes(MD_Node* root, u32 treeLevel = 0)
 {
     // Iterate through each top-level node
@@ -49,6 +52,11 @@ void preLoopInit() {
     InitGame(1920, 1080, 16, 9, "Tiny Engine", is3D); 
     #if TESTBED3D
     testbed_init();
+    #endif
+
+    #if META_TESTING
+    Circle circle = Circle();
+    
     #endif
 }
 
@@ -127,6 +135,10 @@ void LivePPTerminate() {
 int main(int argc, char *argv[]) {
 
     preLoopInit();
+    #if META_TESTING
+    return 0;
+    #endif
+
 #ifdef LIVEPP_ACTIVE
 LivePPInit();
 #endif

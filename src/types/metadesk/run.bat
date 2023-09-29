@@ -1,3 +1,3 @@
 @echo off
 
-type_metadata.exe types.mdesk
+type_metadata.exe test_types.type

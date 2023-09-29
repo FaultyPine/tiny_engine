@@ -27,6 +27,7 @@ Features/Included Implementations:
 - postprocessing
 - Profiling with chrome://tracing api
 - Shader hot reloading & #include parser
+- custom arena allocator
 
 Written with this engine:  
 [Part Of The Pack](https://faultypine.itch.io/part-of-the-pack)  
@@ -48,6 +49,7 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 ### TODO/Topics to Experiment With:
 - Reflection with Metadesk
+    - AoS to SoA converter? would be cool...
 - refactor shaders to use includes
 - Resource system
     - load from filesystem
@@ -55,8 +57,8 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
     - allow access to these things through ids or shared pointers
 - serialize objects... I.E. store positions and whatnot so im not just hardcoding them
     - will also allow me to change them while in-engine and save those changes
-    - use rel pointers/arrays to make everything one big blob
-- Custom allocators (arenas)
+    - use rel pointers/arrays to make everything one big blob?
+- growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
 - better grass sway w/distortion texture to emulate wind better
 - PBR
 - HDR/Tonemapping & Bloom

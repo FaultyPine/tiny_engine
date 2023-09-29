@@ -10,6 +10,16 @@
                 "isDefault": true
             },
             "problemMatcher": "$gcc"
-        }
+        },
+        {
+            "taskName": "build_types",
+            "type": "shell",
+            "command": "build.bat types",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": "$gcc"
+        },
     ]
 }
