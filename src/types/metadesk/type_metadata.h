@@ -98,44 +98,45 @@ struct GEN_MapCase
     MD_Node *out;
 };
 
+struct GEN_FileData;
 
 //~ helpers ///////////////////////////////////////////////////////////////////
 MD_Node* gen_get_child_value(MD_Node *parent, MD_String8 child_name);
 
-GEN_TypeInfo* gen_resolve_type_info_from_string(MD_String8 name);
-GEN_TypeInfo* gen_resolve_type_info_from_referencer(MD_Node *reference);
+GEN_TypeInfo* gen_resolve_type_info_from_string(MD_String8 name, GEN_FileData* filedata);
+GEN_TypeInfo* gen_resolve_type_info_from_referencer(MD_Node *reference, GEN_FileData* filedata);
 
 GEN_TypeEnumerant* gen_enumerant_from_name(GEN_TypeInfo *enum_type, MD_String8 name);
 
 GEN_MapCase* gen_map_case_from_enumerant(GEN_MapInfo *map, GEN_TypeEnumerant *enumerant);
 
-MD_Node* gen_get_symbol_md_node_by_name(MD_String8 name);
+MD_Node* gen_get_symbol_md_node_by_name(MD_String8 name, GEN_FileData* filedata);
 
 void gen_type_resolve_error(MD_Node *reference);
 void gen_duplicate_symbol_error(MD_Node *new_node, MD_Node *existing_node);
 
-void gen_check_and_do_duplicate_symbol_error(MD_Node *new_node);
+void gen_check_and_do_duplicate_symbol_error(MD_Node *new_node, GEN_FileData* filedata);
 
 //~ analyzers /////////////////////////////////////////////////////////////////
-void gen_gather_types_and_maps(MD_Node *list);
-void gen_check_duplicate_member_names(void);
-void gen_equip_basic_type_size(void);
-void gen_equip_struct_members(void);
-void gen_equip_enum_underlying_type(void);
-void gen_equip_enum_members(void);
-void gen_equip_map_in_out_types(void);
-void gen_equip_map_cases(void);
-void gen_check_duplicate_cases(void);
-void gen_check_complete_map_cases(void);
+void gen_gather_types_and_maps(GEN_FileData* filedata, MD_Node* root);
+void gen_check_duplicate_member_names(GEN_FileData* filedata);
+void gen_equip_basic_type_size(GEN_FileData* filedata);
+void gen_equip_struct_members(GEN_FileData* filedata);
+void gen_equip_enum_underlying_type(GEN_FileData* filedata);
+void gen_equip_enum_members(GEN_FileData* filedata);
+void gen_equip_map_in_out_types(GEN_FileData* filedata);
+void gen_equip_map_cases(GEN_FileData* filedata);
+void gen_check_duplicate_cases(GEN_FileData* filedata);
+void gen_check_complete_map_cases(GEN_FileData* filedata);
 
 //~ generators ////////////////////////////////////////////////////////////////
-void gen_type_definitions_from_types(FILE *out);
-void gen_function_declarations_from_maps(FILE *out);
-void gen_type_info_declarations_from_types(FILE *out);
-void gen_struct_member_tables_from_types(FILE *out);
-void gen_enum_member_tables_from_types(FILE *out);
-void gen_type_info_definitions_from_types(FILE *out);
-void gen_function_definitions_from_maps(FILE *out);
+void gen_type_definitions_from_types(FILE *out, GEN_FileData* filedata);
+void gen_function_declarations_from_maps(FILE *out, GEN_FileData* filedata);
+void gen_type_info_declarations_from_types(FILE *out, GEN_FileData* filedata);
+void gen_struct_member_tables_from_types(FILE *out, GEN_FileData* filedata);
+void gen_enum_member_tables_from_types(FILE *out, GEN_FileData* filedata);
+void gen_type_info_definitions_from_types(FILE *out, GEN_FileData* filedata);
+void gen_function_definitions_from_maps(FILE *out, GEN_FileData* filedata);
 
 
 #endif //TYPE_METADATA_H

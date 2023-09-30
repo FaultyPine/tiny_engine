@@ -21,4 +21,10 @@ the output .c and .h files that contain our generated types
 		- make sure each file operates in it's own seperate arena for ez threading
 		- easy to multithread/jobify
 	- now that i wrote them down, it's very clear to me the second option is what I want to do. Yay!
+	- mmm problem....
+	- if we include a file with some types we want to use in our type file...
+	- if we are parsing one file at a time and just plopping the include line in we end up not knowing what those types mean
+	- Should we recursively parse included files? 
+		- see an include - do a parse,equip,(optional:write) cycle
+	- first option might actually be better....
 - base default values(?) - default ctors? Or maybe all default ctors memset self to 0

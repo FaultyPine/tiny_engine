@@ -52,7 +52,7 @@
 
 #include <filesystem>
 
-static MD_Arena *arena = 0;
+//static MD_Arena *arena = 0;
 
 static FILE *error_file = 0;
 
@@ -70,6 +70,7 @@ static FILE *error_file = 0;
 
 struct GEN_FileData
 {
+    MD_Arena* arena = 0;
     GEN_TypeInfo *first_type = 0;
     GEN_TypeInfo *last_type = 0;
     MD_Map type_map = MD_ZERO_STRUCT;
@@ -79,18 +80,11 @@ struct GEN_FileData
     MD_Map map_map = MD_ZERO_STRUCT;
 
     MD_String8List include_list = MD_ZERO_STRUCT;
+    MD_String8 filename = MD_ZERO_STRUCT;
+
+    GEN_FileData* include_filedata = 0;
 };
 
-
-GEN_TypeInfo *first_type = 0;
-GEN_TypeInfo *last_type = 0;
-MD_Map type_map = {0};
-
-GEN_MapInfo *first_map = 0;
-GEN_MapInfo *last_map = 0;
-MD_Map map_map = {0};
-
-MD_String8List include_list = MD_ZERO_STRUCT;
 
 //~ helpers ///////////////////////////////////////////////////////////////////
 
@@ -103,7 +97,7 @@ gen_get_child_value(MD_Node *parent, MD_String8 child_name)
 }
 
 GEN_TypeInfo*
-gen_resolve_type_info_from_string(MD_String8 name)
+gen_resolve_type_info_from_string(MD_String8 name, GEN_FileData* filedata)
 {
     GEN_TypeInfo *result = 0;
     // @notes The MD_Map helper is a "flexibly" typed hash table. It's keys can
@@ -112,18 +106,22 @@ gen_resolve_type_info_from_string(MD_String8 name)
     //  "map slot" because the map is not restricted to storing just one value
     //  per key, if we were using it that way we could use MD_MapScan to
     //  iterate through the map slots.
-    MD_MapSlot *slot = MD_MapLookup(&type_map, MD_MapKeyStr(name));
+    MD_MapSlot *slot = MD_MapLookup(&filedata->type_map, MD_MapKeyStr(name));
     if (slot != 0)
     {
         result = (GEN_TypeInfo*)slot->val;
+    }
+    else if (filedata->include_filedata)
+    {
+        result = gen_resolve_type_info_from_string(name, filedata->include_filedata);
     }
     return(result);
 }
 
 GEN_TypeInfo*
-gen_resolve_type_info_from_referencer(MD_Node *reference)
+gen_resolve_type_info_from_referencer(MD_Node *reference, GEN_FileData* filedata)
 {
-    GEN_TypeInfo *result = gen_resolve_type_info_from_string(reference->string);
+    GEN_TypeInfo *result = gen_resolve_type_info_from_string(reference->string, filedata);
     return(result);
 }
 
@@ -162,22 +160,39 @@ gen_map_case_from_enumerant(GEN_MapInfo *map, GEN_TypeEnumerant *enumerant)
 }
 
 MD_Node*
-gen_get_symbol_md_node_by_name(MD_String8 name)
+gen_get_symbol_md_node_by_name(MD_String8 name, GEN_FileData* filedata)
 {
     MD_Node *result = MD_NilNode();
-    MD_MapSlot *type_slot = MD_MapLookup(&type_map, MD_MapKeyStr(name));
+    MD_MapSlot *type_slot = MD_MapLookup(&filedata->type_map, MD_MapKeyStr(name));
     if (type_slot != 0)
     {
         GEN_TypeInfo *type_info = (GEN_TypeInfo*)type_slot->val;
         result = type_info->node;
     }
-    MD_MapSlot *map_slot = MD_MapLookup(&map_map, MD_MapKeyStr(name));
+    MD_MapSlot *map_slot = MD_MapLookup(&filedata->map_map, MD_MapKeyStr(name));
     if (map_slot != 0)
     {
         GEN_MapInfo *map_info = (GEN_MapInfo*)map_slot->val;
         result = map_info->node;
     }
+    if (MD_NodeIsNil(result) && filedata->include_filedata)
+    {
+        result = gen_get_symbol_md_node_by_name(name, filedata->include_filedata);
+    }
     return(result);
+}
+
+MD_String8 remove_file_extension(MD_String8 full_filename)
+{
+    // get non-extension filename
+    MD_u8* str_end = full_filename.str + full_filename.size-1;
+    MD_u8* ext_pos = str_end;
+    int extension_length = 1;
+    for (; *--str_end != '.' ; extension_length++) // reverse walk to '.'
+    {}
+    extension_length++;
+    MD_String8 filename_noext = MD_S8(full_filename.str, full_filename.size - extension_length);
+    return filename_noext;
 }
 
 void
@@ -202,12 +217,16 @@ gen_duplicate_symbol_error(MD_Node *new_node, MD_Node *existing_node)
 }
 
 void
-gen_check_and_do_duplicate_symbol_error(MD_Node *new_node)
+gen_check_and_do_duplicate_symbol_error(MD_Node *new_node, GEN_FileData* filedata)
 {
-    MD_Node *existing = gen_get_symbol_md_node_by_name(new_node->string);
+    MD_Node *existing = gen_get_symbol_md_node_by_name(new_node->string, filedata);
     if (!MD_NodeIsNil(existing))
     {
         gen_duplicate_symbol_error(new_node, existing);
+    }
+    else if (filedata->include_filedata)
+    {
+        gen_check_and_do_duplicate_symbol_error(new_node, filedata->include_filedata);
     }
 }
 
@@ -224,13 +243,13 @@ gen_check_and_do_duplicate_symbol_error(MD_Node *new_node)
 //  where the kind field is not one of the expected values.
 
 void
-gen_gather_types_and_maps(MD_Node *list)
+gen_gather_types_and_maps(GEN_FileData* filedata, MD_Node* root)
 {
     // for each parsed FILE passed in
-    for(MD_EachNode(ref, list->first_child))
-    {
+    //for(MD_EachNode(ref, list->first_child))
+    //{
         // topmost root node of a parsed file
-        MD_Node *root = MD_ResolveNodeFromReference(ref);
+        //MD_Node *root = MD_ResolveNodeFromReference(ref);
         for(MD_EachNode(node, root->first_child))
         {
             // gather type
@@ -239,7 +258,7 @@ gen_gather_types_and_maps(MD_Node *list)
             // if we are a @type
             if (!MD_NodeIsNil(type_tag))
             {
-                gen_check_and_do_duplicate_symbol_error(node);
+                gen_check_and_do_duplicate_symbol_error(node, filedata);
                 
                 GEN_TypeKind kind = GEN_TypeKind_Null;
                 MD_Node   *tag_arg_node = type_tag->first_child;
@@ -266,42 +285,51 @@ gen_gather_types_and_maps(MD_Node *list)
                 }
                 else
                 {
-                    GEN_TypeInfo *type_info = MD_PushArrayZero(arena, GEN_TypeInfo, 1);
+                    GEN_TypeInfo *type_info = MD_PushArrayZero(filedata->arena, GEN_TypeInfo, 1);
                     type_info->kind = kind;
                     type_info->node = node;
-                    MD_QueuePush(first_type, last_type, type_info);
-                    MD_MapInsert(arena, &type_map, MD_MapKeyStr(node->string), type_info);
+                    MD_QueuePush(filedata->first_type, filedata->last_type, type_info);
+                    MD_MapInsert(filedata->arena, &filedata->type_map, MD_MapKeyStr(node->string), type_info);
                 }
             }
             
             // if we are an @map
             if (MD_NodeHasTag(node, MD_S8Lit("map"), 0))
             {
-                gen_check_and_do_duplicate_symbol_error(node);
+                gen_check_and_do_duplicate_symbol_error(node, filedata);
                 
-                GEN_MapInfo *map_info = MD_PushArrayZero(arena, GEN_MapInfo, 1);
+                GEN_MapInfo *map_info = MD_PushArrayZero(filedata->arena, GEN_MapInfo, 1);
                 map_info->node = node;
-                MD_QueuePush(first_map, last_map, map_info);
-                MD_MapInsert(arena, &map_map, MD_MapKeyStr(node->string), map_info);
+                MD_QueuePush(filedata->first_map, filedata->last_map, map_info);
+                MD_MapInsert(filedata->arena, &filedata->map_map, MD_MapKeyStr(node->string), map_info);
             }
-            else if (MD_NodeHasTag(node, MD_S8Lit("include"), 0))
+        }
+    //}
+}
+
+void
+gen_parse_includes(GEN_FileData* filedata, MD_Node* root)
+{
+    // "preprocessor"
+    for(MD_EachNode(node, root->first_child))
+    {
+        if (MD_NodeHasTag(node, MD_S8Lit("include"), 0))
+        {
+            MD_Node* include_tag = node->first_tag; // include(...)
+            MD_Node* include_path_node = include_tag->first_child;
+            if (!MD_NodeIsNil(include_path_node))
             {
-                MD_Node* include_tag = node->first_tag; // include(...)
-                MD_Node* include_path_node = include_tag->first_child;
-                if (!MD_NodeIsNil(include_path_node))
-                {
-                    MD_String8 include_path = include_path_node->string;
-                    MD_S8ListPush(arena, &include_list, include_path);
-                }
+                MD_String8 include_path = include_path_node->string;
+                MD_S8ListPush(filedata->arena, &filedata->include_list, include_path);
             }
         }
     }
 }
 
 void
-gen_check_duplicate_member_names(void)
+gen_check_duplicate_member_names(GEN_FileData* filedata)
 {
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -335,9 +363,9 @@ gen_check_duplicate_member_names(void)
 //  metadesk nodes we saw durring the gather phase.
 
 void
-gen_equip_basic_type_size(void)
+gen_equip_basic_type_size(GEN_FileData* filedata)
 {
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -380,9 +408,9 @@ gen_equip_basic_type_size(void)
 }
 
 void
-gen_equip_struct_members(void)
+gen_equip_struct_members(GEN_FileData* filedata)
 {
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -416,7 +444,7 @@ gen_equip_struct_members(void)
                 // the "x" or "y" in Vector2
                 MD_String8 type_name = type_name_node->string;
                 // fetches type info from the type_map from the type's name
-                GEN_TypeInfo *type_info = gen_resolve_type_info_from_string(type_name);
+                GEN_TypeInfo *type_info = gen_resolve_type_info_from_string(type_name, filedata);
                 
                 // could not resolve type?
                 if (type_info == 0)
@@ -478,7 +506,7 @@ gen_equip_struct_members(void)
                         }
                     }
                     
-                    GEN_TypeMember *member = MD_PushArray(arena, GEN_TypeMember, 1);
+                    GEN_TypeMember *member = MD_PushArray(filedata->arena, GEN_TypeMember, 1);
                     member->node = member_node;
                     member->type = type_info;
                     member->array_count = array_count;
@@ -502,9 +530,9 @@ gen_equip_struct_members(void)
 }
 
 void
-gen_equip_enum_underlying_type(void)
+gen_equip_enum_underlying_type(GEN_FileData* filedata)
 {
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -519,7 +547,7 @@ gen_equip_enum_underlying_type(void)
             MD_Node *underlying_type_ref = type_tag_param->first_child;
             if (!MD_NodeIsNil(underlying_type_ref))
             {
-                GEN_TypeInfo *resolved_type = gen_resolve_type_info_from_referencer(underlying_type_ref);
+                GEN_TypeInfo *resolved_type = gen_resolve_type_info_from_referencer(underlying_type_ref, filedata);
                 if (resolved_type == 0)
                 {
                     gen_type_resolve_error(underlying_type_ref);
@@ -547,9 +575,9 @@ gen_equip_enum_underlying_type(void)
 }
 
 void
-gen_equip_enum_members(void)
+gen_equip_enum_members(GEN_FileData* filedata)
 {
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -596,7 +624,7 @@ gen_equip_enum_members(void)
                 // save enumerant
                 if (got_list)
                 {
-                    GEN_TypeEnumerant *enumerant = MD_PushArray(arena, GEN_TypeEnumerant, 1);
+                    GEN_TypeEnumerant *enumerant = MD_PushArray(filedata->arena, GEN_TypeEnumerant, 1);
                     enumerant->node = enumerant_node;
                     enumerant->value = value;
                     MD_QueuePush(first_enumerant, last_enumerant, enumerant);
@@ -618,9 +646,9 @@ gen_equip_enum_members(void)
 }
 
 void
-gen_equip_map_in_out_types(void)
+gen_equip_map_in_out_types(GEN_FileData* filedata)
 {
-    for (GEN_MapInfo *map = first_map;
+    for (GEN_MapInfo *map = filedata->first_map;
          map != 0;
          map = map->next)
     {
@@ -658,7 +686,7 @@ gen_equip_map_in_out_types(void)
         GEN_TypedMapInfo *typed_map = 0;
         {
             // resolve in type info
-            GEN_TypeInfo *in_type_info = gen_resolve_type_info_from_referencer(in_node);
+            GEN_TypeInfo *in_type_info = gen_resolve_type_info_from_referencer(in_node, filedata);
             if (in_type_info != 0 &&
                 in_type_info->kind != GEN_TypeKind_Enum)
             {
@@ -669,7 +697,7 @@ gen_equip_map_in_out_types(void)
             }
             
             // resolve out type info
-            GEN_TypeInfo *out_type_info = gen_resolve_type_info_from_referencer(out_node);
+            GEN_TypeInfo *out_type_info = gen_resolve_type_info_from_referencer(out_node, filedata);
             int out_is_type_info_ptr = 0;
             if (out_type_info == 0)
             {
@@ -687,7 +715,7 @@ gen_equip_map_in_out_types(void)
             // assemble typed map
             if (in_type_info != 0 && (out_type_info != 0 || out_is_type_info_ptr))
             {
-                typed_map = MD_PushArray(arena, GEN_TypedMapInfo, 1);
+                typed_map = MD_PushArray(filedata->arena, GEN_TypedMapInfo, 1);
                 
                 // fill primary values
                 typed_map->in = in_type_info;
@@ -721,9 +749,9 @@ gen_equip_map_in_out_types(void)
 }
 
 void
-gen_equip_map_cases(void)
+gen_equip_map_cases(GEN_FileData* filedata)
 {
-    for (GEN_MapInfo *map = first_map;
+    for (GEN_MapInfo *map = filedata->first_map;
          map != 0;
          map = map->next)
     {
@@ -775,7 +803,7 @@ gen_equip_map_cases(void)
                 // save case
                 if (got_list)
                 {
-                    GEN_MapCase *map_case = MD_PushArray(arena, GEN_MapCase, 1);
+                    GEN_MapCase *map_case = MD_PushArray(filedata->arena, GEN_MapCase, 1);
                     map_case->in_enumerant = in_enumerant;
                     map_case->out = out;
                     MD_QueuePush(first_case, last_case, map_case);
@@ -797,9 +825,9 @@ gen_equip_map_cases(void)
 }
 
 void
-gen_check_duplicate_cases(void)
+gen_check_duplicate_cases(GEN_FileData* filedata)
 {
-    for (GEN_MapInfo *map = first_map;
+    for (GEN_MapInfo *map = filedata->first_map;
          map != 0;
          map = map->next)
     {
@@ -847,9 +875,9 @@ gen_check_duplicate_cases(void)
 }
 
 void
-gen_check_complete_map_cases(void)
+gen_check_complete_map_cases(GEN_FileData* filedata)
 {
-    for (GEN_MapInfo *map = first_map;
+    for (GEN_MapInfo *map = filedata->first_map;
          map != 0;
          map = map->next)
     {
@@ -904,27 +932,28 @@ gen_check_complete_map_cases(void)
 //  output files.
 
 void
-gen_include_statements(FILE* out)
+gen_output_include_statements(FILE* out, GEN_FileData* filedata)
 {
     MD_PrintGenNoteCComment(out);
     
-    for (MD_String8Node* include = include_list.first; 
+    for (MD_String8Node* include = filedata->include_list.first; 
         include != 0; 
         include = include->next)
     {
         MD_String8 include_string = include->string;
-        fprintf(out, "#include \"%.*s.h\"\n", MD_S8VArg(include_string));
+        MD_String8 include_string_noext = remove_file_extension(include_string);
+        fprintf(out, "#include \"%.*s.h\"\n", MD_S8VArg(include_string_noext));
     }
 }
 
 void
-gen_type_definitions_from_types(FILE *out)
+gen_type_definitions_from_types(FILE *out, GEN_FileData* filedata)
 {
     // @notes This Metadesk helper generates a comment that points back here.
     //  Generating a comment like this can help a lot to with issues later.
     MD_PrintGenNoteCComment(out);
     
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -1019,11 +1048,11 @@ gen_type_definitions_from_types(FILE *out)
 }
 
 void
-gen_function_declarations_from_maps(FILE *out)
+gen_function_declarations_from_maps(FILE *out, GEN_FileData* filedata)
 {
     MD_PrintGenNoteCComment(out);
     
-    for (GEN_MapInfo *map = first_map;
+    for (GEN_MapInfo *map = filedata->first_map;
          map != 0;
          map = map->next)
     {
@@ -1042,11 +1071,11 @@ gen_function_declarations_from_maps(FILE *out)
 }
 
 void
-gen_type_info_declarations_from_types(FILE *out)
+gen_type_info_declarations_from_types(FILE *out, GEN_FileData* filedata)
 {
     MD_PrintGenNoteCComment(out);
     
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -1058,11 +1087,11 @@ gen_type_info_declarations_from_types(FILE *out)
 }
 
 void
-gen_struct_member_tables_from_types(FILE *out)
+gen_struct_member_tables_from_types(FILE *out, GEN_FileData* filedata)
 {
     MD_PrintGenNoteCComment(out);
     
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -1097,11 +1126,11 @@ gen_struct_member_tables_from_types(FILE *out)
 }
 
 void
-gen_enum_member_tables_from_types(FILE *out)
+gen_enum_member_tables_from_types(FILE *out, GEN_FileData* filedata)
 {
     MD_PrintGenNoteCComment(out);
     
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -1131,13 +1160,13 @@ gen_enum_member_tables_from_types(FILE *out)
 }
 
 void
-gen_type_info_definitions_from_types(FILE *out)
+gen_type_info_definitions_from_types(FILE *out, GEN_FileData* filedata)
 {
     MD_ArenaTemp scratch = MD_GetScratch(0, 0);
     
     MD_PrintGenNoteCComment(out);
     
-    for (GEN_TypeInfo *type = first_type;
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -1191,13 +1220,13 @@ gen_type_info_definitions_from_types(FILE *out)
 }
 
 void
-gen_function_definitions_from_maps(FILE *out)
+gen_function_definitions_from_maps(FILE *out, GEN_FileData* filedata)
 {
     MD_ArenaTemp scratch = MD_GetScratch(0, 0);
     
     MD_PrintGenNoteCComment(out);
     
-    for (GEN_MapInfo *map = first_map;
+    for (GEN_MapInfo *map = filedata->first_map;
          map != 0;
          map = map->next)
     {
@@ -1296,121 +1325,16 @@ gen_function_definitions_from_maps(FILE *out)
     MD_ReleaseScratch(scratch);
 }
 
-
-MD_Node* parse_tree_from_file(MD_String8 filename, MD_Arena* arena = nullptr)
+void print_parse_analysis(GEN_FileData* filedata)
 {
-    MD_ParseResult parse_result = MD_ParseWholeFile(arena, filename);
-    // print metadesk errors
-    for (MD_Message *message = parse_result.errors.first;
-            message != 0;
-            message = message->next)
-    {
-        MD_CodeLoc code_loc = MD_CodeLocFromNode(message->node);
-        MD_PrintMessage(error_file, code_loc, message->kind, message->string);
-    }
-    return parse_result.node;
-}
-
-
-
-
-
-//~ main //////////////////////////////////////////////////////////////////////
-
-int
-main(int argc, char **argv)
-{
-    // setup the global arena
-    arena = MD_ArenaAlloc();
-    
-    // output stream routing
-    error_file = stderr;
-    
-    //printf("Recursive dirs\n");
-    //for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("C:/Dev/tiny_engine/src/types/metadesk"))
-    //    std::cout << dirEntry << std::endl;
-    //printf("Recursive dirs END\n");
-
-
-    // parse all files passed to the command line
-    MD_Node *list = MD_MakeList(arena);
-    for (int i = 1; i < argc; i += 1)
-    {
-        // parse the file
-        MD_String8 file_name = MD_S8CString(argv[i]);
-        MD_Node* root = parse_tree_from_file(file_name, arena);
-        // save to parse results list
-        // NOTE(grayson): list is a linkedlist of MD_Node's
-        // whose type is MD_NodeKind_Reference and whose ref_target
-        // is the root we just parsed from the file above
-        // (it's a linkedlist of "pointers" to the actual tree)
-        MD_PushNewReference(arena, list, root);
-    }
-
-    // init maps
-    type_map = MD_MapMake(arena);
-    map_map = MD_MapMake(arena);
-    
-    // analysis phase
-    gen_gather_types_and_maps(list);
-    gen_check_duplicate_member_names();
-    gen_equip_basic_type_size();
-    gen_equip_struct_members();
-    gen_equip_enum_underlying_type();
-    gen_equip_enum_members();
-    gen_equip_map_in_out_types();
-    gen_equip_map_cases();
-    gen_check_duplicate_cases();
-    gen_check_complete_map_cases();
-    
-    // @notes Here we explicitly use one block to generate each output file.
-    //  This approach makes it a lot easier to understand where the contents
-    //  of generated files come from, because it's all layed out it one place.
-    //  However if the number of output files grows, this can get out of hand
-    //  and the situation may start calling for more automation of the output
-    //  files. There is a large amount of judgement calling in this part!
-    
-    // generate header file
-    {
-        MD_String8 filename = MD_S8Lit("meta_types");
-        MD_String8 header_name = MD_S8Fmt(arena, "%.*s.h", MD_S8VArg(filename));
-        MD_String8 header_guard_name = MD_S8Stylize(arena, filename, MD_IdentifierStyle_UpperCase, MD_S8Lit(""));
-        FILE *h = fopen((const char*)header_name.str, "wb");
-        fprintf(h, "#if !defined(%.*s_H)\n", MD_S8VArg(header_guard_name));
-        fprintf(h, "#define %.*s_H\n", MD_S8VArg(header_guard_name));
-        //fprintf(h, "#include \"type_info.h\"\n");
-        gen_include_statements(h);
-        gen_type_definitions_from_types(h);
-        // forward declare typeinfo so we can only include it in the cpp
-        fprintf(h, "struct TypeInfo;\n");
-        gen_function_declarations_from_maps(h);
-        gen_type_info_declarations_from_types(h);
-        fprintf(h, "#endif // %.*s_H\n", MD_S8VArg(header_guard_name));
-        fclose(h);
-    }
-    
-    // generate definitions file
-    {
-        FILE *c = fopen("meta_types.cpp", "wb");
-        fprintf(c, "#include \"meta_types.h\"\n");
-        fprintf(c, "#include \"type_info.h\"\n");
-        gen_struct_member_tables_from_types(c);
-        gen_enum_member_tables_from_types(c);
-        gen_type_info_definitions_from_types(c);
-        gen_function_definitions_from_maps(c);
-        fclose(c);
-    }
-    
-    
     // @notes The generated code doesn't go straight to stdout, and has a lot
     //  of transforms applied. When writing the analyzers, it's often useful to
     //  have a way to directly dump the results of analysis right to stdout to
     //  see what's going on.
     
     // print diagnostics of the parse analysis
-#if 1
-    printf("---- PARSE ANALYSIS ----\n");
-    for (GEN_TypeInfo *type = first_type;
+    printf("---- PARSE ANALYSIS %.*s ----\n", MD_S8VArg(filedata->filename));
+    for (GEN_TypeInfo *type = filedata->first_type;
          type != 0;
          type = type->next)
     {
@@ -1447,7 +1371,7 @@ main(int argc, char **argv)
         }
     }
     
-    for (GEN_MapInfo *map = first_map;
+    for (GEN_MapInfo *map = filedata->first_map;
          map != 0;
          map = map->next)
     {
@@ -1464,5 +1388,209 @@ main(int argc, char **argv)
                    MD_S8VArg(map_case->out->string));
         }
     }
-#endif
+}
+
+
+MD_Node* parse_tree_from_file(MD_String8 filename, MD_Arena* arena = nullptr)
+{
+    MD_ParseResult parse_result = MD_ParseWholeFile(arena, filename);
+    // print metadesk errors
+    for (MD_Message *message = parse_result.errors.first;
+            message != 0;
+            message = message->next)
+    {
+        MD_CodeLoc code_loc = MD_CodeLocFromNode(message->node);
+        MD_PrintMessage(error_file, code_loc, message->kind, message->string);
+    }
+    return parse_result.node;
+}
+
+/*
+// MD_ListConcatInPlace(MD_Node *list, MD_Node *to_push)
+if (!MD_NodeIsNil(to_push->first_child))
+{
+    if (!MD_NodeIsNil(list->first_child))
+    {
+        list->last_child->next = to_push->first_child;
+        list->last_child = to_push->last_child;
+    }
+    else
+    {
+        list->first_child = to_push->first_child;
+        list->last_child = to_push->last_child;
+    }
+    to_push->first_child = to_push->last_child = MD_NilNode();
+}
+*/
+template <typename T>
+void MD_ListConcatInPlace(
+    T*& typeinfo_first_1, 
+    T*& typeinfo_last_1, 
+    T*& typeinfo_first_2, 
+    T*& typeinfo_last_2)
+{
+    if (typeinfo_first_2)
+    {
+        if (typeinfo_first_1)
+        {
+            typeinfo_last_1->next = typeinfo_first_2;
+            typeinfo_last_1 = typeinfo_last_2;
+        }
+        else
+        {
+            typeinfo_first_1 = typeinfo_first_2;
+            typeinfo_last_1 = typeinfo_last_2;
+        }
+    }
+}
+
+void MD_MapConcatInPlace(MD_Arena* arena, MD_Map& map1, MD_Map& map2)
+{
+    for (int i = 0; i < map2.bucket_count; i++)
+    {
+        // each bucket
+        MD_MapBucket& bucket = map2.buckets[i];
+        for (MD_MapSlot* slot = bucket.first; slot; slot = slot->next)
+        {
+            MD_MapInsert(arena, &map1, slot->key, slot->val);
+        }
+    }
+}
+
+void MergeFileData(GEN_FileData& filedata, GEN_FileData& filedata_other)
+{
+    MD_ListConcatInPlace(filedata.first_type, filedata.last_type, filedata_other.first_type, filedata_other.last_type);
+    MD_ListConcatInPlace(filedata.first_map, filedata.last_map, filedata_other.first_map, filedata_other.last_map);
+    MD_MapConcatInPlace(filedata.arena, filedata.type_map, filedata_other.type_map);
+    MD_MapConcatInPlace(filedata.arena, filedata.map_map, filedata_other.map_map);
+}
+
+void CreateDirIfNotExists(MD_String8 dir)
+{
+    std::string dir_str = std::string((const char*)dir.str, dir.size);
+    std::filesystem::path dir_path = std::filesystem::path(dir_str);
+    std::filesystem::create_directory(dir_path);
+}
+
+GEN_FileData ProcessTypeFile(MD_String8 filename, MD_String8 output_dir, bool is_include = false)
+{
+    printf("Parsing %.*s\n", MD_S8VArg(filename));
+    GEN_FileData filedata = MD_ZERO_STRUCT;
+    filedata.arena = MD_ArenaAlloc();
+    MD_Arena* arena = filedata.arena;
+    filedata.type_map = MD_MapMake(arena);
+    filedata.map_map = MD_MapMake(arena);
+    filedata.filename = filename;
+
+    // parse phase
+    MD_Node* root = parse_tree_from_file(filename, arena);
+
+    // analysis phase
+    gen_parse_includes(&filedata, root);
+    // Handling includes per-file here. This means there may be redundant work done
+    // when multiple files include the same file. 
+    // TODO(grayson): this won't work still since it's gonna output the include info too so
+    // we'll have duplicate definitions in the output files
+    for (MD_String8Node* include = filedata.include_list.first; include; include = include->next)
+    {
+        GEN_FileData include_filedata = ProcessTypeFile(include->string, output_dir, true);
+        // merge our filedata with include filedata somehow
+        //MergeFileData(filedata, include_filedata);
+        if (!filedata.include_filedata)
+        {
+            GEN_FileData* new_include_filedata = (GEN_FileData*)MD_ArenaPush(arena, sizeof(GEN_FileData));
+            *new_include_filedata = include_filedata;
+            filedata.include_filedata = new_include_filedata;
+        }
+        else
+        {
+            MergeFileData(*filedata.include_filedata, include_filedata);
+        }
+    }
+
+    gen_gather_types_and_maps(&filedata, root);
+    gen_check_duplicate_member_names(&filedata);
+    gen_equip_basic_type_size(&filedata);
+    gen_equip_struct_members(&filedata);
+    gen_equip_enum_underlying_type(&filedata);
+    gen_equip_enum_members(&filedata);
+    gen_equip_map_in_out_types(&filedata);
+    gen_equip_map_cases(&filedata);
+    gen_check_duplicate_cases(&filedata);
+    gen_check_complete_map_cases(&filedata);
+
+    if (!is_include)    
+    {
+        MD_String8 filename_noext = remove_file_extension(filename);
+        MD_String8 header_name = MD_S8Fmt(arena, "%.*s.h", MD_S8VArg(filename_noext));
+        MD_String8 header_path = MD_S8Fmt(arena, "%.*s/%.*s", MD_S8VArg(output_dir), MD_S8VArg(header_name));
+        MD_String8 source_filename = MD_S8Fmt(arena, "%.*s/%.*s.cpp", MD_S8VArg(output_dir), MD_S8VArg(filename_noext));
+
+        // generate header file
+        {
+            FILE *h = fopen((const char*)header_path.str, "wb");
+            MD_String8 header_guard_name = MD_S8Stylize(arena, filename_noext, MD_IdentifierStyle_UpperCase, MD_S8Lit(""));
+            fprintf(h, "#if !defined(%.*s_H)\n", MD_S8VArg(header_guard_name));
+            fprintf(h, "#define %.*s_H\n", MD_S8VArg(header_guard_name));
+            // need type info for all type headers/source
+            fprintf(h, "#include \"type_info.h\"\n");
+            gen_output_include_statements(h, &filedata);
+            gen_type_definitions_from_types(h, &filedata);
+            // forward declare typeinfo so we can only include it in the cpp
+            gen_function_declarations_from_maps(h, &filedata);
+            gen_type_info_declarations_from_types(h, &filedata);
+            fprintf(h, "#endif // %.*s_H\n", MD_S8VArg(header_guard_name));
+            fclose(h);
+        }
+        
+        // generate definitions file
+        {
+            FILE *c = fopen((const char*)source_filename.str, "wb");
+            fprintf(c, "#include \"%.*s\"\n", MD_S8VArg(header_name));
+            gen_struct_member_tables_from_types(c, &filedata);
+            gen_enum_member_tables_from_types(c, &filedata);
+            gen_type_info_definitions_from_types(c, &filedata);
+            gen_function_definitions_from_maps(c, &filedata);
+            fclose(c);
+        }
+
+        print_parse_analysis(&filedata);
+    }
+
+    return filedata;
+}
+
+
+
+//~ main //////////////////////////////////////////////////////////////////////
+
+int
+main(int argc, char **argv)
+{
+    // setup the global arena
+    //arena = MD_ArenaAlloc();
+    
+    // output stream routing
+    error_file = stderr;
+    
+    //printf("Recursive dirs\n");
+    //for (const auto& dirEntry : std::filesystem::recursive_directory_iterator("C:/Dev/tiny_engine/src/types/metadesk"))
+    //    std::cout << dirEntry << std::endl;
+    //printf("Recursive dirs END\n");
+
+    MD_String8 output_dir = MD_S8Lit("../generated");
+    // TESTING
+    std::filesystem::remove_all(std::filesystem::path("../generated"));
+    // ----
+    CreateDirIfNotExists(output_dir);
+    // parse all files passed to the command line
+    //MD_Node *list = MD_MakeList(arena);
+    for (int i = 1; i < argc; i += 1)
+    {
+        // parse the file
+        MD_String8 file_name = MD_S8CString(argv[i]);
+        ProcessTypeFile(file_name, output_dir);
+    }
+
+    return 0;
 }
