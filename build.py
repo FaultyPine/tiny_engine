@@ -69,9 +69,10 @@ def clean_debug_executables():
         iteration += 1
         name = APP_NAME + str(iteration) + ".exe"
 
-def regen_and_rebuild_types_lib():
+def regen_and_rebuild_types_lib(should_run: bool):
     print("Rebuilding types lib...")
-    command("cd src/types/metadesk && build.bat && run.bat && cd ../../../")
+    cmd_str = f"cd src/types/metadesk && build.bat{' && run.bat' if should_run else ''} && cd ../../../"
+    command(cmd_str)
 
 def run_livepp(num_debug_iterations: int):
     #name = EXE_NAME
@@ -120,7 +121,10 @@ if len(args) > 0:
     elif args[0] == "norun":
         build()
     elif args[0] == "types":
-        regen_and_rebuild_types_lib()
+        if len(args) > 1 and args[1] == "norun":
+            regen_and_rebuild_types_lib(False)
+        else:
+            regen_and_rebuild_types_lib(True)
 
     elif args[0] == "livepp":
         if (len(args) > 1 and args[1] == "clean"):
