@@ -27,4 +27,7 @@ the output .c and .h files that contain our generated types
 	- Should we recursively parse included files? 
 		- see an include - do a parse,equip,(optional:write) cycle
 	- first option might actually be better....
+	- ended up continuing doing things per file
+	- now i parse the file, then scan all the includes and recurse to parse & equip those
+	- I make sure any procedures that scan all our types also try scanning the includes (I.E. find type from name)
 - base default values(?) - default ctors? Or maybe all default ctors memset self to 0

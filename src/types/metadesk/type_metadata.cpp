@@ -84,6 +84,8 @@ struct GEN_FileData
 
     GEN_FileData* include_filedata = 0;
 };
+// cache processed files so other files can reference them when @included
+static MD_Map filedata_map = MD_ZERO_STRUCT;
 
 
 //~ helpers ///////////////////////////////////////////////////////////////////
@@ -1493,7 +1495,16 @@ GEN_FileData ProcessTypeFile(MD_String8 filename, MD_String8 output_dir, bool is
     // we'll have duplicate definitions in the output files
     for (MD_String8Node* include = filedata.include_list.first; include; include = include->next)
     {
-        GEN_FileData include_filedata = ProcessTypeFile(include->string, output_dir, true);
+        GEN_FileData include_filedata;
+        if (MD_MapSlot* slot = MD_MapLookup(&filedata_map, MD_MapKeyStr(include->string)))
+        {
+            include_filedata = *(GEN_FileData*)slot->val;
+        }
+        else
+        {
+            include_filedata = ProcessTypeFile(include->string, output_dir, true);
+            MD_MapInsert(filedata.arena, &filedata_map, MD_MapKeyStr(include->string), &include_filedata);
+        }
         // merge our filedata with include filedata somehow
         //MergeFileData(filedata, include_filedata);
         if (!filedata.include_filedata)
@@ -1568,8 +1579,9 @@ int
 main(int argc, char **argv)
 {
     // setup the global arena
-    //arena = MD_ArenaAlloc();
-    
+    MD_Arena* arena = MD_ArenaAlloc();
+    filedata_map = MD_MapMake(arena);
+
     // output stream routing
     error_file = stderr;
     
@@ -1589,7 +1601,8 @@ main(int argc, char **argv)
     {
         // parse the file
         MD_String8 file_name = MD_S8CString(argv[i]);
-        ProcessTypeFile(file_name, output_dir);
+        GEN_FileData filedata = ProcessTypeFile(file_name, output_dir);
+        MD_MapInsert(filedata.arena, &filedata_map, MD_MapKeyStr(file_name), &filedata);
     }
 
     return 0;
