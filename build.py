@@ -71,7 +71,7 @@ def clean_debug_executables():
 
 def regen_and_rebuild_types_lib(should_run: bool):
     print("Rebuilding types lib...")
-    cmd_str = f"cd src/types/metadesk && build.bat{' && run.bat' if should_run else ''} && cd ../../../"
+    cmd_str = f"cd src/types && build.bat{' && run.bat' if should_run else ''} && cd ../.."
     command(cmd_str)
 
 def run_livepp(num_debug_iterations: int):

@@ -19,14 +19,15 @@ def get_ninja_command():
 def get_files_with_ext(basedir, ext):
     files_with_ext = [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
     # if a folder/file starts with .  ignore it
-    def filter_out_files_that_start_with_dot(filepath):
+    def exclude_file_filter(filepath):
         #filepath looks like 'src/PartOfThePack/assassin_scene.cpp'
         for folder in filepath.split("/"):
             if folder.startswith("."):
                 return False
+        if "/types/" in filepath and "/generated/" not in filepath: return False # don't compile type system cpp files
         return True
 
-    files_with_ext = list(filter(filter_out_files_that_start_with_dot, files_with_ext))
+    files_with_ext = list(filter(exclude_file_filter, files_with_ext))
     return files_with_ext
 
 

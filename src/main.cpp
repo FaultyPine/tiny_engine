@@ -16,34 +16,7 @@
 
 #define META_TESTING 1
 #if META_TESTING
-#include "metadesk/source/md.h"
-#include "metadesk/source/md.c"
-#include "types/metadesk/meta_types.cpp"
-
-void PrintMDNodes(MD_Node* root, u32 treeLevel = 0)
-{
-    // Iterate through each top-level node
-    for(MD_EachNode(node, root))
-    {
-        for (u32 i = 0; i < treeLevel; i++) printf("\t");
-        printf("/ %.*s\n", MD_S8VArg(node->string));
-
-        // Print the name of each of the node's tags
-        for(MD_EachNode(tag, node->first_tag))
-        {
-            for (u32 i = 0; i < treeLevel; i++) printf("\t");
-            printf("|-- Tag %.*s\n", MD_S8VArg(tag->string));
-        }
-
-        // Print the name of each of the node's children
-        for(MD_EachNode(child, node->first_child))
-        {
-            PrintMDNodes(child, ++treeLevel);
-            for (u32 i = 0; i < treeLevel; i++) printf("\t");
-            printf("|-- Child %.*s\n", MD_S8VArg(child->string));
-        }
-    }
-}
+#include "types/generated/test_types.h"
 #endif
 
 
@@ -56,7 +29,9 @@ void preLoopInit() {
 
     #if META_TESTING
     Circle circle = Circle();
-    
+    circle.r = 10;
+    circle.pos = {0,0};
+    printf("%s\n", Circle_type_info.name);
     #endif
 }
 

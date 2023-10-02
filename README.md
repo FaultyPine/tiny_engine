@@ -50,12 +50,13 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 ### TODO/Topics to Experiment With:
 - Reflection with Metadesk
     - AoS to SoA converter? would be cool...
+    - refactor everything to use type files... will be a huge refactor on literally everything
 - refactor shaders to use includes
 - Resource system
     - load from filesystem
-    - store things like Shader, Mesh, Model, etc objects
-    - allow access to these things through ids or shared pointers
-- serialize objects... I.E. store positions and whatnot so im not just hardcoding them
+    - store things like Shader, Mesh, Model, etc
+    - allow access to these things through ids
+- serialize objects... 
     - will also allow me to change them while in-engine and save those changes
     - use rel pointers/arrays to make everything one big blob?
 - growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)

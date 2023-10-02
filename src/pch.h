@@ -40,24 +40,14 @@
 
 
 // types
-typedef unsigned char u8;
-typedef char s8;
-typedef unsigned short u16;
-typedef short s16;
-typedef unsigned int u32;
-typedef int s32;
-typedef unsigned long u64;
-typedef long s64;
-typedef float f32;
-typedef double f64;
-typedef unsigned long long usize;
-typedef signed long long isize;
+#include "types/generated/basics.h"
+
 #ifndef PATH_MAX
 #define PATH_MAX 260
 #endif
 
 // debug
-inline void PrintAndExitDBG(const char* file, s32 line, const char* msg) {
+inline void PrintAndExitDBG(const char* file, int line, const char* msg) {
     std::cout << "[ERROR] In " << file << ":" << line << "\n" << msg << std::endl; 
     throw std::exception();
 }

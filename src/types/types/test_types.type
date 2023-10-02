@@ -1,0 +1,75 @@
+/*
+** Example: type metadata
+** 
+** Input for the type definition system setup by type_metadata.c
+*/
+
+@include("basics.type")
+
+@type(enum: u32)
+@doc("This is some example enum")
+States:
+{
+    IDLE,
+    RUNNING,
+    LOADING,
+    FINISHED,
+}
+
+@type(struct)
+Vector2:
+{
+  x: f32;
+  y: f32;
+}
+
+@type(struct)
+Circle:
+{
+  r: f32;
+  pos: Vector2;
+}
+
+@type(struct)
+RoundedSegment:
+{
+  r: f32;
+  p1: Vector2;
+  p2: Vector2;
+}
+
+@type(struct)
+RoundedPolygon:
+{
+  r: f32;
+  count: u32;
+  p: @array(count) Vector2;
+}
+
+@type(enum: u32)
+Shape:
+{
+  Square: 1,
+  Segment,
+  Triangle,
+}
+
+/*
+@map(Shape -> `$Type`; complete)
+type_info_from_shape:
+{
+  Circle -> Circle,
+  Segment -> RoundedSegment,
+  Triangle -> RoundedPolygon,
+}
+
+@map(Shape -> u32; default: 0; auto: 64)
+max_slot_from_shape:
+{
+  Triangle -> 12,
+}
+*/
+
+
+
+

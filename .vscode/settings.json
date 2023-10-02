@@ -87,4 +87,5 @@
         "type_info.h": "cpp"
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
+    "editor.minimap.enabled": false,
 }
