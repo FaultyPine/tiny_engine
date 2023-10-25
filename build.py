@@ -18,6 +18,7 @@ def run_app():
     command(EXE_NAME)
 
 def build():
+    check_types_build()
     generate_ninja_build()
     if not os.path.exists("pch.pch"):
         build_pch()
@@ -36,6 +37,14 @@ def build():
     print(f"Built {dst}!")
     print(f"Build took {elapsed} seconds")
 
+def check_types_build():
+    if not os.path.exists(os.path.join(PYTHON_SCRIPT_PATH, TYPE_METAPROGRAM_PATH)):
+        regen_and_rebuild_types_lib(True)
+
+def regen_and_rebuild_types_lib(should_run: bool):
+    print("Rebuilding types lib...")
+    cmd_str = f"cd src/types && build.bat{' && run.bat' if should_run else ''} && cd ../.."
+    command(cmd_str)
 # returns the number of debug exe's exist
 def get_current_exe_iteration():
     iteration = 0
@@ -69,10 +78,6 @@ def clean_debug_executables():
         iteration += 1
         name = APP_NAME + str(iteration) + ".exe"
 
-def regen_and_rebuild_types_lib(should_run: bool):
-    print("Rebuilding types lib...")
-    cmd_str = f"cd src/types && build.bat{' && run.bat' if should_run else ''} && cd ../.."
-    command(cmd_str)
 
 def run_livepp(num_debug_iterations: int):
     #name = EXE_NAME
@@ -133,6 +138,16 @@ if len(args) > 0:
             num_debug_iterations = get_current_exe_iteration()
             build_livepp(num_debug_iterations)
             run_livepp(num_debug_iterations)
+
+    elif args[0] == "help":
+        print("| TinyEngine Build System |")
+        print("pch - builds the precompiled header")
+        print("regen - regenerates ninja build file. Run this when you add/remove files from the project")
+        print("clean - removes intermediate build files")
+        print("run - starts the program after bulding (on by default)")
+        print("norun - makes sure the program does *not* run after compiling")
+        print("types - builds the type generation metaprogram and runs it, generating reflected type files")
+    
     else:
         print("Unknown argument passed to build script!")
 

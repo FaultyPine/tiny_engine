@@ -39,7 +39,7 @@ SOURCE_DIR = "src"
 BUILD_DIR = "build"
 USE_MSVC = False if not is_windows() else True
 SOURCES = get_files_with_ext(SOURCE_DIR, "cpp")
-
+TYPE_METAPROGRAM_PATH = "src/types/type_metadata.exe"
 
 
 def command(cmd):
