@@ -17,6 +17,7 @@ typedef enum GEN_TypeKind
     GEN_TypeKind_Basic,
     GEN_TypeKind_Struct,
     GEN_TypeKind_Enum,
+    GEN_TypeKind_Array,
 } GEN_TypeKind;
 
 typedef struct GEN_TypeInfo GEN_TypeInfo;
@@ -47,7 +48,7 @@ struct GEN_TypeMember
     GEN_TypeMember *next;
     MD_Node *node;
     GEN_TypeInfo *type;
-    struct GEN_TypeMember *array_count;
+    struct GEN_TypeMember *array_count_ref;
     //MD_Node *array_count;
     int member_index;
 };

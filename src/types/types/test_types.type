@@ -17,7 +17,7 @@ States:
 }
 
 @type(struct)
-Vector2:
+Position:
 {
   x: f32;
   y: f32;
@@ -27,15 +27,15 @@ Vector2:
 Circle:
 {
   r: f32;
-  pos: Vector2;
+  pos: Position;
 }
 
 @type(struct)
 RoundedSegment:
 {
   r: f32;
-  p1: Vector2;
-  p2: Vector2;
+  p1: Position;
+  p2: Position;
 }
 
 @type(struct)
@@ -43,7 +43,7 @@ RoundedPolygon:
 {
   r: f32;
   count: u32;
-  p: @array(count) Vector2;
+  p: @array(count) Position;
 }
 
 @type(enum: u32)

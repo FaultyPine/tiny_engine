@@ -3,5 +3,4 @@
 cls
 
 call "vsdev.bat"
-
-build.py %*
+python build.py %*

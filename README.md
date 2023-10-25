@@ -56,8 +56,11 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
     - load from filesystem
     - store things like Shader, Mesh, Model, etc
     - allow access to these things through ids
-- serialize objects... 
-    - will also allow me to change them while in-engine and save those changes
+- "entities"/serialize objects... 
+    - entities are an int ID (and a pointer to the thing that manages them?)
+        - could then use an entity to get all entities like that one...
+        - struct with array of some type, each entity contains a pointer back to that array
+        - or some way to reverse-lookup an ID to an entity type array
     - use rel pointers/arrays to make everything one big blob?
 - growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
 - better grass sway w/distortion texture to emulate wind better

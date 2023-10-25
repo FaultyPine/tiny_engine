@@ -449,7 +449,7 @@ gen_equip_struct_members(GEN_FileData* filedata)
             MD_Node *type_root_node = type->node;
             for (MD_EachNode(member_node, type_root_node->first_child))
             {
-                // the "x" or "y" in Vector2
+                // each member of the struct
                 MD_Node *type_name_node = member_node->first_child;
                 
                 // missing type node?
@@ -464,7 +464,7 @@ gen_equip_struct_members(GEN_FileData* filedata)
                 
                 // has type node:
 
-                // the "x" or "y" in Vector2
+                // the type after the member name. the f32 in    x: f32
                 MD_String8 type_name = type_name_node->string;
                 // fetches type info from the type_map from the type's name
                 GEN_TypeInfo *type_info = gen_resolve_type_info_from_string(type_name, filedata);
@@ -480,7 +480,8 @@ gen_equip_struct_members(GEN_FileData* filedata)
                 // resolved type:
                 if (got_list)
                 {
-                    GEN_TypeMember *array_count = 0;
+                    GEN_TypeMember *array_count_ref = 0;
+                    //MD_u32 array_count = 0;
                     MD_Node *array_tag = MD_TagFromString(type_name_node, MD_S8Lit("array"), 0);
                     // if we're an array struct member
                     if (!MD_NodeIsNil(array_tag))
@@ -499,10 +500,25 @@ gen_equip_struct_members(GEN_FileData* filedata)
                                 MD_ChildFromString(type_root_node, array_count_referencer->string, 0);
                             if (MD_NodeIsNil(array_count_member_node))
                             {
-                                MD_CodeLoc loc = MD_CodeLocFromNode(array_count_referencer);
-                                MD_PrintMessageFmt(error_file, loc, MD_MessageKind_Error,
-                                                   "'%.*s' is not a member of %.*s",
-                                                   MD_S8VArg(array_count_referencer->string), MD_S8VArg(type_name));
+                                MD_u64 array_size = abs(MD_CStyleIntFromString(array_count_referencer->string));
+                                if (array_size)
+                                {
+                                    // if it's a hardcoded array, generate a new GEN_TypeInfo
+                                    GEN_TypeInfo* array_type_info = MD_PushArrayZero(filedata->arena, GEN_TypeInfo, 1);
+                                    array_type_info->kind = GEN_TypeKind_Array;
+                                    array_type_info->node = type_name_node;
+                                    array_type_info->size = array_size;
+                                    MD_QueuePush(filedata->first_type, filedata->last_type, array_type_info);
+                                    MD_MapInsert(filedata->arena, &filedata->type_map, MD_MapKeyStr(array_type_info->node->string), array_type_info);
+                                    type_info = array_type_info; // type info to attach to this struct member is our new array type
+                                }
+                                else
+                                {
+                                    MD_CodeLoc loc = MD_CodeLocFromNode(array_count_referencer);
+                                    MD_PrintMessageFmt(error_file, loc, MD_MessageKind_Error,
+                                                    "'%.*s' is not a member of %.*s",
+                                                    MD_S8VArg(array_count_referencer->string), MD_S8VArg(type_name));
+                                }
                             }
                             else
                             {
@@ -512,11 +528,11 @@ gen_equip_struct_members(GEN_FileData* filedata)
                                 {
                                     if (member_it->node == array_count_member_node)
                                     {
-                                        array_count = member_it;
+                                        array_count_ref = member_it;
                                         break;
                                     }
                                 }
-                                if (array_count == 0)
+                                if (array_count_ref == 0)
                                 {
                                     // ensuring the reference count variable for an array is declared before
                                     // the array declaration
@@ -532,7 +548,24 @@ gen_equip_struct_members(GEN_FileData* filedata)
                     GEN_TypeMember *member = MD_PushArray(filedata->arena, GEN_TypeMember, 1);
                     member->node = member_node;
                     member->type = type_info;
-                    member->array_count = array_count;
+                    // struct member arrays can either be
+                    // data: @array(count_member): u32;
+                    // ^ where the array count is specified by some previous member var
+                    // or it can be
+                    // data: @array(2): u32;
+                    // where the size of the array is hardcoded. 
+                    // This will output data u32[2]; in the final generated struct
+                    /*
+                    if (array_count)
+                    {
+                        member->array_count = array_count;
+                    }
+                    else
+                    {
+                        member->array_count_ref = array_count_ref;
+                    }
+                    */
+                    member->array_count_ref = array_count_ref;
                     member->member_index = member_count;
                     MD_QueuePush(first_member, last_member, member);
                     member_count += 1;
@@ -973,7 +1006,7 @@ void
 gen_type_definitions_from_types(FILE *out, GEN_FileData* filedata)
 {
     // @notes This Metadesk helper generates a comment that points back here.
-    //  Generating a comment like this can help a lot to with issues later.
+    //  Generating a comment like this can help a lot with issues later.
     MD_PrintGenNoteCComment(out);
     
     for (GEN_TypeInfo *type = filedata->first_type;
@@ -998,7 +1031,12 @@ gen_type_definitions_from_types(FILE *out, GEN_FileData* filedata)
                 {
                     MD_String8 type_name = member->type->node->string;
                     MD_String8 member_name = member->node->string;
-                    if (member->array_count != 0)
+                    if (member->type->kind == GEN_TypeKind_Array)
+                    {
+                        int array_size = member->type->size;
+                        fprintf(out, "\t%.*s %.*s[%i];\n", MD_S8VArg(type_name), MD_S8VArg(member_name), array_size);
+                    }
+                    else if (member->array_count_ref != 0)
                     {
                         fprintf(out, "\t%.*s *%.*s;\n", MD_S8VArg(type_name), MD_S8VArg(member_name));
                     }
@@ -1045,20 +1083,9 @@ gen_type_definitions_from_types(FILE *out, GEN_FileData* filedata)
                 {
                     // specifying a tag after "basic" on an @type specifies the underlying typedef
                     MD_Node* typedef_tag = basic_type_basic->next;
-                    MD_String8 typedef_underlying_type_name = { typedef_tag->string.str, 0 };
-                    // things like "unsigned int" will not show up in the same string. 
-                    // Need to traverse ->next to get names with more than one word
-                    int are_spaces_in_type = 0;
-                    for (MD_EachNode(type_word, typedef_tag))
-                    {
-                        typedef_underlying_type_name.size += type_word->string.size + 1; // + 1 for space
-                        are_spaces_in_type = 1;
-                    }
-                    // if there were spaces in our type name, our size is 1 too big
-                    if (are_spaces_in_type)
-                    {
-                        typedef_underlying_type_name.size--;
-                    }
+                    MD_String8 typedef_underlying_type_name = { typedef_tag->string.str, 99 }; // huge size so substring continues searching
+                    MD_u64 underlying_type_end_idx = MD_S8FindSubstring(typedef_underlying_type_name, MD_S8Lit(")"), 0, 0);
+                    typedef_underlying_type_name.size = underlying_type_end_idx;
                     MD_String8 typedef_alias_type_name = type->node->string;
                     fprintf(out, "typedef %.*s %.*s;\n", MD_S8VArg(typedef_underlying_type_name), MD_S8VArg(typedef_alias_type_name));
                 }
@@ -1132,9 +1159,9 @@ gen_struct_member_tables_from_types(FILE *out, GEN_FileData* filedata)
                 MD_String8 member_name = member->node->string;
                 MD_String8 member_type_name = member->type->node->string;
                 int array_count_member_index = -1;
-                if (member->array_count != 0)
+                if (member->array_count_ref != 0)
                 {
-                    array_count_member_index = member->array_count->member_index;
+                    array_count_member_index = member->array_count_ref->member_index;
                 }
                 fprintf(out, "\t{\"%.*s\", %d, %d, &%.*s_type_info},\n",
                         MD_S8VArg(member_name), (int)member_name.size,
@@ -1495,62 +1522,62 @@ void CreateDirIfNotExists(MD_String8 dir)
     std::filesystem::create_directory(dir_path);
 }
 
-GEN_FileData ProcessTypeFile(MD_String8 filename, MD_String8 output_dir, MD_String8 input_dir, bool is_include = false)
+GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 output_dir, MD_String8 input_dir, bool is_include = false)
 {
     if (!is_include) { printf("Parsing %.*s\n", MD_S8VArg(filename)); }
-    GEN_FileData filedata = MD_ZERO_STRUCT;
-    filedata.arena = MD_ArenaAlloc();
-    MD_Arena* arena = filedata.arena;
-    filedata.type_map = MD_MapMake(arena);
-    filedata.map_map = MD_MapMake(arena);
-    filedata.filename = filename;
+
+    GEN_FileData* filedata = (GEN_FileData*)MD_ArenaPush(arena, sizeof(GEN_FileData));
+    filedata->arena = MD_ArenaAlloc();
+    //MD_Arena* arena = filedata->arena;
+    filedata->type_map = MD_MapMake(arena);
+    filedata->map_map = MD_MapMake(arena);
+    filedata->filename = filename;
 
     // parse phase
     MD_Node* root = parse_tree_from_file(filename, arena);
 
     // analysis phase
-    gen_parse_includes(&filedata, root);
+    gen_parse_includes(filedata, root);
 
-    for (MD_String8Node* include = filedata.include_list.first; include; include = include->next)
+    for (MD_String8Node* include = filedata->include_list.first; include; include = include->next)
     {
         MD_String8 include_filename = include->string;
         include_filename = MD_S8Fmt(arena, "%.*s/%.*s", MD_S8VArg(input_dir), MD_S8VArg(include_filename));
-        GEN_FileData include_filedata;
+        GEN_FileData* include_filedata;
         // if we already parsed this file, get it from cache
         if (MD_MapSlot* slot = MD_MapLookup(&filedata_map, MD_MapKeyStr(include_filename)))
         {
-            include_filedata = *(GEN_FileData*)slot->val;
+            include_filedata = (GEN_FileData*)slot->val;
         }
         else
         {
             // parse new include file
-            include_filedata = ProcessTypeFile(include_filename, output_dir, input_dir, true);
-            MD_MapInsert(filedata.arena, &filedata_map, MD_MapKeyStr(include_filename), &include_filedata);
+            include_filedata = ProcessTypeFile(arena, include_filename, output_dir, input_dir, true);
+            MD_MapInsert(filedata->arena, &filedata_map, MD_MapKeyStr(include_filename), include_filedata);
         }
-        if (!filedata.include_filedata)
+        if (!filedata->include_filedata)
         {
             // if this current file doesn't already have some parsed include data, set it
-            GEN_FileData* new_include_filedata = (GEN_FileData*)MD_ArenaPush(arena, sizeof(GEN_FileData));
-            *new_include_filedata = include_filedata;
-            filedata.include_filedata = new_include_filedata;
+            filedata->include_filedata = (GEN_FileData*)MD_ArenaPush(arena, sizeof(GEN_FileData));
+            filedata->include_filedata = include_filedata;
         }
         else
         {
             // if we've included more than 1 file in a file, merge all that include data together
-            MergeFileData(*filedata.include_filedata, include_filedata);
+            MergeFileData(*filedata->include_filedata, *include_filedata);
         }
     }
 
-    gen_gather_types_and_maps(&filedata, root);
-    gen_check_duplicate_member_names(&filedata);
-    gen_equip_basic_type_size(&filedata);
-    gen_equip_struct_members(&filedata);
-    gen_equip_enum_underlying_type(&filedata);
-    gen_equip_enum_members(&filedata);
-    gen_equip_map_in_out_types(&filedata);
-    gen_equip_map_cases(&filedata);
-    gen_check_duplicate_cases(&filedata);
-    gen_check_complete_map_cases(&filedata);
+    gen_gather_types_and_maps(filedata, root);
+    gen_check_duplicate_member_names(filedata);
+    gen_equip_basic_type_size(filedata);
+    gen_equip_struct_members(filedata);
+    gen_equip_enum_underlying_type(filedata);
+    gen_equip_enum_members(filedata);
+    gen_equip_map_in_out_types(filedata);
+    gen_equip_map_cases(filedata);
+    gen_check_duplicate_cases(filedata);
+    gen_check_complete_map_cases(filedata);
 
     // generate phase
     if (!is_include)    
@@ -1571,11 +1598,11 @@ GEN_FileData ProcessTypeFile(MD_String8 filename, MD_String8 output_dir, MD_Stri
             fprintf(h, "#define %.*s_H\n", MD_S8VArg(header_guard_name));
             // need type info for all type headers/source
             fprintf(h, "#include \"../type_info.h\"\n");
-            gen_output_include_statements(h, &filedata);
-            gen_type_definitions_from_types(h, &filedata);
+            gen_output_include_statements(h, filedata);
+            gen_type_definitions_from_types(h, filedata);
             // forward declare typeinfo so we can only include it in the cpp
-            gen_function_declarations_from_maps(h, &filedata);
-            gen_type_info_declarations_from_types(h, &filedata);
+            gen_function_declarations_from_maps(h, filedata);
+            gen_type_info_declarations_from_types(h, filedata);
             fprintf(h, "#endif // %.*s_H\n", MD_S8VArg(header_guard_name));
             fclose(h);
         }
@@ -1585,10 +1612,10 @@ GEN_FileData ProcessTypeFile(MD_String8 filename, MD_String8 output_dir, MD_Stri
             FILE *c = fopen((const char*)source_filename.str, "wb");
             fprintf(c, "#include \"pch.h\"\n");
             fprintf(c, "#include \"%.*s\"\n", MD_S8VArg(header_name));
-            gen_struct_member_tables_from_types(c, &filedata);
-            gen_enum_member_tables_from_types(c, &filedata);
-            gen_type_info_definitions_from_types(c, &filedata);
-            gen_function_definitions_from_maps(c, &filedata);
+            gen_struct_member_tables_from_types(c, filedata);
+            gen_enum_member_tables_from_types(c, filedata);
+            gen_type_info_definitions_from_types(c, filedata);
+            gen_function_definitions_from_maps(c, filedata);
             fclose(c);
         }
 
@@ -1636,8 +1663,8 @@ main(int argc, char **argv)
             // parse the file
             MD_String8 md_filename = MD_S8CString(file_name_cstr);
             normalize_directory_seperators(md_filename);
-            GEN_FileData filedata = ProcessTypeFile(md_filename, output_dir, input_dir);
-            MD_MapInsert(filedata.arena, &filedata_map, MD_MapKeyStr(md_filename), &filedata);
+            GEN_FileData* filedata = ProcessTypeFile(arena, md_filename, output_dir, input_dir);
+            MD_MapInsert(arena, &filedata_map, MD_MapKeyStr(md_filename), filedata);
         }
     }
 

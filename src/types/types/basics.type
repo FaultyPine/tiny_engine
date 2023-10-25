@@ -12,3 +12,11 @@
 @type(basic, double) f64: 8;
 @type(basic, unsigned long long) usize: 8;
 @type(basic, signed long long) isize: 8;
+@type(basic, void*) voidp: 8;
+
+@type(struct)
+Buffer:
+{
+    size: u32;
+    data: voidp;
+}

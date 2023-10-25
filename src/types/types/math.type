@@ -1,0 +1,32 @@
+@include("basics.type")
+
+
+@type(struct)
+Vector2:
+{
+  x: f32;
+  y: f32;
+}
+
+@type(struct)
+Vector3:
+{
+    x: f32;
+    y: f32;
+    z: f32;
+}
+
+@type(struct)
+Vector4:
+{
+  x: f32;
+  y: f32;
+  z: f32;
+  w: f32;
+}
+
+@type(struct)
+Mat2:
+{
+    data: @array(2) Vector2;
+}

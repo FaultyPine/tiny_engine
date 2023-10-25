@@ -1,0 +1,9 @@
+@include("basics.type")
+
+
+@type(struct)
+Camera:
+{
+    speed: f32;
+    
+}

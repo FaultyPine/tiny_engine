@@ -1,0 +1,8 @@
+generated/
+
+*.gch
+*.exe
+*.out
+*.ilk
+*.obj
+*.pdb

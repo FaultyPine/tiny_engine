@@ -22,7 +22,7 @@
         "preLaunchTask": "build_types",
         "cwd": "${workspaceFolder}\\src\\types",
         "environment": [],
-        "externalConsole": false
+        "console": "integratedTerminal"
     },
     ]
 }
