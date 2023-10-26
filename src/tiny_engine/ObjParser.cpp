@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "ObjParser.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -6,7 +6,12 @@
 
 #include "tiny_engine/texture.h"
 #include "tiny_engine/mesh.h" // for Vertex
-#include "tiny_engine/math.h"
+#include "tiny_engine/tiny_math.h"
+#include "tiny_engine/tiny_log.h"
+
+// for std::filesystem::path stuff
+// TODO: replace this with custom string stuff
+#include <filesystem>
 
 using glm::vec3;
 using glm::vec2;
@@ -22,7 +27,7 @@ Material MaterialConvert(const tinyobj::material_t& mat, const std::string& texd
     const f32* materialTypes[] = {mat.diffuse, mat.ambient, mat.specular, nullptr};
     const std::string* texnames[] = {&mat.diffuse_texname, &mat.ambient_texname, &mat.specular_texname, &mat.normal_texname};
     TextureMaterialType types[] = {TextureMaterialType::DIFFUSE, TextureMaterialType::AMBIENT, TextureMaterialType::SPECULAR, TextureMaterialType::NORMAL};
-    ASSERT(ARRAY_SIZE(props) == ARRAY_SIZE(materialTypes) && ARRAY_SIZE(materialTypes) == ARRAY_SIZE(texnames));
+    TINY_ASSERT(ARRAY_SIZE(props) == ARRAY_SIZE(materialTypes) && ARRAY_SIZE(materialTypes) == ARRAY_SIZE(texnames));
     for (u32 i = 0; i < ARRAY_SIZE(props); i++) {
         MaterialProp& prop = *props[i];
         const f32* color = materialTypes[i];
@@ -160,10 +165,10 @@ std::vector<Mesh> LoadObjMesh(const char* filename, const char* matsDirectory) {
 
     //boilerplate error handling
     if (!err.empty()) {
-        std::cerr << err << std::endl;
+        LOG_ERROR("Load OBJ mesh error: %i\n", err);
     }
     if (!success) {
-        std::cerr << err << " " << warn << std::endl;
+        LOG_WARN("Load OBJ mesh warning: %i\n", warn);
     }
 
     std::vector<Material> materials = {};
@@ -176,7 +181,8 @@ std::vector<Mesh> LoadObjMesh(const char* filename, const char* matsDirectory) {
         ret.emplace_back(MeshConvert(shape, attrib, materials));
     }
 
-    std::cout << "Loaded model " << filename << " [mats: " << materials.size() << ", submeshes: " << shapes.size() << ", verts: " << attrib.vertices.size()/3 << "]\n";
+    LOG_INFO("Loaded model %s [mats: %i, submeshes: %i, verts: %i]\n", 
+            filename, materials.size(), shapes.size(), attrib.vertices.size()/3);
     return ret;
 }
 

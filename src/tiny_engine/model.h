@@ -1,7 +1,7 @@
 #ifndef TINY_MODEL_H
 #define TINY_MODEL_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "mesh.h"
 #include "tiny_lights.h"
 

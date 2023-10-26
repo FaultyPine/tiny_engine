@@ -1,7 +1,7 @@
 #ifndef SPRITE_H
 #define SPRITE_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "shader.h"
 #include "texture.h"
 #include "tiny_types.h"

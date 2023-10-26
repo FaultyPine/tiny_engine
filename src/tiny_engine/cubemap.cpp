@@ -1,6 +1,5 @@
-#include "pch.h"
+//#include "pch.h"
 #include "cubemap.h"
-
 
 
 // loads a cubemap texture from 6 individual texture faces
@@ -20,8 +19,8 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
     for (u32 i = 0; i < facesPaths.size(); i++) {
         u8 *data = LoadImageData(facesPaths[i], &width, &height, &nrChannels);
         if (!data) {
-            std::cout << "Cubemap texture failed to load at path: " << facesPaths[i] << std::endl;
-            ASSERT(false);
+            LOG_ERROR("Cubemap texture failed to load at path: %s\n", facesPaths[i]);
+            TINY_ASSERT(false);
         }
         else {
             GLCall(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, (s32)props.texFormat, width, height, 0, (s32)props.imgFormat, (s32)props.imgDataType, data));
@@ -39,9 +38,9 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
     // unbind
     GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
     
-    std::cout << "Loaded cubemap: [";
-    for (const char* s : facesPaths) std::cout << s << ", ";
-    std::cout << "]\n";
+    LOG_INFO("Loaded cubemap: [");
+    for (const char* s : facesPaths) LOG_INFO("%s, ", s);
+    LOG_INFO("]\n");
 
     Cubemap ret;
     ret.id = textureID;

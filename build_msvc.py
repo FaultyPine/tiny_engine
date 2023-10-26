@@ -26,9 +26,6 @@ def build_pch_msvc():
     command(f"cl /c {pch_source} /Yc{pch_include_name} /Fppch.pch /Fobuild/pch.obj {get_compiler_args_msvc(False)}")
     print("Built pch!")
 
-def start_debugger():
-    command(f"devenv /nosplash /edit {PYTHON_SCRIPT_PATH} /debugexe {PYTHON_SCRIPT_PATH}\\{EXE_NAME}")
-
 def generate_ninja_build_msvc(force_overwrite):
     ninja_build_filename = "build.ninja"
     if os.path.exists(ninja_build_filename) and not force_overwrite:
@@ -36,18 +33,12 @@ def generate_ninja_build_msvc(force_overwrite):
     buildfile = open("build.ninja", "w")
     n = Writer(buildfile)
     n.variable("cxx", "cl")
-    n.variable("compiler_args", get_compiler_args_msvc(True))
-    n.variable("compiler_args_nopch", get_compiler_args_msvc(False))
+    n.variable("compiler_args", get_compiler_args_msvc())
     n.variable("linker_args", get_linker_args_msvc())
     n.variable("builddir", BUILD_DIR) # "builddir" is a special ninja var that dictates the output directory
     n.rule(
         name="compile", 
         command="$cxx -showIncludes $compiler_args -c $in -Fo$out",
-        description="BUILD $out",
-        deps="msvc")
-    n.rule(
-        name="compile_nopch", 
-        command="$cxx -showIncludes $compiler_args_nopch -c $in -Fo$out",
         description="BUILD $out",
         deps="msvc")
     n.rule(
@@ -61,13 +52,7 @@ def generate_ninja_build_msvc(force_overwrite):
         print("Source file: " + src_cpp)
         # build src
         obj_filename = get_obj_from_src_file(src_cpp)
-        if "pch." not in obj_filename:
-            if "src/" not in src_cpp or "src/tiny_engine/external/" in src_cpp:
-                # if we are an external file (I.E. 3rd party library) don't use PCH
-                n.build(f"$builddir/{obj_filename}", "compile_nopch", f"{src_cpp}")
-            else:
-                # we are a tiny engine or game file, use pch
-                n.build(f"$builddir/{obj_filename}", "compile", f"{src_cpp}")
+        n.build(f"$builddir/{obj_filename}", "compile", f"{src_cpp}")
         # prep file list for linking
         link_files.append(f"$builddir/{get_obj_from_src_file(src_cpp)}")
     # link

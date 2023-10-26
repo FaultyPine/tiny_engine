@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "game_main.h"
 
 #include "tiny_engine/camera.h"

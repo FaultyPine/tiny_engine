@@ -1,10 +1,10 @@
-#include "pch.h"
+//#include "pch.h"
 #include "texture.h"
 #include "shader.h"
 #include "external/stb_image.h"
 
 
-std::string GetTexMatTypeString(TextureMaterialType type) {
+const char* GetTexMatTypeString(TextureMaterialType type) {
     switch (type) {
         case DIFFUSE: return "tex_diffuse";
         case SPECULAR: return "tex_specular";
@@ -83,18 +83,18 @@ Texture LoadTexture(const std::string& imgPath,
             props.imgDataType = TextureProperties::ImageDataType::UNSIGNED_BYTE;
         }
         else {
-            ASSERT(false && "Unknown number of channels in image!\n");
+            TINY_ASSERT(false && "Unknown number of channels in image!\n");
         }
     }
     Texture ret = GenTextureFromImg(data, width, height, props);
     if (ret.id == 0) {
         // invalid texture
-        std::cout << "Couldn't load " << imgPath << "\n";
-        ASSERT(false && "failed to load texture!");
+        LOG_ERROR("Couldn't load %s\n", imgPath);
+        TINY_ASSERT(false && "failed to load texture!");
     }
     ret.texpath = imgPath;
     stbi_image_free(data);
-    std::cout << "Loaded texture " << ret.texpath << " channels: " << numChannels << "\n";
+    LOG_INFO("Loaded texture %s  channels: %i\n", ret.texpath.c_str(), numChannels);
     return ret;
 }
 

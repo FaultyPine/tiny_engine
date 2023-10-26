@@ -1,5 +1,6 @@
-#include "pch.h"
+//#include "pch.h"
 #include "job_system.h"
+#include "tiny_log.h"
 
 #include <thread>
 
@@ -9,7 +10,7 @@ void JobSystem::Initialize() {
     u32 threads = std::max(1u, numCores); // hardware_concurrency may return 0 if it can't query properly.. in that case just use 1
     this->numThreads = threads;
     inProgressJobs = std::vector<std::vector<u32>>(numThreads);
-    std::cout << "[JOBS] Spinning up " << numThreads << " job threads\n";
+    LOG_INFO("[JOBS] Spinning up %i job threads\n", numThreads);
 
     for (u32 threadID = 0; threadID < this->numThreads; threadID++) {
         std::thread worker([this, threadID]{

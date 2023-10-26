@@ -1,7 +1,9 @@
 #ifndef TINY_ASSETS_H
 #define TINY_ASSETS_H
 
-#include "pch.h"
+//#include "pch.h"
+#include "tiny_defines.h"
+
 /*
 
 Ideas/Notes:

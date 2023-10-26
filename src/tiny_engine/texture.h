@@ -1,7 +1,11 @@
 #ifndef TINY_TEXTURE_H
 #define TINY_TEXTURE_H
 
-#include "pch.h"
+//#include "pch.h"
+#include "tiny_defines.h"
+#include "tiny_ogl.h"
+#include "tiny_math.h"
+#include <string>
 
 enum TextureMaterialType {
     DIFFUSE = 0,
@@ -14,8 +18,8 @@ enum TextureMaterialType {
 
     NUM_TYPES,
 };
-std::string GetTexMatTypeString(TextureMaterialType type);
-
+const char* GetTexMatTypeString(TextureMaterialType type);
+// TODO: get rid of the ogl usages in this header
 struct TextureProperties {
     enum class TexWrapMode : s32 {
         CLAMP_TO_EDGE = GL_CLAMP_TO_EDGE,

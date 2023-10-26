@@ -1,7 +1,7 @@
 #ifndef TINY_POSTPROCESSING_H
 #define TINY_POSTPROCESSING_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "sprite.h"
 #include "tiny_engine.h"
 #include "framebuffer.h"

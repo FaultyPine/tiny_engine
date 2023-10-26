@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "input.h"
 
 // press this button to unlock the cursor from the window

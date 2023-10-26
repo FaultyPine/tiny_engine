@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "tiny_engine.h"
 
 #include "tiny_fs.h"
@@ -9,9 +9,19 @@
 #include "texture.h"
 #include "input.h"
 #include "sprite.h"
-#include "math.h"
+#include "tiny_math.h"
 #include "tiny_profiler.h"
+#include "tiny_ogl.h"
+#include "tiny_log.h"
 
+#include "GLFW/glfw3.h"
+
+// for getcwd
+#ifndef _MSC_VER
+#include <unistd.h>
+#else
+#include <direct.h>
+#endif
 
 static f32 deltaTime = 0.0f;
 static f32 lastFrameTime = 0.0f;
@@ -143,13 +153,11 @@ bool ShouldCloseWindow() {
 
 void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH, const s8* windowName, bool false2DTrue3D) {
     Profiler::Instance().beginSession("Profile");
+    InitializeLogger();
 
     s8 cwd[PATH_MAX];
-    #ifdef _MSC_VER
-    std::cout << "CWD: " << getcwd(cwd, PATH_MAX) << "\n";
-    #else
-    std::cout << "CWD: " << getcwd(cwd, PATH_MAX) << "\n";
-    #endif
+    getcwd(cwd, PATH_MAX);
+    LOG_INFO("CWD: %s\n", cwd);
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -168,7 +176,7 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
     GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, windowName, NULL, NULL);
     if (window == NULL)
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
+        LOG_ERROR("Failed to create GLFW window");
         glfwTerminate();
         return;
     }
@@ -176,14 +184,14 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cout << "Failed to initialize GLAD" << std::endl;
+        LOG_ERROR("Failed to initialize GLAD");
         glfwTerminate();
         return;
     }    
 
     // Initialize glText
     if (!GLTInitialize()) {
-        std::cout << "[ERROR] Failed to initialize GLtext!\n";
+        LOG_ERROR("Failed to initialize GLtext!\n");
     }
 
     glViewport(0, 0, windowWidth, windowHeight);

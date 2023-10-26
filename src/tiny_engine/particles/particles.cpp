@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "particles.h"
 #include "tiny_engine/tiny_engine.h"
 
@@ -33,7 +33,7 @@ void ParticleSystem::TrySpawnNewParticles(glm::vec3 position) {
         numNewParticles += behavior->ShouldEmitParticle();
     }
     if (numNewParticles) {
-        std::cout << "Spawning " << numNewParticles << " particles. Adjusted numNewParticles: " << Math::MIN(numNewParticles, (u32)particles.size()) << "\n";
+        LOG_INFO("Spawning %i particles. Adjusted numNewParticles: %i", numNewParticles, Math::MIN(numNewParticles, (u32)particles.size()));
     }
     numNewParticles = Math::MIN(numNewParticles, (u32)particles.size());
 
@@ -44,7 +44,7 @@ void ParticleSystem::TrySpawnNewParticles(glm::vec3 position) {
             behavior->InitializeParticle(newParticle, position);
         }
         u32 firstUnusedParticleIdx = FirstUnusedParticle(particles);
-        std::cout << "New particle " << firstUnusedParticleIdx << " life: " << newParticle.life << "\n";
+        LOG_INFO("New particle %i life: %f\n", firstUnusedParticleIdx, newParticle.life);
         // "emitting" a particle just means overwriting a dead one in the pool with a new one
         particles.at(firstUnusedParticleIdx) = newParticle;
     }
@@ -68,7 +68,7 @@ void ParticleSystem::Draw() const {
             particleSprite.DrawSprite(particle.position-particle.size, particle.size, particle.rotation, {0.0, 0.0, 1.0}, particle.color, true);
         }
         if (particleModel.isValid()) {
-            std::cout << particle.life << "\n";
+            LOG_INFO("%f\n", particle.life);
             particleModel.cachedShader.use();
             particleModel.cachedShader.setUniform("color", particle.color);
             particleModel.Draw(particle.GetTransform());

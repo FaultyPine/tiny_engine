@@ -1,7 +1,7 @@
 #ifndef TINY_SHAPES_H
 #define TINY_SHAPES_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "mesh.h"
 struct Shader;
 

@@ -1,5 +1,5 @@
-#include "pch.h"
-#include "math.h"
+//#include "pch.h"
+#include "tiny_math.h"
 
 #include "tiny_engine/tiny_engine.h"
 
@@ -53,6 +53,9 @@ glm::vec3 RandomPointInSphere(f32 radius) {
 f32 Lerp(f32 a, f32 b, f32 t) {
     return a * (1.0 - t) + (b * t);
 }
+glm::vec3 Lerp(glm::vec3 a, glm::vec3 b, f32 t) {
+    return a * (f32)(1.0 - t) + (b * t);
+}
 f32 InvLerp(f32 a, f32 b, f32 v) {
     return (v - a) / (b - a);
 }
@@ -61,6 +64,9 @@ f32 Remap(f32 v, f32 iMin, f32 iMax, f32 oMin, f32 oMax) {
     return Lerp(oMin, oMax, t);
 }
 
+u32 countLeadingZeroes(u32 n) {
+    return n == 0 ? 0 : log2(n & -n);
+}
 
 glm::mat4 Position3DToModelMat(const glm::vec3& position, const glm::vec3& scale, f32 rotation, const glm::vec3& rotationAxis) {
     glm::mat4 model = glm::mat4(1);
@@ -86,5 +92,35 @@ glm::mat4 Position2DToModelMat(const glm::vec2& position, const glm::vec2& scale
     return model;
 }
 
+uint32_t hash(const char* message, size_t message_length)
+{
+    auto mix = [](uint32_t message_block, uint32_t internal_state){
+        return (internal_state * message_block) ^
+          ((internal_state << 3) + (message_block >> 2));
+    };
+
+   uint32_t internal_state = 0xA5A5A5A5; // IV: A magic number
+   uint32_t message_block = 0;
+
+   // Loop over the message 32-bits at-a-time
+   while (message_length >= 4)
+   {
+      memcpy(&message_block, message, sizeof(uint32_t));
+
+      internal_state = mix(message_block, internal_state);
+
+      message_length -= sizeof(uint32_t);
+      message        += sizeof(uint32_t);
+   }
+
+   // Are there any remaining bytes?
+   if (message_length)
+   {
+      memcpy(&message_block, message, message_length);
+      internal_state = mix(message_block, internal_state);
+   }
+
+   return internal_state;
+}
 
 }

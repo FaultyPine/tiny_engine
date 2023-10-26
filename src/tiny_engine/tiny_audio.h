@@ -1,7 +1,8 @@
 #ifndef TINY_AUDIO_H
 #define TINY_AUDIO_H
 
-#include "pch.h"
+//#include "pch.h"
+#include "tiny_defines.h"
 
 namespace Audio {
 

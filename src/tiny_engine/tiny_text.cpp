@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "tiny_text.h"
 
 #define GLT_DEBUG
@@ -7,6 +7,7 @@
 // because this is defined, make sure to call gltViewport(width, height) when the screen is resized
 // this optimizes away a call to glGetIntegerv
 #define GLT_MANUAL_VIEWPORT 
+#include "tiny_ogl.h"
 #include "external/glText.h"
 
 void UpdateGLTViewport(s32 width, s32 height) {
@@ -33,8 +34,8 @@ void DrawText(GLTtext* text, f32 x, f32 y, f32 scale, f32 r, f32 g, f32 b, f32 a
     gltEndDraw();
 }
 
-void SetText(GLTtext* text, const std::string& msg) {
-    gltSetText(text, msg.c_str());
+void SetText(GLTtext* text, const char* msg) {
+    gltSetText(text, msg);
 }
 
 void UnloadText(GLTtext* txt) {

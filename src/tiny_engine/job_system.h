@@ -1,10 +1,10 @@
 #ifndef JOB_SYSTEM_H
 #define JOB_SYSTEM_H
 
-#include "pch.h"
+//#include "pch.h"
+#include "tiny_defines.h"
 #include "mutex_queue.h"
 #include <functional>
-
 
 /*
 C:\Users\gclar\Desktop>job_parser.py
@@ -12,8 +12,6 @@ C:\Users\gclar\Desktop>job_parser.py
 Without job system average scene tick time = 0.00471090243902439094
 With job system average scene tick time = 0.00006366292134831459
 Job system improved scene tick time with 8000 ninjas by 73.9976%
-
-It really works!
 */
 
 struct Job {

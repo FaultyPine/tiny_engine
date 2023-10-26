@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "tiny_lights.h"
 #include "tiny_engine.h"
 #include "camera.h"
@@ -16,7 +16,7 @@ glm::mat4 Light::GetLightViewProjMatrix() const {
 
 Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color) {
     static u32 global_num_lights = 0;
-    ASSERT(global_num_lights+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
+    TINY_ASSERT(global_num_lights+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
     
     Light light = {};
 
@@ -32,7 +32,7 @@ Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 colo
 
 void UpdateLightValues(const Shader& shader, Light light) {
     s32 lightIdx = light.globalIndex;
-    ASSERT(lightIdx < MAX_NUM_LIGHTS); 
+    TINY_ASSERT(lightIdx < MAX_NUM_LIGHTS); 
     shader.use();
 
     // Send to shader light enabled state and type

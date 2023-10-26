@@ -1,11 +1,11 @@
-#include "pch.h"
+//#include "pch.h"
 #include "shapes.h"
 
 #include "camera.h"
 #include "texture.h"
 #include "shader.h"
 #include "tiny_fs.h"
-#include "math.h"
+#include "tiny_math.h"
 
 // shader var is just called "shader" after this macro
 #define SHAPE_SHADER(shaderName, vertShaderPath, fragShaderPath) \

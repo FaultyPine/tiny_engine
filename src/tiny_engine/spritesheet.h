@@ -1,9 +1,12 @@
 #ifndef TINY_SPRITESHEET_H
 #define TINY_SPRITESHEET_H
 
-#include "pch.h"
+//#include "pch.h"
+#include "tiny_defines.h"
 #include "sprite.h"
 #include "texture.h"
+#include <vector>
+#include <map>
 
 // NOTE: there's a bit of animation logic in here... might be a good idea
 // to seperate that out into an animation system

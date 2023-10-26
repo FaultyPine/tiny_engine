@@ -1,8 +1,10 @@
 #ifndef SHADER_H
 #define SHADER_H
 
-#include "pch.h"
-
+//#include "pch.h"
+#include "tiny_defines.h"
+#include "tiny_ogl.h"
+#include "tiny_math.h"
 
 struct Shader {
     // ID is not necessarily the OpenGL shader id!

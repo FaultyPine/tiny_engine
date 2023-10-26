@@ -1,6 +1,9 @@
-#include "pch.h"
+//#include "pch.h"
 #include "shader.h"
 #include "texture.h"
+#include "tiny_fs.h"
+#include <unordered_map>
+#include <sstream>
 
 // TODO: There's a lot of static tracking stuff here meant to make Shaders
 // a simple wrapper on an ID... But is there a better way to structure this?
@@ -27,30 +30,18 @@ u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) {
     if (!successCode) {
         s8 infoLog[512];
         glGetShaderInfoLog(shaderID, 512, NULL, infoLog);
-        std::cout << "[ERR] " << (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader compilation failed. shaderID = " << shaderID << "\n" << infoLog << "\n";
+        LOG_ERROR("%s shader compilation failed. shaderID = %i\n%s\n", (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment"), shaderID, infoLog);
     }
     return shaderID;
 }
 
-bool ReadEntireFile(const char* filename, std::string& str) {
-    std::ifstream f(filename);
-    if (f) {
-        std::ostringstream ss;
-        ss << f.rdbuf();
-        str = ss.str();
-        return true;
-    }
-    else {
-        return false;
-    }
-}
 
 std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& includeIdentifier, const std::string& includeSearchDir) {
     static bool isRecursiveCall = false;
     std::string fullSourceCode = "";
     std::string lineBuffer;
     std::istringstream stream = std::istringstream(shaderSource);
-
+    // TODO: custom strings
     while (std::getline(stream, lineBuffer)) {
         // if include is in this line
         if (lineBuffer.find(includeIdentifier) != lineBuffer.npos) {
@@ -69,8 +60,8 @@ std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& 
                 fullSourceCode += recursiveShaderSource;
             }
             else {
-                std::cout << "Failed to open shader include: " << path << "\n";
-                ASSERT(false);
+                LOG_ERROR("Failed to open shader include: %s\n", path);
+                TINY_ASSERT(false);
             }
 
             // don't add the actual "#include blah.blah" line in the final source
@@ -90,7 +81,7 @@ std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& 
 std::string ShaderSourcePreprocess(const s8* shaderSource, const std::string& shaderPath) {
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
-    std::cout << shaderPath << "\n";
+    LOG_INFO("%s\n", shaderPath.c_str());
     std::string includeSearchDir = shaderPath.substr(0, shaderPath.rfind('/')+1); // will look like "res/shaders/"
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
     ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir);
@@ -119,9 +110,9 @@ u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std
     if (!success) {
         s8 infoLog[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "shader linking failed. vs = " << vertexShader << " fs = " << fragShader << "\n" << infoLog << "\n";
+        LOG_ERROR("shader linking failed. vs = %i fs = %i\n%s\n", vertexShader, fragShader, infoLog);
         return 0xDEADBEEF;
-        //ASSERT(false);
+        //TINY_ASSERT(false);
     }
     // delete vert/frag shader after we've linked them to the program object
     glDeleteShader(vertexShader);
@@ -132,28 +123,13 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
     // 1. retrieve the vertex/fragment source code from filePath
     std::string vertexCode;
     std::string fragmentCode;
-    std::ifstream vShaderFile;
-    std::ifstream fShaderFile;
-    // ensure ifstream objects can throw exceptions:
-    vShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        // open files
-        vShaderFile.open(vertexPath);
-        fShaderFile.open(fragmentPath);
-        std::stringstream vShaderStream, fShaderStream;
-        // read file's buffer contents into streams
-        vShaderStream << vShaderFile.rdbuf();
-        fShaderStream << fShaderFile.rdbuf();
-        // close file handlers
-        vShaderFile.close();
-        fShaderFile.close();
-        // convert stream into string
-        vertexCode   = vShaderStream.str();
-        fragmentCode = fShaderStream.str();
+    if (!ReadEntireFile(vertexPath.c_str(), vertexCode))
+    {
+        LOG_ERROR("Failed to read vertex shader file: %s\n", vertexPath.c_str());
     }
-    catch (std::ifstream::failure& e) {
-        std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
+    if (!ReadEntireFile(fragmentPath.c_str(), fragmentCode))
+    {
+        LOG_ERROR("Failed to read fragment shader file: %s\n", fragmentPath.c_str());
     }
     const char* vShaderCode = vertexCode.c_str();
     const char * fShaderCode = fragmentCode.c_str();
@@ -199,7 +175,7 @@ Shader Shader::CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) {
     return Shader(CreateShaderProgramFromStr(vsCodeStr, fsCodeStr));
 }
 void Shader::Delete() const {
-    //ASSERT(false && "Proper shader deletion is currently unimplemented!");
+    //TINY_ASSERT(false && "Proper shader deletion is currently unimplemented!");
     // TODO: properly release shader...
     // if we erase the shader program from the list
     // other shaders whose IDs are indexes are now totally invalid
@@ -210,7 +186,7 @@ void Shader::Delete() const {
 
 
 void Shader::use() const {
-    ASSERT("Invalid shader ID!\n" && valid);
+    TINY_ASSERT("Invalid shader ID!\n" && valid);
     glUseProgram(loadedShaders.at(ID).first); 
 }
 
@@ -226,7 +202,7 @@ void ReloadShader(u32 shaderID) { // shader "id" (not opengl shader program id)
     bool wasShaderFilesChanged = true;
     if (wasShaderFilesChanged) {
         u32 newShaderProgram = CreateShaderFromFiles(shaderLocations.first, shaderLocations.second);
-        std::cout << "New reloaded shader " << newShaderProgram << "\n";
+        LOG_INFO("New reloaded shader %i\n", newShaderProgram);
 
         u32 oldOGLShaderProgram = oglIDAndPaths.first;
         glDeleteProgram(oldOGLShaderProgram);
@@ -241,7 +217,7 @@ void Shader::ReloadShaders() {
     for (auto& [shaderID, oglIDAndPaths] : loadedShaders) {
         ReloadShader(shaderID);
     }
-    std::cout << "Reloaded shaders!\n";
+    LOG_INFO("Reloaded shaders!\n");
 }
 
 

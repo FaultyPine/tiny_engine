@@ -1,5 +1,6 @@
-#include "pch.h"
+//#include "pch.h"
 #include "tiny_audio.h"
+#include "tiny_log.h"
 
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
@@ -13,7 +14,7 @@ void InitAudioEngine() {
     ma_result result;
     result = ma_engine_init(NULL, &globalAudioEngine);
     if (result != MA_SUCCESS) {
-        std::cout << "Failed to initialize audio engine.\n";
+        LOG_ERROR("Failed to initialize audio engine.\n");
     }
 }
 void PlayAudio(const char* file)  {

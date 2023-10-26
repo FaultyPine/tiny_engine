@@ -1,7 +1,7 @@
 #ifndef TINY_FRAMEBUFFER_H
 #define TINY_FRAMEBUFFER_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "texture.h"
 #include "camera.h"
 #include "model.h"

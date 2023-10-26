@@ -1,9 +1,11 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "pch.h"
+//#include "pch.h"
+#include "tiny_math.h"
 #include "texture.h"
 #include "tiny_types.h"
+#include <vector>
 
  
 struct Vertex {

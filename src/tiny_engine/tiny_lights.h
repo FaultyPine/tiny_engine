@@ -1,7 +1,7 @@
 #ifndef TINY_LIGHTS_H
 #define TINY_LIGHTS_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "shader.h"
 
 // needed for 3d light visualization

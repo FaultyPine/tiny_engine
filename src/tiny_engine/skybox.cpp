@@ -1,6 +1,5 @@
-#include "pch.h"
+//#include "pch.h"
 #include "skybox.h"
-
 
 static f32 skyboxVertices[] = {
     // positions          

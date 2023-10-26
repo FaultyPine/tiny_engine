@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "testbed_main.h"
 
 #include "tiny_engine/camera.h"
@@ -10,7 +10,7 @@
 #include "tiny_engine/mesh.h"
 #include "tiny_engine/texture.h"
 #include "tiny_engine/tiny_lights.h"
-#include "tiny_engine/math.h"
+#include "tiny_engine/tiny_math.h"
 #include "tiny_engine/external/imgui/tiny_imgui.h"
 #include "tiny_engine/model.h"
 #include "tiny_engine/shapes.h"

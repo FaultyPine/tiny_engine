@@ -1,9 +1,9 @@
-#include "pch.h"
+//#include "pch.h"
 #include "model.h"
 
 #include "ObjParser.h"
 #include "camera.h"
-#include "tiny_engine/math.h"
+#include "tiny_engine/tiny_math.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -28,7 +28,7 @@ static const char* textureTypeToMatKey[] = {
 
 MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const char* meshMaterialDir) {
     MaterialProp ret;
-    ASSERT(material->GetTextureCount(type) == 1); // there shouldn't... (???) be more than 1 of a particular texture type in a material (I.E. cant have 2 diffuse textures)
+    TINY_ASSERT(material->GetTextureCount(type) <= 1); // there shouldn't... (???) be more than 1 of a particular texture type in a material (I.E. cant have 2 diffuse textures)
     aiString str;
     aiReturn hasTexture = material->GetTexture(type, 0, &str);
     if (hasTexture != aiReturn::aiReturn_SUCCESS) {
@@ -170,7 +170,7 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
     //std::cout << aiGetVersionMajor() << "." << aiGetVersionMinor() << "." << aiGetVersionRevision() << "\n";
     const aiScene* scene = import.ReadFile(meshObjFile, aiProcess_Triangulate);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        std::cout << "[assimp] Error: " << import.GetErrorString() << "\n";
+        LOG_ERROR("[ASSIMP] Error: %s\n", import.GetErrorString());
         return;
     }
     processNode(scene->mRootNode, scene, meshes, meshMaterialDir);
@@ -226,7 +226,7 @@ bool AreActiveLightsInFront(const std::vector<Light>& lights) {
 }
 
 void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Light>& lights) const {
-    ASSERT(AreActiveLightsInFront(lights));
+    TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
         shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
@@ -246,7 +246,7 @@ void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Li
     }
 }
 void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights) const {
-    ASSERT(AreActiveLightsInFront(lights));
+    TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
         shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
@@ -271,7 +271,7 @@ void Model::DrawMinimal(const Shader& shader) const {
 }
 
 void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights) const {
-    ASSERT(AreActiveLightsInFront(lights));
+    TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
         Camera& cam = Camera::GetMainCamera();

@@ -343,6 +343,12 @@ gen_parse_includes(GEN_FileData* filedata, MD_Node* root)
             if (!MD_NodeIsNil(include_path_node))
             {
                 MD_String8 include_path = include_path_node->string;
+                // add .type extension to include path if it's not already there
+                bool hasTypeExt = MD_S8FindSubstring(include_path, MD_S8Lit(".type"), 0, 0) != include_path.size;
+                if (!hasTypeExt)
+                {
+                    include_path = MD_S8Fmt(filedata->arena, "%.*s.type", MD_S8VArg(include_path));
+                }
                 MD_S8ListPush(filedata->arena, &filedata->include_list, include_path);
             }
         }
@@ -998,7 +1004,7 @@ gen_output_include_statements(FILE* out, GEN_FileData* filedata)
     {
         MD_String8 include_string = include->string;
         MD_String8 include_string_noext = remove_file_extension(include_string);
-        fprintf(out, "#include \"%.*s.h\"\n", MD_S8VArg(include_string_noext));
+        fprintf(out, "#include \"%.*s.type.h\"\n", MD_S8VArg(include_string_noext));
     }
 }
 
@@ -1586,9 +1592,10 @@ GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 o
         // all the generated header/source files into the output dir
         MD_String8 only_filename = isolate_filename(filename);
         MD_String8 filename_noext = remove_file_extension(only_filename);
-        MD_String8 header_name = MD_S8Fmt(arena, "%.*s.h", MD_S8VArg(filename_noext));
+        MD_String8 filename_type_ext = MD_S8Fmt(arena, "%.*s.type", MD_S8VArg(filename_noext)); // filename.type.h   filename.type.cpp
+        MD_String8 header_name = MD_S8Fmt(arena, "%.*s.h", MD_S8VArg(filename_type_ext));
         MD_String8 header_path = MD_S8Fmt(arena, "%.*s/%.*s", MD_S8VArg(output_dir), MD_S8VArg(header_name));
-        MD_String8 source_filename = MD_S8Fmt(arena, "%.*s/%.*s.cpp", MD_S8VArg(output_dir), MD_S8VArg(filename_noext));
+        MD_String8 source_filename = MD_S8Fmt(arena, "%.*s/%.*s.cpp", MD_S8VArg(output_dir), MD_S8VArg(filename_type_ext));
 
         // generate header file
         {
@@ -1610,7 +1617,6 @@ GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 o
         // generate definitions file
         {
             FILE *c = fopen((const char*)source_filename.str, "wb");
-            fprintf(c, "#include \"pch.h\"\n");
             fprintf(c, "#include \"%.*s\"\n", MD_S8VArg(header_name));
             gen_struct_member_tables_from_types(c, filedata);
             gen_enum_member_tables_from_types(c, filedata);

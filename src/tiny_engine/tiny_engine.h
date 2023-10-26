@@ -1,10 +1,10 @@
 #ifndef OPENGL_WRAPPER_H
 #define OPENGL_WRAPPER_H
 
-#include "pch.h"
+//#include "pch.h"
+#include "tiny_defines.h"
 
 
-#define TINY_DEBUG
 #define TARGET_FPS 60
 
 void CloseGameWindow();

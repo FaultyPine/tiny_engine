@@ -1,5 +1,5 @@
 // pch's have to be the first thing. If this errors, rebuild again.
-#include "pch.h"
+//#include "pch.h"
 
 // external implementation files
 #include <glad/glad.c>
@@ -9,15 +9,13 @@
 
 #include "tiny_engine/tiny_engine.h"
 
-#define TESTBED3D 0
+#define TESTBED3D 1
 #if TESTBED3D
 #include "testbed/testbed_main.h"
 #endif
 
-#define META_TESTING 1
-#if META_TESTING
-#include "types/generated/test_types.h"
-#endif
+
+#include "types/generated/test.type.h"
 
 
 void preLoopInit() {
@@ -27,12 +25,10 @@ void preLoopInit() {
     testbed_init();
     #endif
 
-    #if META_TESTING
     Circle circle = Circle();
     circle.r = 10;
     circle.pos = {0,0};
     printf("%s\n", Circle_type_info.name);
-    #endif
 }
 
 void gameTick() {
@@ -47,6 +43,41 @@ void endGame() {
     #endif
     TerminateGame();
 }
+
+void LivePPInit();
+void LivePPTick();
+void LivePPTerminate();
+
+int main(int argc, char *argv[]) {
+
+    preLoopInit();
+
+#ifdef LIVEPP_ACTIVE
+    LivePPInit();
+#endif
+    while(!ShouldCloseWindow()) {
+#ifdef LIVEPP_ACTIVE
+        LivePPTick();
+#endif
+        gameTick();
+    }
+    endGame();
+
+#ifdef LIVEPP_ACTIVE
+    LivePPTerminate();
+#endif
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
 
 // Live++ hot-reloading
 //#define LIVEPP_ACTIVE
@@ -106,28 +137,3 @@ void LivePPTerminate() {
     CleanDebugExecutables();
 }
 #endif
-
-int main(int argc, char *argv[]) {
-
-    preLoopInit();
-    #if META_TESTING
-    return 0;
-    #endif
-
-#ifdef LIVEPP_ACTIVE
-LivePPInit();
-#endif
-    while(!ShouldCloseWindow()) {
-#ifdef LIVEPP_ACTIVE
-LivePPTick();
-#endif
-        gameTick();
-    }
-    endGame();
-
-#ifdef LIVEPP_ACTIVE
-LivePPTerminate();
-#endif
-
-    return 0;
-}

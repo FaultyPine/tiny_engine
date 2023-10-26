@@ -1,5 +1,7 @@
-#include "pch.h"
+//#include "pch.h"
+#include <string.h>
 #include "tiny_alloc.h"
+#include "tiny_log.h"
 
 #define MAX_ARENA_NAME_LEN 30
 
@@ -21,7 +23,7 @@ Arena arena_init(void* backing_buffer, size_t arena_size, const char* name) {
 
 const char* arena_get_name(Arena* arena) {
     const char* possible_string = (const char*)arena->backing_mem;
-    for (u32 i = 0; i < MAX_ARENA_NAME_LEN; i++) {
+    for (int i = 0; i < MAX_ARENA_NAME_LEN; i++) {
         if (possible_string[i] == '\0') {
             return possible_string;
         }
@@ -62,7 +64,7 @@ void* arena_resize(Arena* arena, void* old_mem, size_t old_size, size_t new_size
         }
     }
     else {
-        ASSERT(false && "Out of bounds resize in arena\n");
+        TINY_ASSERT(false && "Out of bounds resize in arena\n");
         return nullptr;
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pch.h"
+//#include "pch.h"
 #include "tiny_engine/tiny_types.h"
 #include <functional>
 
@@ -113,7 +113,7 @@ QuadTree<T> QuadTree<T>::GenerateChildQuadTree(BoundingBox2D bounds, QuadTreeChi
         } break;
         default:
         {
-            ASSERT(false && "Invalid QuadTreeChildDirection passed to GenerateChildQuadTree");
+            TINY_ASSERT(false && "Invalid QuadTreeChildDirection passed to GenerateChildQuadTree");
             return QuadTree<T>();
         } break;
     }

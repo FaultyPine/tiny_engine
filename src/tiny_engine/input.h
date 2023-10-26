@@ -1,8 +1,9 @@
 #ifndef TINY_INPUT_H
 #define TINY_INPUT_H
 
-#include "pch.h"
-
+//#include "pch.h"
+#include "GLFW/glfw3.h"
+#include "tiny_math.h"
 
 extern GLFWwindow* glob_glfw_window;
 

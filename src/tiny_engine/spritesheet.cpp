@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "spritesheet.h"
 #include "tiny_engine/tiny_engine.h"
 
@@ -18,8 +18,8 @@ Spritesheet::Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, 
             // get sprite position
             f32 spriteY = row * singleSpriteHeight;
             f32 spriteX = col * singleSpriteWidth;
-            ASSERT(spriteY >= 0 && spriteY <= height);
-            ASSERT(spriteX >= 0 && spriteX <= width);
+            TINY_ASSERT(spriteY >= 0 && spriteY <= height);
+            TINY_ASSERT(spriteX >= 0 && spriteX <= width);
 
             SetPixelReadSettings(width, singleSpriteWidth*col, singleSpriteHeight*row);
             // NOTE: using glPixelStorei to tell opengl to skip pixels so that I can just use the x,y,width,height to
@@ -55,7 +55,7 @@ void Spritesheet::SetFrame(s32 frame) {
     this->animation.frame = frame;
 }
 void Spritesheet::Tick() {
-    ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
+    TINY_ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
     // if we should move to the next spritesheet frame
     if (this->animation.framerate > 0 && this->framerateEnforcer % (TARGET_FPS/this->animation.framerate) == 0) {
         if (!this->animation.isLoop) {
@@ -78,10 +78,10 @@ void Spritesheet::Tick() {
 }
 
 Sprite Spritesheet::GetCurrentSprite() const {
-    ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
-    ASSERT(this->animation.animKey != -1);
+    TINY_ASSERT(this->animationIndicesMap.size() > 0 && "Spritesheet indices not set!");
+    TINY_ASSERT(this->animation.animKey != -1);
     const auto& indices = this->animationIndicesMap.at(this->animation.animKey);
-    ASSERT(indices.size() > this->animation.frame);
+    TINY_ASSERT(indices.size() > this->animation.frame);
     u32 spritesheetIdx = indices.at(this->animation.frame);
     return this->sprites.at(spritesheetIdx);
 }

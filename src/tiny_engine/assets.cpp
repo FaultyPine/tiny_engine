@@ -1,7 +1,10 @@
-#include "pch.h"
+//#include "pch.h"
 #include "assets.h"
 #include "tiny_alloc.h"
+#include "tiny_fs.h"
+#include "tiny_log.h"
 
+#include <unordered_map>
 
 namespace Assets
 {
@@ -22,24 +25,21 @@ static std::unordered_map<u32, void*> assetRecord = {};
 
 u32 Load(const char* filepath)
 {
-    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    size_t size = GetFileSize(filepath);
 
     //Arena& assetArena = GetAssetArena();
     //void* assetData = arena_alloc(&assetArena, size);
     void* assetData = TINY_ALLOC(size);
     u32 assetID = 0;
-    if (file.read((char*)assetData, size))
+    if (ReadFileContentsBinary(filepath, assetData, size))
     {
         assetID = std::hash<std::string>{}(filepath);
-        std::cout << "Loaded asset ID = " << assetID << " filepath = " << filepath;
+        LOG_INFO("Loaded asset ID = %i filepath = %s\n", assetID, filepath);
         assetRecord[assetID] = assetData;
     }
     else
     {
-        std::cout << "[ERROR] Failed to read file " << filepath << "\n";
-        ASSERT(false && "[ERROR] Failed to read file");
+        TINY_ASSERT(false && "[ERROR] Failed to read file");
     }
     return assetID;
 }
@@ -49,7 +49,7 @@ void Unload(u32 id)
     {
         void* assetData = assetRecord[id];
         assetRecord.erase(id);
-        TINY_DELETE(assetData);
+        TINY_FREE(assetData);
     }
 }
 void* Get(u32 id)

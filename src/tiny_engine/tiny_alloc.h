@@ -1,9 +1,9 @@
 #pragma once
 
-#include "pch.h"
+//#include "pch.h"
 
 #define TINY_ALLOC(size) malloc(size)
-#define TINY_DELETE(ptr) free(ptr)
+#define TINY_FREE(ptr) free(ptr)
 
 #define KILOBYTES_BYTES(kb) (kb*1024)
 #define MEGABYTES_BYTES(mb) (mb*KILOBYTES_BYTES(1024))

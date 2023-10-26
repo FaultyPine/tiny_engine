@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pch.h"
+//#include "pch.h"
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/tiny_types.h"
 #include "tiny_engine/QuadTree.h"

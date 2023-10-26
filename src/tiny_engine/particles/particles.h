@@ -1,11 +1,12 @@
 #ifndef TINY_PARTICLES_H
 #define TINY_PARTICLES_H
 
-#include "pch.h"
+//#include "pch.h"
 #include "tiny_engine/sprite.h"
 #include "tiny_engine/texture.h"
 #include "tiny_engine/tiny_fs.h"
 #include "tiny_engine/model.h"
+#include <memory>
 
 struct Particle {
     // value [0, 1] where 1 is "full life", and 0 is dead
