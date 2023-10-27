@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <iostream>
 
 static u32 LOG_LEVELS_ENABLED = 0;
 
@@ -34,13 +35,49 @@ void SetLogLevel(LogLevel level, bool toggle)
     SET_NTH_BIT(LOG_LEVELS_ENABLED, level, toggle);
 }
 
+#define TERMINAL_COLORED_OUTPUT_ENABLED 1
+
+static const char* level_strings[6] = {"[FATAL]", "[ERROR]", "[WARN]", "[INFO]", "[DEBUG]", "[TRACE]"};
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+static int terminal_colors[6] = {4, 4, 6, 2, 1, 1};
+#else
+static const char* terminal_colors[6] = {"\033[0;31m", "\033[0;31m", "\033[0;33m", "\033[0;32m", "\033[0;34m", "\033[0;34m"};
+#endif
+
+void SetTerminalColor(LogLevel level)
+{
+#ifdef _WIN32
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (level < 0)
+    {
+        int defaultWhite = 7;
+        SetConsoleTextAttribute(hConsole, defaultWhite);
+    }
+    else
+    {
+        SetConsoleTextAttribute(hConsole, terminal_colors[level]);
+    }
+#else
+    if (level < 0)
+    {
+        printf("\033[0m");
+    }
+    else
+    {
+        printf("%s", terminal_colors[level]);
+    }
+#endif
+}
+
 void LogMessage(LogLevel level, const char* message, ...)
 {
     if (LOG_LEVELS_ENABLED & level == 0)
     {
         return;
     }
-    static const char* level_strings[6] = {"[FATAL]", "[ERROR]", "[WARN]", "[INFO]", "[DEBUG]", "[TRACE]"};
 
     constexpr u32 log_message_limit = 16000;
     char out_msg[log_message_limit]; // hardcoded log limit...
@@ -50,8 +87,14 @@ void LogMessage(LogLevel level, const char* message, ...)
     vsnprintf(out_msg, log_message_limit, message, args);
     va_end(args);
 
-    // append log level to message
+    // append (optional)color and log level to message
+#if TERMINAL_COLORED_OUTPUT_ENABLED
+    SetTerminalColor(level);
     printf("%s %s", level_strings[level], out_msg);
+    SetTerminalColor((LogLevel)-1);
+#else
+    printf("%s %s", level_strings[level], out_msg);
+#endif
 }
 
 
