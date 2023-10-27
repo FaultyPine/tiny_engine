@@ -26,7 +26,13 @@ Vector4:
 }
 
 @type(struct)
-Mat2:
+Mat2x2:
 {
-    data: @array(2) Vector2;
+    data: @array(2,2) f32;
+}
+
+@type(struct)
+SomeBigList:
+{
+  data: @array(2,2,2,2,2) f32;
 }

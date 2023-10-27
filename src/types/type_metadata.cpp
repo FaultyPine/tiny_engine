@@ -514,6 +514,11 @@ gen_equip_struct_members(GEN_FileData* filedata)
                                     array_type_info->kind = GEN_TypeKind_Array;
                                     array_type_info->node = type_name_node;
                                     array_type_info->size = array_size;
+                                    // (extra) info about the array type stored in the underlying_type->node
+                                    // this includes if we have a 2D or 3D (or ND) array
+                                    GEN_TypeInfo* underlying_array_type = MD_PushArrayZero(filedata->arena, GEN_TypeInfo, 1);
+                                    underlying_array_type->node = array_count_referencer;
+                                    array_type_info->underlying_type = underlying_array_type;
                                     MD_QueuePush(filedata->first_type, filedata->last_type, array_type_info);
                                     MD_MapInsert(filedata->arena, &filedata->type_map, MD_MapKeyStr(array_type_info->node->string), array_type_info);
                                     type_info = array_type_info; // type info to attach to this struct member is our new array type
@@ -1040,7 +1045,15 @@ gen_type_definitions_from_types(FILE *out, GEN_FileData* filedata)
                     if (member->type->kind == GEN_TypeKind_Array)
                     {
                         int array_size = member->type->size;
-                        fprintf(out, "\t%.*s %.*s[%i];\n", MD_S8VArg(type_name), MD_S8VArg(member_name), array_size);
+                        MD_String8 array_str = MD_S8Fmt(filedata->arena, "\t%.*s %.*s", MD_S8VArg(type_name), MD_S8VArg(member_name));
+                        MD_String8 array_size_str = MD_S8Lit("");
+                        for (MD_Node* next_array_size = member->type->underlying_type->node; 
+                            !MD_NodeIsNil(next_array_size); 
+                            next_array_size = next_array_size->next)
+                        {
+                            array_size_str = MD_S8Fmt(filedata->arena, "%.*s[%.*s]", MD_S8VArg(array_size_str), MD_S8VArg(next_array_size->string));
+                        }
+                        fprintf(out, "%.*s%.*s;\n", MD_S8VArg(array_str), MD_S8VArg(array_size_str));
                     }
                     else if (member->array_count_ref != 0)
                     {
