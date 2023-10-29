@@ -10,7 +10,7 @@ void JobSystem::Initialize() {
     u32 threads = std::max(1u, numCores); // hardware_concurrency may return 0 if it can't query properly.. in that case just use 1
     this->numThreads = threads;
     inProgressJobs = std::vector<std::vector<u32>>(numThreads);
-    LOG_INFO("[JOBS] Spinning up %i job threads\n", numThreads);
+    LOG_INFO("[JOBS] Spinning up %i job threads", numThreads);
 
     for (u32 threadID = 0; threadID < this->numThreads; threadID++) {
         std::thread worker([this, threadID]{
@@ -22,12 +22,12 @@ void JobSystem::Initialize() {
                     inProgressJobsForThread.push_back(job.id);
                     job.func(); // execute the job
                     inProgressJobsForThread.erase(std::remove(inProgressJobsForThread.begin(), inProgressJobsForThread.end(), job.id));
-                    //std::cout << "[JOBS] Thread " << threadID << " finished job " << job.id << "\n"; 
+                    //std::cout << "[JOBS] Thread " << threadID << " finished job " << job.id << ""; 
                 }
                 // might be good in the future to put the thread to sleep when there's no more work
                 // and when we enqueue a new job it'll wake the thread up. Use condition variables for this
             }
-            //std::cout << "[JOBS] Shutting down job thread " << threadID << "\n";
+            //std::cout << "[JOBS] Shutting down job thread " << threadID << "";
 
         });
         worker.detach(); // set it free

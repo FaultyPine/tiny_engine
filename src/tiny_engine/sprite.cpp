@@ -31,7 +31,7 @@ void Sprite::DrawSprite(const Transform2D& tf, glm::vec4 color, bool shouldFlipY
     DrawSprite(tf.position, tf.scale, tf.rotation, {0,0,1}, color, shouldFlipY);
 }
 void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool shouldFlipY) const {
-    TINY_ASSERT(isValid() && "Tried to draw invalid sprite!\n");
+    TINY_ASSERT(isValid() && "Tried to draw invalid sprite!");
 
     // set up transform of the actual sprite
     Camera& cam = Camera::GetMainCamera();

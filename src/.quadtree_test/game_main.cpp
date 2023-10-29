@@ -74,7 +74,7 @@ void game_init() {
         QuadTreeNode nodeToInsert = QuadTreeNode(pos, &rd.npcs.back());
         rd.tree.insert(nodeToInsert);
     }
-    std::cout << "Finished init\n";
+    //std::cout << "Finished init";
 
 }
 

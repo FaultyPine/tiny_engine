@@ -165,10 +165,10 @@ std::vector<Mesh> LoadObjMesh(const char* filename, const char* matsDirectory) {
 
     //boilerplate error handling
     if (!err.empty()) {
-        LOG_ERROR("Load OBJ mesh error: %i\n", err);
+        LOG_ERROR("Load OBJ mesh error: %i", err);
     }
     if (!success) {
-        LOG_WARN("Load OBJ mesh warning: %i\n", warn);
+        LOG_WARN("Load OBJ mesh warning: %i", warn);
     }
 
     std::vector<Material> materials = {};
@@ -181,7 +181,7 @@ std::vector<Mesh> LoadObjMesh(const char* filename, const char* matsDirectory) {
         ret.emplace_back(MeshConvert(shape, attrib, materials));
     }
 
-    LOG_INFO("Loaded model %s [mats: %i, submeshes: %i, verts: %i]\n", 
+    LOG_INFO("Loaded model %s [mats: %i, submeshes: %i, verts: %i]", 
             filename, materials.size(), shapes.size(), attrib.vertices.size()/3);
     return ret;
 }

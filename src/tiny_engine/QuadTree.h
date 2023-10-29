@@ -131,12 +131,12 @@ void QuadTree<T>::insert(const QuadTreeNode<T>& nodeToInsert) {
     }
     // don't insert empty nodes
     if (!nodeToInsert.hasData) {
-        std::cout << "Tried to insert node without data to quadtree\n";
+        std::cout << "Tried to insert node without data to quadtree";
         return;
     }
     // node not in bounds of this tree, can't insert
     if (!inBoundary(nodeToInsert.point)) {
-        std::cout << "Tried to insert node out of bounds to quadtree\n";
+        std::cout << "Tried to insert node out of bounds to quadtree";
         return;
     }
 
@@ -154,7 +154,7 @@ void QuadTree<T>::insert(const QuadTreeNode<T>& nodeToInsert) {
             // TODO: it might be a good idea to change the QuadTree
             // implementation to store more than 1 piece of data per level
             // and allow users to specify the capacity of each level of the tree
-            std::cout << "QuadTree max depth reached. Too many entities too close together!\n";
+            std::cout << "QuadTree max depth reached. Too many entities too close together!";
         }
         return;
     }
@@ -238,11 +238,11 @@ bool QuadTree<T>::inBoundary(glm::vec2 p) {
 template<typename T>
 void QuadTree<T>::Draw() {
     if (bounds.min == glm::vec2(0) && bounds.max == glm::vec2(0)) return;
-    //std::cout << glm::to_string(bounds.min) << " -> " << glm::to_string(bounds.max) << "\n"; 
+    //std::cout << glm::to_string(bounds.min) << " -> " << glm::to_string(bounds.max) << ""; 
     if (node.hasData) {
         Shapes2D::DrawCircle(node.point, 1.0f);
-        //std::cout << "QuadTreeNode pos: " << glm::to_string(node.point) << "\n";
-        //std::cout << " real ent pos: " << glm::to_string(node.data->tf.position) << "\n";
+        //std::cout << "QuadTreeNode pos: " << glm::to_string(node.point) << "";
+        //std::cout << " real ent pos: " << glm::to_string(node.data->tf.position) << "";
     }
 
     Shapes2D::DrawWireframeSquare(bounds.min, bounds.max, glm::vec4(1), 0.5f);

@@ -28,7 +28,7 @@ void preLoopInit() {
     Circle circle = Circle();
     circle.r = 10;
     circle.pos = {0,0};
-    printf("%s\n", Circle_type_info.name);
+    LOG_INFO("%s", Circle_type_info.name);
 }
 
 void gameTick() {
@@ -117,13 +117,13 @@ void LivePPTick() {
     }
     // listen to hot-reload and hot-restart requests
     if (lppAgent.WantsReload()) {
-        std::cout << "Reload\n";
+        LOG_INFO("Reload");
         Recompile();
         lppAgent.CompileAndReloadChanges(lpp::LPP_RELOAD_BEHAVIOUR_WAIT_UNTIL_CHANGES_ARE_APPLIED);
     }
     if (lppAgent.WantsRestart() || WantsRestartManual) {
         WantsRestartManual = false;
-        std::cout << "Restart\n";
+        LOG_INFO("Restart");
         endGame();
         RestartProcedure();
         // lpp restart didn't work great for some reason

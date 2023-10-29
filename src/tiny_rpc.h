@@ -2,6 +2,11 @@
 #define TINY_RPC_H
 
 //#include "pch.h"
+#include "tiny_defines.h"
+#include "tiny_log.h"
+#include <string>
+#include <vector>
+#include <windows.h>
 
 // WIP. Not done
 
@@ -95,7 +100,7 @@ extern "C"
 
 void my_printer(int x)
 {
-    std::cout << x << "YESSS\n";
+    LOG_INFO("YESSSSSS  %i", x);
 }
 
 void tiny_rpc_test_init()
@@ -107,7 +112,7 @@ void tiny_rpc_test_init()
     {
         cdeclfunc = (CallCDeclFunc)GetProcAddress(hinstLib, "CallCDecl");
     }
-    std::cout << "tiny_rpc_test_init\n";
+    LOG_INFO("tiny_rpc_test_init");
     int* args = new int[1]; 
     args[0] = 9;
     u64 size = 4;
@@ -117,7 +122,7 @@ void tiny_rpc_test_init()
     //float x = GetST0();
     //DWORD eip = GetEIP();
     //std::cout << x << eip;
-    std::cout << "rpc success\n";
+    LOG_INFO("rpc success");
 }
 
 

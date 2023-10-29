@@ -12,7 +12,7 @@ bool ReadFileContentsBinary(const char* filepath, void* backingBuffer, size_t si
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.read((char*)backingBuffer, size))
     {
-        LOG_ERROR("Failed to read file %s\n", filepath);
+        LOG_ERROR("Failed to read file %s", filepath);
         return false;
     }
     return true;

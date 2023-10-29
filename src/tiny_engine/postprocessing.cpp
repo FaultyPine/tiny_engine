@@ -13,7 +13,7 @@ PostprocessingFB::PostprocessingFB(Shader shader, glm::vec2 framebufferSize) {
 void PostprocessingFB::DrawToScreen(const Shader& shader) {
     // Draws the content of the "fullscreenSprite" to the screen as a 2D quad
     if (!shader.isValid()) {
-        LOG_ERROR("Attempted to draw framebuffer with invalid shader!\n");
+        LOG_ERROR("Attempted to draw framebuffer with invalid shader!");
         exit(1);
     }
     BindDefaultFrameBuffer();

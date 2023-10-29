@@ -134,7 +134,7 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
         aiString name;
         aiReturn hasName = material->Get(AI_MATKEY_NAME, name);
         if (hasName == aiReturn_SUCCESS) {
-            //std::cout << "mat name = " << name.C_Str() << "\n";
+            //std::cout << "mat name = " << name.C_Str() << "";
             if (std::string(name.C_Str()) != "DefaultMaterial") {
                 Material m = aiMaterialConvert(material, meshMaterialDir);
                 materials.push_back(m);
@@ -166,11 +166,11 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
     Assimp::Importer import;
     //std::string extList = "";
     //import.GetExtensionList(extList);
-    //std::cout << extList << "\n";
-    //std::cout << aiGetVersionMajor() << "." << aiGetVersionMinor() << "." << aiGetVersionRevision() << "\n";
+    //std::cout << extList << "";
+    //std::cout << aiGetVersionMajor() << "." << aiGetVersionMinor() << "." << aiGetVersionRevision() << "";
     const aiScene* scene = import.ReadFile(meshObjFile, aiProcess_Triangulate);
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        LOG_ERROR("[ASSIMP] Error: %s\n", import.GetErrorString());
+        LOG_ERROR("[ASSIMP] Error: %s", import.GetErrorString());
         return;
     }
     processNode(scene->mRootNode, scene, meshes, meshMaterialDir);

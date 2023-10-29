@@ -52,7 +52,7 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
     }
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        LOG_ERROR("Framebuffer is not complete!\n");
+        LOG_ERROR("Framebuffer is not complete!");
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));  
 }
@@ -131,7 +131,7 @@ Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height) {
     
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        LOG_ERROR("Framebuffer is not complete!\n");
+        LOG_ERROR("Framebuffer is not complete!");
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
  

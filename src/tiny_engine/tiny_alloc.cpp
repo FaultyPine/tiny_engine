@@ -1,5 +1,4 @@
 //#include "pch.h"
-#include <string.h>
 #include "tiny_alloc.h"
 #include "tiny_log.h"
 
@@ -64,7 +63,7 @@ void* arena_resize(Arena* arena, void* old_mem, size_t old_size, size_t new_size
         }
     }
     else {
-        TINY_ASSERT(false && "Out of bounds resize in arena\n");
+        TINY_ASSERT(false && "Out of bounds resize in arena");
         return nullptr;
     }
 }

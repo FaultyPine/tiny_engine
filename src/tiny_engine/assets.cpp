@@ -17,7 +17,7 @@ static std::unordered_map<u32, void*> assetRecord = {};
     if (assetArena.backing_mem == nullptr)
     {
         u32 arenaSizeBytes = MEGABYTES_BYTES(PREALLOCATED_ASSET_MEM_MB);
-        void* backingArenaMem = TINY_ALLOC(arenaSizeBytes);
+        void* backingArenaMem = TALLOC(arenaSizeBytes);
         assetArena = arena_init(backingArenaMem, arenaSizeBytes);
     }
     return assetArena;
@@ -29,12 +29,12 @@ u32 Load(const char* filepath)
 
     //Arena& assetArena = GetAssetArena();
     //void* assetData = arena_alloc(&assetArena, size);
-    void* assetData = TINY_ALLOC(size);
+    void* assetData = TALLOC(size);
     u32 assetID = 0;
     if (ReadFileContentsBinary(filepath, assetData, size))
     {
         assetID = std::hash<std::string>{}(filepath);
-        LOG_INFO("Loaded asset ID = %i filepath = %s\n", assetID, filepath);
+        LOG_INFO("Loaded asset ID = %i filepath = %s", assetID, filepath);
         assetRecord[assetID] = assetData;
     }
     else
@@ -49,7 +49,7 @@ void Unload(u32 id)
     {
         void* assetData = assetRecord[id];
         assetRecord.erase(id);
-        TINY_FREE(assetData);
+        TFREE(assetData);
     }
 }
 void* Get(u32 id)

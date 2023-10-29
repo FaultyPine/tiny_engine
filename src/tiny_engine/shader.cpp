@@ -30,7 +30,7 @@ u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) {
     if (!successCode) {
         s8 infoLog[512];
         glGetShaderInfoLog(shaderID, 512, NULL, infoLog);
-        LOG_ERROR("%s shader compilation failed. shaderID = %i\n%s\n", (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment"), shaderID, infoLog);
+        LOG_ERROR("%s shader compilation failed. shaderID = %i\n%s", (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment"), shaderID, infoLog);
     }
     return shaderID;
 }
@@ -60,7 +60,7 @@ std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& 
                 fullSourceCode += recursiveShaderSource;
             }
             else {
-                LOG_ERROR("Failed to open shader include: %s\n", path);
+                LOG_ERROR("Failed to open shader include: %s", path);
                 TINY_ASSERT(false);
             }
 
@@ -81,7 +81,7 @@ std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& 
 std::string ShaderSourcePreprocess(const s8* shaderSource, const std::string& shaderPath) {
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
-    LOG_INFO("%s\n", shaderPath.c_str());
+    LOG_INFO("%s", shaderPath.c_str());
     std::string includeSearchDir = shaderPath.substr(0, shaderPath.rfind('/')+1); // will look like "res/shaders/"
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
     ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir);
@@ -110,7 +110,7 @@ u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std
     if (!success) {
         s8 infoLog[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        LOG_ERROR("shader linking failed. vs = %i fs = %i\n%s\n", vertexShader, fragShader, infoLog);
+        LOG_ERROR("shader linking failed. vs = %i fs = %i\n%s", vertexShader, fragShader, infoLog);
         return 0xDEADBEEF;
         //TINY_ASSERT(false);
     }
@@ -125,11 +125,11 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
     std::string fragmentCode;
     if (!ReadEntireFile(vertexPath.c_str(), vertexCode))
     {
-        LOG_ERROR("Failed to read vertex shader file: %s\n", vertexPath.c_str());
+        LOG_ERROR("Failed to read vertex shader file: %s", vertexPath.c_str());
     }
     if (!ReadEntireFile(fragmentPath.c_str(), fragmentCode))
     {
-        LOG_ERROR("Failed to read fragment shader file: %s\n", fragmentPath.c_str());
+        LOG_ERROR("Failed to read fragment shader file: %s", fragmentPath.c_str());
     }
     const char* vShaderCode = vertexCode.c_str();
     const char * fShaderCode = fragmentCode.c_str();
@@ -149,7 +149,7 @@ s32 Shader::getLoc(const std::string& uniformName) const {
             return loc;
         }
         else {
-            //std::cout << "Shader Uniform " << uniformName << " either isn't defined or is unused!\n";
+            //std::cout << "Shader Uniform " << uniformName << " either isn't defined or is unused!";
             return -1;
         }
     }
@@ -186,7 +186,7 @@ void Shader::Delete() const {
 
 
 void Shader::use() const {
-    TINY_ASSERT("Invalid shader ID!\n" && valid);
+    TINY_ASSERT("Invalid shader ID!" && valid);
     glUseProgram(loadedShaders.at(ID).first); 
 }
 
@@ -202,7 +202,7 @@ void ReloadShader(u32 shaderID) { // shader "id" (not opengl shader program id)
     bool wasShaderFilesChanged = true;
     if (wasShaderFilesChanged) {
         u32 newShaderProgram = CreateShaderFromFiles(shaderLocations.first, shaderLocations.second);
-        LOG_INFO("New reloaded shader %i\n", newShaderProgram);
+        LOG_INFO("New reloaded shader %i", newShaderProgram);
 
         u32 oldOGLShaderProgram = oglIDAndPaths.first;
         glDeleteProgram(oldOGLShaderProgram);
@@ -217,7 +217,7 @@ void Shader::ReloadShaders() {
     for (auto& [shaderID, oglIDAndPaths] : loadedShaders) {
         ReloadShader(shaderID);
     }
-    LOG_INFO("Reloaded shaders!\n");
+    LOG_INFO("Reloaded shaders!");
 }
 
 

@@ -19,7 +19,7 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
     for (u32 i = 0; i < facesPaths.size(); i++) {
         u8 *data = LoadImageData(facesPaths[i], &width, &height, &nrChannels);
         if (!data) {
-            LOG_ERROR("Cubemap texture failed to load at path: %s\n", facesPaths[i]);
+            LOG_ERROR("Cubemap texture failed to load at path: %s", facesPaths[i]);
             TINY_ASSERT(false);
         }
         else {
@@ -38,9 +38,8 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
     // unbind
     GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
     
-    LOG_INFO("Loaded cubemap: [");
+    LOG_INFO("Loaded cubemaps: ");
     for (const char* s : facesPaths) LOG_INFO("%s, ", s);
-    LOG_INFO("]\n");
 
     Cubemap ret;
     ret.id = textureID;

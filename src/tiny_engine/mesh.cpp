@@ -140,7 +140,7 @@ void Set3DMatrixUniforms(const Shader& shader, const Transform& tf) {
 }
 
 void Mesh::Draw(const Shader& shader, const Transform& tf) const {
-    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
 
     shader.use();
@@ -158,7 +158,7 @@ void Mesh::Draw(const Shader& shader, const Transform& tf) const {
     OGLDrawDefault(VAO, indices.size(), vertices.size());
 }
 void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
-    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
 
     shader.use();
@@ -178,7 +178,7 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
 
 
 void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
-    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     TINY_ASSERT(instanceVBO != 0 && "Tried to instance mesh that has not had EnableInstance called");
     if (!isVisible) return;
 
@@ -201,7 +201,7 @@ void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
 }
 
 void Mesh::DrawMinimal(const Shader& shader) const {
-    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!\n");
+    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
     shader.use();
     OGLDrawDefault(VAO, indices.size(), vertices.size());

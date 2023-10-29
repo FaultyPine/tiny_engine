@@ -57,7 +57,7 @@ s32 GetRandom(s32 start, s32 end) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
         randomSeed = Math::hash((const char*)&time, sizeof(f64));
-        //std::cout << "Initial random seed = " << randomSeed << "\n";
+        //std::cout << "Initial random seed = " << randomSeed << "";
     }
     srand(Math::hash((const char*)&randomSeed, sizeof(randomSeed)));
     randomSeed++; // deterministic random
@@ -69,7 +69,7 @@ f32 GetRandomf(f32 start, f32 end) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
         randomSeed = Math::hash((const char*)&time, sizeof(f64));
-        //std::cout << "Initial random seed = " << randomSeed << "\n";
+        //std::cout << "Initial random seed = " << randomSeed << "";
     }
     srand(Math::hash((const char*)&randomSeed, sizeof(randomSeed)));
     randomSeed++; // deterministic random
@@ -157,7 +157,7 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
 
     s8 cwd[PATH_MAX];
     getcwd(cwd, PATH_MAX);
-    LOG_INFO("CWD: %s\n", cwd);
+    LOG_INFO("CWD: %s", cwd);
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -191,7 +191,7 @@ void InitGame(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRat
 
     // Initialize glText
     if (!GLTInitialize()) {
-        LOG_ERROR("Failed to initialize GLtext!\n");
+        LOG_ERROR("Failed to initialize GLtext!");
     }
 
     glViewport(0, 0, windowWidth, windowHeight);

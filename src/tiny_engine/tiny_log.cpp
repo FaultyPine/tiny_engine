@@ -17,12 +17,12 @@ static u32 LOG_LEVELS_ENABLED = 0;
 
 bool InitializeLogger()
 {
-    LOG_LEVELS_ENABLED |= LOG_LEVEL_FATAL_ENABLED;
-    LOG_LEVELS_ENABLED |= LOG_LEVEL_ERROR_ENABLED;
-    LOG_LEVELS_ENABLED |= LOG_LEVEL_WARN_ENABLED;
-    LOG_LEVELS_ENABLED |= LOG_LEVEL_INFO_ENABLED;
-    LOG_LEVELS_ENABLED |= LOG_LEVEL_DEBUG_ENABLED;
-    LOG_LEVELS_ENABLED |= LOG_LEVEL_TRACE_ENABLED;
+    SetLogLevel(LOG_LEVEL_FATAL, LOG_LEVEL_FATAL_ENABLED);
+    SetLogLevel(LOG_LEVEL_ERROR, LOG_LEVEL_ERROR_ENABLED);
+    SetLogLevel(LOG_LEVEL_WARN, LOG_LEVEL_WARN_ENABLED);
+    SetLogLevel(LOG_LEVEL_INFO, LOG_LEVEL_INFO_ENABLED);
+    SetLogLevel(LOG_LEVEL_DEBUG, LOG_LEVEL_DEBUG_ENABLED);
+    SetLogLevel(LOG_LEVEL_TRACE, LOG_LEVEL_TRACE_ENABLED);
     return true;
 }
 void ShutdownLogger()
@@ -74,7 +74,7 @@ void SetTerminalColor(LogLevel level)
 
 void LogMessage(LogLevel level, const char* message, ...)
 {
-    if (LOG_LEVELS_ENABLED & level == 0)
+    if (LOG_LEVELS_ENABLED & (1 << level) == 0)
     {
         return;
     }
@@ -90,10 +90,10 @@ void LogMessage(LogLevel level, const char* message, ...)
     // append (optional)color and log level to message
 #if TERMINAL_COLORED_OUTPUT_ENABLED
     SetTerminalColor(level);
-    printf("%s %s", level_strings[level], out_msg);
+    printf("%s %s\n", level_strings[level], out_msg);
     SetTerminalColor((LogLevel)-1);
 #else
-    printf("%s %s", level_strings[level], out_msg);
+    printf("%s %s\n", level_strings[level], out_msg);
 #endif
 }
 

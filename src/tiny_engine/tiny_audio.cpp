@@ -14,7 +14,7 @@ void InitAudioEngine() {
     ma_result result;
     result = ma_engine_init(NULL, &globalAudioEngine);
     if (result != MA_SUCCESS) {
-        LOG_ERROR("Failed to initialize audio engine.\n");
+        LOG_ERROR("Failed to initialize audio engine.");
     }
 }
 void PlayAudio(const char* file)  {
