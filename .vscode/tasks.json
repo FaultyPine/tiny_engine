@@ -14,7 +14,7 @@
         {
             "taskName": "build_types",
             "type": "shell",
-            "command": "build.bat types norun",
+            "command": "build.bat types",
             "group": {
                 "kind": "build",
                 "isDefault": false

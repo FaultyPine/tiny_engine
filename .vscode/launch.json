@@ -1,16 +1,16 @@
 {
     "configurations": [
     {
-        "name": "Tiny Engine",
+        "name": "Testbed",
         "type": "cppvsdbg",
         "request": "launch",
-        "program": "${workspaceFolder}\\TinyEngine.exe",
-        "args": [],
+        "program": "${workspaceFolder}\\bin\\Testbed.exe",
+        "args": ["${workspaceFolder}\\res\\"],
         "stopAtEntry": false,
         "preLaunchTask": "build",
-        "cwd": "${workspaceFolder}",
+        "cwd": "${workspaceFolder}\\bin",
         "environment": [],
-        "externalConsole": false
+        "console": "integratedTerminal"
     },
     {
         "name": "MD Types",
@@ -23,6 +23,14 @@
         "cwd": "${workspaceFolder}\\src\\types",
         "environment": [],
         "console": "integratedTerminal"
+    },
+    {
+        "name": "Python: Current File",
+        "type": "python",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal",
+        "cwd": "${fileDirname}",
     },
     ]
 }

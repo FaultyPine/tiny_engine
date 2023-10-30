@@ -88,4 +88,5 @@
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "editor.minimap.enabled": false,
+    "python.analysis.autoImportCompletions": false,
 }

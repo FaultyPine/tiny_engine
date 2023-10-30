@@ -28,6 +28,9 @@ Features/Included Implementations:
 - Profiling with chrome://tracing api
 - Shader hot reloading & #include parser
 - custom arena allocator
+- custom dynamic array type
+- compile-time reflection / type metadata generation system (backed by Metadesk)
+
 
 Written with this engine:  
 [Part Of The Pack](https://faultypine.itch.io/part-of-the-pack)  
@@ -47,10 +50,7 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 
-### TODO/Topics to Experiment With:
-- Reflection with Metadesk
-    - AoS to SoA converter? would be cool...
-    - refactor everything to use type files... will be a huge refactor on literally everything
+### TODO:
 - refactor shaders to use includes
 - Resource system
     - load from filesystem

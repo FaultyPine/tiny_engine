@@ -4,9 +4,11 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/include",
                 "${vcpkgRoot}/x64-windows/include",
-                "${vcpkgRoot}/x86-windows/include"
+                "${workspaceFolder}/game/**",
+                "${workspaceFolder}/engine/**",
+                "${workspaceFolder}/external/**",
+                "${workspaceFolder}/types/**",
             ],
             "defines": [
                 "_DEBUG",
