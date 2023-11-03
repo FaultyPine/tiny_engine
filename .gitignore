@@ -2,6 +2,7 @@
 
 .vs
 
+bin/
 build/
 __pycache__/
 build.ninja

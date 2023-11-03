@@ -3,7 +3,7 @@
 
 //#include "pch.h"
 #include "tiny_defines.h"
-#include "mesh.h"
+#include "render/mesh.h"
 
 TAPI std::vector<Mesh> LoadObjMesh(const char* filename, const char* matsDirectory);
 

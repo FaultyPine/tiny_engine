@@ -3,6 +3,7 @@
 
 //#include "pch.h"
 #include "tiny_math.h"
+#include "input_keys.h"
 
 // gamepad
 
@@ -66,7 +67,17 @@ struct MouseInput {
     }
 };
 
+// maps to GLFW_CURSOR_XXXX
+enum class CursorMode : s32
+{
+    NORMAL,
+    DISABLED,
+    HIDDEN,
+};
 
+TAPI void setCursorPosition(f32 x, f32 y);
+TAPI CursorMode getCursorMode();
+TAPI void setCursorMode(CursorMode cursorMode);
 
 
 #endif

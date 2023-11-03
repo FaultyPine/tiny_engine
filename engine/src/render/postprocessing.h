@@ -15,7 +15,7 @@ struct PostprocessingFB {
 
     inline bool isValid() { return fb.isValid(); }
     inline void Bind() { fb.Bind(); }
-    inline void BindDefaultFrameBuffer() { fb.BindDefaultFrameBuffer(); }
+    inline static void BindDefaultFrameBuffer() { Framebuffer::BindDefaultFrameBuffer(); }
     void Delete() { 
         fullscreenSprite.Delete();
         fb.Delete();

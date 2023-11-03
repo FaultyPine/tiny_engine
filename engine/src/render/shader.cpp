@@ -83,7 +83,8 @@ std::string ShaderSourcePreprocess(const s8* shaderSource, const std::string& sh
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
     LOG_INFO("%s", shaderPath.c_str());
-    std::string includeSearchDir = shaderPath.substr(0, shaderPath.rfind('/')+1); // will look like "res/shaders/"
+    std::string includeSearchDir = ResPath("shaders/");
+    //std::string includeSearchDir = shaderPath.substr(0, shaderPath.rfind('/')+1); // will look like "res/shaders/"
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
     ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir);
     return ret;
@@ -92,13 +93,9 @@ std::string ShaderSourcePreprocess(const s8* shaderSource, const std::string& sh
 
 u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") {
     // preprocess both vert and frag shader source code before compiling
-#if 1
     std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource, vertPath);
     std::string fsSourcePreprocessed = ShaderSourcePreprocess(fsSource, fragPath);
-#else
-    std::string vsSourcePreprocessed = vsSource;
-    std::string fsSourcePreprocessed = fsSource;
-#endif
+
     u32 vertexShader = CreateAndCompileShader(GL_VERTEX_SHADER, vsSourcePreprocessed.c_str());
     u32 fragShader = CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSourcePreprocessed.c_str());
 
@@ -111,7 +108,7 @@ u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std
     if (!success) {
         s8 infoLog[512];
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        LOG_ERROR("shader linking failed. vs = %i fs = %i\n%s", vertexShader, fragShader, infoLog);
+        LOG_ERROR("shader linking failed. vs = %s fs = %s\n%s", vertPath.c_str(), fragPath.c_str(), infoLog);
         return 0xDEADBEEF;
         //TINY_ASSERT(false);
     }

@@ -2,9 +2,9 @@
 #define TINY_MODEL_H
 
 //#include "pch.h"
-#include "mesh.h"
-#include "tiny_lights.h"
-#include "shader.h"
+#include "render/mesh.h"
+#include "render/tiny_lights.h"
+#include "render/shader.h"
 
 struct Model {
     Model() = default;

@@ -3,8 +3,8 @@
 
 //#include "pch.h"
 #include "tiny_defines.h"
-#include "sprite.h"
-#include "texture.h"
+#include "render/sprite.h"
+#include "render/texture.h"
 #include <vector>
 #include <map>
 

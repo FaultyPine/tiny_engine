@@ -2,17 +2,20 @@
 #include "tiny_engine.h"
 
 #include "tiny_fs.h"
-#include "tiny_text.h"
-#include "shader.h"
+#include "render/tiny_text.h"
+#include "render/shader.h"
 #include "camera.h"
-#include "mesh.h"
-#include "texture.h"
+#include "render/mesh.h"
+#include "render/texture.h"
 #include "input.h"
-#include "sprite.h"
+#include "render/sprite.h"
 #include "tiny_math.h"
 #include "tiny_profiler.h"
-#include "tiny_ogl.h"
+#include "render/tiny_ogl.h"
+#include "render/framebuffer.h"
 #include "tiny_log.h"
+#include "tiny_alloc.h"
+#include "tiny_imgui.h"
 
 #include "GLFW/glfw3.h"
 
@@ -23,13 +26,10 @@
 #include <direct.h>
 #endif
 
-static f32 deltaTime = 0.0f;
-static f32 lastFrameTime = 0.0f;
-static u32 frameCount = 0;
-GLFWwindow* glob_glfw_window = nullptr;
-static u64 randomSeed = 0;
+static EngineState globEngineState;
 
-GLFWwindow* GetMainGLFWWindow() { return glob_glfw_window; }
+GLFWwindow* GetMainGLFWWindow() { return globEngineState.glob_glfw_window; }
+
 
 void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
     s32 screenWidth = width;
@@ -40,41 +40,41 @@ void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
     Camera::GetMainCamera().screenHeight = screenHeight;
 }
 void TerminateGame() {
-    frameCount = 0;
-    deltaTime = 0;
-    lastFrameTime = 0;
-    randomSeed = 0;
+    globEngineState.frameCount = 0;
+    globEngineState.deltaTime = 0;
+    globEngineState.lastFrameTime = 0;
+    globEngineState.randomSeed = 0;
 
     GLTTerminate();
     glfwTerminate();
     Profiler::Instance().endSession();
 }
 void OverwriteRandomSeed(u64 seed) {
-    randomSeed = seed;
+    globEngineState.randomSeed = seed;
 }
-u64 GetRandomSeed() { return randomSeed; }
+u64 GetRandomSeed() { return globEngineState.randomSeed; }
 s32 GetRandom(s32 start, s32 end) {
     // lazy init random seed
-    if (randomSeed == 0) {
+    if (globEngineState.randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
-        randomSeed = Math::hash((const char*)&time, sizeof(f64));
+        globEngineState.randomSeed = Math::hash((const char*)&time, sizeof(f64));
         //std::cout << "Initial random seed = " << randomSeed << "";
     }
-    srand(Math::hash((const char*)&randomSeed, sizeof(randomSeed)));
-    randomSeed++; // deterministic random
+    srand(Math::hash((const char*)&globEngineState.randomSeed, sizeof(globEngineState.randomSeed)));
+    globEngineState.randomSeed++; // deterministic random
     return start + (rand() % end);
 }
 f32 GetRandomf(f32 start, f32 end) {
     // lazy init random seed
-    if (randomSeed == 0) {
+    if (globEngineState.randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
-        randomSeed = Math::hash((const char*)&time, sizeof(f64));
+        globEngineState.randomSeed = Math::hash((const char*)&time, sizeof(f64));
         //std::cout << "Initial random seed = " << randomSeed << "";
     }
-    srand(Math::hash((const char*)&randomSeed, sizeof(randomSeed)));
-    randomSeed++; // deterministic random
+    srand(Math::hash((const char*)&globEngineState.randomSeed, sizeof(globEngineState.randomSeed)));
+    globEngineState.randomSeed++; // deterministic random
     f32 zeroToOneRandom = ((f32)rand()) / RAND_MAX;
     return Math::Lerp(start, end, zeroToOneRandom);
 }
@@ -90,9 +90,9 @@ void CloseGameWindow() {
     glfwSetWindowShouldClose(GetMainGLFWWindow(), true);
 }
 f32 GetDeltaTime() {
-    return deltaTime;
+    return globEngineState.deltaTime;
 }
-u32 GetFrameCount() { return frameCount; }
+u32 GetFrameCount() { return globEngineState.frameCount; }
 
 void SetMode2D() {
     // For 2D games, don't depth test so that the order they are drawn in makes sense
@@ -124,13 +124,17 @@ void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 maxHe
     cam.maxScreenHeight = maxHeight;
 }
 
+void SetWireframeDrawing(bool shouldDrawWireframes) {
+    glPolygonMode(GL_FRONT_AND_BACK, shouldDrawWireframes ? GL_LINE : GL_FILL);
+}
+
 void EngineLoop() {
     // update deltatime
     f32 currentTime = GetTime();
-    deltaTime = currentTime - lastFrameTime;
-    lastFrameTime = currentTime;
+    globEngineState.deltaTime = currentTime - globEngineState.lastFrameTime;
+    globEngineState.lastFrameTime = currentTime;
     // inc frame
-    frameCount++;
+    globEngineState.frameCount++;
     // update cam
     Camera::UpdateCamera();
 
@@ -153,11 +157,33 @@ bool ShouldCloseWindow() {
     return glfwWindowShouldClose(GetMainGLFWWindow());
 }
 
-void InitEngine(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectRatioH,
-            const s8* windowName, bool false2DTrue3D, const char* resourceDirectory) {
+void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int argc, char *argv[])
+{
+    InitializeLogger();
+    globEngineState = engineInitState;
+    u32 windowWidth = engineInitState.windowWidth;
+    u32 windowHeight = engineInitState.windowHeight;
+    u32 aspectRatioW = engineInitState.aspectRatioW;
+    u32 aspectRatioH = engineInitState.aspectRatioH;
+    const s8* windowName = engineInitState.appName;
+    bool false2DTrue3D = engineInitState.false2DTrue3D;
+
+    if (argc < 2)
+    {
+        LOG_FATAL("Passed too few arguments to engine. Make sure to specify the resource directory");
+    }
+    const char* resourceDirectory = argv[1];
+    globEngineState.resourceDirectory = resourceDirectory;
+
+    TINY_ASSERT(globEngineState.resourceDirectory);
+    AppRunCallbacks& gameFuncs = globEngineState.appCallbacks;
+    TINY_ASSERT(gameFuncs.initFunc);
+    TINY_ASSERT(gameFuncs.tickFunc);
+    TINY_ASSERT(gameFuncs.renderFunc);
+    TINY_ASSERT(gameFuncs.terminateFunc);
+
     Profiler::Instance().beginSession("Profile");
     InitializeTinyFilesystem(resourceDirectory);
-    InitializeLogger();
     LOG_INFO("Resource directory: %s", resourceDirectory);
 
     s8 cwd[PATH_MAX];
@@ -165,8 +191,8 @@ void InitEngine(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectR
     LOG_INFO("CWD: %s", cwd);
 
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
     glfwWindowHint(GLFW_SAMPLES, 4); // ask for multisampled buffers so we can do multisampling if we want
@@ -186,6 +212,7 @@ void InitEngine(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectR
         return;
     }
     glfwMakeContextCurrent(window);
+    globEngineState.glob_glfw_window = window;
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -193,6 +220,7 @@ void InitEngine(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectR
         glfwTerminate();
         return;
     }    
+    LOG_INFO("OpenGL Driver Version: %s", glGetString(GL_VERSION));
 
     // Initialize glText
     if (!GLTInitialize()) {
@@ -201,10 +229,7 @@ void InitEngine(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectR
 
     glViewport(0, 0, windowWidth, windowHeight);
     UpdateGLTViewport(windowWidth, windowHeight);
-    
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);  
-
+    setCursorMode(CursorMode::DISABLED); // lock cursor into window
     glfwSetWindowAspectRatio(window, aspectRatioW, aspectRatioH);
 
     if (false2DTrue3D) {
@@ -215,22 +240,46 @@ void InitEngine(u32 windowWidth, u32 windowHeight, u32 aspectRatioW, u32 aspectR
     }
 
     glEnable(GL_STENCIL_TEST);  
-   
-
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     glEnable(GL_MULTISAMPLE);
+#ifdef TINY_DEBUG
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(OglDebugMessageCallback, 0);
+#endif
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); 
     glfwSetCursorPosCallback(window, mouse_callback);
 
-    glob_glfw_window = window;
-
     Camera::GetMainCamera().screenWidth = windowWidth;
     Camera::GetMainCamera().screenHeight = windowHeight;
-}
 
-void SetWireframeDrawing(bool shouldDrawWireframes) {
-    glPolygonMode(GL_FRONT_AND_BACK, shouldDrawWireframes ? GL_LINE : GL_FILL);
+    InitImGui();
+
+    // give a big memory pool to the game. Game shouldn't allocate outside this pool
+    void* gameMemory = TALLOC(requestedMemSize);
+    globEngineState.gameArena = arena_init(gameMemory, requestedMemSize);
+    Arena* gameArena = &globEngineState.gameArena;
+
+    // Begin game loop
+    Sprite screenRenderSprite;
+    gameFuncs.initFunc(gameArena);
+    while (!ShouldCloseWindow())
+    {
+        ImGuiBeginFrame();
+        gameFuncs.tickFunc(gameArena);
+        u64 renderTexture = gameFuncs.renderFunc(gameArena);
+        if (renderTexture != screenRenderSprite.GetMainTex().id)
+        {
+            screenRenderSprite = Sprite(Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag")), Texture(renderTexture));
+        }
+        Framebuffer::BindDefaultFrameBuffer();
+        screenRenderSprite.DrawSpriteFullscreen();
+        ImGuiEndFrame();
+    }
+    gameFuncs.terminateFunc(gameArena);
+
+    arena_free_all(gameArena);
+    ImGuiTerminate();
+    TerminateGame();
 }

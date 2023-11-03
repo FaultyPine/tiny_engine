@@ -13,6 +13,18 @@
         "console": "integratedTerminal"
     },
     {
+        "name": "Editor",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}\\bin\\TinyEditor.exe",
+        "args": ["${workspaceFolder}\\res\\"],
+        "stopAtEntry": false,
+        "preLaunchTask": "build",
+        "cwd": "${workspaceFolder}\\bin",
+        "environment": [],
+        "console": "integratedTerminal"
+    },
+    {
         "name": "MD Types",
         "type": "cppvsdbg",
         "request": "launch",

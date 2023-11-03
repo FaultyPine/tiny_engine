@@ -51,6 +51,18 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
+- Build up editor - get game rendering in editor window
+    - need a way for the editor to render the game into a specified window.
+        game's render function needs to return a Sprite/Texture (or at least some texture handle that imgui can draw)
+
+    - Plan of attack for proper editor/engine/game split.
+        game and editor call InitEngine, passing in (default) res/aspect ratio, along with argc/argv. Engine grabs resource dir
+        game and editor *also* pass in an init, tick, render, and terminate function pointer.
+        
+
+
+
+
 - refactor shaders to use includes
 - Resource system
     - load from filesystem

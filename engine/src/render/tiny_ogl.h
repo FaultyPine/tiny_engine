@@ -4,6 +4,14 @@
 #include "tiny_log.h"
 #include <glad/glad.h>
 
+void GLAPIENTRY
+OglDebugMessageCallback( GLenum source,
+                 GLenum type,
+                 GLuint id,
+                 GLenum severity,
+                 GLsizei length,
+                 const GLchar* message,
+                 const void* userParam );
 
 #ifdef TINY_DEBUG
 #define GLCall(_CALL)  \

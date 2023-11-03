@@ -42,6 +42,7 @@ struct Camera {
     TAPI glm::vec2 GetMaxScreenDimensions() const;
     
     TAPI static void UpdateCamera();
+    TAPI static void UpdateTabbingOut();
     TAPI static u32 GetScreenWidth();
     TAPI static u32 GetScreenHeight();
     TAPI static Camera& GetMainCamera();

@@ -3,7 +3,6 @@
 
 #include "tiny_defines.h"
 #include "imgui/imgui.h"
-#include "tiny_engine.h" // for the glfw window
 
 #define ENABLE_IMGUI
 

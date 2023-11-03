@@ -1,6 +1,7 @@
 #include "tiny_imgui.h"
 
-#include "tiny_ogl.h" // imgui custom opengl loader definitions
+#include "render/tiny_ogl.h" // imgui custom opengl loader definitions
+#include "tiny_engine.h" // for glfw window
 #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 // ====== imgui source ==================
 #include "imgui/imgui_draw.cpp"

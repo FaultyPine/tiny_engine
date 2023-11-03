@@ -7,10 +7,11 @@
 #include "model.h"
 #include "tiny_types.h"
 #include "tiny_engine.h"
-#include "sprite.h"
-#include "framebuffer.h"
-#include "skybox.h"
+#include "render/sprite.h"
+#include "render/framebuffer.h"
+#include "render/skybox.h"
 #include "particles/particles.h"
+#include "tiny_alloc.h"
 
 struct WorldEntity {
     Transform transform = {};
@@ -54,6 +55,8 @@ inline u32 GetHash(const std::string& str) {
 }
 
 struct GameState {
+    Arena* gameMem;
+
     // TODO: use hashmap w/int IDs
     std::vector<WorldEntity> entities = {};
     std::vector<Light> lights = {};
@@ -91,9 +94,17 @@ struct GameState {
 
     Skybox skybox = {};
 
-    static GameState& get() {
-        static GameState gs;
-        return gs; 
+    inline static GameState* gs;
+    // sets the static gamestate to a copy of the passed in gamestate
+    static void Initialize(Arena* gameMem)
+    {
+        GameState* newGamestate = (GameState*)arena_alloc(gameMem, sizeof(GameState));
+        newGamestate->gameMem = gameMem;
+        gs = newGamestate;
+    }
+    static GameState& get() 
+    {
+        return *gs; 
     }
     void Terminate() {
         for (auto& ent : entities) {
@@ -120,54 +131,47 @@ struct GameState {
 #include "camera.h"
 #include "input.h"
 #include "ObjParser.h"
-#include "shader.h"
+#include "render/shader.h"
 #include "tiny_fs.h"
-#include "mesh.h"
-#include "texture.h"
-#include "tiny_lights.h"
+#include "render/mesh.h"
+#include "render/texture.h"
+#include "render/tiny_lights.h"
 #include "tiny_math.h"
-#include "shapes.h"
+#include "render/shapes.h"
 #include "tiny_profiler.h"
 #include "particles/particle_behaviors.h"
 #include "tiny_log.h"
-#include <GLFW/glfw3.h> // TODO: change to custom input stuff
 
-
-static bool USE_OUTLINE_SHADER = false;
 
 void testbed_inputpoll() {
     Camera& cam = Camera::GetMainCamera();
     f32 cameraSpeed = cam.speed * GetDeltaTime();
     glm::vec3 cameraRight = glm::normalize(glm::cross(cam.cameraFront, cam.cameraUp));
-    if (Keyboard::isKeyDown(GLFW_KEY_W)) {
+    if (Keyboard::isKeyDown(TINY_KEY_W)) {
         cam.cameraPos += cameraSpeed * glm::vec3(cam.cameraFront.x, 0.0, cam.cameraFront.z);
     }
-    if (Keyboard::isKeyDown(GLFW_KEY_S)) {
+    if (Keyboard::isKeyDown(TINY_KEY_S)) {
         cam.cameraPos -= cameraSpeed * glm::vec3(cam.cameraFront.x, 0.0, cam.cameraFront.z);
     }
-    if (Keyboard::isKeyDown(GLFW_KEY_A)) {
+    if (Keyboard::isKeyDown(TINY_KEY_A)) {
         cam.cameraPos -= cameraRight * cameraSpeed;
     }
-    if (Keyboard::isKeyDown(GLFW_KEY_D)) {
+    if (Keyboard::isKeyDown(TINY_KEY_D)) {
         cam.cameraPos += cameraRight * cameraSpeed;
     }
-    if (Keyboard::isKeyDown(GLFW_KEY_SPACE)) {
+    if (Keyboard::isKeyDown(TINY_KEY_SPACE)) {
         cam.cameraPos.y += cameraSpeed;
     }
-    if (Keyboard::isKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+    if (Keyboard::isKeyDown(TINY_KEY_LEFT_SHIFT)) {
         cam.cameraPos.y -= cameraSpeed;
     }
-    if (Keyboard::isKeyDown(GLFW_KEY_ESCAPE)) {
+    if (Keyboard::isKeyDown(TINY_KEY_ESCAPE)) {
         CloseGameWindow();
     }
 
 
-    if (Keyboard::isKeyPressed(GLFW_KEY_R)) {
+    if (Keyboard::isKeyPressed(TINY_KEY_R)) {
         Shader::ReloadShaders();
-    }
-
-    if (Keyboard::isKeyPressed(GLFW_KEY_P)) {
-        USE_OUTLINE_SHADER = !USE_OUTLINE_SHADER;
     }
 
 
@@ -201,7 +205,7 @@ static f32 _NormalStrength = 1.0f;
 
 void drawImGuiDebug() {
     GameState& gs = GameState::get();
-    ImGuiBeginFrame();
+    //ImGuiBeginFrame();
     
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
@@ -257,7 +261,7 @@ void drawImGuiDebug() {
     }
     #endif
 
-    ImGuiEndFrame();
+    //ImGuiEndFrame();
 }
 
 void ShadowMapPrePass() {
@@ -380,15 +384,13 @@ void drawGameState() {
     
     { PROFILE_SCOPE("EntityDrawing");
         for (const auto& ent : gs.entities) {
-            ent.model.cachedShader.use();
-            ent.model.cachedShader.setUniform("shouldCrosshatch", (int)USE_OUTLINE_SHADER);
             ent.model.Draw(ent.transform, gs.lights);
         }
     }
 
     #if 1
     { PROFILE_SCOPE("Skybox draw");
-        gs.skybox.Draw();
+        gs.skybox.Draw(gs.lights[0].position);
     }
     #endif
 }
@@ -492,10 +494,17 @@ void init_waterfall(GameState& gs) {
     */
 }
 
-void testbed_init() {
+
+
+
+
+void testbed_init(Arena* gameMem) {
     PROFILE_FUNCTION();
     
-    InitImGui();
+    {
+        GameState::Initialize(gameMem);
+    }
+
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
     Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
@@ -544,7 +553,8 @@ void testbed_init() {
     }
 }
 
-void testbed_gametick(GameState& gs) {
+void testbed_gametick(Arena* gameMem) {
+    GameState& gs = GameState::get();
     testbed_inputpoll();
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
@@ -552,7 +562,9 @@ void testbed_gametick(GameState& gs) {
     testbed_orbit_light(mainLight, 200, 0.2);
     //gs.waterfallParticles.Tick({0,15,0});
 }
-void testbed_render(GameState& gs) {
+
+u64 testbed_render(const Arena* const gameMem) {
+    GameState& gs = GameState::get();
     #if 0
     SetWireframeDrawing(true);
     #endif
@@ -562,75 +574,62 @@ void testbed_render(GameState& gs) {
 
     if (!gs.postprocessingFB.isValid()) {
         gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
-        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/outline.frag"));
+        //Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/outline.frag"));
+        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
         postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture().id, "depthNormals");
         //gs.shadowMap.ReceiveShadows(postprocessingShader, gs.lights[0]);
         gs.framebufferSprite = Sprite(postprocessingShader, gs.postprocessingFB.GetTexture());
     }
 
     // draw game to postprocessing framebuffer
-    if (USE_OUTLINE_SHADER) {
-        gs.postprocessingFB.Bind();
-    }
+    gs.postprocessingFB.Bind();
 
     ClearGLBuffers();
     drawGameState();
 
-    if (USE_OUTLINE_SHADER) {
-        gs.postprocessingFB.BindDefaultFrameBuffer();
-
-        // draw postprocessing framebuffer to screen
-        gs.framebufferSprite.GetShader().use();
-        gs.framebufferSprite.GetShader().setUniform("_DepthThreshold", _DepthThreshold);
-        gs.framebufferSprite.GetShader().setUniform("_DepthThickness", _DepthThickness);
-        gs.framebufferSprite.GetShader().setUniform("_DepthStrength", _DepthStrength);
-        gs.framebufferSprite.GetShader().setUniform("_ColorThreshold", _ColorThreshold);
-        gs.framebufferSprite.GetShader().setUniform("_ColorThickness", _ColorThickness);
-        gs.framebufferSprite.GetShader().setUniform("_ColorStrength", _ColorStrength);
-        gs.framebufferSprite.GetShader().setUniform("_NormalThreshold", _NormalThreshold);
-        gs.framebufferSprite.GetShader().setUniform("_NormalThickness", _NormalThickness);
-        gs.framebufferSprite.GetShader().setUniform("_NormalStrength", _NormalStrength);
-        gs.framebufferSprite.GetShader().setUniform("viewDir", Camera::GetMainCamera().cameraFront);
-
-        gs.framebufferSprite.DrawSprite(Transform2D({0,0}, {Camera::GetScreenWidth(), Camera::GetScreenHeight()}), glm::vec4(1), true);
-    }
-
 #ifdef ENABLE_IMGUI
     drawImGuiDebug();
 #endif
+    Framebuffer::BindDefaultFrameBuffer();
     // red is x, green is y, blue is z
     //Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
     //Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
     //Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
+    return gs.postprocessingFB.texture;
 }
 
-void testbed_tick() {
-    PROFILE_FUNCTION();
+void testbed_tick(Arena* gameMem) {
     GameState& gs = GameState::get();
-    testbed_gametick(gs);
-    testbed_render(gs);
+    testbed_inputpoll();
+    //testbed_orbit_cam(27, 17, {0, 10, 0});
+    // have main directional light orbit
+    Light& mainLight = gs.lights[0];
+    testbed_orbit_light(mainLight, 200, 0.2);
+    //gs.waterfallParticles.Tick({0,15,0});
 }
-void testbed_terminate() {
-    ImGuiTerminate();
+
+void testbed_terminate(Arena* gameMem) {
+    //ImGuiTerminate();
     GameState::get().Terminate();
 }
 
-void testbed_entrypoint(int argc, char *argv[])
+void GetTestbedAppRunCallbacks(AppRunCallbacks* out)
 {
-    
-    if (argc < 2)
-    {
-        LOG_FATAL("Passed too few arguments to app. Make sure to specify the resource directory");
-    }
-    const char* resourceDirectory = argv[1];
+    out->initFunc = testbed_init;
+    out->tickFunc = testbed_tick;
+    out->renderFunc = testbed_render;
+    out->terminateFunc = testbed_terminate;
+}
 
-    bool is3D = true;
-    InitEngine(1920, 1080, 16, 9, "Testbed", is3D, resourceDirectory); 
-    testbed_init();
-    while (!ShouldCloseWindow())
-    {
-        testbed_tick();
-    }
-    testbed_terminate();
-    TerminateGame();
+void testbed_standalone_entrypoint(int argc, char *argv[])
+{
+    EngineState engineInitState;
+    engineInitState.appName = "Testbed";
+    engineInitState.windowWidth = 1920;
+    engineInitState.windowHeight = 1080;
+    engineInitState.aspectRatioW = 16;
+    engineInitState.aspectRatioH = 9;
+    engineInitState.false2DTrue3D = true;
+    GetTestbedAppRunCallbacks(&engineInitState.appCallbacks);
+    InitEngine(engineInitState, MEGABYTES_BYTES(20), argc, argv); 
 }

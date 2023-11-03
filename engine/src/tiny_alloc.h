@@ -30,6 +30,7 @@ TAPI Arena arena_init(void* backing_buffer, size_t arena_size);
 TAPI Arena arena_init(void* backing_buffer, size_t arena_size, const char* name);
 TAPI void* arena_alloc(Arena* arena, size_t alloc_size);
 TAPI void* arena_resize(Arena* arena, void* old_mem, size_t old_size, size_t new_size);
+TAPI void arena_clear(Arena* arena);
 TAPI void arena_free_all(Arena* arena);
 TAPI const char* arena_get_name(Arena* arena);
 

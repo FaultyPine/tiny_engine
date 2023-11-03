@@ -3,5 +3,6 @@
 //#include "pch.h"
 #include "tiny_defines.h"
 
-
-TAPI void testbed_entrypoint(int argc, char *argv[]);
+struct AppRunCallbacks;
+TAPI void GetTestbedAppRunCallbacks(AppRunCallbacks* out);
+TAPI void testbed_standalone_entrypoint(int argc, char *argv[]);

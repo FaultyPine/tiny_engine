@@ -7,7 +7,7 @@
 // because this is defined, make sure to call gltViewport(width, height) when the screen is resized
 // this optimizes away a call to glGetIntegerv
 #define GLT_MANUAL_VIEWPORT 
-#include "tiny_ogl.h"
+#include "render/tiny_ogl.h"
 #include "external/GlText/glText.h"
 
 void UpdateGLTViewport(s32 width, s32 height) {

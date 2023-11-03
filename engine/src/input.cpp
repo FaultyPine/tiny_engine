@@ -2,6 +2,7 @@
 #include "input.h"
 #include "tiny_defines.h"
 #include "tiny_engine.h"
+#include "tiny_log.h"
 #include "GLFW/glfw3.h"
 #include <unordered_map>
 // gamepad
@@ -113,4 +114,67 @@ void MouseInput::UpdateMouse(f64 xpos, f64 ypos) {
         pitch = -89.0f;
 
     mousePos = glm::vec2(xpos, ypos);
+}
+
+static CursorMode glfwToTinyCursorMode(s32 glfwCursorMode)
+{
+    switch (glfwCursorMode)
+    {
+        case GLFW_CURSOR_NORMAL: 
+        {
+            return CursorMode::NORMAL;
+        } break;
+        case GLFW_CURSOR_DISABLED: 
+        {
+            return CursorMode::DISABLED;
+        } break;
+        case GLFW_CURSOR_HIDDEN: 
+        {
+            return CursorMode::HIDDEN;
+        } break;
+        default:
+        {
+            LOG_ERROR("Invalid glfw cursor mode passed to glfwToTinyCursorMode");
+            return CursorMode::NORMAL;
+        } break;
+    }
+}
+static s32 tinyToGlfwCursorMode(CursorMode tinyCursorMode)
+{
+    switch (tinyCursorMode)
+    {
+        case CursorMode::NORMAL: 
+        {
+            return GLFW_CURSOR_NORMAL;
+        } break;
+        case CursorMode::DISABLED: 
+        {
+            return GLFW_CURSOR_DISABLED;
+        } break;
+        case CursorMode::HIDDEN: 
+        {
+            return GLFW_CURSOR_HIDDEN;
+        } break;
+        default:
+        {
+            LOG_ERROR("Invalid CursorMode passed to tinyToGlfwCursorMode");
+            return GLFW_CURSOR_NORMAL;
+        } break;
+    }
+}
+
+void setCursorPosition(f32 x, f32 y)
+{
+    glfwSetCursorPos(GetMainGLFWWindow(), x, y);
+}
+CursorMode getCursorMode()
+{
+    s32 glfwCursorMode = glfwGetInputMode(GetMainGLFWWindow(), GLFW_CURSOR);
+    CursorMode result = glfwToTinyCursorMode(glfwCursorMode);
+    return result;
+}
+void setCursorMode(CursorMode cursorMode)
+{
+    s32 glfwCursorMode = tinyToGlfwCursorMode(cursorMode);
+    glfwSetInputMode(GetMainGLFWWindow(), GLFW_CURSOR, glfwCursorMode);
 }

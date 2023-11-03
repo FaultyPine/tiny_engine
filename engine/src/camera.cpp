@@ -1,9 +1,8 @@
 #include "camera.h"
-#include "GLFW/glfw3.h"
+#include "input.h"
 
 
-
-const s32 TAB_OUT_OF_WINDOW_KEY = GLFW_KEY_TAB;
+const s32 TAB_OUT_OF_WINDOW_KEY = TINY_KEY_TAB;
 
 
 glm::mat4 Camera::GetProjectionMatrix() const {
@@ -39,22 +38,24 @@ void Camera::UpdateCamera() {
     if (cam.isSwivelable) {
         cam.cameraFront = mouseInput.GetNormalizedLookDir();
     }
-
-    if (Keyboard::isKeyPressed(TAB_OUT_OF_WINDOW_KEY)) {
-    // when "tabbing" in and out of the game, the cursor position jumps around weirdly
-    // so here we save the last cursor pos when we tab out, and re-set it when we tab back in
-    static glm::vec2 lastMousePos = glm::vec2(0);
-    if (glfwGetInputMode(GetMainGLFWWindow(), GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
-        glfwSetInputMode(GetMainGLFWWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        cam.isSwivelable = true;
-        glfwSetCursorPos(GetMainGLFWWindow(), lastMousePos.x, lastMousePos.y);
-    }
-    else {
-        lastMousePos = {MouseInput::GetMouse().lastX, MouseInput::GetMouse().lastY};
-        glfwSetInputMode(GetMainGLFWWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);  
-        cam.isSwivelable = false;
-    }
+    UpdateTabbingOut();
+    cam.isSwivelable = getCursorMode() == CursorMode::DISABLED;
 }
+void Camera::UpdateTabbingOut()
+{
+    if (Keyboard::isKeyPressed(TAB_OUT_OF_WINDOW_KEY)) {
+        // when "tabbing" in and out of the game, the cursor position jumps around weirdly
+        // so here we save the last cursor pos when we tab out, and re-set it when we tab back in
+        static glm::vec2 lastMousePos = glm::vec2(0);
+        if (getCursorMode() == CursorMode::NORMAL) {
+            setCursorMode(CursorMode::DISABLED);
+            setCursorPosition(lastMousePos.x, lastMousePos.y);
+        }
+        else {
+            lastMousePos = {MouseInput::GetMouse().lastX, MouseInput::GetMouse().lastY};
+            setCursorMode(CursorMode::NORMAL);
+        }
+    }
 }
 void Camera::LookAt(glm::vec3 pos) {
     glm::vec3 diff = pos - cameraPos;

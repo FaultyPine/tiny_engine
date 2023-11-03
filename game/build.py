@@ -6,13 +6,13 @@ PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
 APP_NAME = "Testbed"
 SOURCE_DIR = "src"
 RESOURCE_DIRECTORY = f"{PYTHON_SCRIPT_PATH}/../res/"
-BUILD_LIB_DIR = f"{PYTHON_SCRIPT_PATH}/build_lib"
+BUILD_LIB_DIR = f"{PYTHON_SCRIPT_PATH}/build"
 BUILD_STANDALONE_DIR = f"{PYTHON_SCRIPT_PATH}/standalone"
 BIN_DIR = f"{PYTHON_SCRIPT_PATH}/../bin"
 
 
 # since we don't have a proper pythonic package folder structure, choosing to import our build utils this way
-sys.path.append(f"{PYTHON_SCRIPT_PATH}/../tools/build")
+sys.path.append(f"{PYTHON_SCRIPT_PATH}/../tools/build_tools")
 from build_utils import *
 
 DLL_NAME = f"{APP_NAME}.dll" if is_windows() else f"{APP_NAME}.so"
@@ -56,9 +56,11 @@ def get_game_standalone_linker_args_msvc():
     """)
 def get_game_standalone_compiler_args_msvc():
     to_root = "..\\..\\" # standalone buildfile is in game/standalone, so going 2 out is root
+    include_root_paths = ["", "engine\\src", "types\\generated"]
+    include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
         /std:c++17 
-        /I{to_root} /I{to_root}engine\\src  /I{to_root}types\\generated
+        {include_paths}
         /EHa /MT /Zi /FS /Gm- /Od /nologo /MP
     """)
 
@@ -86,25 +88,24 @@ def main():
     shouldBuildStandalone = True
     standalone_ninjafile_dir = os.path.join(PYTHON_SCRIPT_PATH, BUILD_STANDALONE_DIR) if shouldBuildStandalone else ""
     if len(args) > 0:
-        if args[0] == "regen":
+        if "clean" in args:
+            clean(BUILD_LIB_DIR)
+            clean(BUILD_STANDALONE_DIR)
+        elif "regen" in args:
             generate_ninjafile(PYTHON_SCRIPT_PATH, get_gamedll_compiler_args_msvc(), get_gamedll_linker_args_msvc(), BUILD_LIB_DIR, get_game_dll_sources, DLL_NAME, True)
             if (shouldBuildStandalone):
                 generate_ninjafile(standalone_ninjafile_dir, get_game_standalone_compiler_args_msvc(), get_game_standalone_linker_args_msvc(), BUILD_STANDALONE_DIR, get_game_standalone_app_sources, EXE_NAME, True)
-        elif args[0] == "clean":
-            clean(BUILD_LIB_DIR)
-            clean(BUILD_STANDALONE_DIR)
-        elif args[0] == "norun":
+        elif "norun" in args:
             build_game(standalone_ninjafile_dir)
-        elif args[0] == "run":
+        elif "run" in args:
             run_game()
-        elif args[0] == "help":
+        elif "help" in args:
             print("TODO: implement help text")
         else:
-            print("Unknown argument passed to engine build script!")
+            print("Unknown argument passed to game build script!")
     else:
         # default no arg behavior
         build_game(standalone_ninjafile_dir)
-        run_game()
 
 
 if __name__ == "__main__":

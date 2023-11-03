@@ -4,8 +4,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "external/obj_loader/tiny_obj_loader.h"
 
-#include "texture.h"
-#include "mesh.h" // for Vertex
+#include "render/texture.h"
+#include "render/mesh.h" // for Vertex
 #include "tiny_math.h"
 #include "tiny_log.h"
 

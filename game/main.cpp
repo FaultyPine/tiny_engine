@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[]) 
 {
-    testbed_entrypoint(argc, argv);
+    testbed_standalone_entrypoint(argc, argv);
 }
 
 /*

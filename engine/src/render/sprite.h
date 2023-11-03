@@ -20,6 +20,7 @@ struct Sprite {
                     glm::vec4 color = glm::vec4(1.0f),
                     bool shouldFlipY = false) const;
     TAPI void DrawSprite(const Transform2D& tf, glm::vec4 color = glm::vec4(1.0f), bool shouldFlipY = false) const;
+    TAPI void DrawSpriteFullscreen(glm::vec4 color = glm::vec4(1.0f)) const;
 
     bool isValid() const { return mainTex.id != 0; }
     inline f32 GetTextureWidth() const { return mainTex.width; }
@@ -28,13 +29,13 @@ struct Sprite {
     template<typename T>
     TAPI void setShaderUniform(const char* name, T val) const;
 
-    Texture GetMainTex() { return mainTex; }
+    Texture& GetMainTex() { return mainTex; }
     Shader GetShader() { return shader; }
 
 private:
-    Texture mainTex;
-    Shader shader;
-    u32 quadVAO;
+    Texture mainTex = {};
+    Shader shader = {};
+    u32 quadVAO = 0;
     void initRenderData();
 };
 

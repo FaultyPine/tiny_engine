@@ -60,6 +60,10 @@ void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec
     glBindVertexArray(0);
 }
 
+void Sprite::DrawSpriteFullscreen(glm::vec4 color) const
+{
+    DrawSprite(glm::vec2(0), glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight()), true);
+}
 
 void Sprite::initRenderData() {
     // configure VAO/VBO

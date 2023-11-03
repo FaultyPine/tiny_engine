@@ -1,0 +1,127 @@
+import sys, os, glob, shutil, time
+from ninja_syntax import Writer
+
+UTILS_PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
+platform = sys.platform
+
+def is_windows():
+    return platform == "win32" or platform == "cygwin"
+def is_linux():
+    return platform == "linux" or platform == "linux2"
+def is_macos():
+    return platform == "darwin" 
+def get_ninja_command(ninjabuild_dir: str = ""):
+    ninja_exe_dir = UTILS_PYTHON_SCRIPT_PATH
+    if is_linux():
+        return f"chmod u+x {ninja_exe_dir}/ninja-linux && {ninja_exe_dir}ninja-linux -C {ninjabuild_dir}"
+    elif is_macos():
+        return f"chmod 755 {ninja_exe_dir}/ninja-mac && {ninja_exe_dir}/ninja-mac -C {ninjabuild_dir}"
+    elif is_windows():
+        return f"\"{ninja_exe_dir}/ninja.exe\" -C {ninjabuild_dir}"
+def get_files_with_ext_recursive_walk(basedir, ext):
+    files_with_ext = [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
+    def exclude_file_filter(filepath):
+        # if a folder/file starts with .  ignore it
+        for folder in filepath.split("/"):
+            if folder.startswith("."):
+                return False
+        return True
+
+    files_with_ext = list(filter(exclude_file_filter, files_with_ext))
+    return files_with_ext
+
+def command(cmd):
+    result = os.system(cmd)
+    if result != 0: # if not success code, stop
+        exit()
+
+def get_obj_from_src_file(filename):
+    return filename[filename.rfind("/")+1:].replace(".cpp", ".obj" if is_windows() else ".o")
+
+def clean_string(contents):
+    return contents.replace("\n", "").strip()
+
+
+def generate_ninjafile(
+        buildninja_path: str, 
+        compiler_args: str, 
+        linker_args: str, 
+        build_dir: str,  
+        get_source_files_func,
+        output_exe_name: str,
+        force_overwrite=False):
+    ninja_build_filename = f"{buildninja_path}/build.ninja"
+    if os.path.exists(ninja_build_filename) and not force_overwrite:
+        return
+    os.makedirs(buildninja_path, exist_ok=True)
+    buildfile = open(ninja_build_filename, "w")
+    n = Writer(buildfile)
+    n.variable("cxx", "cl")
+    n.variable("compiler_args", compiler_args)
+    n.variable("linker_args", linker_args)
+    n.variable("builddir", build_dir) # "builddir" is a special ninja var that dictates the output directory
+    n.rule(
+        name="compile", 
+        command="$cxx -showIncludes $compiler_args -c $in -Fo$out",
+        description="BUILD $out",
+        deps="msvc")
+    n.rule(
+        name="link",
+        command="LINK -OUT:$out $in $linker_args",
+        description="LINK $out"
+    )
+    link_files = []
+    source_files = get_source_files_func()
+    for src_cpp in source_files:
+        print("Source file: " + src_cpp)
+        # build src
+        obj_filename = get_obj_from_src_file(src_cpp)
+        n.build(f"$builddir/{obj_filename}", "compile", f"{src_cpp}")
+        # prep file list for linking
+        link_files.append(f"$builddir/{get_obj_from_src_file(src_cpp)}")
+    # link
+    n.build(f"$builddir/{output_exe_name}", "link", link_files)
+    print("Regenerated ninja build!")
+    buildfile.close()
+
+
+def include_arg(to_root, path):
+    return f"/I{to_root}\\{path}"
+
+def include_paths_str(to_root: str, paths: list) -> str:
+    include_paths = str.join(" ", [include_arg(to_root, inc_path) for inc_path in paths])
+    return include_paths
+
+def generic_ninja_build(buildninja_path: str, 
+        compiler_args: str, 
+        linker_args: str, 
+        build_dir: str,  
+        get_source_files_func,
+        output_exe_name: str,
+        output_dir: str):
+    generate_ninjafile(buildninja_path, compiler_args, linker_args, build_dir, get_source_files_func, output_exe_name, False)
+    start_time = time.time()
+    command(get_ninja_command(buildninja_path)) # actual build
+    elapsed = round(time.time() - start_time, 3)
+    print(f"{output_exe_name} build took {elapsed} seconds")
+
+    src = os.path.join(build_dir, output_exe_name)
+    dst = os.path.join(output_dir, output_exe_name)
+    copy_file(src, dst)
+
+def clean(dir: str):
+    # remove generated pch and all files or folders in build/
+    for root, dirs, files in os.walk(dir):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
+    print("Cleaned!")
+
+
+def copy_file(src, dst):
+    if os.path.exists(src):
+        shutil.copy(src, dst)
+        print(f"Copied {src} -> {dst}")
+    else:
+        print(f"{src} doesn't exist, didn't copy.")

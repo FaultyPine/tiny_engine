@@ -68,11 +68,17 @@ void* arena_resize(Arena* arena, void* old_mem, size_t old_size, size_t new_size
     }
 }
 
-void arena_free_all(Arena* arena) {
+void arena_clear(Arena* arena) {
     arena->offset = 0;
     arena->prev_offset = 0;
 }
 
+void arena_free_all(Arena* arena)
+{
+    arena_clear(arena);
+    arena->backing_mem_size = 0;
+    TFREE(arena->backing_mem);
+}
 
 ArenaTemp arena_temp_init(Arena* arena) {
     ArenaTemp tmp;

@@ -2,8 +2,8 @@
 #define TINY_PARTICLES_H
 
 //#include "pch.h"
-#include "sprite.h"
-#include "texture.h"
+#include "render/sprite.h"
+#include "render/texture.h"
 #include "tiny_fs.h"
 #include "model.h"
 #include <memory>

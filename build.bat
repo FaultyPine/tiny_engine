@@ -2,10 +2,18 @@
 
 cls
 
-pushd tools\build
+set pythoncmd=python
+WHERE %pythoncmd% >nul 2>nul
+IF NOT %ERRORLEVEL% == 0 (
+    echo Python not found, make sure it is installed, or change the python command in this batch file (build.bat)
+)
+
+pushd tools\build_tools
 call "vsdev.bat"
 popd
 
+
+REM TODO: always run type recompilation, but implement ninja system to make sure we only rebuild when necessary
 if ["%1"]==["types"] (
     :: build types
     pushd types
@@ -17,16 +25,17 @@ if ["%1"]==["types"] (
 :: build engine
 pushd engine
 echo =========== Engine ===========
-python build.py %*
+%pythoncmd% build.py %*
 popd
 
 :: build editor
 pushd editor
-
+echo =========== Editor ===========
+%pythoncmd% build.py %*
 popd
 
 :: build game
 pushd game
 echo =========== Game ===========
-python build.py %*
+%pythoncmd% build.py %*
 popd
