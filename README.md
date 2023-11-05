@@ -51,18 +51,6 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
-- Build up editor - get game rendering in editor window
-    - need a way for the editor to render the game into a specified window.
-        game's render function needs to return a Sprite/Texture (or at least some texture handle that imgui can draw)
-
-    - Plan of attack for proper editor/engine/game split.
-        game and editor call InitEngine, passing in (default) res/aspect ratio, along with argc/argv. Engine grabs resource dir
-        game and editor *also* pass in an init, tick, render, and terminate function pointer.
-        
-
-
-
-
 - refactor shaders to use includes
 - Resource system
     - load from filesystem
@@ -76,25 +64,26 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
     - use rel pointers/arrays to make everything one big blob?
 - growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
 - better grass sway w/distortion texture to emulate wind better
+- Renderer
+    - Centralized system that takes in draw commands. At end of frame draws all requests and can
+        do pre-processing on those commands like batching
 - PBR
 - HDR/Tonemapping & Bloom
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
-- Space partitioning (BSP/Quadtree/Octree)
+- Space partitioning
+    - OctTree (?)
+    - BVH
+        - raycasting
 - animation
-    - .obj files don't support animation... might need to implement gltf or collada or fbx support
-    - https://learnopengl.com/Guest-Articles/2020/Skeletal-Animation
-    - https://www.youtube.com/watch?v=f3Cr8Yx3GGA
-- Perforce?
+    - basic skeletal
+    - IK
+- get linux build on feature parity
+- Event system
 - Portals! (And utilizing that to make "non-euclidean" spaces)
 - 3D World Wrapping (I.E. Manifold garden)
 - (Visualizing) L-Systems
-- get linux build on feature parity
-- in general, research good debugging tools...
-    - https://werat.dev/blog/what-a-good-debugger-can-do/
-    - https://rr-project.org/  (get this compiling under linux? Did, but weird mouse issues...)
-- Event system
 
 
 

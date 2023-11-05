@@ -1,46 +1,7 @@
 /*
-** Example: type metadata
-**
-** This example is full of commentary on strategies for setting up Metadesk
-** programs. There are many many ways a system like this could be built,
-** this example only demonstrates one way. Everything here should be taken as
-** our best attempt to pass on insights about using Metadesk, and not as the
-** "one true way".
-**
-** This example shows what a typical Metadesk based metaprogram for generating
-** type metadata looks like. Metadesk can be used for all sorts of other
-** purposes, managing data tables, authoring content, configuration systems,
-** and more, but a very common reason that a C programmer reaches for a
-** metaprogramming system is to make up for C's lack of type metadata.
-**
-** The "Metadesk way" of solving this problem is to move the hand written type
-** definitions into metadesk files, and to generate the C structs AND the 
-** tables for type metadata from the metaprogram.
-**
-** A more common approach is to mark up C types and create a custom parser
-** for the modified C hybdrid. That approach requires a lot of heuristics to
-** deal with the complex grammar of C code, and is especially hard to make
-** both robust and reusable. The Metadesk way makes the problem a lot more
-** simple, if you are comfortable with generating C types instead of writing
-** them by hand in C.
-**
-**
-** Files:
-**  type_metadata.h - This example is big enough that we pulled out the types
-**                    and function declarations from the metaprogram to keep
-**                    things organized.
-**  type_info.h     - This header is included in the "final program" and
-**                    defines the types that will form the tables of metdata.
-**  type_info_final_program.c - In addition to the metaprogram this example
-**                    includes a "final program", i.e. one that depends on
-**                    generated code. There is more commentary there.
-**  generated/ *    - This is the output folder where the generated files
-**                    should be saved by the metaprogram.
-**  types.mdesk     - Sample input for this metaprogram. The code generated
-**                    from this metadesk file will be necessary to make
-**                    type_info_final_program.c compile.
-**  bad_types.mdesk - Sample input for seeing some of the error checking work.
-**
+Reads in files in the types/ folder
+and outputs type metadata .h/.cpp files in a generated/ folder
+both folders will be in the same directory as the built executable
 */
 
 //~ includes and globals //////////////////////////////////////////////////////
@@ -51,8 +12,6 @@
 #include "md.c"
 
 #include <filesystem>
-
-//static MD_Arena *arena = 0;
 
 static FILE *error_file = 0;
 
@@ -89,6 +48,15 @@ static MD_Map filedata_map = MD_ZERO_STRUCT;
 
 
 //~ helpers ///////////////////////////////////////////////////////////////////
+
+// STD
+
+void CreateDirIfNotExists(MD_String8 dir)
+{
+    std::filesystem::create_directories(std::string_view((const char*)dir.str, dir.size));
+}
+
+// /////////////////////////////
 
 MD_Node*
 gen_get_child_value(MD_Node *parent, MD_String8 child_name)
@@ -189,21 +157,39 @@ MD_String8 remove_file_extension(MD_String8 full_filename)
     // get non-extension filename
     MD_u8* str_end = full_filename.str + full_filename.size-1;
     int extension_length = 1;
-    for (; *--str_end != '.' ; extension_length++) // reverse walk to '.'
+    for (; *--str_end != '.' && extension_length < full_filename.size ; extension_length++) // reverse walk to '.'
     {}
     extension_length++;
     MD_String8 filename_noext = MD_S8(full_filename.str, full_filename.size - extension_length);
     return filename_noext;
 }
 
+MD_String8 remove_uppermost_dir(MD_String8 path)
+{
+    // TODO:
+    // walk to the first "/"
+    MD_u8* str_begin = path.str;
+    MD_u32 str_chars_cut = 0;
+    for (; *str_begin++ != '/' && str_begin < (str_begin + path.size); str_chars_cut++) {}
+    return MD_String8 {str_begin, path.size - str_chars_cut};
+}
+
 MD_String8 isolate_filename(MD_String8 full_path)
 {
     MD_u8* str_end = full_path.str + full_path.size-1;
     int filename_length = 0;
-    for (; *str_end != '\\' && *str_end != '/'; filename_length++) // reverse walk to / or "\"
-    {--str_end;}
+    for (; *str_end-- != '/'; filename_length++) {} // reverse walk to /
     str_end++;
     MD_String8 filename_noext = MD_S8(str_end, filename_length);
+    return filename_noext;
+}
+
+MD_String8 isolate_filepath(MD_String8 file_path)
+{
+    MD_u8* str_end = file_path.str + file_path.size-1;
+    int filename_length = 0;
+    for (; *str_end-- != '/'; filename_length++) {} // reverse walk to /
+    MD_String8 filename_noext = MD_S8(file_path.str, file_path.size - filename_length);
     return filename_noext;
 }
 
@@ -1534,12 +1520,7 @@ void MergeFileData(GEN_FileData& filedata, GEN_FileData& filedata_other)
     MD_MapConcatInPlace(filedata.arena, filedata.map_map, filedata_other.map_map);
 }
 
-void CreateDirIfNotExists(MD_String8 dir)
-{
-    std::string dir_str = std::string((const char*)dir.str, dir.size);
-    std::filesystem::path dir_path = std::filesystem::path(dir_str);
-    std::filesystem::create_directory(dir_path);
-}
+
 
 GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 output_dir, MD_String8 input_dir, bool is_include = false)
 {
@@ -1603,16 +1584,19 @@ GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 o
     {
         // as of right now we don't preserve input directory structure. Just spitting
         // all the generated header/source files into the output dir
-        MD_String8 only_filename = isolate_filename(filename);
-        MD_String8 filename_noext = remove_file_extension(only_filename);
-        MD_String8 filename_type_ext = MD_S8Fmt(arena, "%.*s.type", MD_S8VArg(filename_noext)); // filename.type.h   filename.type.cpp
-        MD_String8 header_name = MD_S8Fmt(arena, "%.*s.h", MD_S8VArg(filename_type_ext));
+        MD_String8 filepath = remove_uppermost_dir(filename);
+        MD_String8 header_name = MD_S8Fmt(arena, "%.*s.h", MD_S8VArg(filepath));
         MD_String8 header_path = MD_S8Fmt(arena, "%.*s/%.*s", MD_S8VArg(output_dir), MD_S8VArg(header_name));
-        MD_String8 source_filename = MD_S8Fmt(arena, "%.*s/%.*s.cpp", MD_S8VArg(output_dir), MD_S8VArg(filename_type_ext));
+        MD_String8 source_filename = MD_S8Fmt(arena, "%.*s/%.*s.cpp", MD_S8VArg(output_dir), MD_S8VArg(filepath));
 
+        MD_String8 filepath_no_filename = isolate_filepath(header_path);
+        CreateDirIfNotExists(filepath_no_filename);
+        filepath_no_filename = isolate_filepath(source_filename);
+        CreateDirIfNotExists(filepath_no_filename);
         // generate header file
         {
             FILE *h = fopen((const char*)header_path.str, "wb");
+            MD_String8 filename_noext = remove_file_extension(isolate_filename(filename)); // "types/basic.type" -> "basic"
             MD_String8 header_guard_name = MD_S8Stylize(arena, filename_noext, MD_IdentifierStyle_UpperCase, MD_S8Lit(""));
             fprintf(h, "#if !defined(%.*s_H)\n", MD_S8VArg(header_guard_name));
             fprintf(h, "#define %.*s_H\n", MD_S8VArg(header_guard_name));
@@ -1671,7 +1655,7 @@ main(int argc, char **argv)
 
     // parse all files in input dir with .type extension
     // *not recursive*! Purposely keeping file structure simple
-    for (const std::filesystem::directory_entry& dirEntry : std::filesystem::directory_iterator(INPUT_DIR_S))
+    for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(INPUT_DIR_S))
     {
         std::filesystem::path file_path = dirEntry.path();
         std::filesystem::path file_ext = file_path.extension();

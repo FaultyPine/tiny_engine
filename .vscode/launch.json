@@ -28,11 +28,11 @@
         "name": "MD Types",
         "type": "cppvsdbg",
         "request": "launch",
-        "program": "${workspaceFolder}\\src\\types\\type_metadata.exe",
+        "program": "${workspaceFolder}\\types\\type_metadata.exe",
         "args": [],
         "stopAtEntry": false,
         "preLaunchTask": "build_types",
-        "cwd": "${workspaceFolder}\\src\\types",
+        "cwd": "${workspaceFolder}\\types",
         "environment": [],
         "console": "integratedTerminal"
     },
