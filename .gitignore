@@ -6,6 +6,8 @@ bin/
 build/
 __pycache__/
 build.ninja
+*.ninja_deps
+*.ninja_log
 *.gch
 *.exe
 *.out

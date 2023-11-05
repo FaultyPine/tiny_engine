@@ -13,14 +13,11 @@ call "vsdev.bat"
 popd
 
 
-REM TODO: always run type recompilation, but implement ninja system to make sure we only rebuild when necessary
-if ["%1"]==["types"] (
-    :: build types
-    pushd types
-    echo =========== TYPES ===========
-    call build.bat && run.bat
-    popd
-)
+:: build types
+pushd types
+echo =========== TYPES ===========
+%pythoncmd% build.py %*
+popd
 
 :: build engine
 pushd engine

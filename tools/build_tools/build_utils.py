@@ -18,6 +18,16 @@ def get_ninja_command(ninjabuild_dir: str = ""):
         return f"chmod 755 {ninja_exe_dir}/ninja-mac && {ninja_exe_dir}/ninja-mac -C {ninjabuild_dir}"
     elif is_windows():
         return f"\"{ninja_exe_dir}/ninja.exe\" -C {ninjabuild_dir}"
+
+def get_ninja_command_for_ninjafile(ninjabuild_file: str):
+    ninja_exe_dir = UTILS_PYTHON_SCRIPT_PATH
+    if is_linux():
+        return f"chmod u+x {ninja_exe_dir}/ninja-linux && {ninja_exe_dir}ninja-linux -f {ninjabuild_file}"
+    elif is_macos():
+        return f"chmod 755 {ninja_exe_dir}/ninja-mac && {ninja_exe_dir}/ninja-mac -f {ninjabuild_file}"
+    elif is_windows():
+        return f"\"{ninja_exe_dir}/ninja.exe\" -f {ninjabuild_file}"
+
 def get_files_with_ext_recursive_walk(basedir, ext):
     files_with_ext = [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]
     def exclude_file_filter(filepath):
@@ -107,7 +117,8 @@ def generic_ninja_build(buildninja_path: str,
 
     src = os.path.join(build_dir, output_exe_name)
     dst = os.path.join(output_dir, output_exe_name)
-    copy_file(src, dst)
+    if src != dst:
+        copy_file(src, dst)
 
 def clean(dir: str):
     # remove generated pch and all files or folders in build/

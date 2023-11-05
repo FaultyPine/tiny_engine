@@ -10,7 +10,7 @@ both folders will be in the same directory as the built executable
 #include "type_metadata.h"
 
 #include "md.c"
-
+ 
 #include <filesystem>
 
 static FILE *error_file = 0;
@@ -170,15 +170,21 @@ MD_String8 remove_uppermost_dir(MD_String8 path)
     // walk to the first "/"
     MD_u8* str_begin = path.str;
     MD_u32 str_chars_cut = 0;
-    for (; *str_begin++ != '/' && str_begin < (str_begin + path.size); str_chars_cut++) {}
-    return MD_String8 {str_begin, path.size - str_chars_cut};
+    for (; *str_begin != '/' && str_begin < (path.str + path.size); str_chars_cut++, str_begin++) {}
+    str_begin++;
+    // there never was any 
+    if (str_chars_cut >= path.size)
+    {
+        return path;
+    }
+    return MD_String8 {str_begin, path.size - str_chars_cut - 1};
 }
 
 MD_String8 isolate_filename(MD_String8 full_path)
 {
     MD_u8* str_end = full_path.str + full_path.size-1;
     int filename_length = 0;
-    for (; *str_end-- != '/'; filename_length++) {} // reverse walk to /
+    for (; *str_end != '/'; filename_length++, str_end--) {} // reverse walk to /
     str_end++;
     MD_String8 filename_noext = MD_S8(str_end, filename_length);
     return filename_noext;
@@ -187,8 +193,8 @@ MD_String8 isolate_filename(MD_String8 full_path)
 MD_String8 isolate_filepath(MD_String8 file_path)
 {
     MD_u8* str_end = file_path.str + file_path.size-1;
-    int filename_length = 0;
-    for (; *str_end-- != '/'; filename_length++) {} // reverse walk to /
+    int filename_length = 1;
+    for (; *str_end != '/'; filename_length++, str_end--) {} // reverse walk to /
     MD_String8 filename_noext = MD_S8(file_path.str, file_path.size - filename_length);
     return filename_noext;
 }
@@ -1582,8 +1588,6 @@ GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 o
     // generate phase
     if (!is_include)    
     {
-        // as of right now we don't preserve input directory structure. Just spitting
-        // all the generated header/source files into the output dir
         MD_String8 filepath = remove_uppermost_dir(filename);
         MD_String8 header_name = MD_S8Fmt(arena, "%.*s.h", MD_S8VArg(filepath));
         MD_String8 header_path = MD_S8Fmt(arena, "%.*s/%.*s", MD_S8VArg(output_dir), MD_S8VArg(header_name));
@@ -1632,34 +1636,16 @@ GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 o
 
 
 //~ main //////////////////////////////////////////////////////////////////////
+#define TYPE_FILE_EXT ".type"
 
-int
-main(int argc, char **argv)
+void process_type_files_in_dir(MD_Arena* arena, char* input_dir_s, char* output_dir_s)
 {
-    if (argc < 3)
-    {
-        fprintf(stderr, "Make sure to pass the input types folder and output folder!");
-        return 1;
-    }
-    
-    #define TYPE_FILE_EXT ".type"
-    char* input_dir_s = argv[1];
-    char* output_dir_s = argv[2];
     MD_String8 input_dir = MD_S8CString(input_dir_s);
     MD_String8 output_dir = MD_S8CString(output_dir_s);
-
-    // setup the global arena
-    MD_Arena* arena = MD_ArenaAlloc();
-    filedata_map = MD_MapMake(arena);
-
-    // output stream routing
-    error_file = stderr;
-    
-    // hardcoded input/output dirs to make things simple as possible
-
+    normalize_directory_seperators(input_dir);
+    normalize_directory_seperators(output_dir);
     CreateDirIfNotExists(output_dir);
     CreateDirIfNotExists(input_dir);
-
     // parse all files in input dir with .type extension
     // *not recursive*! Purposely keeping file structure simple
     for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(input_dir_s))
@@ -1676,6 +1662,45 @@ main(int argc, char **argv)
             GEN_FileData* filedata = ProcessTypeFile(arena, md_filename, output_dir, input_dir);
             MD_MapInsert(arena, &filedata_map, MD_MapKeyStr(md_filename), filedata);
         }
+    }
+}
+
+int
+main(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        fprintf(stderr, "Make sure to either pass '-f <input dir> <output dir> <filename>' for single file processing, or '<input dir> <output dir>' for recursive folder processing");
+        return 1;
+    }
+    // setup the global arena
+    MD_Arena* arena = MD_ArenaAlloc();
+    filedata_map = MD_MapMake(arena);
+    // output stream routing
+    error_file = stderr;
+
+    if (strcmp(argv[1], "-f") == 0)
+    {
+        // single file mode
+        char* input_dir_s = argv[2];
+        char* output_dir_s = argv[3];
+        char* file = argv[4];
+        MD_String8 md_filename = MD_S8CString(file);
+        MD_String8 md_input_dir = MD_S8CString(input_dir_s);
+        MD_String8 md_output_dir = MD_S8CString(output_dir_s);
+        normalize_directory_seperators(md_filename);
+        normalize_directory_seperators(md_input_dir);
+        normalize_directory_seperators(md_output_dir);
+        md_filename = MD_S8Fmt(arena, "%.*s/%.*s", MD_S8VArg(md_input_dir), MD_S8VArg(md_filename));
+        GEN_FileData* filedata = ProcessTypeFile(arena, md_filename, md_output_dir, md_input_dir);
+        MD_MapInsert(arena, &filedata_map, MD_MapKeyStr(md_filename), filedata);
+    }
+    else
+    {
+        // recursive dir mode
+        char* input_dir_s = argv[1];
+        char* output_dir_s = argv[2];
+        process_type_files_in_dir(arena, input_dir_s, output_dir_s);
     }
 
     return 0;

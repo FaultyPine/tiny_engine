@@ -51,6 +51,7 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
+- ~~type system ninja build~~
 - refactor shaders to use includes
 - Resource system
     - load from filesystem
