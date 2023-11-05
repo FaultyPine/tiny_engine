@@ -29,7 +29,7 @@
         "type": "cppvsdbg",
         "request": "launch",
         "program": "${workspaceFolder}\\types\\type_metadata.exe",
-        "args": [],
+        "args": ["types", "generated"],
         "stopAtEntry": false,
         "preLaunchTask": "build_types",
         "cwd": "${workspaceFolder}\\types",

@@ -1636,6 +1636,18 @@ GEN_FileData* ProcessTypeFile(MD_Arena* arena, MD_String8 filename, MD_String8 o
 int
 main(int argc, char **argv)
 {
+    if (argc < 3)
+    {
+        fprintf(stderr, "Make sure to pass the input types folder and output folder!");
+        return 1;
+    }
+    
+    #define TYPE_FILE_EXT ".type"
+    char* input_dir_s = argv[1];
+    char* output_dir_s = argv[2];
+    MD_String8 input_dir = MD_S8CString(input_dir_s);
+    MD_String8 output_dir = MD_S8CString(output_dir_s);
+
     // setup the global arena
     MD_Arena* arena = MD_ArenaAlloc();
     filedata_map = MD_MapMake(arena);
@@ -1644,18 +1656,13 @@ main(int argc, char **argv)
     error_file = stderr;
     
     // hardcoded input/output dirs to make things simple as possible
-    #define INPUT_DIR_S "types"
-    #define OUTPUT_DIR_S "generated"
-    #define TYPE_FILE_EXT ".type"
-    MD_String8 input_dir = MD_S8Lit(INPUT_DIR_S);
-    MD_String8 output_dir = MD_S8Lit(OUTPUT_DIR_S);
 
     CreateDirIfNotExists(output_dir);
     CreateDirIfNotExists(input_dir);
 
     // parse all files in input dir with .type extension
     // *not recursive*! Purposely keeping file structure simple
-    for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(INPUT_DIR_S))
+    for (const std::filesystem::directory_entry& dirEntry : std::filesystem::recursive_directory_iterator(input_dir_s))
     {
         std::filesystem::path file_path = dirEntry.path();
         std::filesystem::path file_ext = file_path.extension();
