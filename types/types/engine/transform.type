@@ -1,0 +1,34 @@
+@include "basics.type"
+@include "engine/math.type"
+
+
+@type(struct)
+Transform:
+{
+    position: Vector3;
+    rotation: Vector3;
+    scale: Vector3;
+}
+
+@type(struct)
+Transform2D:
+{
+    position: Vector2;
+    rotationAngle: f32;
+    scale: Vector2;
+}
+
+@type(struct)
+BoundingBox:
+{
+    min: Vector3;
+    max: Vector3;
+}
+
+@type(struct)
+BoundingBox2D:
+{
+    min: Vector2;
+    max: Vector2;
+}
+

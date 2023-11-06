@@ -2,7 +2,6 @@
 
 @include "engine/math.type"
 @include "basics.type"
-@include "test.type"
 
 @type(enum)
 Projection:

@@ -30,7 +30,7 @@ def get_types_metaprogram_compiler_args():
 
 def get_types_metaprogram_linker_args():
     return clean_string(f"""
-        /DEBUG
+        /DEBUG /NOLOGO
     """)
 
 

@@ -28,5 +28,23 @@ Vector4:
 @type(struct)
 Mat2x2:
 {
-    data: @array(2,2) f32;
+  data: @array(2,2) f32;
+}
+
+@type(struct)
+Mat3x3:
+{
+  data: @array(3,3) f32;
+}
+
+@type(struct)
+Mat4x4:
+{
+  data: @array(4,4) f32;
+}
+
+@type(struct)
+Quaternion:
+{
+  data: @array(4) f32;
 }
