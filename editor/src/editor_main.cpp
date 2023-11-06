@@ -21,7 +21,7 @@ static EditorState* globEditorState;
 void editor_render_game_window(const Arena* const mem, EditorState* editor)
 {
     u64 renderedGameFrame = globEditorState->gameCallbacks.renderFunc(mem);
-    ImGui::Begin("Game", 0, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin("Game");
     ImVec2 window_dimensions = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImGui::GetWindowDrawList()->AddImage(
@@ -76,8 +76,9 @@ void editor_init(Arena* mem)
     globEditorState = editor;
     // fetch our game's callbacks
     GetTestbedAppRunCallbacks(&editor->gameCallbacks);
-    editor->editorMainFb = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
     editor->gameCallbacks.initFunc(mem);
+    
+    editor->editorMainFb = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
 }
 void editor_tick(Arena* mem)
 {
