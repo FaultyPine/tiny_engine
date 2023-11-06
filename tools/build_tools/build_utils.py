@@ -26,7 +26,7 @@ def get_ninja_command_for_ninjafile(ninjabuild_file: str):
     elif is_macos():
         return f"chmod 755 {ninja_exe_dir}/ninja-mac && {ninja_exe_dir}/ninja-mac -f {ninjabuild_file}"
     elif is_windows():
-        return f"\"{ninja_exe_dir}/ninja.exe\" -f {ninjabuild_file}"
+        return f"\"{ninja_exe_dir}\\ninja.exe\" -f {ninjabuild_file}"
 
 def get_files_with_ext_recursive_walk(basedir, ext):
     files_with_ext = [y.replace("\\", "/") for x in os.walk(basedir) for y in glob.glob(os.path.join(x[0], f'*.{ext}'))]

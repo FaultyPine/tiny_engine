@@ -496,7 +496,12 @@ gen_equip_struct_members(GEN_FileData* filedata)
                                 MD_u64 array_size = abs(MD_CStyleIntFromString(array_count_referencer->string));
                                 if (array_size)
                                 {
-                                    MD_String8 new_array_type_name = MD_S8Fmt(filedata->arena, "%.*s[]", MD_S8VArg(type_name_node->string));
+                                    MD_String8 new_array_type_name = 
+                                        MD_S8Fmt(filedata->arena, "%.*s_%.*s_%.*s[]", 
+                                        MD_S8VArg(type->node->string),
+                                        MD_S8VArg(member_node->string),
+                                        MD_S8VArg(type_name_node->string)
+                                        ); // looks like Mat2x2_data_f32[]  making sure name is unique
                                     MD_MapSlot* array_type_already_exists = 
                                             MD_MapLookup(&filedata->type_map, MD_MapKeyStr(new_array_type_name));
                                     GEN_TypeInfo* array_type_info;
