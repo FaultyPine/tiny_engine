@@ -330,19 +330,14 @@ gen_parse_includes(GEN_FileData* filedata, MD_Node* root)
     {
         if (MD_NodeHasTag(node, MD_S8Lit("include"), 0))
         {
-            MD_Node* include_tag = node->first_tag; // include(...)
-            MD_Node* include_path_node = include_tag->first_child;
-            if (!MD_NodeIsNil(include_path_node))
+            MD_String8 include_path = node->string;
+            // add .type extension to include path if it's not already there
+            bool hasTypeExt = MD_S8FindSubstring(include_path, MD_S8Lit(".type"), 0, 0) != include_path.size;
+            if (!hasTypeExt)
             {
-                MD_String8 include_path = include_path_node->string;
-                // add .type extension to include path if it's not already there
-                bool hasTypeExt = MD_S8FindSubstring(include_path, MD_S8Lit(".type"), 0, 0) != include_path.size;
-                if (!hasTypeExt)
-                {
-                    include_path = MD_S8Fmt(filedata->arena, "%.*s.type", MD_S8VArg(include_path));
-                }
-                MD_S8ListPush(filedata->arena, &filedata->include_list, include_path);
+                include_path = MD_S8Fmt(filedata->arena, "%.*s.type", MD_S8VArg(include_path));
             }
+            MD_S8ListPush(filedata->arena, &filedata->include_list, include_path);
         }
     }
 }
@@ -501,18 +496,29 @@ gen_equip_struct_members(GEN_FileData* filedata)
                                 MD_u64 array_size = abs(MD_CStyleIntFromString(array_count_referencer->string));
                                 if (array_size)
                                 {
-                                    // if it's a hardcoded array, generate a new GEN_TypeInfo
-                                    GEN_TypeInfo* array_type_info = MD_PushArrayZero(filedata->arena, GEN_TypeInfo, 1);
-                                    array_type_info->kind = GEN_TypeKind_Array;
-                                    array_type_info->node = type_name_node;
-                                    array_type_info->size = array_size;
-                                    // (extra) info about the array type stored in the underlying_type->node
-                                    // this includes if we have a 2D or 3D (or ND) array
-                                    GEN_TypeInfo* underlying_array_type = MD_PushArrayZero(filedata->arena, GEN_TypeInfo, 1);
-                                    underlying_array_type->node = array_count_referencer;
-                                    array_type_info->underlying_type = underlying_array_type;
-                                    MD_QueuePush(filedata->first_type, filedata->last_type, array_type_info);
-                                    MD_MapInsert(filedata->arena, &filedata->type_map, MD_MapKeyStr(array_type_info->node->string), array_type_info);
+                                    MD_String8 new_array_type_name = MD_S8Fmt(filedata->arena, "%.*s[]", MD_S8VArg(type_name_node->string));
+                                    MD_MapSlot* array_type_already_exists = 
+                                            MD_MapLookup(&filedata->type_map, MD_MapKeyStr(new_array_type_name));
+                                    GEN_TypeInfo* array_type_info;
+                                    if (!array_type_already_exists)
+                                    {
+                                        // if it's a hardcoded array, generate a new GEN_TypeInfo
+                                        array_type_info = MD_PushArrayZero(filedata->arena, GEN_TypeInfo, 1);
+                                        array_type_info->kind = GEN_TypeKind_Array;
+                                        array_type_info->node = type_name_node;
+                                        array_type_info->size = array_size;
+                                        // (extra) info about the array type stored in the underlying_type->node
+                                        // this includes if we have a 2D or 3D (or ND) array
+                                        GEN_TypeInfo* underlying_array_type = MD_PushArrayZero(filedata->arena, GEN_TypeInfo, 1);
+                                        underlying_array_type->node = array_count_referencer;
+                                        array_type_info->underlying_type = underlying_array_type;
+                                        MD_QueuePush(filedata->first_type, filedata->last_type, array_type_info);
+                                        MD_MapInsert(filedata->arena, &filedata->type_map, MD_MapKeyStr(new_array_type_name), array_type_info);
+                                    }
+                                    else
+                                    {
+                                        array_type_info = (GEN_TypeInfo*)array_type_already_exists->val;
+                                    }
                                     type_info = array_type_info; // type info to attach to this struct member is our new array type
                                 }
                                 else

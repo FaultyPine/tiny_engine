@@ -1,4 +1,4 @@
-@include("basics.type")
+@include "basics.type"
 
 
 @type(struct)
@@ -29,10 +29,4 @@ Vector4:
 Mat2x2:
 {
     data: @array(2,2) f32;
-}
-
-@type(struct)
-SomeBigList:
-{
-  data: @array(2,2,2,2,2) f32;
 }

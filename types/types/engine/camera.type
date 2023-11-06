@@ -1,9 +1,34 @@
-@include("basics.type")
 
+
+@include "engine/math.type"
+@include "basics.type"
+@include "test.type"
+
+@type(enum)
+Projection:
+{
+    PERSPECTIVE,
+    ORTHOGRAPHIC,
+}
 
 @type(struct)
 Camera:
 {
     speed: f32;
+    cameraPos: Vector3;
+    cameraFront: Vector3;
+    cameraUp: Vector3;
     
+    screenWidth: u32;
+    screenHeight: u32;
+    maxScreenWidth: u32;
+    maxScreenHeight: u32;
+    minScreenWidth: u32;
+    minScreenHeight: u32;
+
+    FOV: f32;
+    nearClip: f32;
+    farClip: f32;
+    isSwivelable: bool;
+    projection: Projection;
 }

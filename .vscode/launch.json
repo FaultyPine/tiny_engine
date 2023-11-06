@@ -29,9 +29,13 @@
         "type": "cppvsdbg",
         "request": "launch",
         "program": "${workspaceFolder}\\types\\type_metadata.exe",
-        "args": ["-f", "types", "generated", "game/test.type"],
+        "symbolOptions": {
+            "searchPaths": ["${workspaceFolder}\\types"],
+            "searchMicrosoftSymbolServer": true
+        },
+        "args": ["-f", "types", "generated", "engine/camera.type"],
         "stopAtEntry": false,
-        "preLaunchTask": "build_types",
+        //"preLaunchTask": "build_types",
         "cwd": "${workspaceFolder}\\types",
         "environment": [],
         "console": "integratedTerminal"

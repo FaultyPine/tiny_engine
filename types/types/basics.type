@@ -1,17 +1,15 @@
 
-
+@type(basic) bool: 4;
 @type(basic, unsigned char) u8: 1;
 @type(basic, char) s8: 1;
 @type(basic, unsigned short) u16: 2;
 @type(basic, short) s16: 2;
 @type(basic, unsigned int) u32: 4;
 @type(basic, int) s32: 4;
-@type(basic, long) s64: 8;
-@type(basic, unsigned long) u64: 8;
+@type(basic, long long) s64: 8;
+@type(basic, unsigned long long) u64: 8;
 @type(basic, float) f32: 4;
 @type(basic, double) f64: 8;
-@type(basic, unsigned long long) usize: 8;
-@type(basic, signed long long) isize: 8;
 @type(basic, void*) voidp: 8;
 
 @type(struct)

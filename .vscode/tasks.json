@@ -14,12 +14,15 @@
         {
             "taskName": "build_types",
             "type": "shell",
-            "command": "build.bat types",
+            "command": "python build.py",
             "group": {
                 "kind": "build",
                 "isDefault": false
             },
-            "problemMatcher": "$gcc"
+            "problemMatcher": "$gcc",
+            "options": {
+                "cwd": "${workspaceFolder}\\types"
+            }
         },
     ]
 }

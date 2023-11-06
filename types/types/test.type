@@ -1,0 +1,7 @@
+@include "basics.type"
+
+@type(struct)
+SomeStruct:
+{
+    data: u32;
+}

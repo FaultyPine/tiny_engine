@@ -1,5 +1,5 @@
 import os, sys, time
-PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
+PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__)).replace("\\", "/")
 
 # since we don't have a proper pythonic package folder structure, choosing to import our build utils this way
 sys.path.append(f"{PYTHON_SCRIPT_PATH}/../tools/build_tools")
@@ -14,10 +14,12 @@ def get_types_metaprogram_source_files():
     return ["type_metadata.cpp"]
 
 def get_types_source_files():
-    type_sources = get_files_with_ext_recursive_walk(f"{PYTHON_SCRIPT_PATH}/{TYPES_INPUT_FOLDER}", "type")
-    print(type_sources)
-    sources = ["basics.type", "math.type", "game/test.type", "engine/camera.type"] # TODO: find automatically
-    return sources
+    types_input_folder_path = f"{PYTHON_SCRIPT_PATH}/{TYPES_INPUT_FOLDER}"
+    print(types_input_folder_path)
+    type_sources = get_files_with_ext_recursive_walk(types_input_folder_path, "type")
+    for i in range(len(type_sources)):
+        type_sources[i] = type_sources[i].replace(types_input_folder_path, "").strip("/")
+    return type_sources
 
 
 def get_types_metaprogram_compiler_args():
@@ -28,7 +30,7 @@ def get_types_metaprogram_compiler_args():
 
 def get_types_metaprogram_linker_args():
     return clean_string(f"""
-        
+        /DEBUG
     """)
 
 
@@ -57,8 +59,7 @@ def generate_types_ninjafile(buildninja_path, build_dir, get_source_files_func, 
 
 def build_types_metaprogram():
     print("Building meta types...")
-    start_time = time.time()
-    # build our actual types metaprogram
+    # build our types metaprogram
     generic_ninja_build(
         PYTHON_SCRIPT_PATH,
         get_types_metaprogram_compiler_args(),
@@ -68,11 +69,12 @@ def build_types_metaprogram():
         OUTPUT_EXE_NAME,
         PYTHON_SCRIPT_PATH)
     
-    # generate ninjafile for building the actual .type files
+    start_time = time.time()
+    # generate ninjafile for building the .type files
     generate_types_ninjafile(TYPES_INPUT_FOLDER, GENERATED_TYPES_FOLDER, get_types_source_files, False)
     command(get_ninja_command_for_ninjafile(f"{PYTHON_SCRIPT_PATH}/{TYPES_INPUT_FOLDER}/build.ninja")) # actual build of .type files
     elapsed = round(time.time() - start_time, 3)
-    print(f"{OUTPUT_EXE_NAME} build took {elapsed} seconds")
+    print(f"Meta types build took {elapsed} seconds")
 
 def run_types_metaprogram():
     if is_windows():
@@ -85,12 +87,21 @@ def main():
     if (len(args) > 0):
         if "clean" in args:
             clean(f"{PYTHON_SCRIPT_PATH}/{GENERATED_TYPES_FOLDER}")
-            if os.path.exists(f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME}"):
-                os.remove(f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME}")
+            files_to_remove = [f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME}",
+                               f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME.replace('exe', 'obj')}",
+                               f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME.replace('exe', 'pdb')}",
+                               f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME.replace('exe', 'ilk')}",
+                               f"{PYTHON_SCRIPT_PATH}/{TYPES_INPUT_FOLDER}/build.ninja",
+                               f"{PYTHON_SCRIPT_PATH}/build.ninja"]
+            for filename in files_to_remove:
+                if os.path.exists(filename):
+                    os.remove(filename)
+        if "run" in args:
+            run_types_metaprogram()
+
     else:
         # default no arg behavior
         build_types_metaprogram()
-        #run_types_metaprogram()
 
 
 if __name__ == "__main__":
