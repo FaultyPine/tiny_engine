@@ -5,7 +5,7 @@
 #include "texture.h"
 #include "shader.h"
 #include "tiny_fs.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "tiny_ogl.h"
 
 // shader var is just called "shader" after this macro

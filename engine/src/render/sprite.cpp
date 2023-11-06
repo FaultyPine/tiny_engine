@@ -1,7 +1,7 @@
 //#include "pch.h"
 #include "sprite.h"
 #include "tiny_fs.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "camera.h"
 #include "tiny_ogl.h"
 

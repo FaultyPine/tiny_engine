@@ -3,7 +3,7 @@
 
 //#include "pch.h"
 #include "tiny_defines.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "shader.h"
 
 #define MAX_NUM_LIGHTS 4

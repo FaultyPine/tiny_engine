@@ -6,7 +6,7 @@
 
 #include "render/texture.h"
 #include "render/mesh.h" // for Vertex
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "tiny_log.h"
 
 // for std::filesystem::path

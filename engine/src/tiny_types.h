@@ -2,7 +2,7 @@
 #define TINY_TYPES_H
 
 //#include "pch.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 
 // TODO: seperate into cpp file
 

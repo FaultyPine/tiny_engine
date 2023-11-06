@@ -136,7 +136,7 @@ struct GameState {
 #include "render/mesh.h"
 #include "render/texture.h"
 #include "render/tiny_lights.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "render/shapes.h"
 #include "tiny_profiler.h"
 #include "particles/particle_behaviors.h"

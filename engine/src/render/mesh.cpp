@@ -1,7 +1,7 @@
 //#include "pch.h"
 #include "mesh.h"
 #include "camera.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "tiny_engine.h"
 #include "tiny_ogl.h"
 #include "shader.h"
@@ -49,8 +49,8 @@ void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent,
     // vertex attribute slots since we can only pass a max of 4 floats in one attribute
     // TODO: verify this works for all data types (float, vec2/3/4, mat2/3/4)
     u32 numFloatsInComponent = sizeofSingleComponent / 4;
-    u32 numVec4sInComponent = std::max(1u, numFloatsInComponent / 4);
-    for (usize i = 0; i < numVec4sInComponent; i++) {
+    u64 numVec4sInComponent = std::max(1u, numFloatsInComponent / 4);
+    for (u64 i = 0; i < numVec4sInComponent; i++) {
         ConfigureVertexAttrib( // instance data
             vertexAttributeLocation+i, numFloatsInComponent / 4, GL_FLOAT, false, sizeofSingleComponent, (void*)(i*numFloatsInComponent));
         GLCall(glVertexAttribDivisor(vertexAttributeLocation+i, 1));  // update vertex attribute on every new instance of the mesh, not on every vertex

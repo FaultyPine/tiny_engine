@@ -2,7 +2,7 @@
 #define MESH_H
 
 //#include "pch.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "texture.h"
 #include "tiny_types.h"
 #include <vector>

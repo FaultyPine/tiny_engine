@@ -9,7 +9,7 @@
 #include "render/texture.h"
 #include "input.h"
 #include "render/sprite.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "tiny_profiler.h"
 #include "render/tiny_ogl.h"
 #include "render/framebuffer.h"
@@ -25,6 +25,20 @@
 #else
 #include <direct.h>
 #endif
+
+STATIC_ASSERT(sizeof(s8) == 1);
+STATIC_ASSERT(sizeof(u8) == 1);
+STATIC_ASSERT(sizeof(s16) == 2);
+STATIC_ASSERT(sizeof(u16) == 2);
+STATIC_ASSERT(sizeof(u32) == 4);
+STATIC_ASSERT(sizeof(s32) == 4);
+STATIC_ASSERT(sizeof(u64) == 8);
+STATIC_ASSERT(sizeof(s64) == 8);
+
+STATIC_ASSERT(sizeof(f32) == 4);
+STATIC_ASSERT(sizeof(f64) == 8);
+
+STATIC_ASSERT(sizeof(void*) == 8);
 
 static EngineState globEngineState;
 

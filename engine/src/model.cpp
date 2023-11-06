@@ -3,7 +3,7 @@
 
 #include "ObjParser.h"
 #include "camera.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "tiny_log.h"
 
 #include <assimp/Importer.hpp>

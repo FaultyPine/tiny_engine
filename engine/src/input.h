@@ -2,7 +2,7 @@
 #define TINY_INPUT_H
 
 //#include "pch.h"
-#include "tiny_math.h"
+#include "math/tiny_math.h"
 #include "input_keys.h"
 
 // gamepad
