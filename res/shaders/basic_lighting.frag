@@ -13,56 +13,12 @@ out vec4 finalColor;
 uniform float nearClip;
 uniform float farClip;
 uniform int shouldCrosshatch = 0;
-vec3 crosshatch(vec3 texColor);
+#include "crosshatch.glsl"
+
 // ============================ MATERIALS ==================================
-
-#define NUM_MATERIAL_TYPES 4
-#define MAX_NUM_MATERIALS 4
-
-struct MaterialProperty {
-    vec4 color;
-    int useSampler;
-    sampler2D tex;
-};
-struct Material {
-    MaterialProperty diffuseMat;
-    // TODO: don't use ambient material, ambient should always just be a color. 
-    // If you really want an ambient "texture", use diffuse
-    MaterialProperty ambientMat;
-    MaterialProperty specularMat;
-    MaterialProperty normalMat;
-    MaterialProperty shininessMat;
-    MaterialProperty emissiveMat;
-};
-
+#include "material.glsl"
 uniform int useNormalMap = 0; // If unset, use vertex normals. If set, sample normal map
 uniform Material materials[MAX_NUM_MATERIALS];
-
-vec4 GetMaterialColor(MaterialProperty mat) {
-    int shouldUseSampler = mat.useSampler;
-    vec4 color = (1-shouldUseSampler) * mat.color;
-    vec4 tex =   shouldUseSampler     * texture(mat.tex, fragTexCoord);
-    // if useSampler is true, color is 0, if it's false, tex is 0
-    return color + tex;
-}
-vec4 GetDiffuseMaterial() {
-    return GetMaterialColor(materials[materialId].diffuseMat);
-}
-vec4 GetAmbientMaterial() {
-    return GetMaterialColor(materials[materialId].ambientMat);
-}
-vec4 GetSpecularMaterial() {
-    return GetMaterialColor(materials[materialId].specularMat);
-}
-vec4 GetNormalMaterial() {
-    return GetMaterialColor(materials[materialId].normalMat);
-}
-float GetShininessMaterial() {
-    return GetMaterialColor(materials[materialId].shininessMat).r;
-}
-vec4 GetEmissiveMaterial() {
-    return GetMaterialColor(materials[materialId].emissiveMat);
-}
 
 // ================================== LIGHTING ===================================
 
@@ -88,7 +44,7 @@ vec3 GetViewDir() {
 }
 vec3 GetNormals() {
     vec3 vertNormals = (1-useNormalMap) * normalize(fragNormalWS);
-    vec3 normalMapNormals = (useNormalMap) * GetNormalMaterial().rgb;
+    vec3 normalMapNormals = (useNormalMap) * GetNormalMaterial(materials, materialId, fragTexCoord).rgb;
     return vertNormals + normalMapNormals;
 }
 
@@ -136,7 +92,7 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
 
 vec3 calculateLighting() {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
-    vec3 ambientLight = GetAmbientMaterial().rgb * ambientLightIntensity;
+    vec3 ambientLight = GetAmbientMaterial(materials, materialId, fragTexCoord).rgb * ambientLightIntensity;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
@@ -174,14 +130,14 @@ vec3 calculateLighting() {
             // blinn-phong
             vec3 halfwayDir = normalize(lightDir + viewDir);
             float specularFactor = dot(normal, halfwayDir);
-            specCo = pow(max(0.0, specularFactor), GetShininessMaterial());
+            specCo = pow(max(0.0, specularFactor), GetShininessMaterial(materials, materialId, fragTexCoord));
         }
-        specularLight += specCo * lightColor * GetSpecularMaterial().rgb;
+        specularLight += specCo * lightColor * GetSpecularMaterial(materials, materialId, fragTexCoord).rgb;
     }
 
     float shadow = GetShadow(fragPosLightSpace, sunLightDir, normal);
     if (shouldCrosshatch != 0) {
-        shadow = crosshatch(vec3(shadow)).r;
+        shadow = crosshatch(vec3(shadow), fragPositionWS).r;
     }
     vec3 lighting = shadow * (specularLight + diffuseLight);
     lighting += ambientLight; // add ambient on top of everything
@@ -192,7 +148,7 @@ vec3 calculateLighting() {
 
 void main() {
     // Texel color fetching from texture sampler
-    vec3 diffuseColor = GetDiffuseMaterial().rgb;
+    vec3 diffuseColor = GetDiffuseMaterial(materials, materialId, fragTexCoord).rgb;
 
     // colored lighting
     vec3 lighting = calculateLighting();
@@ -204,51 +160,4 @@ void main() {
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));
-}
-
-
-
-
-
-
-
-
-
-float luma(vec3 color) {
-    return (color.r + color.g + color.g) / 3;
-    //return dot(color, vec3(0.299, 0.587, 0.114));
-}
-vec3 crosshatch(vec3 texColor, float x, float y, float z, float t1, float t2, float t3, float t4, float crosshatchOffset, float lineThickness) {
-  float lum = luma(texColor);
-  vec3 color = vec3(1.0);
-  float crosshatchLineStep = crosshatchOffset / lineThickness;
-  if (lum < t1) {
-      float ch = mod(x + y + z, crosshatchOffset);
-      ch = smoothstep(0,crosshatchLineStep, ch);
-      color *= vec3(ch);
-  }
-  if (lum < t2) {
-      float ch = mod(x - y - z, crosshatchOffset);
-      ch = smoothstep(0,crosshatchLineStep, ch);
-      color *= vec3(ch);
-  }
-  if (lum < t3) {
-      float ch = mod(x + y + z - crosshatchOffset/2, crosshatchOffset);
-      ch = smoothstep(0,crosshatchLineStep, ch);
-      color *= vec3(ch);
-  }
-  if (lum < t4) {
-      float ch = mod(x - y - z - crosshatchOffset/2, crosshatchOffset);
-      ch = smoothstep(0,crosshatchLineStep, ch);
-      color *= vec3(ch);
-  }
-  return color;
-}
-
-vec3 crosshatch(vec3 texColor) {
-  float crosshatchOffset = 0.8;
-  float lineThickness = 8;
-  //vec2 xy = vec2(gl_FragCoord.x, gl_FragCoord.y);
-  vec3 xyz = fragPositionWS.xyz;
-  return crosshatch(texColor, xyz.x, xyz.y, xyz.z, 1.0, 0.5, 0.2, 0.1, crosshatchOffset, lineThickness);
 }
