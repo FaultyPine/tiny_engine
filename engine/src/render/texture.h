@@ -78,16 +78,25 @@ struct Material {
     MaterialProp ambientMat = {};
     MaterialProp specularMat = {};
     MaterialProp normalMat = {};
-    f32 shininess = 10.0;
+    MaterialProp shininessMat = {};
+    MaterialProp emissiveMat = {};
     std::string name = "DefaultMat";
 
     Material() = default;
-    TAPI Material(MaterialProp diffuse, MaterialProp ambient, MaterialProp specular, MaterialProp normal, f32 shininess, std::string name) {
+    TAPI Material(
+        MaterialProp diffuse, 
+        MaterialProp ambient, 
+        MaterialProp specular, 
+        MaterialProp normal, 
+        MaterialProp shininess, 
+        MaterialProp emissive,
+        std::string name) {
         diffuseMat = diffuse;
         ambientMat = ambient;
         specularMat = specular;
         normalMat = normal;
-        this->shininess = shininess;
+        shininessMat = shininess;
+        emissiveMat = emissive;
         this->name = name;
     }
     void Delete() {

@@ -1,7 +1,6 @@
 //#include "pch.h"
 #include "model.h"
 
-#include "ObjParser.h"
 #include "camera.h"
 #include "math/tiny_math.h"
 #include "tiny_log.h"
@@ -53,9 +52,6 @@ MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const
 }
 
 Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
-    // TODO: since assimp only has shininess as a texture, might want to change my material impl to use
-    // a texture for shininess too... since thats usually how it's done
-    float shininess = 0.0f;
     aiString str;
     std::string name = "";
     aiReturn hasName = material->Get(AI_MATKEY_NAME, str);
@@ -64,11 +60,19 @@ Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
     }
 
     MaterialProp diffuse = GetMaterialFromType(material, aiTextureType_DIFFUSE, meshMaterialDir);
-    MaterialProp ambient = GetMaterialFromType(material, aiTextureType_AMBIENT, meshMaterialDir);
     MaterialProp specular = GetMaterialFromType(material, aiTextureType_SPECULAR, meshMaterialDir);
+    MaterialProp ambient = GetMaterialFromType(material, aiTextureType_AMBIENT, meshMaterialDir);
+    MaterialProp emissive = GetMaterialFromType(material, aiTextureType_EMISSIVE, meshMaterialDir);
+    //MaterialProp height = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
     MaterialProp normal = GetMaterialFromType(material, aiTextureType_NORMALS, meshMaterialDir);
-
-    Material ret = Material(diffuse, ambient, specular, normal, shininess, name);
+    // Usually there is a conversion function defined to map the linear color values in the texture to a suitable exponent
+    MaterialProp shininess = GetMaterialFromType(material, aiTextureType_SHININESS, meshMaterialDir);
+    //MaterialProp opacity = GetMaterialFromType(material, aiTextureType_OPACITY, meshMaterialDir);
+    //MaterialProp displacement = GetMaterialFromType(material, aiTextureType_DISPLACEMENT, meshMaterialDir);
+    //MaterialProp lightmap = GetMaterialFromType(material, aiTextureType_LIGHTMAP, meshMaterialDir);
+    
+    
+    Material ret = Material(diffuse, ambient, specular, normal, shininess, emissive, name);
     return ret;
 }
 
@@ -122,14 +126,6 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
             indices.push_back(face.mIndices[j]);
     }
     // process material
-    /*
-    if (mesh->mMaterialIndex >= 0) {
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-        Material m = aiMaterialConvert(material, meshMaterialDir);
-        materials.push_back(m);
-    }
-    */
-
     for (u32 i = 0; i < scene->mNumMaterials; i++) {
         aiMaterial* material = scene->mMaterials[i];
         aiString name;

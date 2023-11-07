@@ -130,7 +130,6 @@ struct GameState {
 
 #include "camera.h"
 #include "input.h"
-#include "ObjParser.h"
 #include "render/shader.h"
 #include "tiny_fs.h"
 #include "render/mesh.h"

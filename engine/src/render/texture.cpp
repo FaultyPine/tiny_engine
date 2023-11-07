@@ -212,6 +212,7 @@ void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
     SET_MATERIAL_UNIFORMS(ambientMat);
     SET_MATERIAL_UNIFORMS(specularMat);
     SET_MATERIAL_UNIFORMS(normalMat);
-    shader.setUniform(TextFormat("materials[%i].shininess", matIdx), shininess);
+    SET_MATERIAL_UNIFORMS(shininessMat);
+    SET_MATERIAL_UNIFORMS(emissiveMat);
     shader.setUniform("useNormalMap", normalMat.hasTexture);
 }

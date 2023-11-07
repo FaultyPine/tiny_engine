@@ -2,9 +2,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "build",
+            "taskName": "build_all",
             "type": "shell",
-            "command": "build.bat norun",
+            "command": "build_all.bat",
             "group": {
                 "kind": "build",
                 "isDefault": true

@@ -7,7 +7,7 @@
         "program": "${workspaceFolder}\\bin\\Testbed.exe",
         "args": ["${workspaceFolder}\\res\\"],
         "stopAtEntry": false,
-        "preLaunchTask": "build",
+        "preLaunchTask": "build_all",
         "cwd": "${workspaceFolder}\\bin",
         "environment": [],
         "console": "integratedTerminal"
@@ -19,7 +19,7 @@
         "program": "${workspaceFolder}\\bin\\TinyEditor.exe",
         "args": ["${workspaceFolder}\\res\\"],
         "stopAtEntry": false,
-        "preLaunchTask": "build",
+        "preLaunchTask": "build_all",
         "cwd": "${workspaceFolder}\\bin",
         "environment": [],
         "console": "integratedTerminal"

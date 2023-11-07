@@ -31,10 +31,13 @@ struct Material {
     MaterialProperty ambientMat;
     MaterialProperty specularMat;
     MaterialProperty normalMat;
-    float shininess;
+    MaterialProperty shininessMat;
+    MaterialProperty emissiveMat;
 };
+
 uniform int useNormalMap = 0; // If unset, use vertex normals. If set, sample normal map
 uniform Material materials[MAX_NUM_MATERIALS];
+
 vec4 GetMaterialColor(MaterialProperty mat) {
     int shouldUseSampler = mat.useSampler;
     vec4 color = (1-shouldUseSampler) * mat.color;
@@ -53,6 +56,12 @@ vec4 GetSpecularMaterial() {
 }
 vec4 GetNormalMaterial() {
     return GetMaterialColor(materials[materialId].normalMat);
+}
+float GetShininessMaterial() {
+    return GetMaterialColor(materials[materialId].shininessMat).r;
+}
+vec4 GetEmissiveMaterial() {
+    return GetMaterialColor(materials[materialId].emissiveMat);
 }
 
 // ================================== LIGHTING ===================================
@@ -165,7 +174,7 @@ vec3 calculateLighting() {
             // blinn-phong
             vec3 halfwayDir = normalize(lightDir + viewDir);
             float specularFactor = dot(normal, halfwayDir);
-            specCo = pow(max(0.0, specularFactor), materials[materialId].shininess);
+            specCo = pow(max(0.0, specularFactor), GetShininessMaterial());
         }
         specularLight += specCo * lightColor * GetSpecularMaterial().rgb;
     }
