@@ -4,6 +4,7 @@
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
 #include <unordered_map>
+#include <set>
 #include <sstream>
 
 // TODO: There's a lot of static tracking stuff here meant to make Shaders
@@ -37,7 +38,11 @@ u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) {
 }
 
 
-std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& includeIdentifier, const std::string& includeSearchDir) {
+std::string ShaderPreprocessIncludes(
+    const s8* shaderSource, 
+    const std::string& includeIdentifier, 
+    const std::string& includeSearchDir, 
+    std::set<std::string> alreadyIncluded = {}) {
     static bool isRecursiveCall = false;
     std::string fullSourceCode = "";
     std::string lineBuffer;
@@ -52,17 +57,21 @@ std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& 
             lineBuffer.erase(lineBuffer.size() - 1, 1); // remove ""
             // The include path is relative to the current shader file path
             std::string path = includeSearchDir + lineBuffer;
-
-            std::string nextFile;
-            if (ReadEntireFile(path.c_str(), nextFile)) {
-                // recursively process included file
-                isRecursiveCall = true;
-                std::string recursiveShaderSource = ShaderPreprocessIncludes(nextFile.c_str(), includeIdentifier, includeSearchDir);
-                fullSourceCode += recursiveShaderSource;
-            }
-            else {
-                LOG_ERROR("Failed to open shader include: %s", path);
-                TINY_ASSERT(false);
+            // if we haven't already included this in the compilation unit
+            if (alreadyIncluded.count(path) == 0)
+            {
+                std::string nextFile;
+                if (ReadEntireFile(path.c_str(), nextFile)) {
+                    alreadyIncluded.insert(path);
+                    // recursively process included file
+                    isRecursiveCall = true;
+                    std::string recursiveShaderSource = ShaderPreprocessIncludes(nextFile.c_str(), includeIdentifier, includeSearchDir, alreadyIncluded);
+                    fullSourceCode += recursiveShaderSource;
+                }
+                else {
+                    LOG_ERROR("Failed to open shader include: %s", path);
+                    TINY_ASSERT(false);
+                }
             }
 
             // don't add the actual "#include blah.blah" line in the final source
