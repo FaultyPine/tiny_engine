@@ -31,7 +31,7 @@ void main()
     // world space frag pos to light space
     fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
     materialId = vertexMaterialId;
-    fragNormalWS = normalize(vec3(normalMat*vertexNormal));
+    fragNormalWS = vec3(normalMat*vertexNormal);
 
     gl_Position = mvp*vec4(vertexPosition, 1.0);
 }

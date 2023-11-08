@@ -71,6 +71,13 @@ Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
     //MaterialProp displacement = GetMaterialFromType(material, aiTextureType_DISPLACEMENT, meshMaterialDir);
     //MaterialProp lightmap = GetMaterialFromType(material, aiTextureType_LIGHTMAP, meshMaterialDir);
     
+    // if we have a specular coefficient, they are typically in the range [0, 1000]
+    // we remap that to something that looks reasonable here
+    if (!shininess.hasTexture)
+    {
+        // TODO: make configurable
+        shininess.color.r = Math::Remap(shininess.color.r, 0.0, 1000.0, 0.0, 50.0);
+    }
     
     Material ret = Material(diffuse, ambient, specular, normal, shininess, emissive, name);
     return ret;
@@ -159,7 +166,6 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, 
 }
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
-#if 1
     Assimp::Importer import;
     //std::string extList = "";
     //import.GetExtensionList(extList);
@@ -171,9 +177,6 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
         return;
     }
     processNode(scene->mRootNode, scene, meshes, meshMaterialDir);
-#else
-    meshes = LoadObjMesh(meshObjFile, meshMaterialDir);
-#endif
     cachedShader = shader;
 }
 Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) {

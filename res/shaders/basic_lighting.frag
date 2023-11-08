@@ -90,16 +90,14 @@ float GetShadow(vec4 fragPosLS, vec3 lightDir, vec3 normal) {
     return 1-shadow;
 }
 
-vec3 calculateLighting() {
+vec3 calculateLighting(vec3 fragNormalWS, vec3 viewDir) {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
     vec3 ambientLight = GetAmbientMaterial(materials, materialId, fragTexCoord).rgb * ambientLightIntensity;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
-    vec3 normal = GetNormals();
     // direction of directional light (if there are multiple, this currently uses the last)
     vec3 sunLightDir = vec3(0);
-    vec3 viewDir = GetViewDir();
 
     // assumes active lights are at the front of the lights array
     // this is asserted in the model drawing functions
@@ -121,7 +119,7 @@ vec3 calculateLighting() {
 
         // Diffuse light
         // [0-1] 0 being totally unlit, 1 being in full light
-        float NdotL = max(dot(normal, lightDir), 0.0);
+        float NdotL = max(dot(fragNormalWS, lightDir), 0.0);
         diffuseLight += lightColor * NdotL;
 
         // specular light
@@ -129,16 +127,13 @@ vec3 calculateLighting() {
         if (NdotL > 0.0) {
             // blinn-phong
             vec3 halfwayDir = normalize(lightDir + viewDir);
-            float specularFactor = dot(normal, halfwayDir);
+            float specularFactor = dot(fragNormalWS, halfwayDir);
             specCo = pow(max(0.0, specularFactor), GetShininessMaterial(materials, materialId, fragTexCoord));
         }
         specularLight += specCo * lightColor * GetSpecularMaterial(materials, materialId, fragTexCoord).rgb;
     }
 
-    float shadow = GetShadow(fragPosLightSpace, sunLightDir, normal);
-    if (shouldCrosshatch != 0) {
-        shadow = crosshatch(vec3(shadow), fragPositionWS).r;
-    }
+    float shadow = GetShadow(fragPosLightSpace, sunLightDir, fragNormalWS);
     vec3 lighting = shadow * (specularLight + diffuseLight);
     lighting += ambientLight; // add ambient on top of everything
     return lighting;
@@ -151,7 +146,7 @@ void main() {
     vec3 diffuseColor = GetDiffuseMaterial(materials, materialId, fragTexCoord).rgb;
 
     // colored lighting
-    vec3 lighting = calculateLighting();
+    vec3 lighting = calculateLighting(GetNormals(), GetViewDir());
     vec3 col = lighting * diffuseColor;
     float alpha = 1.0;
 
@@ -160,4 +155,6 @@ void main() {
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));
+
+    //finalColor = vec4(normalize(fragNormalWS), 1.0);
 }

@@ -5,15 +5,15 @@
 in vec3 fragPositionWS;
 in vec2 fragTexCoord;
 //in vec4 fragColor;
-//in vec3 fragNormalWS;
+in vec3 fragNormalOS;
 in vec4 fragPosLightSpace;
 flat in int materialId;
-//in vec3 fragPositionOS;
+in vec3 fragPositionOS;
 // Output fragment color
 out vec4 finalColor;
 uniform int numInstances;
 
-vec3 crosshatch(vec3 texColor);
+#include "easings.glsl"
 
 uniform sampler2D shadowMap;
 float PCFShadow(vec2 projCoords, float shadowBias, float currentDepth, int resolution) {
@@ -57,65 +57,23 @@ float GetShadow() {
     return 1-shadow;
 }
 
-const vec3 brown = vec3(115, 72, 69);
-
+const vec3 grassBaseColor = vec3(0.05, 0.2, 0.01);
+const vec3 grassTipColor = vec3(0.1, 0.5, 0.1);
 
 void main() {
-    float height = fragTexCoord.y;
-    vec3 brown = brown/255.0;
-    vec3 col = mix(vec3(0,0.5,0), brown, 1-height);
+    float height = fragTexCoord.y; // 0 at bottom, 1 at tip
+    // TODO: blend between dark green at base and more yellowish green at tip
+    height = EaseInOutSine(height);
+    vec3 col = mix(grassBaseColor, grassTipColor, height);
+
+    // TODO: light these grass blades & use rounded normals
 
     // don't want shadows making it completely black
     // this kinda simulates ambient light
     float shadow = max(GetShadow(), 0.4); 
-    //shadow = crosshatch(vec3(shadow)).r;
-    //col *= shadow;
+    col *= shadow;
 
     finalColor = vec4(vec3(col), 1.0);
 }
 
 
-
-
-
-
-
-
-
-float luma(vec3 color) {
-    return dot(color, vec3(0.299, 0.587, 0.114));
-}
-vec3 crosshatch(vec3 texColor, float x, float y, float t1, float t2, float t3, float t4, float crosshatchOffset, float lineThickness) {
-  float lum = luma(texColor);
-  vec3 color = vec3(1.0);
-  float crosshatchLineStep = crosshatchOffset / lineThickness;
-  if (lum < t1) {
-      float ch = mod(x + y, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  if (lum < t2) {
-      float ch = mod(x - y, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  if (lum < t3) {
-      float ch = mod(x + y - crosshatchOffset/2, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  if (lum < t4) {
-      float ch = mod(x - y - crosshatchOffset/2, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  return color;
-}
-
-vec3 crosshatch(vec3 texColor) {
-  float crosshatchOffset = 0.1;
-  float lineThickness = 4;
-  //vec2 xy = vec2(gl_FragCoord.x, gl_FragCoord.y);
-  vec2 xy = fragPositionWS.xy;
-  return crosshatch(texColor, xy.x, xy.y, 0.5, 0.3, 0.1, 0.01, crosshatchOffset, lineThickness);
-}

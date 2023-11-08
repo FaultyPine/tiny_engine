@@ -23,26 +23,19 @@ out vec3 fragNormalOS;
 //out vec4 fragPosLightSpace;
 out vec4 fragPosLightSpace;
 flat out int materialId;
-//out vec3 fragPositionOS;
+out vec3 fragPositionOS;
 
-float cnoise(vec2 P);
+#include "noise.glsl"
+#include "hash.glsl"
+#include "common.glsl"
 
-vec2 windDirBase = vec2(0.5, 0.5);
+vec2 windDirBase = normalize(vec2(0.5, 0.5));
 uniform sampler2D windTexture;
 uniform float _WindStrength;
 uniform float _WindFrequency;
 uniform float _WindUVScale;
+uniform float _CurveIntensity;
 
-void GetGrassSway(inout vec3 vertPosOS) {
-    float height = pow(vertexTexCoord.y, 4);
-    vec3 posWS = (instanceModelMat*vec4(vertPosOS, 1.0)).xyz;
-    vec2 windDir = normalize( windDirBase + (cnoise(vec2(time))+1)/2 );
-
-    vec2 uv = posWS.xz + (_WindFrequency * time);
-    vec2 windSample = (texture(windTexture, uv/_WindUVScale).xy * 2 -1);
-    vec2 wind = normalize(windSample) * _WindStrength;
-    vertPosOS.xz += wind * height;
-}
 mat4 Billboard(mat4 modelViewMat) {
     // To create a "billboard" effect,
     // set upper 3x3 submatrix of model-view matrix to identity
@@ -57,67 +50,59 @@ mat4 Billboard(mat4 modelViewMat) {
     return modelViewMat;
 }
 
+
+vec3 positionFromModelMat(mat4 model)
+{
+    return vec3(model[3]);
+}
+
 void main()
 {
     mat4 modelView = viewMat * instanceModelMat;
-    modelView = Billboard(modelView);
+    //modelView = Billboard(modelView);
     mat4 mvp = projectionMat * modelView;
     
     vec3 vertPos = vertexPosition;
-    GetGrassSway(vertPos);
+    // NOTE: doing all calculations in world space to account for grass blades
+    // having randomized local rotation
+    vec3 ogVertPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
+
+    // TODO: rotate grass blades slightly more towards camera in view space
+    // https://www.youtube.com/watch?v=bp7REZBV4P4&ab_channel=SimonDev
+
+    // new grass
+    vec3 grassPosition = positionFromModelMat(instanceModelMat);
+    float noise = cnoise01(grassPosition.xz * _WindUVScale + time * _WindFrequency);
+   
+    // sample noise from world pos for wind *direction* and remap [0,1] to some angle range
+    float windDirFactor = noise;
+    float windDirRadians = remap(windDirFactor, 0.0, 1.0, 0.0, 1 * PI);
+    vec2 windDir2 = AngleToDir(windDirRadians);
+    vec3 windDir = vec3(windDir2.x, 0.0, windDir2.y);
+    // strength of the wind
+    float windStrength = noise * _WindStrength;
+    windDir.xz *= windStrength;
+
+    ogVertPositionWS -= grassPosition;
+    // add wind to curve of grass
+    float grassSway = noise;
+    float curveAmount = _CurveIntensity * grassSway;
+    ogVertPositionWS = vec3(vec4(ogVertPositionWS, 1.0) * rotation(windDir, curveAmount * vertexTexCoord.y));
+    ogVertPositionWS += grassPosition;
+
+
+    // making sure we're using our wind direction in world space
+    // since the grass blades have random local rotation
+    ogVertPositionWS += (windDir) * vertexTexCoord.y;
+    vertPos = vec3(inverse(instanceModelMat) * vec4(ogVertPositionWS, 1.0));
 
     fragPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
     fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
     fragNormalOS = vertexNormal;
+    fragPositionOS = vertPos;
 
     fragTexCoord = vertexTexCoord;
     materialId = vertexMaterialId;
 
     gl_Position = mvp*vec4(vertPos, 1.0);
-}
-
-
-
-
-
-
-
-
-//	Classic Perlin 2D Noise 
-//	by Stefan Gustavson
-//
-vec2 fade(vec2 t) {return t*t*t*(t*(t*6.0-15.0)+10.0);}
-vec4 permute(vec4 x){return mod(((x*34.0)+1.0)*x, 289.0);}
-
-float cnoise(vec2 P){
-  vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
-  vec4 Pf = fract(P.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);
-  Pi = mod(Pi, 289.0); // To avoid truncation effects in permutation
-  vec4 ix = Pi.xzxz;
-  vec4 iy = Pi.yyww;
-  vec4 fx = Pf.xzxz;
-  vec4 fy = Pf.yyww;
-  vec4 i = permute(permute(ix) + iy);
-  vec4 gx = 2.0 * fract(i * 0.0243902439) - 1.0; // 1/41 = 0.024...
-  vec4 gy = abs(gx) - 0.5;
-  vec4 tx = floor(gx + 0.5);
-  gx = gx - tx;
-  vec2 g00 = vec2(gx.x,gy.x);
-  vec2 g10 = vec2(gx.y,gy.y);
-  vec2 g01 = vec2(gx.z,gy.z);
-  vec2 g11 = vec2(gx.w,gy.w);
-  vec4 norm = 1.79284291400159 - 0.85373472095314 * 
-    vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11));
-  g00 *= norm.x;
-  g01 *= norm.y;
-  g10 *= norm.z;
-  g11 *= norm.w;
-  float n00 = dot(g00, vec2(fx.x, fy.x));
-  float n10 = dot(g10, vec2(fx.y, fy.y));
-  float n01 = dot(g01, vec2(fx.z, fy.z));
-  float n11 = dot(g11, vec2(fx.w, fy.w));
-  vec2 fade_xy = fade(Pf.xy);
-  vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
-  float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
-  return 2.3 * n_xy;
 }

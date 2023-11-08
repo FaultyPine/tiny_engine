@@ -17,6 +17,7 @@ struct WorldEntity {
     Transform transform = {};
     Model model = {};
     u32 hash = 0;
+    const char* name = nullptr;
     bool isVisible = true;
     WorldEntity(){}
     WorldEntity(const Transform& tf, const Model& mod, const char* name = "") {
@@ -28,6 +29,7 @@ struct WorldEntity {
         else {
             hash = std::hash<std::string>{}(std::string(name));
         }
+        this->name = name;
     }
     void Delete() {
         model.Delete();
@@ -79,6 +81,7 @@ struct GameState {
     f32 windStrength = 0;
     f32 windFrequency = 0;
     f32 windUVScale = 0;
+    f32 grassCurveIntensity = 0;
 
     // shadows/depth tex
     ShadowMap shadowMap;
@@ -208,6 +211,12 @@ void drawImGuiDebug() {
     
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+    for (WorldEntity& ent : gs.entities)
+    {
+        const char* entityLabel = TextFormat("Position [%s]", ent.name);
+        ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
+    }
+
     ImGui::DragFloat("_DepthThreshold", &_DepthThreshold, 0.0001f);
     ImGui::DragFloat("_DepthThickness", &_DepthThickness, 0.001f);
     ImGui::DragFloat("_DepthStrength", &_DepthStrength, 0.001f);
@@ -222,7 +231,8 @@ void drawImGuiDebug() {
 
     ImGui::DragFloat("wind str", &gs.windStrength, 0.01f);
     ImGui::DragFloat("wind freq", &gs.windFrequency, 0.01f);
-    ImGui::DragFloat("wind uvscale", &gs.windUVScale, 1.0f);
+    ImGui::DragFloat("wind uvscale", &gs.windUVScale, 0.01f);
+    ImGui::DragFloat("grass curve intensity", &gs.grassCurveIntensity, 0.1f);
     if (ImGui::CollapsingHeader("Grass spawn planes")) {
         ImGui::DragFloat3("Grass ex min", &gs.grassSpawnExclusion.min[0], 0.01f);
         ImGui::DragFloat3("Grass ex max", &gs.grassSpawnExclusion.max[0], 0.01f);
@@ -338,6 +348,7 @@ void DepthAndNormsPrePass() {
     gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
     gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
     gs.grassPrepassShader.TryAddSampler(gs.windTexture.id, "windTexture");
+    gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
     gs.grass.model.DrawInstanced(gs.grassPrepassShader, gs.grassTransforms.size());
 
     Framebuffer::BindDefaultFrameBuffer();
@@ -378,6 +389,7 @@ void drawGameState() {
         gs.grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
         gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grass.model.cachedShader.TryAddSampler(gs.windTexture.id, "windTexture");
+        gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
         gs.grass.model.DrawInstanced(gs.grassTransforms.size());
     }
     
@@ -422,7 +434,8 @@ void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, co
             glm::vec3 point = RandomPointBetweenVertices(planeVerts);
             randomPointBetweenVerts = glm::vec2(point.x, point.z);
         } while (Math::isPointInRectangle(randomPointBetweenVerts, exclusionMin, exclusionMax));
-        Transform grassTransform = Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(0.5));
+        f32 randRotation = GetRandomf(0.0f, 360.0f);
+        Transform grassTransform = Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(0.5), randRotation);
         grassTransforms.emplace_back(grassTransform.ToModelMatrix());
     }
 }
@@ -438,7 +451,7 @@ void init_grass(GameState& gs) {
         Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
         if (grassSpawnMesh) {
             grassSpawnMesh->isVisible = false;
-            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 10000);
+            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 100000);
         }
     }
 
@@ -449,9 +462,10 @@ void init_grass(GameState& gs) {
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
     gs.windTexture = LoadTexture(ResPath("other/distortion.png"));
-    gs.windStrength = 0.09;
-    gs.windFrequency = 9.55;
-    gs.windUVScale = 500.0;
+    gs.windStrength = 0.15;
+    gs.windFrequency = 1.1;
+    gs.windUVScale = 0.15;
+    gs.grassCurveIntensity = 1.0;
 }
 
 void init_main_pond(GameState& gs) {
@@ -591,9 +605,10 @@ u64 testbed_render(const Arena* const gameMem) {
 #endif
     Framebuffer::BindDefaultFrameBuffer();
     // red is x, green is y, blue is z
-    //Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
-    //Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
-    //Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
+    // should put this on the screen in the corner permanently
+    Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
+    Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
+    Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
     return gs.postprocessingFB.texture;
 }
 

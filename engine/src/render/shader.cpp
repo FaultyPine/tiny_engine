@@ -79,44 +79,15 @@ std::string ShaderPreprocessIncludes(const s8* shaderSource, const std::string& 
     return fullSourceCode;
 }
 
-std::string ShaderSourcePreprocess(const s8* shaderSource, const std::string& shaderPath) {
+std::string ShaderSourcePreprocess(const s8* shaderSource) {
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
-    LOG_INFO("%s", shaderPath.c_str());
     std::string includeSearchDir = ResPath("shaders/");
-    //std::string includeSearchDir = shaderPath.substr(0, shaderPath.rfind('/')+1); // will look like "res/shaders/"
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
     ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir);
     return ret;
 }
 
-
-u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") {
-    // preprocess both vert and frag shader source code before compiling
-    std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource, vertPath);
-    std::string fsSourcePreprocessed = ShaderSourcePreprocess(fsSource, fragPath);
-
-    u32 vertexShader = CreateAndCompileShader(GL_VERTEX_SHADER, vsSourcePreprocessed.c_str());
-    u32 fragShader = CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSourcePreprocessed.c_str());
-
-    u32 shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragShader);
-    glLinkProgram(shaderProgram);
-    s32 success;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success) {
-        s8 infoLog[512];
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        LOG_ERROR("shader linking failed. vs = %s fs = %s\n%s", vertPath.c_str(), fragPath.c_str(), infoLog);
-        return 0xDEADBEEF;
-        //TINY_ASSERT(false);
-    }
-    // delete vert/frag shader after we've linked them to the program object
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragShader);
-    return shaderProgram;
-}
 
 static const char* fallbackFragShader = R"shad(
 #version 330
@@ -134,6 +105,36 @@ void main()
     gl_Position =  mvp * vec4(vertPos, 1.0);
 }
 )shad";
+
+
+u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") {
+    // preprocess both vert and frag shader source code before compiling
+    std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource);
+    std::string fsSourcePreprocessed = ShaderSourcePreprocess(fsSource);
+
+    u32 vertexShader = CreateAndCompileShader(GL_VERTEX_SHADER, vsSourcePreprocessed.c_str());
+    u32 fragShader = CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSourcePreprocessed.c_str());
+
+    u32 shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragShader);
+    glLinkProgram(shaderProgram);
+    s32 success;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        s8 infoLog[1024];
+        glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
+        //LOG_ERROR("Vertex shader source: %s\n", vsSource);
+        //LOG_ERROR("Fragment shader source: %s\n", fsSource);
+        LOG_ERROR("shader linking failed. vs = %s fs = %s\n%s", vertPath.c_str(), fragPath.c_str(), infoLog);
+        return CreateShaderProgramFromStr(fallbackVertShader, fallbackFragShader, vertPath, fragPath);
+        //TINY_ASSERT(false);
+    }
+    // delete vert/frag shader after we've linked them to the program object
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragShader);
+    return shaderProgram;
+}
 
 u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& fragmentPath) {
     // 1. retrieve the vertex/fragment source code from filePath
