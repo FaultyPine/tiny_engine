@@ -31,5 +31,6 @@ struct Light {
 TAPI Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color);
 // Send light properties to shader
 void UpdateLightValues(const Shader& shader, Light light);
+void UpdateSunlightValues(const Shader& shader, Light sunlight);
 
 #endif

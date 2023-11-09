@@ -63,3 +63,13 @@ void UpdateLightValues(const Shader& shader, Light light) {
     const char* colorLoc = TextFormat("lights[%i].color", lightIdx);
     shader.setUniform(colorLoc, light.color);
 }
+
+void UpdateSunlightValues(const Shader& shader, Light sunlight)
+{
+    shader.use();
+    shader.setUniform("sunlight.enabled", sunlight.enabled);
+    shader.setUniform("sunlight.type", sunlight.type);
+    shader.setUniform("sunlight.position", sunlight.position);
+    shader.setUniform("sunlight.target", sunlight.target);
+    shader.setUniform("sunlight.color", sunlight.color);
+}

@@ -225,7 +225,7 @@ bool AreActiveLightsInFront(const std::vector<Light>& lights) {
     return true;
 }
 
-void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Light>& lights) const {
+void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Light>& lights, Light sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
@@ -240,12 +240,13 @@ void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Li
             if (light.enabled)
                 UpdateLightValues(shader, light);
         }
+        UpdateSunlightValues(shader, sun);
         shader.setUniform("numActiveLights", (s32)lights.size());
 
         mesh.Draw(shader, tf);
     }
 }
-void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights) const {
+void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights, Light sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
@@ -259,6 +260,7 @@ void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& mo
             if (light.enabled)
                 UpdateLightValues(shader, light);
         }
+        UpdateSunlightValues(shader, sun);
         shader.setUniform("numActiveLights", (s32)lights.size());
 
         mesh.Draw(shader, mvp);
@@ -270,7 +272,7 @@ void Model::DrawMinimal(const Shader& shader) const {
     }
 }
 
-void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights) const {
+void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights, Light sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
@@ -286,6 +288,7 @@ void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vec
             if (light.enabled)
                 UpdateLightValues(shader, light);
         }
+        UpdateSunlightValues(shader, sun);
         shader.setUniform("numActiveLights", (s32)lights.size());
 
         mesh.DrawInstanced(shader, numInstances);

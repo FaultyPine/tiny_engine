@@ -34,9 +34,9 @@ struct WorldEntity {
     void Delete() {
         model.Delete();
     }
-    void Draw(const Transform &tf, const std::vector<Light> &lights = {}) {
+    void Draw(const Transform &tf, const std::vector<Light> &lights = {}, Light sun = {}) {
         if (isVisible) {
-            model.Draw(tf, lights);
+            model.Draw(tf, lights, sun);
         }
     }
     bool isValid() { return hash != 0; }
@@ -62,6 +62,7 @@ struct GameState {
     // TODO: use hashmap w/int IDs
     std::vector<WorldEntity> entities = {};
     std::vector<Light> lights = {};
+    Light sunlight = {};
 
     // Main pond
     #define NUM_WAVES 8
@@ -255,14 +256,14 @@ void drawImGuiDebug() {
             }
         }
     }
-    Light& meshLight = gs.lights[0];
+    Light& meshLight = gs.sunlight;
     ImGui::ColorEdit4("Light Color", &meshLight.color[0]);
     ImGui::DragFloat3("Light pos", &meshLight.position[0], 0.1f);
     ImGui::DragFloat3("Light target", &meshLight.target[0]);
     ImGui::SliderInt("1=point 0=directional", (int*)&meshLight.type, 0, 1);
     
     #if 0
-    static f32 ambientLightIntensity = 0.1f;
+    static f32 ambientLightIntensity = 0.15f;
     ImGui::DragFloat("Ambient light intensity", &ambientLightIntensity, 0.01f);
     for (auto& ent : gs.entities) {
         ent.model.cachedShader.use();
@@ -284,7 +285,7 @@ void ShadowMapPrePass() {
     }
 
     shadowMap.BeginRender();
-    const Light& sunlight = gs.lights[0];
+    const Light& sunlight = gs.sunlight;
     for (auto& ent : gs.entities) {
         shadowMap.ReceiveShadows(ent.model.cachedShader, sunlight);
         shadowMap.RenderShadowCaster(sunlight, ent.model, ent.transform);
@@ -390,18 +391,18 @@ void drawGameState() {
         gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grass.model.cachedShader.TryAddSampler(gs.windTexture.id, "windTexture");
         gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        gs.grass.model.DrawInstanced(gs.grassTransforms.size());
+        gs.grass.model.DrawInstanced(gs.grassTransforms.size(), gs.lights, gs.sunlight);
     }
     
     { PROFILE_SCOPE("EntityDrawing");
         for (const auto& ent : gs.entities) {
-            ent.model.Draw(ent.transform, gs.lights);
+            ent.model.Draw(ent.transform, gs.lights, gs.sunlight);
         }
     }
 
     #if 1
     { PROFILE_SCOPE("Skybox draw");
-        gs.skybox.Draw(gs.lights[0].position);
+        gs.skybox.Draw(gs.sunlight.position);
     }
     #endif
 }
@@ -547,10 +548,11 @@ void testbed_init(Arena* gameMem) {
     init_waterfall(gs);
 
     // Init lights
-    Light meshLight = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 100, -22), glm::vec3(0, 10, 0), glm::vec4(1));
+    Light sun = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 100, -22), glm::vec3(0, 10, 0), glm::vec4(1));
     //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
-    gs.lights.push_back(meshLight);
+    //gs.lights.push_back(meshLight);
     //gs.lights.push_back(meshPointLight);
+    gs.sunlight = sun;
 
     { PROFILE_SCOPE("Skybox Init");
     /*
@@ -571,7 +573,7 @@ void testbed_gametick(Arena* gameMem) {
     testbed_inputpoll();
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
-    Light& mainLight = gs.lights[0];
+    Light& mainLight = gs.sunlight;
     testbed_orbit_light(mainLight, 200, 0.2);
     //gs.waterfallParticles.Tick({0,15,0});
 }
@@ -590,7 +592,6 @@ u64 testbed_render(const Arena* const gameMem) {
         //Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/outline.frag"));
         Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
         postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture().id, "depthNormals");
-        //gs.shadowMap.ReceiveShadows(postprocessingShader, gs.lights[0]);
         gs.framebufferSprite = Sprite(postprocessingShader, gs.postprocessingFB.GetTexture());
     }
 
@@ -617,7 +618,7 @@ void testbed_tick(Arena* gameMem) {
     testbed_inputpoll();
     //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
-    Light& mainLight = gs.lights[0];
+    Light& mainLight = gs.sunlight;
     testbed_orbit_light(mainLight, 200, 0.2);
     //gs.waterfallParticles.Tick({0,15,0});
 }
