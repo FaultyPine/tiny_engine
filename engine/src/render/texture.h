@@ -46,7 +46,7 @@ struct TextureProperties {
 
 struct Texture {
     // when we pass texture id to our shader, it needs to use the glUniform1i (<- signed) which is why this is s32 not u32
-    s32 id = 0; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
+    u32 id = 0; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
     f32 width, height = 0.0;
     std::string texpath = "";
 

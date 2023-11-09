@@ -13,15 +13,20 @@
 // contains vertex shader path, frag shader path
 typedef std::pair<std::string, std::string> ShaderLocation;
 
-// <abstract shader "id", <OGL shader id, shaderFilePaths>>
-static std::unordered_map<u32, std::pair<u32, ShaderLocation>> loadedShaders = {};
+struct GlobalShaderState
+{
+    // <abstract shader "id", <OGL shader id, shaderFilePaths>>
+    std::unordered_map<u32, std::pair<u32, ShaderLocation>> loadedShaders = {};
 
-// map of shader id -> list of sampler ids
-// putting this outside the shader object to keep Shaders a wrapper around an ID
-static std::unordered_map<u32, std::vector<s32>> samplerIDs = {};
+    // map of shader id -> list of sampler ids
+    // putting this outside the shader object to keep Shaders a wrapper around an ID
+    std::unordered_map<u32, std::vector<u32>> samplerIDs = {};
 
-//              shader id               uniform name    uniform location
-static std::unordered_map<u32, std::unordered_map<std::string, s32>> cachedUniformLocs = {};
+    //              shader id               uniform name    uniform location
+    std::unordered_map<u32, std::unordered_map<std::string, s32>> cachedUniformLocs = {};
+};
+static GlobalShaderState gss;
+
 
 u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) {
     u32 shaderID = glCreateShader(shaderType);
@@ -167,13 +172,13 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
 
 
 s32 Shader::getLoc(const std::string& uniformName) const {
-    u32 oglShaderID = loadedShaders.at(ID).first;
+    u32 oglShaderID = gss.loadedShaders.at(ID).first;
     // cache uniforms for later retrieval
-    if (cachedUniformLocs[oglShaderID].count(uniformName)) return cachedUniformLocs[oglShaderID][uniformName];
+    if (gss.cachedUniformLocs[oglShaderID].count(uniformName)) return gss.cachedUniformLocs[oglShaderID][uniformName];
     else {
         s32 loc = glGetUniformLocation(oglShaderID, uniformName.c_str());
         if (loc != -1) {
-            cachedUniformLocs[oglShaderID][uniformName] = loc;
+            gss.cachedUniformLocs[oglShaderID][uniformName] = loc;
             return loc;
         }
         else {
@@ -184,13 +189,12 @@ s32 Shader::getLoc(const std::string& uniformName) const {
 }
 
 u32 Shader::GetOpenGLProgramID() {
-    return loadedShaders.at(ID).first;
+    return gss.loadedShaders.at(ID).first;
 }
 void Shader::InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath, const std::string& fragmentPath) {
     // ID is the index into the loadedShaders list that contains the OGL shader id
-    ID = loadedShaders.size();
-    loadedShaders[ID] = std::make_pair(shaderProgram, std::make_pair(vertexPath, fragmentPath));
-    valid = true;
+    ID = gss.loadedShaders.size();
+    gss.loadedShaders[ID] = std::make_pair(shaderProgram, std::make_pair(vertexPath, fragmentPath));
 }
 Shader::Shader(u32 shaderProgram) { 
     InitShaderFromProgramID(shaderProgram);
@@ -214,13 +218,13 @@ void Shader::Delete() const {
 
 
 void Shader::use() const {
-    TINY_ASSERT("Invalid shader ID!" && valid);
-    glUseProgram(loadedShaders.at(ID).first); 
+    TINY_ASSERT("Invalid shader ID!" && isValid());
+    glUseProgram(gss.loadedShaders.at(ID).first); 
 }
 
  
 void ReloadShader(u32 shaderID) { // shader "id" (not opengl shader program id)
-    std::pair<u32, ShaderLocation>& oglIDAndPaths = loadedShaders.at(shaderID);
+    std::pair<u32, ShaderLocation>& oglIDAndPaths = gss.loadedShaders.at(shaderID);
     const ShaderLocation& shaderLocations = oglIDAndPaths.second;
 
     // if shader locations are blank, this shader probably came from a string (cant reload)
@@ -234,7 +238,7 @@ void ReloadShader(u32 shaderID) { // shader "id" (not opengl shader program id)
 
         u32 oldOGLShaderProgram = oglIDAndPaths.first;
         glDeleteProgram(oldOGLShaderProgram);
-        cachedUniformLocs.erase(oldOGLShaderProgram);
+        gss.cachedUniformLocs.erase(oldOGLShaderProgram);
         oglIDAndPaths.first = newShaderProgram;                
     }
 }
@@ -242,7 +246,7 @@ void Shader::Reload() const {
     ReloadShader(this->ID);
 }
 void Shader::ReloadShaders() {
-    for (auto& [shaderID, oglIDAndPaths] : loadedShaders) {
+    for (auto& [shaderID, oglIDAndPaths] : gss.loadedShaders) {
         ReloadShader(shaderID);
     }
     LOG_INFO("Reloaded shaders!");
@@ -251,13 +255,13 @@ void Shader::ReloadShaders() {
 
 
 void Shader::ActivateSamplers() const {
-    const std::vector<s32>& shaderSamplers = samplerIDs[ID];
+    const std::vector<u32>& shaderSamplers = gss.samplerIDs[ID];
     for (s32 i = 0; i < shaderSamplers.size(); i++) {
         Texture::bindUnit(i, shaderSamplers.at(i));
     }
 }
-void Shader::TryAddSampler(s32 texture, const char* uniformName) const {
-    std::vector<s32>& shaderSamplers = samplerIDs[ID];
+void Shader::TryAddSampler(u32 texture, const char* uniformName) const {
+    std::vector<u32>& shaderSamplers = gss.samplerIDs[ID];
     // if this texture is NOT already tracked
     if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture) == shaderSamplers.end()) {
         // this sampler needs to be added

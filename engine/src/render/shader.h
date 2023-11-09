@@ -10,8 +10,7 @@ struct Shader {
     // ID is not necessarily the OpenGL shader id!
     // it is an index into a list of OGL shader ids which we can
     // change to facilitate shader hot reloading
-    u32 ID = 0;
-    bool valid = false;
+    u32 ID = 0xDEADBEEF;
 
     Shader() = default;
     TAPI Shader(u32 id);
@@ -19,13 +18,13 @@ struct Shader {
     TAPI static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr);
 
     TAPI void Delete() const;
-    bool isValid() const { return valid; }
+    bool isValid() const { return ID != 0xDEADBEEF; }
     TAPI u32 GetOpenGLProgramID();
 
     /// Takes vertex/fragment shader code (as a string)
     TAPI void ActivateSamplers() const;
     /// attempts to add the texture to the sampler list. If the texture id alrady exists, does nothing
-    TAPI void TryAddSampler(s32 texture, const char* uniformName) const;
+    TAPI void TryAddSampler(u32 texture, const char* uniformName) const;
 
     // use/activate the shader
     TAPI void use() const;

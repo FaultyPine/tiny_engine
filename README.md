@@ -55,7 +55,8 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
     - have generated folder inside .type s folder
     - let game and engine and editor have it's own types folder
         instead of having all types in one folder
-- refactor shaders to use includes
+- actually implement lights - right now having a sun and some lights just doesn't work
+    - need each light to store their own lightspace matrix and their accompanying shadowmap
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc

@@ -25,8 +25,8 @@ uniform Material materials[MAX_NUM_MATERIALS];
 #include "lighting.glsl"
 
 // Input lighting values
-uniform Light lights[MAX_LIGHTS];
-uniform Light sunlight;
+uniform LightPoint lights[MAX_LIGHTS];
+uniform LightDirectional sunlight;
 uniform int numActiveLights;
 uniform vec3 viewPos;
 uniform float ambientLightIntensity = 0.15;

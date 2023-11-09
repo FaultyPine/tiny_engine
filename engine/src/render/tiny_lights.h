@@ -5,32 +5,41 @@
 #include "tiny_defines.h"
 #include "math/tiny_math.h"
 #include "shader.h"
+#include "texture.h"
+#include "render/framebuffer.h"
+#include "render/cubemap.h"
 
 #define MAX_NUM_LIGHTS 4
 
-enum LightType {
-    LIGHT_DIRECTIONAL = 0,
-    LIGHT_POINT = 1
-};
 
-struct Light {   
-    s32 type = 0;
+struct LightPoint 
+{   
     bool enabled = true;
-    glm::vec3 position = glm::vec3(5);
-    glm::vec3 target = glm::vec3(0);
+    glm::vec3 position = glm::vec3(0);
     glm::vec4 color = glm::vec4(1);
-    f32 attenuation = 1.0;
+    f32 constant = 1.0f;
+    f32 linear = 0.09f;
+    f32 quadratic = 0.032f;
+    Cubemap shadowMap;
     s32 globalIndex = -1;
 
-    void Visualize();
-    glm::vec3 Direction() const;
-    glm::mat4 GetLightViewProjMatrix() const;
+    TAPI void Visualize();
+};
+struct LightDirectional
+{
+    bool enabled = true;
+    glm::vec3 direction = glm::vec3(1);
+    glm::vec4 color = glm::vec4(1);
+    glm::mat4 lightSpaceMatrix = glm::mat4(1);
+    ShadowMap shadowMap;
+    TAPI void Visualize();
 };
 
 // Create a light and get shader locations
-TAPI Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color);
+TAPI LightPoint CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams = glm::vec3(1.0f, 0.09f, 0.032f));
+TAPI LightDirectional CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color);
 // Send light properties to shader
-void UpdateLightValues(const Shader& shader, Light light);
-void UpdateSunlightValues(const Shader& shader, Light sunlight);
+void UpdatePointLightValues(const Shader& shader, const LightPoint& light);
+void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight);
 
 #endif

@@ -16,7 +16,7 @@ uniform int numInstances;
 #include "easings.glsl"
 
 #include "lighting.glsl"
-uniform Light sunlight;
+uniform LightDirectional sunlight;
 uniform sampler2D shadowMap;
 
 const vec3 grassBaseColor = vec3(0.05, 0.2, 0.01);
@@ -30,11 +30,10 @@ void main() {
 
     // TODO: light these grass blades & use rounded normals
 
-    float shadow = GetShadow(
+    float shadow = GetDirectionalShadow(
         fragPosLightSpace, 
-        -normalize(sunlight.target - sunlight.position), 
         fragNormalOS, 
-        shadowMap);
+        sunlight);
     // kinda simulates ambient light
     shadow = max(shadow, 0.6); 
     col *= shadow;

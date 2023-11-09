@@ -93,7 +93,7 @@ u64 editor_render(const Arena* const mem)
     editor_render_inspector(mem, editor);
     editor_render_scene_hierarchy(mem, editor);
     Framebuffer::BindDefaultFrameBuffer();
-    return editor->editorMainFb.texture;
+    return editor->editorMainFb.texture.id;
 }
 void editor_terminate(Arena* mem)
 {

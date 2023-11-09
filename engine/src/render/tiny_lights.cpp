@@ -8,68 +8,89 @@
 
 // TODO: this is hardcoded... ideally this would take a list of transforms and maybe some
 // camera frustum info and calculate the optimal size of the projection matrix
-glm::mat4 Light::GetLightViewProjMatrix() const {
+glm::mat4 GetDirectionalLightViewProjMatrix(glm::vec3 position, glm::vec3 target) 
+{
     const f32 boxScale = 30.0f;
     glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, 0.01f, 500.0f);
     glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
     glm::mat4 lightMat = lightProj * lightView;
     return lightMat;
 }
-void Light::Visualize() {
-    Transform tf = Transform(position, glm::vec3(0.2), 0, {0,1,0});
-    Shapes3D::DrawCube(tf, type == LightType::LIGHT_DIRECTIONAL ? glm::vec4(1,1,0,1) : glm::vec4(0.8));
-}
-glm::vec3 Light::Direction() const {
-    return type == LightType::LIGHT_DIRECTIONAL ? glm::normalize(target-position) : glm::vec3(0);
+
+void LightPoint::Visualize()
+{
+    Shapes3D::DrawCube(Transform(this->position, glm::vec3(0.1)));
 }
 
-Light CreateLight(s32 type, glm::vec3 position, glm::vec3 target, glm::vec4 color) {
+void LightDirectional::Visualize()
+{
+    // TODO:
+}
+
+LightPoint CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 
+{
     static u32 global_num_lights = 0;
     TINY_ASSERT(global_num_lights+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
-    
-    Light light = {};
-
+    LightPoint light = {};
     light.enabled = true;
-    light.type = type;
     light.position = position;
-    light.target = target;
     light.color = color;
+    light.constant = attenuationParams.x;
+    light.linear = attenuationParams.y;
+    light.quadratic = attenuationParams.z;
     light.globalIndex = global_num_lights++;
-
+    // TODO: point light cubemap omnidirectional shadow map
     return light;
 }
 
-void UpdateLightValues(const Shader& shader, Light light) {
+LightDirectional CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color)
+{
+    LightDirectional light = {};
+    light.color = color;
+    light.direction = direction;
+    light.enabled = true;
+    light.lightSpaceMatrix = GetDirectionalLightViewProjMatrix(position, position + direction);
+    light.shadowMap = ShadowMap(1024);
+    return light;
+}
+
+
+void UpdatePointLightValues(const Shader& shader, const LightPoint& light)
+{
     s32 lightIdx = light.globalIndex;
     TINY_ASSERT(lightIdx < MAX_NUM_LIGHTS); 
     shader.use();
 
-    // Send to shader light enabled state and type
-    const char* enabledLoc = TextFormat("lights[%i].enabled", lightIdx);
-    shader.setUniform(enabledLoc, light.enabled);
+    const char* uniformName;
+    uniformName = TextFormat("lights[%i].enabled", lightIdx);
+    shader.setUniform(uniformName, light.enabled);
 
-    const char* typeLoc = TextFormat("lights[%i].type", lightIdx);
-    shader.setUniform(typeLoc, light.type);
+    uniformName = TextFormat("lights[%i].position", lightIdx);
+    shader.setUniform(uniformName, light.position);
 
-    // Send to shader light position values
-    const char* positionLoc = TextFormat("lights[%i].position", lightIdx);
-    shader.setUniform(positionLoc, light.position);
+    uniformName = TextFormat("lights[%i].color", lightIdx);
+    shader.setUniform(uniformName, light.color);
 
-    // Send to shader light target position values
-    const char* targetLoc = TextFormat("lights[%i].target", lightIdx);
-    shader.setUniform(targetLoc, light.target);
+    uniformName = TextFormat("lights[%i].constant", lightIdx);
+    shader.setUniform(uniformName, light.constant);
 
-    // Send to shader light color values
-    const char* colorLoc = TextFormat("lights[%i].color", lightIdx);
-    shader.setUniform(colorLoc, light.color);
+    uniformName = TextFormat("lights[%i].linear", lightIdx);
+    shader.setUniform(uniformName, light.linear);
+
+    uniformName = TextFormat("lights[%i].quadratic", lightIdx);
+    shader.setUniform(uniformName, light.quadratic);
+
+    uniformName = TextFormat("lights[%i].shadowMap", lightIdx);
+    shader.TryAddSampler(light.shadowMap.id, uniformName);
 }
 
-void UpdateSunlightValues(const Shader& shader, Light sunlight)
+void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight)
 {
+    if (!sunlight.enabled) return;
     shader.use();
     shader.setUniform("sunlight.enabled", sunlight.enabled);
-    shader.setUniform("sunlight.type", sunlight.type);
-    shader.setUniform("sunlight.position", sunlight.position);
-    shader.setUniform("sunlight.target", sunlight.target);
+    shader.setUniform("sunlight.direction", sunlight.direction);
     shader.setUniform("sunlight.color", sunlight.color);
+    shader.setUniform("sunlight.lightSpaceMatrix", sunlight.lightSpaceMatrix);
+    shader.TryAddSampler(sunlight.shadowMap.fb.texture.id, "sunlight.shadowMap");
 }

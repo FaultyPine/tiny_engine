@@ -4,6 +4,7 @@
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
 #include "shader.h"
+#include "model.h"
 
 static s32 GetOGLFramebufferAttachmentType(Framebuffer::FramebufferAttachmentType type)
 {
@@ -23,6 +24,7 @@ static s32 GetOGLFramebufferAttachmentType(Framebuffer::FramebufferAttachmentTyp
 Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype) {
     this->type = fbtype;
     this->size = glm::vec2(width, height);
+    u32& texture = this->texture.id;
 
     // generate and bind a framebuffer object
     GLCall(glGenFramebuffers(1, &framebufferID));
@@ -86,7 +88,7 @@ void Framebuffer::BindDefaultFrameBuffer() {
 }
 void Framebuffer::Delete() { 
     GLCall(glDeleteFramebuffers(1, &framebufferID));
-    GLCall(glDeleteTextures(1, &texture));
+    GLCall(glDeleteTextures(1, &texture.id));
     GLCall(glDeleteRenderbuffers(1, &renderBufferObjectID));
     framebufferID = 0; texture = 0; renderBufferObjectID = 0;
     size = glm::vec2(0);
@@ -113,16 +115,16 @@ void ShadowMap::EndRender() const {
     // bind default fb
     Framebuffer::BindDefaultFrameBuffer();
 }
-void ShadowMap::ReceiveShadows(Shader& shader, const Light& light) const {
-    if (!shader.isValid()) return;
-    shader.use();
+void ShadowMap::ReceiveShadows(Shader& shader, const LightDirectional& light) const {
+    if (!shader.isValid() || !light.enabled) return;
     shader.TryAddSampler(fb.GetTexture().id, "shadowMap");
-    shader.setUniform("lightSpaceMatrix", light.GetLightViewProjMatrix());
+    shader.use();
+    shader.setUniform("lightSpaceMatrix", light.lightSpaceMatrix);
 }
-void ShadowMap::RenderShadowCaster(const Light& light, Model& model, const Transform& tf) const {
-    if (!depthShader.isValid()) return;
+void ShadowMap::RenderShadowCaster(const LightDirectional& light, Model& model, const Transform& tf) const {
+    if (!depthShader.isValid() || !light.enabled) return;
     depthShader.use();
-    glm::mat4 lightMat = light.GetLightViewProjMatrix();
+    glm::mat4 lightMat = light.lightSpaceMatrix;
     glm::mat4 modelMat = tf.ToModelMatrix();
     glm::mat4 mvp = lightMat * modelMat;
     depthShader.setUniform("mvp", mvp);
@@ -140,8 +142,8 @@ Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height) {
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, fb.framebufferID));
 
     // generate our texture that we'll draw to
-    GLCall(glGenTextures(1, &fb.texture));
-    GLCall(glBindTexture(GL_TEXTURE_2D, fb.texture));
+    GLCall(glGenTextures(1, &fb.texture.id));
+    GLCall(glBindTexture(GL_TEXTURE_2D, fb.texture.id));
 
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
@@ -152,7 +154,7 @@ Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height) {
     // using RGBA32F to ensure our depth values don't lose precision when going from the depth buffer
     // to our texture. (normally textures might store the values with less precision than the depth buffer would)
     GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL));
-    GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.texture, 0));
+    GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fb.texture.id, 0));
 
     // when rendering to this framebuffer, opengl needs a place to store depth values.
     // it won't store them in the texture so this renderbuffer gives it a place to do depth stuff

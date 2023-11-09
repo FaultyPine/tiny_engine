@@ -11,5 +11,4 @@ struct Cubemap {
 };
 
 TAPI Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TextureProperties props);
-
 #endif

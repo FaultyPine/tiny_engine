@@ -34,7 +34,7 @@ struct WorldEntity {
     void Delete() {
         model.Delete();
     }
-    void Draw(const Transform &tf, const std::vector<Light> &lights = {}, Light sun = {}) {
+    void Draw(const Transform &tf, const std::vector<LightPoint> &lights = {}, LightDirectional sun = {}) {
         if (isVisible) {
             model.Draw(tf, lights, sun);
         }
@@ -61,8 +61,8 @@ struct GameState {
 
     // TODO: use hashmap w/int IDs
     std::vector<WorldEntity> entities = {};
-    std::vector<Light> lights = {};
-    Light sunlight = {};
+    std::vector<LightPoint> lights = {};
+    LightDirectional sunlight = {};
 
     // Main pond
     #define NUM_WAVES 8
@@ -85,7 +85,7 @@ struct GameState {
     f32 grassCurveIntensity = 0;
 
     // shadows/depth tex
-    ShadowMap shadowMap;
+    //ShadowMap shadowMap;
     Sprite depthSprite;
 
     Sprite depthAndNormsSprite;
@@ -114,7 +114,6 @@ struct GameState {
         for (auto& ent : entities) {
             ent.Delete();
         }
-        shadowMap.Delete();
         depthSprite.Delete();
     }
     // TODO: return shared_ptr?
@@ -188,12 +187,15 @@ void testbed_orbit_cam(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtP
     cam.cameraPos = glm::vec3(x, cameraOrbitHeight, z);
     cam.LookAt(lookAtPos);
 }
-void testbed_orbit_light(Light& light, f32 orbitRadius, f32 speedMultiplier) {
+void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMultiplier) {
     f32 time = (f32)GetTime()*speedMultiplier;
-    f32 x = sinf(time) * orbitRadius;
-    f32 z = cosf(time) * orbitRadius;
-    light.position.x = x;
-    light.position.z = z;
+    //f32 x = sinf(time) * orbitRadius;
+    //f32 z = cosf(time) * orbitRadius;
+    f32 x = sinf(time);
+    f32 z = cosf(time);
+    light.direction.x = x;
+    light.direction.z = z;
+    light.direction = glm::normalize(light.direction);
 }
 
 static f32 _DepthThreshold = 1.002f;
@@ -256,12 +258,25 @@ void drawImGuiDebug() {
             }
         }
     }
-    Light& meshLight = gs.sunlight;
-    ImGui::ColorEdit4("Light Color", &meshLight.color[0]);
-    ImGui::DragFloat3("Light pos", &meshLight.position[0], 0.1f);
-    ImGui::DragFloat3("Light target", &meshLight.target[0]);
-    ImGui::SliderInt("1=point 0=directional", (int*)&meshLight.type, 0, 1);
-    
+
+    for (LightPoint& light : gs.lights)
+    {
+        if (ImGui::CollapsingHeader("Light"))
+        {
+            ImGui::ColorEdit4("Light Color", &light.color[0]);
+            ImGui::DragFloat3("Light pos", &light.position[0], 0.1f);
+            ImGui::DragFloat3("Attenuation params", &light.constant, 0.01f);
+            ImGui::Checkbox("Enabled", &light.enabled);
+        }
+    }
+    LightDirectional& meshLight = gs.sunlight;
+    if (ImGui::CollapsingHeader("Sunlight"))
+    {
+        ImGui::ColorEdit4("sunlight Color", &meshLight.color[0]);
+        ImGui::DragFloat3("sunlight direction", &meshLight.direction[0], 0.1f);
+        ImGui::Checkbox("sunlight Enabled", &meshLight.enabled);
+    }
+
     #if 0
     static f32 ambientLightIntensity = 0.15f;
     ImGui::DragFloat("Ambient light intensity", &ambientLightIntensity, 0.01f);
@@ -277,21 +292,21 @@ void drawImGuiDebug() {
 void ShadowMapPrePass() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    ShadowMap& shadowMap = gs.shadowMap;
+    //ShadowMap& shadowMap = gs.shadowMap;
     Sprite& depthSprite = gs.depthSprite; 
-    if (!shadowMap.isValid()) {
-        shadowMap = ShadowMap(1024);
-        depthSprite = Sprite(shadowMap.fb.GetTexture());
+    if (!depthSprite.isValid()) {
+        //shadowMap = ShadowMap(1024);
+        depthSprite = Sprite(gs.sunlight.shadowMap.fb.GetTexture());
     }
 
-    shadowMap.BeginRender();
-    const Light& sunlight = gs.sunlight;
+    gs.sunlight.shadowMap.BeginRender();
+    const LightDirectional& sunlight = gs.sunlight;
     for (auto& ent : gs.entities) {
-        shadowMap.ReceiveShadows(ent.model.cachedShader, sunlight);
-        shadowMap.RenderShadowCaster(sunlight, ent.model, ent.transform);
+        gs.sunlight.shadowMap.ReceiveShadows(ent.model.cachedShader, sunlight);
+        gs.sunlight.shadowMap.RenderShadowCaster(sunlight, ent.model, ent.transform);
     }
-    shadowMap.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
-    shadowMap.EndRender();
+    gs.sunlight.shadowMap.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
+    gs.sunlight.shadowMap.EndRender();
 
 #if 0
     // render depth tex to screen
@@ -398,6 +413,11 @@ void drawGameState() {
         for (const auto& ent : gs.entities) {
             ent.model.Draw(ent.transform, gs.lights, gs.sunlight);
         }
+    }
+
+    for (LightPoint& pointLight : gs.lights)
+    {
+        pointLight.Visualize();
     }
 
     #if 1
@@ -548,11 +568,13 @@ void testbed_init(Arena* gameMem) {
     init_waterfall(gs);
 
     // Init lights
-    Light sun = CreateLight(LIGHT_DIRECTIONAL, glm::vec3(7, 100, -22), glm::vec3(0, 10, 0), glm::vec4(1));
-    //Light meshPointLight = CreateLight(LIGHT_POINT, glm::vec3(2, 7, 8), glm::vec3(0), glm::vec4(1));
-    //gs.lights.push_back(meshLight);
-    //gs.lights.push_back(meshPointLight);
+    glm::vec3 sunPos = glm::vec3(7, 100, -22);
+    glm::vec3 sunTarget = glm::vec3(0, 10, 0);
+    glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
+    LightDirectional sun = CreateDirectionalLight(sunDir, sunPos, glm::vec4(1));
     gs.sunlight = sun;
+    LightPoint meshPointLight = CreatePointLight(glm::vec3(0), glm::vec4(1));
+    gs.lights.push_back(meshPointLight);
 
     { PROFILE_SCOPE("Skybox Init");
     /*
@@ -566,16 +588,6 @@ void testbed_init(Arena* gameMem) {
     */
     gs.skybox = Skybox({}, TextureProperties::RGB_LINEAR());
     }
-}
-
-void testbed_gametick(Arena* gameMem) {
-    GameState& gs = GameState::get();
-    testbed_inputpoll();
-    //testbed_orbit_cam(27, 17, {0, 10, 0});
-    // have main directional light orbit
-    Light& mainLight = gs.sunlight;
-    testbed_orbit_light(mainLight, 200, 0.2);
-    //gs.waterfallParticles.Tick({0,15,0});
 }
 
 u64 testbed_render(const Arena* const gameMem) {
@@ -610,15 +622,14 @@ u64 testbed_render(const Arena* const gameMem) {
     Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
-    return gs.postprocessingFB.texture;
+    return gs.postprocessingFB.texture.id;
 }
 
 void testbed_tick(Arena* gameMem) {
     GameState& gs = GameState::get();
     testbed_inputpoll();
-    //testbed_orbit_cam(27, 17, {0, 10, 0});
     // have main directional light orbit
-    Light& mainLight = gs.sunlight;
+    LightDirectional& mainLight = gs.sunlight;
     testbed_orbit_light(mainLight, 200, 0.2);
     //gs.waterfallParticles.Tick({0,15,0});
 }

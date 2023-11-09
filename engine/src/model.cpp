@@ -212,7 +212,7 @@ BoundingBox Model::GetBoundingBox() {
     return bounds;
 }
 
-bool AreActiveLightsInFront(const std::vector<Light>& lights) {
+bool AreActiveLightsInFront(const std::vector<LightPoint>& lights) {
     for (u32 i = 0; i < lights.size(); i++) {
         if (!lights.at(i).enabled) {
             for (u32 j = i+1; j < lights.size(); j++) {
@@ -225,7 +225,7 @@ bool AreActiveLightsInFront(const std::vector<Light>& lights) {
     return true;
 }
 
-void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Light>& lights, Light sun) const {
+void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
@@ -236,9 +236,9 @@ void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Li
         glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
         shader.setUniform("normalMat", matNormal);
 
-        for (const Light& light : lights) {
+        for (const LightPoint& light : lights) {
             if (light.enabled)
-                UpdateLightValues(shader, light);
+                UpdatePointLightValues(shader, light);
         }
         UpdateSunlightValues(shader, sun);
         shader.setUniform("numActiveLights", (s32)lights.size());
@@ -246,7 +246,7 @@ void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Li
         mesh.Draw(shader, tf);
     }
 }
-void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<Light>& lights, Light sun) const {
+void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
@@ -256,9 +256,9 @@ void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& mo
         glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(modelMat)));
         shader.setUniform("normalMat", matNormal);
 
-        for (const Light& light : lights) {
+        for (const LightPoint& light : lights) {
             if (light.enabled)
-                UpdateLightValues(shader, light);
+                UpdatePointLightValues(shader, light);
         }
         UpdateSunlightValues(shader, sun);
         shader.setUniform("numActiveLights", (s32)lights.size());
@@ -272,7 +272,7 @@ void Model::DrawMinimal(const Shader& shader) const {
     }
 }
 
-void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<Light>& lights, Light sun) const {
+void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     for (const Mesh& mesh : meshes) {
         shader.use();
@@ -284,9 +284,9 @@ void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vec
         shader.setUniform("projectionMat", projection);
         shader.setUniform("viewPos", cam.cameraPos);
 
-        for (const Light& light : lights) {
+        for (const LightPoint& light : lights) {
             if (light.enabled)
-                UpdateLightValues(shader, light);
+                UpdatePointLightValues(shader, light);
         }
         UpdateSunlightValues(shader, sun);
         shader.setUniform("numActiveLights", (s32)lights.size());

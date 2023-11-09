@@ -68,7 +68,7 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
 }
 
 
-void Skybox::Draw(const Light& sun) {
+void Skybox::Draw(const LightDirectional& sun) {
     if (!skyboxShader.isValid())
     {
         LOG_WARN("Skybox shader invalid while drawing");

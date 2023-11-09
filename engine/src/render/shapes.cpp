@@ -11,7 +11,7 @@
 // shader var is just called "shader" after this macro
 #define SHAPE_SHADER(shaderName, vertShaderPath, fragShaderPath) \
 static Shader shaderName; \
-if (shaderName.ID == 0) \
+if (!shaderName.isValid()) \
     shaderName = Shader(ResPath(vertShaderPath), ResPath(fragShaderPath))
 
 
