@@ -402,7 +402,7 @@ void drawGameState() {
 
     #if 1
     { PROFILE_SCOPE("Skybox draw");
-        gs.skybox.Draw(gs.sunlight.position);
+        gs.skybox.Draw(gs.sunlight);
     }
     #endif
 }

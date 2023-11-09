@@ -68,17 +68,14 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
 }
 
 
-void Skybox::Draw(glm::vec3 sunDirection) {
+void Skybox::Draw(const Light& sun) {
     if (!skyboxShader.isValid())
     {
         LOG_WARN("Skybox shader invalid while drawing");
         return;
     }
     skyboxShader.use();
-    if (sunDirection != glm::vec3(0))
-    {
-        skyboxShader.setUniform("sunDirection", sunDirection);
-    }
+    UpdateSunlightValues(skyboxShader, sun);
     GLCall(glDepthFunc(GL_LEQUAL));
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
     // remove translation from the view matrix

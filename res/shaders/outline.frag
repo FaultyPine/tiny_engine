@@ -25,7 +25,7 @@ uniform float _NormalThreshold;
 uniform float _NormalThickness;
 uniform float _NormalStrength = 1.0;
 
-vec3 crosshatch(vec2 xy, vec3 texColor);
+#include "crosshatch.glsl"
 
 // https://alexanderameye.github.io/notes/rendering-outlines/
 // https://alexanderameye.github.io/notes/edge-detection-outlines/
@@ -182,43 +182,3 @@ void main()
 
 
 
-
-
-
-float luma(vec3 color) {
-    return dot(color, vec3(0.299, 0.587, 0.114));
-}
-vec3 crosshatch(vec3 texColor, float x, float y, float t1, float t2, float t3, float t4, float crosshatchOffset, float lineThickness) {
-  float lum = luma(texColor);
-  vec3 color = vec3(1.0);
-  float crosshatchLineStep = crosshatchOffset / lineThickness;
-  if (lum < t1) {
-      float ch = mod(x + y, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  if (lum < t2) {
-      float ch = mod(x - y, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  if (lum < t3) {
-      float ch = mod(x + y - crosshatchOffset/2, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  if (lum < t4) {
-      float ch = mod(x - y - crosshatchOffset/2, crosshatchOffset);
-      ch = step(crosshatchLineStep, ch);
-      color = vec3(ch);
-  }
-  return color;
-}
-
-vec3 crosshatch(vec2 xy, vec3 texColor) {
-  float crosshatchOffset = 0.3;
-  float lineThickness = 4;
-  //vec2 xy = vec2(gl_FragCoord.x, gl_FragCoord.y);
-  //vec2 xy = fragPositionWS.xz;
-  return crosshatch(texColor, xy.x, xy.y, 1.0, 0.5, 0.3, 0.1, crosshatchOffset, lineThickness);
-}

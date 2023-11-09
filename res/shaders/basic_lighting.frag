@@ -59,6 +59,8 @@ void main() {
         numActiveLights,
         GetNormals(), 
         GetViewDir(),
+        fragPosLightSpace,
+        fragPositionWS,
         shadowMap);
     vec3 col = lighting * diffuseColor;
     float alpha = 1.0;

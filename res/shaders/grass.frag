@@ -30,16 +30,13 @@ void main() {
 
     // TODO: light these grass blades & use rounded normals
 
-    // don't want shadows making it completely black
-    // this kinda simulates ambient light
-
-
     float shadow = GetShadow(
         fragPosLightSpace, 
         -normalize(sunlight.target - sunlight.position), 
         fragNormalOS, 
         shadowMap);
-    shadow = max(shadow, 0.4); 
+    // kinda simulates ambient light
+    shadow = max(shadow, 0.6); 
     col *= shadow;
 
     finalColor = vec4(vec3(col), 1.0);

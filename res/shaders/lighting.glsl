@@ -114,6 +114,8 @@ vec3 calculateLighting(
     int numActiveLights,
     vec3 fragNormalWS, 
     vec3 viewDir, 
+    vec4 fragPositionLightSpace,
+    vec3 fragPositionWS,
     sampler2D shadowMap) 
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
@@ -148,7 +150,7 @@ vec3 calculateLighting(
         GetSpecularMaterial(materials, materialId, fragTexCoord).rgb
     );
 
-    float shadow = GetShadow(fragPosLightSpace, sunLightDir, fragNormalWS, shadowMap);
+    float shadow = GetShadow(fragPositionLightSpace, sunLightDir, fragNormalWS, shadowMap);
     vec3 lighting = shadow * (specularLight + diffuseLight);
     lighting += ambientLight; // add ambient on top of everything
     return lighting;

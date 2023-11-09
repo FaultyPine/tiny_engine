@@ -20,7 +20,6 @@ out vec3 fragPositionWS;
 out vec2 fragTexCoord;
 //out vec4 fragColor;
 out vec3 fragNormalOS;
-//out vec4 fragPosLightSpace;
 out vec4 fragPosLightSpace;
 flat out int materialId;
 out vec3 fragPositionOS;

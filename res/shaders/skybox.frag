@@ -7,7 +7,8 @@ out vec4 FragColor;
 in vec3 TexCoords;
 
 uniform samplerCube skybox;
-uniform vec3 sunDirection = vec3(0,1,0);
+#include "lighting.glsl"
+uniform Light sunlight;
 
 uniform vec3 topGradientCol = vec3(1.0, 0.3, 0.2);
 uniform vec3 bottomGradientCol = vec3(0.3, 0.3, 1.0);
@@ -15,7 +16,7 @@ uniform vec3 horizonCol = vec3(1.0, 1.0, 1.0);
 
 void main()
 {
-    vec3 sun = sunDirection;
+    vec3 sun = -normalize(sunlight.target - sunlight.position);
     float sunMask = dot(normalize(sun), normalize(TexCoords)) / 2.0 + 0.5; // 1 directly in sun, 0 directly opposite of sun
     
     sunMask = smoothstep(0.98,1,sunMask)*2;

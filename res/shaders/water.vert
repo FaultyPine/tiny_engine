@@ -32,7 +32,7 @@ struct Wave {
 #define NUM_WAVES 8
 uniform Wave waves[NUM_WAVES];
 uniform int numActiveWaves = 0;
-#define PI 3.1415926535897932384626433832795
+#include "defines.glsl"
 
 
 vec3 GertsnerWave(vec3 VertexPos, in Wave waveOpts, inout vec3 tangent, inout vec3 binormal) {
