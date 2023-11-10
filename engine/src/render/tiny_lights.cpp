@@ -5,10 +5,21 @@
 #include "camera.h"
 #include "shader.h"
 #include "shapes.h"
+#include "render/shadows.h"
+
+static BoundingBox GetTightBoundsOnCamFrustum(
+    glm::mat4 camViewMatrix, 
+    glm::vec3 lightDir, 
+    glm::mat4 camProjMatrix, 
+    glm::vec3& outLightWorldPos, 
+    void* outOrthoProjInfo)
+{
+
+}
 
 // TODO: this is hardcoded... ideally this would take a list of transforms and maybe some
 // camera frustum info and calculate the optimal size of the projection matrix
-glm::mat4 GetDirectionalLightViewProjMatrix(glm::vec3 position, glm::vec3 target) 
+static glm::mat4 GetDirectionalLightViewProjMatrix(glm::vec3 position, glm::vec3 target) 
 {
     const f32 boxScale = 30.0f;
     glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, 0.01f, 500.0f);
@@ -48,15 +59,21 @@ LightDirectional CreateDirectionalLight(glm::vec3 direction, glm::vec3 position,
     LightDirectional light = {};
     light.color = color;
     light.direction = direction;
+    light.position = position;
     light.enabled = true;
-    light.lightSpaceMatrix = GetDirectionalLightViewProjMatrix(position, position + direction);
     light.shadowMap = ShadowMap(1024);
     return light;
+}
+
+glm::mat4 LightDirectional::GetLightSpacematrix() const
+{
+    return GetDirectionalLightViewProjMatrix(position, position + direction);
 }
 
 
 void UpdatePointLightValues(const Shader& shader, const LightPoint& light)
 {
+    if (!light.enabled) return;
     s32 lightIdx = light.globalIndex;
     TINY_ASSERT(lightIdx < MAX_NUM_LIGHTS); 
     shader.use();
@@ -80,6 +97,9 @@ void UpdatePointLightValues(const Shader& shader, const LightPoint& light)
     uniformName = TextFormat("lights[%i].quadratic", lightIdx);
     shader.setUniform(uniformName, light.quadratic);
 
+    uniformName = TextFormat("lights[%i].intensity", lightIdx);
+    shader.setUniform(uniformName, light.intensity);
+
     uniformName = TextFormat("lights[%i].shadowMap", lightIdx);
     shader.TryAddSampler(light.shadowMap.id, uniformName);
 }
@@ -91,6 +111,7 @@ void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight
     shader.setUniform("sunlight.enabled", sunlight.enabled);
     shader.setUniform("sunlight.direction", sunlight.direction);
     shader.setUniform("sunlight.color", sunlight.color);
-    shader.setUniform("sunlight.lightSpaceMatrix", sunlight.lightSpaceMatrix);
+    shader.setUniform("sunlight.intensity", sunlight.intensity);
+    shader.setUniform("sunlight.lightSpaceMatrix", sunlight.GetLightSpacematrix());
     shader.TryAddSampler(sunlight.shadowMap.fb.texture.id, "sunlight.shadowMap");
 }

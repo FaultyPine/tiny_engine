@@ -7,6 +7,7 @@
 #include "shader.h"
 #include "texture.h"
 #include "render/framebuffer.h"
+#include "render/shadows.h"
 #include "render/cubemap.h"
 
 #define MAX_NUM_LIGHTS 4
@@ -20,6 +21,7 @@ struct LightPoint
     f32 constant = 1.0f;
     f32 linear = 0.09f;
     f32 quadratic = 0.032f;
+    f32 intensity = 1.0f;
     Cubemap shadowMap;
     s32 globalIndex = -1;
 
@@ -28,11 +30,16 @@ struct LightPoint
 struct LightDirectional
 {
     bool enabled = true;
+    // directional lights don't really have "positions", but this
+    // is still needed for rendering our shadow map
+    glm::vec3 position = glm::vec3(0);
     glm::vec3 direction = glm::vec3(1);
     glm::vec4 color = glm::vec4(1);
-    glm::mat4 lightSpaceMatrix = glm::mat4(1);
+    f32 intensity = 1.0f;
+    //glm::mat4 lightSpaceMatrix = glm::mat4(1);
     ShadowMap shadowMap;
     TAPI void Visualize();
+    TAPI glm::mat4 GetLightSpacematrix() const;
 };
 
 // Create a light and get shader locations

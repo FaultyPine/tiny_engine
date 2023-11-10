@@ -12,8 +12,10 @@ uniform int shouldFlipY;
 void main()
 {
     float uvY = (shouldFlipY*(1-TexCoords.y)) + ((1-shouldFlipY)*(TexCoords.y));
-    FragColor = color * texture(mainTex, vec2(TexCoords.x, uvY));
-    if (FragColor.a == 0) {
+    vec2 uv = vec2(TexCoords.x, uvY);
+    //vec2 uv = TexCoords;
+    FragColor = color * texture(mainTex, uv);
+    if (FragColor.a < 0.0001) {
         discard;
     }
 }  

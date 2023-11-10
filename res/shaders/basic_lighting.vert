@@ -11,14 +11,14 @@ layout (location = 4) in int  vertexMaterialId;
 uniform mat4 mvp;
 uniform mat4 modelMat;
 uniform mat3 normalMat;
-uniform mat4 lightSpaceMatrix;
+//uniform mat4 lightSpaceMatrix;
 
 // Output vertex attributes (to fragment shader)
 out vec3 fragPositionWS;
 out vec2 fragTexCoord;
 out vec4 fragColor;
 out vec3 fragNormalWS;
-out vec4 fragPosLightSpace;
+//out vec4 fragPosLightSpace;
 flat out int materialId;
 
 
@@ -29,7 +29,7 @@ void main()
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
     // world space frag pos to light space
-    fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
+    //fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
     materialId = vertexMaterialId;
     fragNormalWS = vec3(normalMat*vertexNormal);
 

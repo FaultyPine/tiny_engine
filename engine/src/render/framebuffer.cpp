@@ -39,6 +39,7 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
     GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
     if (type == DEPTH) {
         // if its a depth texture, everything outside our texture should default to 1
+        // I.E. if there is a pixel in the normal camera that isn't covered by the shadow map, give it depth=1
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
         constexpr f32 borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -50,7 +51,7 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
     }
     s32 component = type == DEPTH ? GL_DEPTH_COMPONENT : GL_RGB;
     s32 dataType = type == DEPTH ? GL_FLOAT : GL_UNSIGNED_BYTE;
-    // generate texture to attach to framebuffer
+    // generate texture to attach to framebuffer (alloc vid mem)
     GLCall(glTexImage2D(GL_TEXTURE_2D, 0, component, width, height, 0, component, dataType, NULL));
     if (type == DEPTH) {
         // disable color buffer if it's a depth tex
@@ -86,6 +87,39 @@ void Framebuffer::BindDefaultFrameBuffer() {
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0)); 
     GLCall(glViewport(0, 0, (f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight()));
 }
+void Framebuffer::Blit(
+    u32 framebufferSrc,
+    f32 srcX0, f32 srcY0,
+    f32 srcX1, f32 srcY1,
+    u32 framebufferDst, 
+    f32 dstX0, f32 dstY0, 
+    f32 dstX1, f32 dstY1,
+    FramebufferAttachmentType type)
+{
+    u32 glFbType = -1;
+    if (type == FramebufferAttachmentType::COLOR)
+    {
+        glFbType = GL_COLOR_BUFFER_BIT;
+    }
+    else if (type == FramebufferAttachmentType::DEPTH)
+    {
+        glFbType = GL_DEPTH_BUFFER_BIT;
+    }
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferSrc);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebufferDst);
+    glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, glFbType, GL_NEAREST);
+}
+
+void Framebuffer::DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst)
+{
+    if (!visualizationSprite.isValid())
+    {
+        visualizationSprite = Sprite(GetTexture());
+    }
+    dstFramebuffer.Bind();
+    visualizationSprite.DrawSprite(dst, glm::vec4(1), true);
+}
+
 void Framebuffer::Delete() { 
     GLCall(glDeleteFramebuffers(1, &framebufferID));
     GLCall(glDeleteTextures(1, &texture.id));
@@ -95,42 +129,6 @@ void Framebuffer::Delete() {
 }
 void Framebuffer::ClearDepth() { GLCall(glClear(GL_DEPTH_BUFFER_BIT)); }
 void Framebuffer::ClearStencil() { GLCall(glClear(GL_STENCIL_BUFFER_BIT)); }
-
-
-ShadowMap::ShadowMap(u32 resolution) {
-    fb = Framebuffer(resolution, resolution, Framebuffer::FramebufferAttachmentType::DEPTH);
-    // this shader renders our scene from the perspective of a light
-    depthShader = Shader(ResPath("shaders/depth.vert"), ResPath("shaders/depth.frag"));
-}
-void ShadowMap::BeginRender() const {
-    fb.Bind();
-    // completely clear depth texture
-    ClearGLBuffers();
-    // cull front faces when rendering to depth tex
-    glCullFace(GL_FRONT);
-}
-void ShadowMap::EndRender() const {
-    // reset cull mode
-    glCullFace(GL_BACK);
-    // bind default fb
-    Framebuffer::BindDefaultFrameBuffer();
-}
-void ShadowMap::ReceiveShadows(Shader& shader, const LightDirectional& light) const {
-    if (!shader.isValid() || !light.enabled) return;
-    shader.TryAddSampler(fb.GetTexture().id, "shadowMap");
-    shader.use();
-    shader.setUniform("lightSpaceMatrix", light.lightSpaceMatrix);
-}
-void ShadowMap::RenderShadowCaster(const LightDirectional& light, Model& model, const Transform& tf) const {
-    if (!depthShader.isValid() || !light.enabled) return;
-    depthShader.use();
-    glm::mat4 lightMat = light.lightSpaceMatrix;
-    glm::mat4 modelMat = tf.ToModelMatrix();
-    glm::mat4 mvp = lightMat * modelMat;
-    depthShader.setUniform("mvp", mvp);
-    // draw model to depth tex/fb
-    model.DrawMinimal(depthShader);
-}
 
 
 Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height) {

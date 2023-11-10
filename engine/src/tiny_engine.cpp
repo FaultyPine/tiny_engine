@@ -257,6 +257,11 @@ void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_MULTISAMPLE);
+
+    // slope scale depth bias (helps prevent shadow artifacts (acne) in hardware)
+    //glEnable(GL_POLYGON_OFFSET_FILL); 
+    //glPolygonOffset(1.0f, 1.0f);
+
 #ifdef TINY_DEBUG
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(OglDebugMessageCallback, 0);
@@ -276,19 +281,14 @@ void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int
     Arena* gameArena = &globEngineState.gameArena;
 
     // Begin game loop
-    Sprite screenRenderSprite;
     gameFuncs.initFunc(gameArena);
     while (!ShouldCloseWindow())
     {
-        ImGuiBeginFrame();
         gameFuncs.tickFunc(gameArena);
-        u64 renderTexture = gameFuncs.renderFunc(gameArena);
-        if (renderTexture != screenRenderSprite.GetMainTex().id)
-        {
-            screenRenderSprite = Sprite(Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag")), Texture(renderTexture));
-        }
-        Framebuffer::BindDefaultFrameBuffer();
-        screenRenderSprite.DrawSpriteFullscreen();
+        ImGuiBeginFrame();
+        Framebuffer screenRenderFb = gameFuncs.renderFunc(gameArena);
+        glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
+        Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
         ImGuiEndFrame();
     }
     gameFuncs.terminateFunc(gameArena);

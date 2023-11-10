@@ -25,6 +25,7 @@ struct Mesh {
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
     std::vector<Material> materials = {};
+    BoundingBox cachedBoundingBox = {};
     std::string name = "";
     bool isVisible = true;
     
@@ -38,7 +39,7 @@ struct Mesh {
         return vertices.size() && VAO;
     }
 
-    BoundingBox GetMeshBoundingBox();
+    BoundingBox CalculateMeshBoundingBox();
 
     // draw mesh with specified shader
     TAPI void Draw(const Shader& shader, const Transform& tf) const;

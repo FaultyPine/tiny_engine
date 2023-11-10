@@ -167,6 +167,10 @@ void setCursorPosition(f32 x, f32 y)
 {
     glfwSetCursorPos(GetMainGLFWWindow(), x, y);
 }
+void getCursorPosition(f64& x, f64& y)
+{
+    glfwGetCursorPos(GetMainGLFWWindow(), &x, &y);
+}
 CursorMode getCursorMode()
 {
     s32 glfwCursorMode = glfwGetInputMode(GetMainGLFWWindow(), GLFW_CURSOR);

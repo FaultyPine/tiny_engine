@@ -178,22 +178,24 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
     }
     processNode(scene->mRootNode, scene, meshes, meshMaterialDir);
     cachedShader = shader;
+    cachedBoundingBox = CalculateBoundingBox();
 }
 Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) {
     cachedShader = shader;
     this->meshes = meshes;
+    cachedBoundingBox = CalculateBoundingBox();
 }
 
 
-BoundingBox Model::GetBoundingBox() {
+BoundingBox Model::CalculateBoundingBox() {
     BoundingBox bounds = {};
 
     if (!this->meshes.empty()) {
         glm::vec3 temp = glm::vec3(0);
-        bounds = this->meshes[0].GetMeshBoundingBox();
+        bounds = this->meshes[0].cachedBoundingBox;
 
         for (s32 i = 1; i < this->meshes.size(); i++) {
-            BoundingBox tempBounds = this->meshes[i].GetMeshBoundingBox();
+            BoundingBox tempBounds = this->meshes[i].cachedBoundingBox;
 
             // get min for each component
             temp.x = (bounds.min.x < tempBounds.min.x) ? bounds.min.x : tempBounds.min.x;

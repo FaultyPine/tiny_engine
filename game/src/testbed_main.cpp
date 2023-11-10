@@ -84,25 +84,23 @@ struct GameState {
     f32 windUVScale = 0;
     f32 grassCurveIntensity = 0;
 
-    // shadows/depth tex
-    //ShadowMap shadowMap;
-    Sprite depthSprite;
-
     Sprite depthAndNormsSprite;
     Shader depthAndNormsShader;
     Framebuffer depthAndNorms;
 
     // postprocessing
     Framebuffer postprocessingFB;
-    Sprite framebufferSprite;
 
     Skybox skybox = {};
 
-    inline static GameState* gs;
+    f32 sunOrbitRadius = 100.0f;
+
+    inline static GameState* gs = nullptr;
     // sets the static gamestate to a copy of the passed in gamestate
     static void Initialize(Arena* gameMem)
     {
         GameState* newGamestate = (GameState*)arena_alloc(gameMem, sizeof(GameState));
+        *newGamestate = {}; // default init
         newGamestate->gameMem = gameMem;
         gs = newGamestate;
     }
@@ -114,7 +112,6 @@ struct GameState {
         for (auto& ent : entities) {
             ent.Delete();
         }
-        depthSprite.Delete();
     }
     // TODO: return shared_ptr?
     // TODO: use hashmap
@@ -143,6 +140,7 @@ struct GameState {
 #include "tiny_profiler.h"
 #include "particles/particle_behaviors.h"
 #include "tiny_log.h"
+#include "render/shadows.h"
 
 
 void testbed_inputpoll() {
@@ -187,15 +185,15 @@ void testbed_orbit_cam(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtP
     cam.cameraPos = glm::vec3(x, cameraOrbitHeight, z);
     cam.LookAt(lookAtPos);
 }
-void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMultiplier) {
+void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMultiplier, glm::vec3 target) {
     f32 time = (f32)GetTime()*speedMultiplier;
-    //f32 x = sinf(time) * orbitRadius;
-    //f32 z = cosf(time) * orbitRadius;
-    f32 x = sinf(time);
-    f32 z = cosf(time);
-    light.direction.x = x;
-    light.direction.z = z;
-    light.direction = glm::normalize(light.direction);
+    f32 x = sinf(time) * orbitRadius;
+    f32 z = cosf(time) * orbitRadius;
+    //f32 x = sinf(time);
+    //f32 z = cosf(time);
+    light.position.x = x;
+    light.position.z = z;
+    light.direction = glm::normalize(target - light.position);
 }
 
 static f32 _DepthThreshold = 1.002f;
@@ -207,12 +205,14 @@ static f32 _ColorStrength = 1.5f;
 static f32 _NormalThreshold = 2.7f;
 static f32 _NormalThickness = 1.001f;
 static f32 _NormalStrength = 1.0f;
+static bool enableGrassRender = true;
 
 void drawImGuiDebug() {
     GameState& gs = GameState::get();
     //ImGuiBeginFrame();
     
-    ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
     for (WorldEntity& ent : gs.entities)
     {
@@ -220,6 +220,8 @@ void drawImGuiDebug() {
         ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
     }
 
+    ImGui::DragFloat("Sun Orbit radius", &gs.sunOrbitRadius);
+    ImGui::Checkbox("Enable grass render", &enableGrassRender);
     ImGui::DragFloat("_DepthThreshold", &_DepthThreshold, 0.0001f);
     ImGui::DragFloat("_DepthThickness", &_DepthThickness, 0.001f);
     ImGui::DragFloat("_DepthStrength", &_DepthStrength, 0.001f);
@@ -265,6 +267,7 @@ void drawImGuiDebug() {
         {
             ImGui::ColorEdit4("Light Color", &light.color[0]);
             ImGui::DragFloat3("Light pos", &light.position[0], 0.1f);
+            ImGui::DragFloat("Light intensity", &light.intensity, 0.01f);
             ImGui::DragFloat3("Attenuation params", &light.constant, 0.01f);
             ImGui::Checkbox("Enabled", &light.enabled);
         }
@@ -274,6 +277,8 @@ void drawImGuiDebug() {
     {
         ImGui::ColorEdit4("sunlight Color", &meshLight.color[0]);
         ImGui::DragFloat3("sunlight direction", &meshLight.direction[0], 0.1f);
+        ImGui::DragFloat3("sunlight position", &meshLight.position[0], 0.1f);
+        ImGui::DragFloat("sunlight intensity", &meshLight.intensity, 0.1f);
         ImGui::Checkbox("sunlight Enabled", &meshLight.enabled);
     }
 
@@ -292,37 +297,20 @@ void drawImGuiDebug() {
 void ShadowMapPrePass() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    //ShadowMap& shadowMap = gs.shadowMap;
-    Sprite& depthSprite = gs.depthSprite; 
-    if (!depthSprite.isValid()) {
-        //shadowMap = ShadowMap(1024);
-        depthSprite = Sprite(gs.sunlight.shadowMap.fb.GetTexture());
-    }
-
-    gs.sunlight.shadowMap.BeginRender();
+    const ShadowMap& sunShadows = gs.sunlight.shadowMap;
+    sunShadows.BeginRender();
     const LightDirectional& sunlight = gs.sunlight;
-    for (auto& ent : gs.entities) {
-        gs.sunlight.shadowMap.ReceiveShadows(ent.model.cachedShader, sunlight);
-        gs.sunlight.shadowMap.RenderShadowCaster(sunlight, ent.model, ent.transform);
+    for (WorldEntity& ent : gs.entities) {
+        //sunShadows.ReceiveShadows(ent.model.cachedShader, sunlight);
+        sunShadows.RenderShadowCaster(sunlight, ent.model, ent.transform);
     }
-    gs.sunlight.shadowMap.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
-    gs.sunlight.shadowMap.EndRender();
-
-#if 0
-    // render depth tex to screen
-    glm::vec2 scrn = {Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight()};
-    depthSprite.DrawSprite({0,0}, scrn/3.0f, 0, {0,0,1}, {1,1,1,1}, false, true);
-#endif
+    //sunShadows.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
+    sunShadows.EndRender();
 }
 
 void DepthAndNormsPrePass() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    if (!gs.depthAndNorms.isValid()) {
-        gs.depthAndNormsShader = Shader(ResPath("shaders/prepass.vert"), ResPath("shaders/prepass.frag"));
-        gs.depthAndNorms = CreateDepthAndNormalsFB((f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight());
-        gs.depthAndNormsSprite = Sprite(gs.depthAndNorms.GetTexture());
-    }
 
     gs.depthAndNorms.Bind();
     ClearGLBuffers();
@@ -359,22 +347,16 @@ void DepthAndNormsPrePass() {
         // draw model to texture
         ent.model.DrawMinimal(gs.depthAndNormsShader);
     }
-    gs.grassPrepassShader.use();
-    gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
-    gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
-    gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
-    gs.grassPrepassShader.TryAddSampler(gs.windTexture.id, "windTexture");
-    gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-    gs.grass.model.DrawInstanced(gs.grassPrepassShader, gs.grassTransforms.size());
-
-    Framebuffer::BindDefaultFrameBuffer();
-
-#if 0
-    // render depth tex to screen
-    glm::vec2 scrn = { Camera::GetMainCamera().GetScreenWidth(), Camera::GetMainCamera().GetScreenHeight() };
-    glm::vec2 size = scrn / 3.0f;
-    gs.depthAndNormsSprite.DrawSprite({ scrn.x - size.x, 0 }, size, 0, { 0,0,1 }, { 1,1,1,1 }, false, true);
-#endif
+    if (enableGrassRender)
+    {
+        gs.grassPrepassShader.use();
+        gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
+        gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
+        gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
+        gs.grassPrepassShader.TryAddSampler(gs.windTexture.id, "windTexture");
+        gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
+        gs.grass.model.DrawInstanced(gs.grassPrepassShader, gs.grassTransforms.size());
+    }
 }
 
 void drawGameState() {
@@ -398,14 +380,14 @@ void drawGameState() {
     }
 
     // grass
-    if (gs.grass.isValid()) {
+    if (gs.grass.isValid() && enableGrassRender) {
         PROFILE_SCOPE("GrassInstancing");
         gs.grass.model.cachedShader.use();
         gs.grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
         gs.grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
         gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
+        gs.grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
         gs.grass.model.cachedShader.TryAddSampler(gs.windTexture.id, "windTexture");
-        gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
         gs.grass.model.DrawInstanced(gs.grassTransforms.size(), gs.lights, gs.sunlight);
     }
     
@@ -420,11 +402,9 @@ void drawGameState() {
         pointLight.Visualize();
     }
 
-    #if 1
     { PROFILE_SCOPE("Skybox draw");
         gs.skybox.Draw(gs.sunlight);
     }
-    #endif
 }
 
 glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
@@ -569,7 +549,7 @@ void testbed_init(Arena* gameMem) {
 
     // Init lights
     glm::vec3 sunPos = glm::vec3(7, 100, -22);
-    glm::vec3 sunTarget = glm::vec3(0, 10, 0);
+    glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
     LightDirectional sun = CreateDirectionalLight(sunDir, sunPos, glm::vec4(1));
     gs.sunlight = sun;
@@ -588,9 +568,21 @@ void testbed_init(Arena* gameMem) {
     */
     gs.skybox = Skybox({}, TextureProperties::RGB_LINEAR());
     }
+
+    // init main game framebuffer
+    if (!gs.depthAndNorms.isValid()) {
+        gs.depthAndNormsShader = Shader(ResPath("shaders/prepass.vert"), ResPath("shaders/prepass.frag"));
+        gs.depthAndNorms = CreateDepthAndNormalsFB((f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight());
+        gs.depthAndNormsSprite = Sprite(gs.depthAndNorms.GetTexture());
+    }
+    if (!gs.postprocessingFB.isValid()) {
+        gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
+        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
+        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture().id, "depthNormals");
+    }
 }
 
-u64 testbed_render(const Arena* const gameMem) {
+Framebuffer testbed_render(const Arena* const gameMem) {
     GameState& gs = GameState::get();
     #if 0
     SetWireframeDrawing(true);
@@ -599,19 +591,29 @@ u64 testbed_render(const Arena* const gameMem) {
     ShadowMapPrePass();
     DepthAndNormsPrePass();
 
-    if (!gs.postprocessingFB.isValid()) {
-        gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
-        //Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/outline.frag"));
-        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
-        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture().id, "depthNormals");
-        gs.framebufferSprite = Sprite(postprocessingShader, gs.postprocessingFB.GetTexture());
-    }
-
     // draw game to postprocessing framebuffer
     gs.postprocessingFB.Bind();
 
     ClearGLBuffers();
     drawGameState();
+
+#if 1
+    {
+        // render shadowmap tex to screen
+        glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
+        gs.sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/3.0f));
+    }
+#endif
+#if 1
+    {    
+        // render normals+depth tex to screen
+        glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
+        gs.depthAndNorms.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0, scrn.y / 2.0f), scrn/3.0f));
+    }
+#endif
+    BoundingBox box = gs.entities[0].model.cachedBoundingBox;
+    Shapes3D::DrawWireCube(box);
+    
 
 #ifdef ENABLE_IMGUI
     drawImGuiDebug();
@@ -622,7 +624,7 @@ u64 testbed_render(const Arena* const gameMem) {
     Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
     Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
-    return gs.postprocessingFB.texture.id;
+    return gs.postprocessingFB;
 }
 
 void testbed_tick(Arena* gameMem) {
@@ -630,7 +632,7 @@ void testbed_tick(Arena* gameMem) {
     testbed_inputpoll();
     // have main directional light orbit
     LightDirectional& mainLight = gs.sunlight;
-    testbed_orbit_light(mainLight, 200, 0.2);
+    testbed_orbit_light(mainLight, gs.sunOrbitRadius, 0.2, glm::vec3(0, 10, 0));
     //gs.waterfallParticles.Tick({0,15,0});
 }
 

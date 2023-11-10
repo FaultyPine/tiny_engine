@@ -11,7 +11,7 @@ struct Model {
     TAPI Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir);
     TAPI Model(const Shader& shader, const std::vector<Mesh>& meshes);
 
-    BoundingBox GetBoundingBox();
+    BoundingBox CalculateBoundingBox();
 
     // draw with transform
     TAPI void Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const;
@@ -45,7 +45,8 @@ struct Model {
 
     TAPI Mesh* GetMesh(const std::string& name);
 
-    Shader cachedShader;
+    BoundingBox cachedBoundingBox = {};
+    Shader cachedShader = {};
     std::vector<Mesh> meshes = {};
 };
 

@@ -9,6 +9,7 @@ namespace Shapes3D {
 
 TAPI void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = {1.0,1.0,1.0,1.0}, f32 width = 1.0);
 TAPI void DrawCube(const Transform& tf, const glm::vec4& color = glm::vec4(1));
+TAPI void DrawWireCube(BoundingBox box);
 TAPI void DrawPlane(const Transform& tf, const glm::vec4& color = glm::vec4(1));
 
 TAPI Mesh GenCubeMesh();

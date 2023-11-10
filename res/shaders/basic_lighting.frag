@@ -5,7 +5,7 @@ in vec3 fragPositionWS;
 in vec2 fragTexCoord;
 in vec4 fragColor;
 in vec3 fragNormalWS;
-in vec4 fragPosLightSpace;
+//in vec4 fragPosLightSpace;
 flat in int materialId;
 // Output fragment color
 out vec4 finalColor;
@@ -30,7 +30,6 @@ uniform LightDirectional sunlight;
 uniform int numActiveLights;
 uniform vec3 viewPos;
 uniform float ambientLightIntensity = 0.15;
-uniform sampler2D shadowMap;
 
 vec3 GetViewDir() {
     return normalize(viewPos - fragPositionWS);
@@ -45,7 +44,7 @@ vec3 GetNormals() {
 
 
 void main() {
-    // Texel color fetching from texture sampler
+    // base diffuse material texture
     vec3 diffuseColor = GetDiffuseMaterial(materials, materialId, fragTexCoord).rgb;
 
     // colored lighting
@@ -59,9 +58,7 @@ void main() {
         numActiveLights,
         GetNormals(), 
         GetViewDir(),
-        fragPosLightSpace,
-        fragPositionWS,
-        shadowMap);
+        fragPositionWS);
     vec3 col = lighting * diffuseColor;
     float alpha = 1.0;
 
@@ -70,6 +67,4 @@ void main() {
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));
-
-    //finalColor = vec4(normalize(fragNormalWS), 1.0);
 }

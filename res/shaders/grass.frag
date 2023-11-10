@@ -6,7 +6,6 @@ in vec3 fragPositionWS;
 in vec2 fragTexCoord;
 //in vec4 fragColor;
 in vec3 fragNormalOS;
-in vec4 fragPosLightSpace;
 flat in int materialId;
 in vec3 fragPositionOS;
 // Output fragment color
@@ -31,7 +30,7 @@ void main() {
     // TODO: light these grass blades & use rounded normals
 
     float shadow = GetDirectionalShadow(
-        fragPosLightSpace, 
+        fragPositionWS.xyz, 
         fragNormalOS, 
         sunlight);
     // kinda simulates ambient light

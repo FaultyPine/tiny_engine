@@ -12,7 +12,6 @@ uniform int numInstances;
 uniform mat4 viewMat;
 uniform mat4 projectionMat;
 uniform float time;
-uniform mat4 lightSpaceMatrix;
 
 // Output vertex attributes (to fragment shader)
 
@@ -20,7 +19,6 @@ out vec3 fragPositionWS;
 out vec2 fragTexCoord;
 //out vec4 fragColor;
 out vec3 fragNormalOS;
-out vec4 fragPosLightSpace;
 flat out int materialId;
 out vec3 fragPositionOS;
 
@@ -96,7 +94,6 @@ void main()
     vertPos = vec3(inverse(instanceModelMat) * vec4(ogVertPositionWS, 1.0));
 
     fragPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
-    fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
     fragNormalOS = vertexNormal;
     fragPositionOS = vertPos;
 

@@ -11,6 +11,18 @@
 constexpr double PI   = 3.141592653589793238463;
 constexpr float  PI_F = 3.14159265358979f;
 
+struct Frustum
+{
+    glm::vec4 nearTopLeft;
+    glm::vec4 nearBottomLeft;
+    glm::vec4 nearTopRight;
+    glm::vec4 nearBottomRight;
+    glm::vec4 farTopLeft;
+    glm::vec4 farBottomLeft;
+    glm::vec4 farTopRight;
+    glm::vec4 farBottomRight;
+};
+
 namespace Math {
 
 

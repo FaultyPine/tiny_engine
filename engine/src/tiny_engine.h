@@ -13,7 +13,7 @@ struct Framebuffer;
 typedef void(*InitFunction)(Arena* gameMem);
 typedef void(*TickFunction)(Arena* gameMem);
 // render functions should output a texture handle to be rendered
-typedef u64(*RenderFunction)(const Arena* const gameMem);
+typedef Framebuffer(*RenderFunction)(const Arena* const gameMem);
 typedef void(*TerminateFunction)(Arena* gameMem);
 
 struct AppRunCallbacks

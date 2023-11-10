@@ -5,7 +5,7 @@
 #include "texture.h"
 #include "camera.h"
 #include "tiny_types.h"
-#include "shader.h"
+#include "render/sprite.h"
 
 struct Framebuffer {
     enum FramebufferAttachmentType {
@@ -21,37 +21,27 @@ struct Framebuffer {
     TAPI void Delete();
     TAPI static void ClearDepth();
     TAPI static void ClearStencil();
+    TAPI static void Blit(
+                    u32 framebufferSrc,
+                    f32 srcX0, f32 srcY0,
+                    f32 srcX1, f32 srcY1,
+                    u32 framebufferDst, 
+                    f32 dstX0, f32 dstY0, 
+                    f32 dstX1, f32 dstY1,
+                    FramebufferAttachmentType type);
+    TAPI void DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst);
 
     TAPI glm::vec2 GetSize() const { return size; }
     TAPI Texture GetTexture() const { return texture; }
-    FramebufferAttachmentType type = COLOR;
 
+    FramebufferAttachmentType type = COLOR;
     u32 framebufferID = 0;
     u32 renderBufferObjectID = 0;
     Texture texture = {};
     glm::vec2 size = glm::vec2(0);
+    Sprite visualizationSprite;
 };
 
-struct LightDirectional;
-struct Model;
-struct ShadowMap {
-    ShadowMap() = default;
-    TAPI ShadowMap(u32 resolution);
-    void Delete() {
-        fb.Delete();
-        depthShader.Delete();
-    }
-    bool isValid() const { return fb.isValid(); }
-    TAPI void BeginRender() const;
-    // makes the passed in shader "receive" shadows (just gets shadow uniforms set)
-    TAPI void ReceiveShadows(Shader& shader, const LightDirectional& light) const;
-    // makes passed in model cast shadows (just renders the model into the depth texture)
-    TAPI void RenderShadowCaster(const LightDirectional& light, Model& model, const Transform& tf) const;
-    TAPI void EndRender() const;
-
-    Framebuffer fb;
-    Shader depthShader;
-};
 
 TAPI Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height);
 

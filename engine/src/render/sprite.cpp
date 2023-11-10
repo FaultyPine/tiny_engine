@@ -38,8 +38,6 @@ void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec
     glm::mat4 model = Math::Position2DToModelMat(position, size, rotate, rotationAxis);
     glm::mat4 projection = cam.GetOrthographicProjection();
     glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, cam.cameraPos);
-
 
     shader.use();
     shader.setUniform("model", model);
@@ -62,7 +60,7 @@ void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec
 
 void Sprite::DrawSpriteFullscreen(glm::vec4 color) const
 {
-    DrawSprite(glm::vec2(0), glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight()), true);
+    DrawSprite(glm::vec2(0), glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight()), false);
 }
 
 void Sprite::initRenderData() {

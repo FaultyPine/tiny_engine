@@ -244,6 +244,29 @@ void DrawCube(const Transform& tf, const glm::vec4& color) {
 
 }
 
+void DrawWireCube(BoundingBox box)
+{
+    glm::vec3 min = box.min;
+    glm::vec3 max = box.max;
+
+    Shapes3D::DrawLine(box.min, glm::vec3(max.x, min.y, min.z)); // min-x
+    Shapes3D::DrawLine(box.min, glm::vec3(min.x, max.y, min.z)); // min-y
+    Shapes3D::DrawLine(box.min, glm::vec3(min.x, min.y, max.z)); // min-z
+
+    Shapes3D::DrawLine(box.max, glm::vec3(min.x, max.y, max.z)); // max-x
+    Shapes3D::DrawLine(box.max, glm::vec3(max.x, min.y, max.z)); // max-y
+    Shapes3D::DrawLine(box.max, glm::vec3(max.x, max.y, min.z)); // max-z
+
+    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(min.x, max.y, max.z)); // min-y -> max-x
+    Shapes3D::DrawLine(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z)); // min-z -> max-x
+    
+    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z)); // min-y -> max-z
+    Shapes3D::DrawLine(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z)); // min-x -> max-z
+    
+    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, min.y, min.z)); // max-y -> min-x
+    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z)); // max-y -> min-z
+}
+
 void DrawPlane(const Transform& tf, const glm::vec4& color) {
     SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
     static u32 planeVAO = 0;

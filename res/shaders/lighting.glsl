@@ -8,6 +8,7 @@ struct LightDirectional
     int enabled;
     vec3 direction;
     vec4 color;
+    float intensity;
     mat4 lightSpaceMatrix;
     sampler2D shadowMap;
 };
@@ -20,12 +21,12 @@ struct LightPoint
     float constant;
     float linear;
     float quadratic;
+    float intensity;
     samplerCube shadowMap;
 };
 
 float PCFShadow(
     vec2 projCoords, 
-    float shadowBias, 
     float currentDepth, 
     int resolution, 
     sampler2D shadowMap) 
@@ -34,24 +35,32 @@ float PCFShadow(
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     for(int x = -resolution; x <= resolution; x++) {
         for(int y = -resolution; y <= resolution; y++) {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - shadowBias > pcfDepth ? 1.0 : 0.0;        
+            vec2 shadowMapUVOffset = vec2(x, y) * texelSize;
+            float shadowMapDepth = texture(shadowMap, projCoords.xy + shadowMapUVOffset).r; 
+            shadow += currentDepth > shadowMapDepth ? 1.0 : 0.0;        
         }    
     }
-    shadow /= float(pow(resolution*2 + 1, 2));
+    // average shadow across samples
+    shadow /= float(pow(resolution * 2 + 1, 2));
     return shadow;
 }
 
 // 0 is in shadow, 1 is out of shadow
 float GetDirectionalShadow(
-    vec4 fragPosLS, 
-    vec3 normal,
+    vec3 fragPosWS, 
+    vec3 fragNormalWS,
     in LightDirectional light) 
 {
+    vec3 lightDir = -light.direction; // points towards pixel from light, so reverse it to get pixel to light
+    // the light space matrix contains the view and projection matrices 
+    // for our light (view representing where our light is "looking") and projection representing the shadow frustum
+    vec4 fragPosLS = light.lightSpaceMatrix * vec4(fragPosWS, 1.0);
+
     //const float shadowBias = 0.005;
-    // maximum bias of 0.05 and a minimum of 0.005 based on the surface's normal and light direction
-    float shadowBias = max(0.01 * (1.0 - dot(normal, light.direction)), 0.005);  
-    // manual perspective divide
+    // bias based on the surface's normal and light direction
+    //float shadowBias = max(0.01 * (1.0 - dot(fragNormalWS, -light.direction)), 0.005);  
+    float shadowBias = mix(0.005, 0.0, dot(fragNormalWS, -light.direction));  
+    // manual perspective divide - now we're in NDC
     // range [-1,1]
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
     // transform to [0,1]
@@ -64,14 +73,14 @@ float GetDirectionalShadow(
     //float shadowMapDepth = texture(shadowMap, projCoords.xy).r;
     // [0,1] current depth of this fragment
     float currentDepth = projCoords.z;
-    // 1.0 is in shadow, 0 is out of shadow
 
-    float shadow = PCFShadow(projCoords.xy, shadowBias, currentDepth, 1, light.shadowMap);
+    // 1.0 is in shadow, 0 is out of shadow
+    float shadow = PCFShadow(projCoords.xy, currentDepth - shadowBias, 2, light.shadowMap);
 
     // - bias   gets rid of shadow acne
     //float shadow = currentDepth-shadowBias > shadowMapDepth ? 1.0 : 0.0;
     
-    return 1-shadow;
+    return 1.0-shadow;
 }
 
 void calculateLightingForPointLight (
@@ -104,7 +113,7 @@ void calculateLightingForPointLight (
     vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
 
     // dist from current fragment to light source
-    float distance = length(light.position - fragPositionWS);
+    float distance = length(light.position - fragPositionWS) / light.intensity;
     float attenuation = 1.0 / (light.constant + light.linear * distance + 
     		    light.quadratic * (distance * distance));
 
@@ -141,8 +150,8 @@ void calculateLightingForDirectionalLight (
     }
     vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
 
-    diffuseLight += currentLightDiffuse;
-    specularLight += currentLightSpecular;
+    diffuseLight += currentLightDiffuse * light.intensity;
+    specularLight += currentLightSpecular * light.intensity;
 }
 
 vec3 calculateLighting(
@@ -155,9 +164,7 @@ vec3 calculateLighting(
     int numActiveLights,
     vec3 fragNormalWS, 
     vec3 viewDir, 
-    vec4 fragPositionLightSpace,
-    vec3 fragPositionWS,
-    sampler2D shadowMap) 
+    vec3 fragPositionWS)
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
     vec3 ambientLight = GetAmbientMaterial(materials, materialId, fragTexCoord).rgb * ambientLightIntensity;
@@ -166,7 +173,18 @@ vec3 calculateLighting(
     vec3 specularLight = vec3(0);
     float shininess = GetShininessMaterial(materials, materialId, fragTexCoord);
     vec3 specularMaterial = GetSpecularMaterial(materials, materialId, fragTexCoord).rgb;
+    float shadow = GetDirectionalShadow(fragPositionWS, fragNormalWS, sunlight);
 
+    // sunlight is seperate from other lights
+    calculateLightingForDirectionalLight(
+        specularLight, 
+        diffuseLight,
+        sunlight,
+        fragNormalWS,
+        fragPositionWS,
+        viewDir,
+        shininess,
+        specularMaterial);
     // assumes active lights are at the front of the lights array
     // this is asserted in the model drawing functions
     for (int i = 0; i < numActiveLights; i++) {
@@ -180,19 +198,9 @@ vec3 calculateLighting(
             shininess,
             specularMaterial);
     }
-    // sunlight is seperate from other lights
-    calculateLightingForDirectionalLight(
-        specularLight, 
-        diffuseLight,
-        sunlight,
-        fragNormalWS,
-        fragPositionWS,
-        viewDir,
-        shininess,
-        specularMaterial);
 
-    float shadow = GetDirectionalShadow(fragPositionLightSpace, fragNormalWS, sunlight);
-    vec3 lighting = shadow * (specularLight + diffuseLight);
+    vec3 lighting = specularLight + diffuseLight;
+    lighting *= shadow;
     lighting += ambientLight; // add ambient on top of everything
     return lighting;
 }

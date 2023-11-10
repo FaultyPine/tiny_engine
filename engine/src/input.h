@@ -76,6 +76,7 @@ enum class CursorMode : s32
 };
 
 TAPI void setCursorPosition(f32 x, f32 y);
+TAPI void getCursorPosition(f64& x, f64& y);
 TAPI CursorMode getCursorMode();
 TAPI void setCursorMode(CursorMode cursorMode);
 

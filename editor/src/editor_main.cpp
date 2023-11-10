@@ -18,14 +18,19 @@ struct EditorState
 static EditorState* globEditorState;
 
 
-void editor_render_game_window(const Arena* const mem, EditorState* editor)
+void* editor_render_game(const Arena* const mem)
 {
-    u64 renderedGameFrame = globEditorState->gameCallbacks.renderFunc(mem);
+    Framebuffer outGameWindow = globEditorState->gameCallbacks.renderFunc(mem);
+    return (void*)outGameWindow.GetTexture().id;
+}
+
+void editor_render_game_window(void* renderedGameFrameHandle)
+{
     ImGui::Begin("Game");
     ImVec2 window_dimensions = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImGui::GetCursorScreenPos();
     ImGui::GetWindowDrawList()->AddImage(
-        (void*)renderedGameFrame, 
+        renderedGameFrameHandle, 
         pos, 
         ImVec2(pos.x + window_dimensions.x, pos.y + window_dimensions.y), 
         ImVec2(0,1), ImVec2(1,0)); // uvs flipped b/c opengl
@@ -84,16 +89,18 @@ void editor_tick(Arena* mem)
 {
     globEditorState->gameCallbacks.tickFunc(mem);
 }
-u64 editor_render(const Arena* const mem)
+Framebuffer editor_render(const Arena* const mem)
 {
+    void* renderedGameFrame = editor_render_game(mem);
+    //ImGuiBeginFrame();
     EditorState* editor = globEditorState;
     editor->editorMainFb.Bind();
-    editor_render_game_window(mem, editor);
+    editor_render_game_window(renderedGameFrame);
     editor_render_toolbar(mem, editor);
     editor_render_inspector(mem, editor);
     editor_render_scene_hierarchy(mem, editor);
-    Framebuffer::BindDefaultFrameBuffer();
-    return editor->editorMainFb.texture.id;
+    //ImGuiEndFrame();
+    return editor->editorMainFb;
 }
 void editor_terminate(Arena* mem)
 {

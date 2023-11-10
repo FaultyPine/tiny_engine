@@ -17,6 +17,7 @@ Mesh::Mesh(const std::vector<Vertex>& verts,
         materials.push_back(defaultMat);
     }
     initMesh();
+    cachedBoundingBox = CalculateMeshBoundingBox();
 }
 void Mesh::Delete() {
     GLCall(glDeleteVertexArrays(1, &VAO));
@@ -208,7 +209,7 @@ void Mesh::DrawMinimal(const Shader& shader) const {
 }
 
 
-BoundingBox Mesh::GetMeshBoundingBox() {
+BoundingBox Mesh::CalculateMeshBoundingBox() {
     // Get min and max vertex to construct bounds (AABB)
     glm::vec3 minVertex = glm::vec3(0);
     glm::vec3 maxVertex = glm::vec3(0);
