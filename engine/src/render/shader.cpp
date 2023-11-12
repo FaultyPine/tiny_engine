@@ -108,14 +108,12 @@ std::string ShaderSourcePreprocess(const s8* shaderSource) {
 
 
 static const char* fallbackFragShader = R"shad(
-#version 330
 void main()
 {
     gl_FragColor = vec4(1.0, 0.0, 0.5, 1.0);
 }
 )shad";
 static const char* fallbackVertShader = R"shad(
-#version 330
 layout (location = 0) in vec3 vertPos;
 uniform mat4 mvp;
 void main()
