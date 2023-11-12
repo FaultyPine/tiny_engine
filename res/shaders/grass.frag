@@ -1,4 +1,4 @@
-#version 330 core
+ 
 
 // Input vertex attributes (from vertex shader)
 

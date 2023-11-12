@@ -194,9 +194,6 @@ void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
         materials.at(i).SetShaderUniforms(shader, i);
     }
     shader.ActivateSamplers();
-    
-    // instance uniforms
-    shader.setUniform("numInstances", (s32)numInstances);
 
     OGLDrawInstanced(VAO, indices.size(), vertices.size(), numInstances);
 }

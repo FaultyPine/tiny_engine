@@ -96,9 +96,13 @@ std::string ShaderPreprocessIncludes(
 std::string ShaderSourcePreprocess(const s8* shaderSource) {
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
+
+    ret += "#version 330 core\n";
+
     std::string includeSearchDir = ResPath("shaders/");
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
     ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir);
+
     return ret;
 }
 
@@ -120,6 +124,11 @@ void main()
 }
 )shad";
 
+u32 GetShaderErrorLineNumber(const s8* infoLog, u32 infoLogSize)
+{
+    // TODO: grab error line number and print out the error line in the preprocessed string
+    return 0;
+}
 
 u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") {
     // preprocess both vert and frag shader source code before compiling
@@ -138,8 +147,8 @@ u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std
     if (!success) {
         s8 infoLog[1024];
         glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
-        //LOG_ERROR("Vertex shader source: %s\n", vsSource);
-        //LOG_ERROR("Fragment shader source: %s\n", fsSource);
+        //LOG_ERROR("Vertex shader source: %s\n", vsSourcePreprocessed);
+        //LOG_ERROR("Fragment shader source: %s\n", fsSourcePreprocessed);
         LOG_ERROR("shader linking failed. vs = %s fs = %s\n%s", vertPath.c_str(), fragPath.c_str(), infoLog);
         return CreateShaderProgramFromStr(fallbackVertShader, fallbackFragShader, vertPath, fragPath);
         //TINY_ASSERT(false);

@@ -139,7 +139,7 @@ void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& col
     if (!shader.isValid()) {
         shader = Shader::CreateShaderFromStr(
 R"(
-#version 330 core
+ 
 layout (location = 0) in vec3 vertPos;
 layout (location = 1) in vec4 vertColor;
 out vec4 color;
@@ -150,7 +150,7 @@ void main(){
 }
 )",
 R"(
-#version 330 core
+ 
 out vec4 FragColor;
 in vec4 color;
 void main(){
@@ -397,7 +397,7 @@ void DrawLine(const glm::vec2& origin, const glm::vec2& dest, const glm::vec4& c
     if (!shader.isValid()) {
         shader = Shader::CreateShaderFromStr(
 R"(
-#version 330 core
+ 
 layout (location = 0) in vec3 vertPos;
 layout (location = 1) in vec4 vertColor;
 out vec4 color;
@@ -408,7 +408,7 @@ void main(){
 }
 )",
 R"(
-#version 330 core
+ 
 out vec4 FragColor;
 in vec4 color;
 void main(){

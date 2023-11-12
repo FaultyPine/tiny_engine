@@ -51,12 +51,37 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
-- Type system
-    - have generated folder inside .type s folder
-    - let game and engine and editor have it's own types folder
-        instead of having all types in one folder
-- actually implement lights - right now having a sun and some lights just doesn't work
-    - need each light to store their own lightspace matrix and their accompanying shadowmap
+- Shader refactor
+    - have shaders own their own copies of all their uniforms
+        - this way we can tell a shader to "activate" and it'll use() and 
+            assign to all it's uniforms automatically, and we can then only setUniform outside the shader impl
+            when uniforms change
+    - implement global UBOs that apply to *all* shaders for Camera data and Lighting data
+        making a broad assumption/decision that all shaders may want access to lighting data. I think this is reasonable at the moment
+        this would also entail our GlobalShaderState having some sort of API where we could modify UBO data since Shaders don't "own" that data
+API would be used like
+
+```C
+// init with shader paths (would compile shaders, and bind UBOs)
+Shader shader = Shader(vsPath, fsPath);
+
+// every game tick...
+// copies x into the shader's owned uniforms list, or if "myuni" doesn't already exist, add it
+// notably, the change with this system is that setUniform no longer does opengl calls.
+// it just copies the uniform or adds it to the map. All opengl uniform setting happens when we .Use() the shader
+shader.setUniform("myuni", x); 
+
+// in drawing code
+shader.Use(); // uses itself and sets all owned uniforms, also refreshes UBO data
+model.Draw(shader, ....);
+
+// if you wanted to change data in the UBO, like camera data...
+GlobalShaderState::setUBOData(...); // what would this look like?
+
+```
+
+
+
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc
