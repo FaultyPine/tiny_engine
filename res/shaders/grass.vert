@@ -15,12 +15,14 @@ uniform float time;
 
 // Output vertex attributes (to fragment shader)
 
-out vec3 fragPositionWS;
-out vec2 fragTexCoord;
-//out vec4 fragColor;
-out vec3 fragNormalOS;
-flat out int materialId;
-out vec3 fragPositionOS;
+out VS_OUT 
+{
+    vec3 fragPositionWS;
+    vec2 fragTexCoord;
+    vec3 fragNormalOS;
+    flat int materialId;
+    vec3 fragPositionOS;
+} vs_out;
 
 #include "noise.glsl"
 #include "hash.glsl"
@@ -93,12 +95,12 @@ void main()
     ogVertPositionWS += (windDir) * vertexTexCoord.y;
     vertPos = vec3(inverse(instanceModelMat) * vec4(ogVertPositionWS, 1.0));
 
-    fragPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
-    fragNormalOS = vertexNormal;
-    fragPositionOS = vertPos;
+    vs_out.fragPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
+    vs_out.fragNormalOS = vertexNormal;
+    vs_out.fragPositionOS = vertPos;
 
-    fragTexCoord = vertexTexCoord;
-    materialId = vertexMaterialId;
+    vs_out.fragTexCoord = vertexTexCoord;
+    vs_out.materialId = vertexMaterialId;
 
     gl_Position = mvp*vec4(vertPos, 1.0);
 }

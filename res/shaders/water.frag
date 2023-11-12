@@ -1,13 +1,16 @@
 #version 330 core
 
 // Input vertex attributes (from vertex shader)
-in vec3 fragPositionWS;
-in vec2 fragTexCoord;
-in vec4 fragColor;
-in vec3 fragNormalOS;
-in vec4 fragPosLightSpace;
-flat in int materialId;
-in float waveHeight;
+in VS_OUT
+{
+    vec3 fragPositionWS;
+    vec2 fragTexCoord;
+    vec4 fragColor;
+    vec3 fragNormalOS;
+    vec4 fragPosLightSpace;
+    flat int materialId;
+    float waveHeight;
+} vs_in;
 // Output fragment color
 out vec4 finalColor;
 
@@ -27,7 +30,7 @@ uniform vec2 waterfallPosWS = vec2(-0.5, 5.5);
 uniform float waterfallRippleDecayFactor = 5.0;
 
 vec3 Waterfall(vec3 ogCol) {
-    float dist = distance(waterfallPosWS, fragPositionWS.xz);
+    float dist = distance(waterfallPosWS, vs_in.fragPositionWS.xz);
     float mask = fract(dist-time);
     float distFalloff = pow(dist, waterfallRippleDecayFactor);
     mask *= distFalloff;
@@ -37,10 +40,10 @@ vec3 Waterfall(vec3 ogCol) {
 
 void main() {
     float time = time * 0.01;
-    vec3 waterTextureCol = texture(waterTexture, fragTexCoord+time).rgb;
+    vec3 waterTextureCol = texture(waterTexture, vs_in.fragTexCoord+time).rgb;
     float alpha = length(waterTextureCol)*1.2;
     
-    float mask = (waveHeight - offset) * contrast;
+    float mask = (vs_in.waveHeight - offset) * contrast;
     vec3 col = mix(waterColor, waterHighlight, mask) * brightness;
 
     col *= waterTextureCol;

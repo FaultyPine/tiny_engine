@@ -1,12 +1,14 @@
 #version 330 core
 
 // Input vertex attributes (from vertex shader)
-in vec3 fragPositionWS;
-in vec2 fragTexCoord;
-in vec4 fragColor;
-in vec3 fragNormalWS;
-//in vec4 fragPosLightSpace;
-flat in int materialId;
+in VS_OUT
+{
+    vec3 fragPositionWS;
+    vec2 fragTexCoord;
+    vec4 fragColor;
+    vec3 fragNormalWS;
+    flat int materialId;
+} vs_in;
 // Output fragment color
 out vec4 finalColor;
 
@@ -32,11 +34,11 @@ uniform vec3 viewPos;
 uniform float ambientLightIntensity = 0.15;
 
 vec3 GetViewDir() {
-    return normalize(viewPos - fragPositionWS);
+    return normalize(viewPos - vs_in.fragPositionWS);
 }
 vec3 GetNormals() {
-    vec3 vertNormals = (1-useNormalMap) * normalize(fragNormalWS);
-    vec3 normalMapNormals = (useNormalMap) * GetNormalMaterial(materials, materialId, fragTexCoord).rgb;
+    vec3 vertNormals = (1-useNormalMap) * normalize(vs_in.fragNormalWS);
+    vec3 normalMapNormals = (useNormalMap) * GetNormalMaterial(materials, vs_in.materialId, vs_in.fragTexCoord).rgb;
     return vertNormals + normalMapNormals;
 }
 
@@ -45,20 +47,20 @@ vec3 GetNormals() {
 
 void main() {
     // base diffuse material texture
-    vec3 diffuseColor = GetDiffuseMaterial(materials, materialId, fragTexCoord).rgb;
+    vec3 diffuseColor = GetDiffuseMaterial(materials, vs_in.materialId, vs_in.fragTexCoord).rgb;
 
     // colored lighting
     vec3 lighting = calculateLighting(
         materials,
-        materialId,
-        fragTexCoord,
+        vs_in.materialId,
+        vs_in.fragTexCoord,
         ambientLightIntensity,
         lights,
         sunlight,
         numActiveLights,
         GetNormals(), 
         GetViewDir(),
-        fragPositionWS);
+        vs_in.fragPositionWS);
     vec3 col = lighting * diffuseColor;
     float alpha = 1.0;
 

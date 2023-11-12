@@ -15,13 +15,16 @@ uniform mat4 lightSpaceMatrix;
 uniform float time;
 
 // Output vertex attributes (to fragment shader)
-out vec3 fragPositionWS;
-out vec2 fragTexCoord;
-out vec4 fragColor;
-out vec3 fragNormalOS;
-out vec4 fragPosLightSpace;
-flat out int materialId;
-out float waveHeight;
+out VS_OUT
+{
+    vec3 fragPositionWS;
+    vec2 fragTexCoord;
+    vec4 fragColor;
+    vec3 fragNormalOS;
+    vec4 fragPosLightSpace;
+    flat int materialId;
+    float waveHeight;
+} vs_out;
 
 struct Wave {
     float waveSpeed;
@@ -86,24 +89,24 @@ void main() {
     vec3 normal = vec3(0);
     float wvh = 0.0;
     vec3 newVertexPos = GertsnerWaves(vertexPosWS, normal, wvh);
-    waveHeight = wvh;
+    vs_out.waveHeight = wvh;
     vertPos = newVertexPos;
 
     
-    fragPositionWS = vec3(modelMat * vec4(vertPos, 1.0)); // model space vertex pos -> world space
+    vs_out.fragPositionWS = vec3(modelMat * vec4(vertPos, 1.0)); // model space vertex pos -> world space
 
     
     // world space normals
     //fragNormalWS = normalize(normalMat * vertexNormal);
     vec3 fragNormalWS = normalize(normalMat*normal); // recalculated normals
     
-    fragNormalOS = vertexNormal;
+    vs_out.fragNormalOS = vertexNormal;
     
     // world space frag pos to light space
-    fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
-    fragTexCoord = vertexTexCoord;
-    fragColor = vertexColor;
-    materialId = vertexMaterialId;
+    vs_out.fragPosLightSpace = lightSpaceMatrix * vec4(vs_out.fragPositionWS, 1.0);
+    vs_out.fragTexCoord = vertexTexCoord;
+    vs_out.fragColor = vertexColor;
+    vs_out.materialId = vertexMaterialId;
 
     gl_Position = mvp*vec4(vertPos, 1.0);
 }

@@ -14,24 +14,26 @@ uniform mat3 normalMat;
 //uniform mat4 lightSpaceMatrix;
 
 // Output vertex attributes (to fragment shader)
-out vec3 fragPositionWS;
-out vec2 fragTexCoord;
-out vec4 fragColor;
-out vec3 fragNormalWS;
-//out vec4 fragPosLightSpace;
-flat out int materialId;
+out VS_OUT
+{
+    vec3 fragPositionWS;
+    vec2 fragTexCoord;
+    vec4 fragColor;
+    vec3 fragNormalWS;
+    flat int materialId;
+} vs_out;
 
 
 void main()
 {
     // transform model space vertexPosition into world space by multiplying with model matrix
-    fragPositionWS = vec3(modelMat*vec4(vertexPosition, 1.0));
-    fragTexCoord = vertexTexCoord;
-    fragColor = vertexColor;
+    vs_out.fragPositionWS = vec3(modelMat*vec4(vertexPosition, 1.0));
+    vs_out.fragTexCoord = vertexTexCoord;
+    vs_out.fragColor = vertexColor;
     // world space frag pos to light space
     //fragPosLightSpace = lightSpaceMatrix * vec4(fragPositionWS, 1.0);
-    materialId = vertexMaterialId;
-    fragNormalWS = vec3(normalMat*vertexNormal);
+    vs_out.materialId = vertexMaterialId;
+    vs_out.fragNormalWS = vec3(normalMat*vertexNormal);
 
     gl_Position = mvp*vec4(vertexPosition, 1.0);
 }
