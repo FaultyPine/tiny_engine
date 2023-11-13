@@ -27,13 +27,11 @@ void ShadowMap::EndRender() const {
 }
 void ShadowMap::ReceiveShadows(Shader& shader, const LightDirectional& light) const {
     if (!shader.isValid() || !light.enabled) return;
-    shader.TryAddSampler(fb.GetTexture().id, "shadowMap");
-    shader.use();
+    shader.TryAddSampler(fb.GetTexture(), "shadowMap");
     shader.setUniform("lightSpaceMatrix", light.GetLightSpacematrix());
 }
 void ShadowMap::RenderShadowCaster(const LightDirectional& light, const Model& model, const Transform& tf) const {
     if (!depthShader.isValid() || !light.enabled) return;
-    depthShader.use();
     glm::mat4 lightMat = light.GetLightSpacematrix();
     glm::mat4 modelMat = tf.ToModelMatrix();
     glm::mat4 mvp = lightMat * modelMat;

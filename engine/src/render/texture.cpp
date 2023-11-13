@@ -96,21 +96,23 @@ const char* GetTexMatTypeString(TextureMaterialType type) {
     }
 }
 
+
+Texture::Texture(u32 id, u32 type, u32 width, u32 height)
+{
+    this->id = id;
+    this->type = type;
+    this->width = width;
+    this-> height = height;
+}
+
 void Texture::Delete() { GLCall(glDeleteTextures(1, (const GLuint*)&id)); }
-void Texture::bindUnit(u32 textureUnit) const {
+void Texture::bindUnit(u32 textureUnit, u32 id, u32 textureType) {
+    TINY_ASSERT(textureType != 0 && "Attempted to bind texture with invalid type!");
+    // bind id to given texture unit
     activate(textureUnit);
-    bind();
-    activate(0);
+    GLCall(glBindTexture(textureType, id));
 }
-void Texture::bindUnit(u32 textureUnit, u32 id) {
-    activate(textureUnit);
-    GLCall(glBindTexture(GL_TEXTURE_2D, id));
-    //activate(0);
-}
-void Texture::bind() const
-{ 
-    GLCall(glBindTexture(GL_TEXTURE_2D, id)); 
-}
+
 void Texture::activate(u32 textureUnit) { GLCall(glActiveTexture(GL_TEXTURE0 + textureUnit)); }
 
 // https://registry.khronos.org/OpenGL-Refpages/es3.0/html/glPixelStorei.xhtml
@@ -158,6 +160,7 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
     ret.id = texture;
     ret.height = (u32)height;
     ret.width = (u32)width;
+    ret.type = GL_TEXTURE_2D;
     return ret;
 }
 
@@ -199,12 +202,11 @@ Texture LoadTexture(const std::string& imgPath,
 
 
 void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
-    shader.use();
     s32 matPropIdx = 0;
    #define SET_MATERIAL_UNIFORMS(matVar) \
         shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
         if (matVar.hasTexture) { \
-            shader.TryAddSampler(matVar.texture.id, TextFormat("materials[%i].%s.tex", matIdx, #matVar)); \
+            shader.TryAddSampler(matVar.texture, TextFormat("materials[%i].%s.tex", matIdx, #matVar)); \
         } \
         shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
 

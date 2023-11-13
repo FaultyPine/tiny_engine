@@ -198,8 +198,8 @@ void main(){
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
     glm::mat4 model = glm::mat4(1); // specifying start/end pos in vertex data, don't need anything here
     glm::mat4 mvp = proj * view * model;
-    shader.use();
     shader.setUniform("mvp", mvp);
+    shader.use();
 
     GLCall(glBindVertexArray(quadVAO));
     glLineWidth(width);
@@ -230,13 +230,13 @@ void DrawCube(const Transform& tf, const glm::vec4& color) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
-    shader.use();
     glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
     glm::mat4 model = tf.ToModelMatrix();
     glm::mat4 mvp = proj * view * model;
     shader.setUniform("mvp", mvp);
     shader.setUniform("color", color);
+    shader.use();
     // render Cube
     glBindVertexArray(cubeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -288,13 +288,13 @@ void DrawPlane(const Transform& tf, const glm::vec4& color) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
-    shader.use();
     glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
     glm::mat4 model = tf.ToModelMatrix();
     glm::mat4 mvp = proj * view * model;
     shader.setUniform("mvp", mvp);
     shader.setUniform("color", color);
+    shader.use();
     // render Cube
     glBindVertexArray(planeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -317,7 +317,6 @@ void DrawSquare(const glm::vec2& pos, const glm::vec2& size,
             const glm::vec4& color, bool isHollow) {
     SHAPE_SHADER(shader, "shaders/shapes/shape.vert", "shaders/shapes/square.frag");
     s32 hollow = isHollow ? 1 : 0;
-    shader.use();
     shader.setUniform("isHollow", hollow);
     Shapes2D::DrawShape(pos, size, rotation, rotationAxis, color, shader);
 }
@@ -325,7 +324,6 @@ void DrawSquare(const glm::vec2& pos, const glm::vec2& size,
 void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color, bool isHollow) {
     SHAPE_SHADER(shader, "shaders/shapes/shape.vert", "shaders/shapes/circle.frag");
     s32 hollow = isHollow ? 1 : 0;
-    shader.use();
     shader.setUniform("isHollow", hollow);
     Shapes2D::DrawShape(pos, glm::vec2(radius, radius), 0.0, glm::vec3(0.0, 0.0, 1.0), color, shader);
 }
@@ -373,10 +371,10 @@ void DrawShape(const glm::mat4& model, const glm::vec4& color, const Shader& sha
 
     glm::mat4 projection = Camera::GetMainCamera().GetProjectionMatrix();
 
-    shader.use();
     shader.setUniform("model", model);
     shader.setUniform("projection", projection);
     shader.setUniform("color", color);
+    shader.use();
 
     GLCall(glBindVertexArray(quadVAO));
     GLCall(glDrawArrays(GL_TRIANGLES, 0, 6));
@@ -456,8 +454,8 @@ void main(){
     glm::mat4 view = glm::mat4(1);
     glm::mat4 model = glm::mat4(1); // specifying start/end pos in vertex data, don't need anything here
     glm::mat4 mvp = proj * view * model;
-    shader.use();
     shader.setUniform("mvp", mvp);
+    shader.use();
 
     GLCall(glBindVertexArray(quadVAO));
     glLineWidth(width);

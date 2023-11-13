@@ -113,6 +113,7 @@ void calculateLightingForPointLight (
     vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
 
     // dist from current fragment to light source
+    // TODO: https://lisyarus.github.io/blog/graphics/2022/07/30/point-light-attenuation.html
     float distance = length(light.position - fragPositionWS) / light.intensity;
     float attenuation = 1.0 / (light.constant + light.linear * distance + 
     		    light.quadratic * (distance * distance));

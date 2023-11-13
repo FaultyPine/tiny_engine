@@ -15,7 +15,7 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
     GLCall(glGenTextures(1, &textureID));
     GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, textureID));
 
-    s32 width, height, nrChannels;
+    s32 width, height, nrChannels = 0;
     for (u32 i = 0; i < facesPaths.size(); i++) {
         u8 *data = LoadImageData(facesPaths[i], &width, &height, &nrChannels);
         if (!data) {
@@ -43,5 +43,7 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
 
     Cubemap ret;
     ret.id = textureID;
+    ret.width = width;
+    ret.height = height;
     return ret;
 }

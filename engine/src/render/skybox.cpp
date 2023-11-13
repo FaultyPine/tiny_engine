@@ -55,7 +55,7 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
     cubemap = LoadCubemap(facesPaths, props);
     if (!skyboxShader.isValid() && !skyboxCube.isValid()) {
         skyboxShader = Shader(ResPath("shaders/skybox.vert"), ResPath("shaders/skybox.frag"));
-        skyboxShader.TryAddSampler(cubemap.id, "skybox");
+        skyboxShader.TryAddSampler(cubemap, "skybox");
         std::vector<Vertex> vertices = {};
         for (u32 i = 0; i < ARRAY_SIZE(skyboxVertices); i+=3) {
             Vertex v = {};
@@ -73,7 +73,6 @@ void Skybox::Draw(const LightDirectional& sun) {
         LOG_WARN("Skybox shader invalid while drawing");
         return;
     }
-    skyboxShader.use();
     UpdateSunlightValues(skyboxShader, sun);
     GLCall(glDepthFunc(GL_LEQUAL));
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();

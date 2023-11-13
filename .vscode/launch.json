@@ -7,7 +7,7 @@
         "program": "${workspaceFolder}\\bin\\Testbed.exe",
         "args": ["${workspaceFolder}\\res\\"],
         "stopAtEntry": false,
-        "preLaunchTask": "build_all",
+        //"preLaunchTask": "build_all",
         "cwd": "${workspaceFolder}\\bin",
         "environment": [],
         "console": "integratedTerminal"
@@ -19,7 +19,7 @@
         "program": "${workspaceFolder}\\bin\\TinyEditor.exe",
         "args": ["${workspaceFolder}\\res\\"],
         "stopAtEntry": false,
-        "preLaunchTask": "build_all",
+        //"preLaunchTask": "build_all",
         "cwd": "${workspaceFolder}\\bin",
         "environment": [],
         "console": "integratedTerminal"
@@ -35,7 +35,7 @@
         },
         "args": ["-f", "types", "generated", "engine/camera.type"],
         "stopAtEntry": false,
-        //"preLaunchTask": "build_types",
+        "preLaunchTask": "build_types",
         "cwd": "${workspaceFolder}\\types",
         "environment": [],
         "console": "integratedTerminal"

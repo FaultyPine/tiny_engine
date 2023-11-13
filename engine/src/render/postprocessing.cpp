@@ -20,7 +20,6 @@ void PostprocessingFB::DrawToScreen(const Shader& shader) {
     }
     BindDefaultFrameBuffer();
     ClearGLColorBuffer();
-    shader.use();
     shader.setUniform("screenWidth", (f32)Camera::GetScreenWidth());
     shader.setUniform("screenHeight", (f32)Camera::GetScreenHeight());
     shader.setUniform("time", (f32)GetTime());

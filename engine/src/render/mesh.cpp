@@ -135,7 +135,6 @@ void Set3DMatrixUniforms(const Shader& shader, const Transform& tf) {
     glm::mat4 view = cam.GetViewMatrix();
     glm::mat4 projection = cam.GetProjectionMatrix();
 
-    shader.use();
     // set transform uniforms with the raw data of our matricies
     shader.setUniform("mvp", projection * view * model);
 }
@@ -144,7 +143,6 @@ void Mesh::Draw(const Shader& shader, const Transform& tf) const {
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
 
-    shader.use();
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
     shader.setUniform("farClip", Camera::GetMainCamera().farClip);
@@ -155,14 +153,13 @@ void Mesh::Draw(const Shader& shader, const Transform& tf) const {
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
-    shader.ActivateSamplers();
+    shader.use();
     OGLDrawDefault(VAO, indices.size(), vertices.size());
 }
 void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
 
-    shader.use();
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
     shader.setUniform("farClip", Camera::GetMainCamera().farClip);
@@ -173,7 +170,7 @@ void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
-    shader.ActivateSamplers();
+    shader.use();
     OGLDrawDefault(VAO, indices.size(), vertices.size());
 }
 
@@ -183,7 +180,6 @@ void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
     TINY_ASSERT(instanceVBO != 0 && "Tried to instance mesh that has not had EnableInstance called");
     if (!isVisible) return;
 
-    shader.use();
     // misc uniforms
     shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
     shader.setUniform("farClip", Camera::GetMainCamera().farClip);
@@ -193,8 +189,8 @@ void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
-    shader.ActivateSamplers();
 
+    shader.use();
     OGLDrawInstanced(VAO, indices.size(), vertices.size(), numInstances);
 }
 

@@ -9,10 +9,13 @@
 
 void InitializeShaderSystem(Arena* arena, size_t shaderUniformDataBlockSize);
 
+struct Texture;
+struct Cubemap;
+
 struct Shader {
-    // ID is not necessarily the OpenGL shader id!
-    // it is an index into a list of OGL shader ids which we can
-    // change to facilitate shader hot reloading
+    // ID is not the OpenGL shader id!
+    // this is to facilitate shader hot reloading - 
+    // we can keep this same ID but have it refer to a different ogl shader program
     u32 ID = 0xDEADBEEF;
 
     Shader() = default;
@@ -23,10 +26,9 @@ struct Shader {
     TAPI void Delete() const;
     bool isValid() const { return ID != 0xDEADBEEF; }
 
-    /// Takes vertex/fragment shader code (as a string)
-    TAPI void ActivateSamplers() const;
-    /// attempts to add the texture to the sampler list. If the texture id alrady exists, does nothing
-    TAPI void TryAddSampler(u32 texture, const char* uniformName) const;
+    // adds a sampler to this shader
+    TAPI void TryAddSampler(const Texture& texture, const char* uniformName) const;
+    TAPI void TryAddSampler(const Cubemap& texture, const char* uniformName) const;
 
     // use/activate the shader
     TAPI void use() const;

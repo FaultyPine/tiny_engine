@@ -84,7 +84,6 @@ struct GameState {
     f32 windUVScale = 0;
     f32 grassCurveIntensity = 0;
 
-    Sprite depthAndNormsSprite;
     Shader depthAndNormsShader;
     Framebuffer depthAndNorms;
 
@@ -286,7 +285,6 @@ void drawImGuiDebug() {
     static f32 ambientLightIntensity = 0.15f;
     ImGui::DragFloat("Ambient light intensity", &ambientLightIntensity, 0.01f);
     for (auto& ent : gs.entities) {
-        ent.model.cachedShader.use();
         ent.model.cachedShader.setUniform("ambientLightIntensity", ambientLightIntensity);
     }
     #endif
@@ -328,7 +326,6 @@ void DepthAndNormsPrePass() {
             // and the frag shader being our prepass one
             // might need to add a flag to each shader if it has vertex displacement
             
-            gs.pondPrepassShader.use();
             gs.pondPrepassShader.setUniform("mvp", mvp);
             gs.pondPrepassShader.setUniform("numActiveWaves", gs.numActiveWaves);
             for (u32 i = 0; i < NUM_WAVES; i++) {
@@ -342,18 +339,16 @@ void DepthAndNormsPrePass() {
 
             continue;
         }
-        gs.depthAndNormsShader.use();
         gs.depthAndNormsShader.setUniform("mvp", mvp);
         // draw model to texture
         ent.model.DrawMinimal(gs.depthAndNormsShader);
     }
     if (enableGrassRender)
     {
-        gs.grassPrepassShader.use();
         gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
         gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
         gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
-        gs.grassPrepassShader.TryAddSampler(gs.windTexture.id, "windTexture");
+        gs.grassPrepassShader.TryAddSampler(gs.windTexture, "windTexture");
         gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
         gs.grass.model.DrawInstanced(gs.grassPrepassShader, gs.grassTransforms.size());
     }
@@ -367,7 +362,6 @@ void drawGameState() {
     if (WorldEntity* waveEntity = gs.GetEntity("PondEntity")) {
         Shader& waveShader = waveEntity->model.cachedShader;
         if (waveEntity->isValid() && waveShader.isValid()) {
-            waveShader.use();
             waveShader.setUniform("numActiveWaves", gs.numActiveWaves);
             for (u32 i = 0; i < NUM_WAVES; i++) {
                 Wave& wave = gs.waves[i];
@@ -382,12 +376,11 @@ void drawGameState() {
     // grass
     if (gs.grass.isValid() && enableGrassRender) {
         PROFILE_SCOPE("GrassInstancing");
-        gs.grass.model.cachedShader.use();
         gs.grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
         gs.grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
         gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        gs.grass.model.cachedShader.TryAddSampler(gs.windTexture.id, "windTexture");
+        gs.grass.model.cachedShader.TryAddSampler(gs.windTexture, "windTexture");
         gs.grass.model.DrawInstanced(gs.grassTransforms.size(), gs.lights, gs.sunlight);
     }
     
@@ -473,7 +466,7 @@ void init_main_pond(GameState& gs) {
     Shader waterShader = Shader(ResPath("shaders/water.vert").c_str(), ResPath("shaders/water.frag").c_str());
     gs.pondPrepassShader = Shader(ResPath("shaders/water.vert").c_str(), ResPath("shaders/prepass.frag").c_str());
     gs.waterTexture = LoadTexture(ResPath("other/water.png"));
-    waterShader.TryAddSampler(gs.waterTexture.id, "waterTexture");
+    waterShader.TryAddSampler(gs.waterTexture, "waterTexture");
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
     WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "PondEntity");
@@ -487,7 +480,7 @@ void init_main_pond(GameState& gs) {
 void init_waterfall(GameState& gs) {
     Shader waterfallShader = Shader(ResPath("shaders/waterfall.vert"), ResPath("shaders/waterfall.frag"));
     Texture waterfallTex = LoadTexture(ResPath("noise.jpg"));
-    waterfallShader.TryAddSampler(waterfallTex.id, "waterfallTex");
+    waterfallShader.TryAddSampler(waterfallTex, "waterfallTex");
 
     Model waterfallModel = Model(waterfallShader, ResPath("other/island_wip/waterfall.obj").c_str(), ResPath("other/island_wip/").c_str());
     Transform waterfallTf = Transform({0, 0, 0}, {1.0, 1.0, 1.0});
@@ -573,12 +566,11 @@ void testbed_init(Arena* gameMem) {
     if (!gs.depthAndNorms.isValid()) {
         gs.depthAndNormsShader = Shader(ResPath("shaders/prepass.vert"), ResPath("shaders/prepass.frag"));
         gs.depthAndNorms = CreateDepthAndNormalsFB((f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight());
-        gs.depthAndNormsSprite = Sprite(gs.depthAndNorms.GetTexture());
     }
     if (!gs.postprocessingFB.isValid()) {
         gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
         Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
-        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture().id, "depthNormals");
+        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture(), "depthNormals");
     }
 }
 

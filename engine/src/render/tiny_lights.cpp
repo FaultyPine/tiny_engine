@@ -76,7 +76,6 @@ void UpdatePointLightValues(const Shader& shader, const LightPoint& light)
     if (!light.enabled) return;
     s32 lightIdx = light.globalIndex;
     TINY_ASSERT(lightIdx < MAX_NUM_LIGHTS); 
-    shader.use();
 
     const char* uniformName;
     uniformName = TextFormat("lights[%i].enabled", lightIdx);
@@ -101,17 +100,17 @@ void UpdatePointLightValues(const Shader& shader, const LightPoint& light)
     shader.setUniform(uniformName, light.intensity);
 
     uniformName = TextFormat("lights[%i].shadowMap", lightIdx);
-    shader.TryAddSampler(light.shadowMap.id, uniformName);
+    shader.TryAddSampler(light.shadowMap, uniformName);
 }
 
 void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight)
 {
     if (!sunlight.enabled) return;
-    shader.use();
+    //shader.use();
     shader.setUniform("sunlight.enabled", sunlight.enabled);
     shader.setUniform("sunlight.direction", sunlight.direction);
     shader.setUniform("sunlight.color", sunlight.color);
     shader.setUniform("sunlight.intensity", sunlight.intensity);
     shader.setUniform("sunlight.lightSpaceMatrix", sunlight.GetLightSpacematrix());
-    shader.TryAddSampler(sunlight.shadowMap.fb.texture.id, "sunlight.shadowMap");
+    shader.TryAddSampler(sunlight.shadowMap.fb.texture, "sunlight.shadowMap");
 }

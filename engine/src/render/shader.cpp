@@ -1,6 +1,7 @@
 //#include "pch.h"
 #include "shader.h"
 #include "texture.h"
+#include "cubemap.h"
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
 #include <unordered_map>
@@ -45,7 +46,7 @@ struct GlobalShaderState
 
     // map of shader id -> list of sampler ids
     // putting this outside the shader object to keep Shaders a wrapper around an ID
-    std::unordered_map<u32, std::vector<u32>> samplerIDs = {};
+    std::unordered_map<u32, std::vector<Texture>> samplerIDs = {};
 
     //              shader id               uniform name    uniform
     std::unordered_map<u32, std::unordered_map<std::string, UniformData>> cachedUniforms = {};
@@ -296,31 +297,40 @@ void Shader::ReloadShaders() {
 
 
 
-void Shader::ActivateSamplers() const 
+void ActivateSamplers(u32 shaderID) 
 {
-    const std::vector<u32>& shaderSamplers = gss.samplerIDs[ID];
+    if (gss.samplerIDs.count(shaderID) == 0) return;
+    const std::vector<Texture>& shaderSamplers = gss.samplerIDs[shaderID];
     for (s32 i = 0; i < shaderSamplers.size(); i++) {
-        Texture::bindUnit(i, shaderSamplers.at(i));
+        const Texture& tex = shaderSamplers.at(i);
+        Texture::bindUnit(i, tex.id, tex.type);
     }
 }
-void Shader::TryAddSampler(u32 texture, const char* uniformName) const 
+
+void Shader::TryAddSampler(const Texture& texture, const char* uniformName) const 
 {
-    std::vector<u32>& shaderSamplers = gss.samplerIDs[ID];
-    // if this texture is NOT already tracked
-    if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture) == shaderSamplers.end()) {
-        // this sampler needs to be added
+    TINY_ASSERT(texture.isValid());
+    std::vector<Texture>& shaderSamplers = gss.samplerIDs[ID];
+    s32 samplerIdx = -1;
+    for (s32 i = 0; i < shaderSamplers.size(); i++)
+    {
+        if (shaderSamplers[i].id == texture.id)
+        {
+            samplerIdx = i;
+            break;
+        }
+    }
+    if (samplerIdx == -1) {
+        samplerIdx = shaderSamplers.size();
         shaderSamplers.push_back(texture);
     }
-    // TODO: clean this shit up
-    // find texture in sampler list and set uniform.
-    // doing this here to help support shader hot-reloading. When shaders are reloaded the sampler
-    // uniforms need to be re-set with the appropriate textures
-    auto samplerFound = std::find(shaderSamplers.begin(), shaderSamplers.end(), texture);
-    if (samplerFound != shaderSamplers.end()) {
-        s32 samplerIndex = samplerFound - shaderSamplers.begin();
-        //use();
-        setUniform(uniformName, samplerIndex);
-    }
+    // when we pass texture id to our shader, it needs to use the glUniform1i (<- signed) which is why this should be s32 not u32
+    setUniform(uniformName, samplerIdx);
+}
+void Shader::TryAddSampler(const Cubemap& texture, const char* uniformName) const
+{
+    Texture cubemapTex = Texture(texture.id, GL_TEXTURE_CUBE_MAP, texture.width, texture.height);
+    this->TryAddSampler(cubemapTex, uniformName);
 }
 
 
@@ -371,6 +381,7 @@ void Shader::use() const
     u32 oglShaderID = GetOpenGLProgramID(shaderID);
 
     glUseProgram(oglShaderID); 
+    ActivateSamplers(shaderID);
     // TODO: use all uniforms associated with this ID
     const auto& uniformMap = gss.cachedUniforms[shaderID];
     for (const auto& [uniformName, uniformData] : uniformMap)

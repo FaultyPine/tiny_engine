@@ -70,7 +70,7 @@ void ParticleSystem::Draw() const {
         }
         if (particleModel.isValid()) {
             LOG_INFO("%f", particle.life);
-            particleModel.cachedShader.use();
+            //particleModel.cachedShader.use();
             particleModel.cachedShader.setUniform("color", particle.color);
             particleModel.Draw(particle.GetTransform());
         }

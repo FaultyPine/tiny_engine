@@ -44,7 +44,6 @@ MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const
         std::string texturePath = meshMaterialDir;
         texturePath.append(str.C_Str());
         Texture tex = LoadTexture(texturePath, TextureProperties::None(), true); // flip vert for opengl
-        tex.texpath = texturePath;
         ret.hasTexture = true;
         ret.texture = tex;
     }
@@ -229,42 +228,40 @@ bool AreActiveLightsInFront(const std::vector<LightPoint>& lights) {
 
 void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
+    shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
+    // set model-space matrix seperately so we can get fragment WS positions and WS normals
+    glm::mat4 model = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
+    shader.setUniform("modelMat", model);
+    glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
+    shader.setUniform("normalMat", matNormal);
+
+    for (const LightPoint& light : lights) {
+        if (light.enabled)
+            UpdatePointLightValues(shader, light);
+    }
+    UpdateSunlightValues(shader, sun);
+    shader.setUniform("numActiveLights", (s32)lights.size());
+
     for (const Mesh& mesh : meshes) {
-        shader.use();
-        shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
-        // set model-space matrix seperately so we can get fragment WS positions and WS normals
-        glm::mat4 model = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
-        shader.setUniform("modelMat", model);
-        glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
-        shader.setUniform("normalMat", matNormal);
-
-        for (const LightPoint& light : lights) {
-            if (light.enabled)
-                UpdatePointLightValues(shader, light);
-        }
-        UpdateSunlightValues(shader, sun);
-        shader.setUniform("numActiveLights", (s32)lights.size());
-
         mesh.Draw(shader, tf);
     }
 }
 void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
+    shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
+    // set model-space matrix seperately so we can get fragment WS positions and WS normals
+    shader.setUniform("modelMat", modelMat);
+    glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(modelMat)));
+    shader.setUniform("normalMat", matNormal);
+
+    for (const LightPoint& light : lights) {
+        if (light.enabled)
+            UpdatePointLightValues(shader, light);
+    }
+    UpdateSunlightValues(shader, sun);
+    shader.setUniform("numActiveLights", (s32)lights.size());
+
     for (const Mesh& mesh : meshes) {
-        shader.use();
-        shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
-        // set model-space matrix seperately so we can get fragment WS positions and WS normals
-        shader.setUniform("modelMat", modelMat);
-        glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(modelMat)));
-        shader.setUniform("normalMat", matNormal);
-
-        for (const LightPoint& light : lights) {
-            if (light.enabled)
-                UpdatePointLightValues(shader, light);
-        }
-        UpdateSunlightValues(shader, sun);
-        shader.setUniform("numActiveLights", (s32)lights.size());
-
         mesh.Draw(shader, mvp);
     }
 }
@@ -276,23 +273,22 @@ void Model::DrawMinimal(const Shader& shader) const {
 
 void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
+    Camera& cam = Camera::GetMainCamera();
+    glm::mat4 view = cam.GetViewMatrix();
+    glm::mat4 projection = cam.GetProjectionMatrix();
+
+    shader.setUniform("viewMat", view);
+    shader.setUniform("projectionMat", projection);
+    shader.setUniform("viewPos", cam.cameraPos);
+
+    for (const LightPoint& light : lights) {
+        if (light.enabled)
+            UpdatePointLightValues(shader, light);
+    }
+    UpdateSunlightValues(shader, sun);
+    shader.setUniform("numActiveLights", (s32)lights.size());
+
     for (const Mesh& mesh : meshes) {
-        shader.use();
-        Camera& cam = Camera::GetMainCamera();
-        glm::mat4 view = cam.GetViewMatrix();
-        glm::mat4 projection = cam.GetProjectionMatrix();
-
-        shader.setUniform("viewMat", view);
-        shader.setUniform("projectionMat", projection);
-        shader.setUniform("viewPos", cam.cameraPos);
-
-        for (const LightPoint& light : lights) {
-            if (light.enabled)
-                UpdatePointLightValues(shader, light);
-        }
-        UpdateSunlightValues(shader, sun);
-        shader.setUniform("numActiveLights", (s32)lights.size());
-
         mesh.DrawInstanced(shader, numInstances);
     }
 }

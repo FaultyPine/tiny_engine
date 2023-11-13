@@ -29,7 +29,7 @@ struct LightPoint
 };
 struct LightDirectional
 {
-    bool enabled = true;
+    bool enabled = false;
     // directional lights don't really have "positions", but this
     // is still needed for rendering our shadow map
     glm::vec3 position = glm::vec3(0);
