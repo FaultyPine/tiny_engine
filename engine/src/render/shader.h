@@ -5,6 +5,9 @@
 #include "tiny_defines.h"
 //#include "tiny_ogl.h"
 #include "math/tiny_math.h"
+#include "tiny_alloc.h"
+
+void InitializeShaderSystem(Arena* arena, size_t shaderUniformDataBlockSize);
 
 struct Shader {
     // ID is not necessarily the OpenGL shader id!
@@ -19,7 +22,6 @@ struct Shader {
 
     TAPI void Delete() const;
     bool isValid() const { return ID != 0xDEADBEEF; }
-    TAPI u32 GetOpenGLProgramID();
 
     /// Takes vertex/fragment shader code (as a string)
     TAPI void ActivateSamplers() const;
@@ -28,7 +30,6 @@ struct Shader {
 
     // use/activate the shader
     TAPI void use() const;
-    TAPI s32 getLoc(const std::string& uniformName) const;
 
     // reloads all shaders
     TAPI static void ReloadShaders();

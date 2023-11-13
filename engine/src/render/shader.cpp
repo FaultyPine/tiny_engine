@@ -7,14 +7,39 @@
 #include <set>
 #include <sstream>
 
-// TODO: There's a lot of static tracking stuff here meant to make Shaders
+// There's a lot of static tracking stuff here meant to make Shaders
 // a simple wrapper on an ID... But is there a better way to structure this?
+
+
+enum UniformDataType
+{
+    UNK = 0,
+    FLOAT,
+    UINT,
+    SINT,
+    VEC2,
+    VEC3,
+    VEC4,
+    MAT3,
+    MAT4,
+};
+
+struct UniformData
+{
+    // pointer into the dedicated uniform memory block given to us by the engine
+    void* uniformData = 0;
+    u32 uniformSize = 0;
+    UniformDataType dataType = UNK;
+    s32 uniformLocation = 0;
+    // TODO: dirty flag and only set when we actually change the data
+};
 
 // contains vertex shader path, frag shader path
 typedef std::pair<std::string, std::string> ShaderLocation;
 
 struct GlobalShaderState
-{
+{ // TODO: use only 1 map. shader id -> {ogl id, filepaths, samplers, uniforms}
+
     // <abstract shader "id", <OGL shader id, shaderFilePaths>>
     std::unordered_map<u32, std::pair<u32, ShaderLocation>> loadedShaders = {};
 
@@ -22,13 +47,24 @@ struct GlobalShaderState
     // putting this outside the shader object to keep Shaders a wrapper around an ID
     std::unordered_map<u32, std::vector<u32>> samplerIDs = {};
 
-    //              shader id               uniform name    uniform location
-    std::unordered_map<u32, std::unordered_map<std::string, s32>> cachedUniformLocs = {};
+    //              shader id               uniform name    uniform
+    std::unordered_map<u32, std::unordered_map<std::string, UniformData>> cachedUniforms = {};
+
+    Arena uniformsDataBlock = {};
 };
 static GlobalShaderState gss;
 
 
-u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) {
+
+void InitializeShaderSystem(Arena* arena, size_t shaderUniformDataBlockSize)
+{
+    void* uniformsDataBlock = arena_alloc(arena, shaderUniformDataBlockSize);
+    gss.uniformsDataBlock = arena_init(uniformsDataBlock, shaderUniformDataBlockSize);
+}
+
+
+u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) 
+{
     u32 shaderID = glCreateShader(shaderType);
     glShaderSource(shaderID, 1, &shaderSource, NULL);
     glCompileShader(shaderID);
@@ -47,7 +83,8 @@ std::string ShaderPreprocessIncludes(
     const s8* shaderSource, 
     const std::string& includeIdentifier, 
     const std::string& includeSearchDir, 
-    std::set<std::string> alreadyIncluded = {}) {
+    std::set<std::string> alreadyIncluded = {}) 
+{
     static bool isRecursiveCall = false;
     std::string fullSourceCode = "";
     std::string lineBuffer;
@@ -93,7 +130,8 @@ std::string ShaderPreprocessIncludes(
     return fullSourceCode;
 }
 
-std::string ShaderSourcePreprocess(const s8* shaderSource) {
+std::string ShaderSourcePreprocess(const s8* shaderSource) 
+{
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
 
@@ -128,7 +166,8 @@ u32 GetShaderErrorLineNumber(const s8* infoLog, u32 infoLogSize)
     return 0;
 }
 
-u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") {
+u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") 
+{
     // preprocess both vert and frag shader source code before compiling
     std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource);
     std::string fsSourcePreprocessed = ShaderSourcePreprocess(fsSource);
@@ -157,7 +196,8 @@ u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std
     return shaderProgram;
 }
 
-u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& fragmentPath) {
+u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& fragmentPath) 
+{
     // 1. retrieve the vertex/fragment source code from filePath
     std::string vertexCode;
     std::string fragmentCode;
@@ -178,42 +218,31 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
 }
 
 
-s32 Shader::getLoc(const std::string& uniformName) const {
-    u32 oglShaderID = gss.loadedShaders.at(ID).first;
-    // cache uniforms for later retrieval
-    if (gss.cachedUniformLocs[oglShaderID].count(uniformName)) return gss.cachedUniformLocs[oglShaderID][uniformName];
-    else {
-        s32 loc = glGetUniformLocation(oglShaderID, uniformName.c_str());
-        if (loc != -1) {
-            gss.cachedUniformLocs[oglShaderID][uniformName] = loc;
-            return loc;
-        }
-        else {
-            //std::cout << "Shader Uniform " << uniformName << " either isn't defined or is unused!";
-            return -1;
-        }
-    }
+static u32 GetOpenGLProgramID(u32 shaderID)
+{
+    return gss.loadedShaders.at(shaderID).first;
 }
-
-u32 Shader::GetOpenGLProgramID() {
-    return gss.loadedShaders.at(ID).first;
-}
-void Shader::InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath, const std::string& fragmentPath) {
+void Shader::InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath, const std::string& fragmentPath) 
+{
     // ID is the index into the loadedShaders list that contains the OGL shader id
     ID = gss.loadedShaders.size();
     gss.loadedShaders[ID] = std::make_pair(shaderProgram, std::make_pair(vertexPath, fragmentPath));
 }
-Shader::Shader(u32 shaderProgram) { 
+Shader::Shader(u32 shaderProgram) 
+{ 
     InitShaderFromProgramID(shaderProgram);
 }
-Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) {
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) 
+{
     u32 shaderProgram = CreateShaderFromFiles(vertexPath, fragmentPath);
     InitShaderFromProgramID(shaderProgram, vertexPath, fragmentPath);
 }
-Shader Shader::CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) {
+Shader Shader::CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) 
+{
     return Shader(CreateShaderProgramFromStr(vsCodeStr, fsCodeStr));
 }
-void Shader::Delete() const {
+void Shader::Delete() const 
+{
     //TINY_ASSERT(false && "Proper shader deletion is currently unimplemented!");
     // TODO: properly release shader...
     // if we erase the shader program from the list
@@ -221,16 +250,20 @@ void Shader::Delete() const {
     
 }
 
-
-
-
-void Shader::use() const {
-    TINY_ASSERT("Invalid shader ID!" && isValid());
-    glUseProgram(gss.loadedShaders.at(ID).first); 
+void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram)
+{
+    for (auto& [uniformName, uniformData] : gss.cachedUniforms[shaderID])
+    {
+        s32 loc = glGetUniformLocation(oglShaderProgram, uniformName.c_str());
+        if (loc != -1)
+        {
+            uniformData.uniformLocation = loc;
+        }
+    }
 }
 
- 
-void ReloadShader(u32 shaderID) { // shader "id" (not opengl shader program id)
+void ReloadShader(u32 shaderID) 
+{ // shader "id" (not opengl shader program id)
     std::pair<u32, ShaderLocation>& oglIDAndPaths = gss.loadedShaders.at(shaderID);
     const ShaderLocation& shaderLocations = oglIDAndPaths.second;
 
@@ -245,11 +278,13 @@ void ReloadShader(u32 shaderID) { // shader "id" (not opengl shader program id)
 
         u32 oldOGLShaderProgram = oglIDAndPaths.first;
         glDeleteProgram(oldOGLShaderProgram);
-        gss.cachedUniformLocs.erase(oldOGLShaderProgram);
-        oglIDAndPaths.first = newShaderProgram;                
+        oglIDAndPaths.first = newShaderProgram;
+        // new ogl shader, old uniform locations are now invalid
+        RefreshShaderUniformLocations(shaderID, newShaderProgram);
     }
 }
-void Shader::Reload() const {
+void Shader::Reload() const 
+{
     ReloadShader(this->ID);
 }
 void Shader::ReloadShaders() {
@@ -261,110 +296,360 @@ void Shader::ReloadShaders() {
 
 
 
-void Shader::ActivateSamplers() const {
+void Shader::ActivateSamplers() const 
+{
     const std::vector<u32>& shaderSamplers = gss.samplerIDs[ID];
     for (s32 i = 0; i < shaderSamplers.size(); i++) {
         Texture::bindUnit(i, shaderSamplers.at(i));
     }
 }
-void Shader::TryAddSampler(u32 texture, const char* uniformName) const {
+void Shader::TryAddSampler(u32 texture, const char* uniformName) const 
+{
     std::vector<u32>& shaderSamplers = gss.samplerIDs[ID];
     // if this texture is NOT already tracked
     if (std::find(shaderSamplers.begin(), shaderSamplers.end(), texture) == shaderSamplers.end()) {
         // this sampler needs to be added
         shaderSamplers.push_back(texture);
     }
+    // TODO: clean this shit up
     // find texture in sampler list and set uniform.
     // doing this here to help support shader hot-reloading. When shaders are reloaded the sampler
     // uniforms need to be re-set with the appropriate textures
     auto samplerFound = std::find(shaderSamplers.begin(), shaderSamplers.end(), texture);
     if (samplerFound != shaderSamplers.end()) {
         s32 samplerIndex = samplerFound - shaderSamplers.begin();
-        use();
+        //use();
         setUniform(uniformName, samplerIndex);
     }
 }
 
 
 
+void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData, u32 uniformSize, UniformDataType dataType) 
+{
+    TINY_ASSERT(gss.uniformsDataBlock.backing_mem_size > 0 && "Make sure to call InitializeShaderSystem before doing any shader calls!");
+    // if we already have uniform - simply update cached values. If we don't, allocate more mem in our uniform mem block
+    if (gss.cachedUniforms[ID].count(uniformName)) 
+    {
+        UniformData& uniform = gss.cachedUniforms[ID][uniformName];
+        TINY_ASSERT(dataType == uniform.dataType && uniformSize == uniform.uniformSize);
+        TMEMCPY(uniform.uniformData, uniformData, uniformSize);
+    }
+    else {
+        // new uniform, cache it
+        u32 oglShaderID = GetOpenGLProgramID(ID);
+        s32 loc = glGetUniformLocation(oglShaderID, uniformName.c_str());
+        if (loc != -1) {
+            void* uniformDataPersistent = arena_alloc(&gss.uniformsDataBlock, uniformSize);
+            TMEMCPY(uniformDataPersistent, uniformData, uniformSize);
+            UniformData uniform = {};
+            uniform.uniformLocation = loc;
+            uniform.uniformData = uniformDataPersistent;
+            uniform.dataType = dataType;
+            uniform.uniformSize = uniformSize;
+            gss.cachedUniforms[ID][uniformName] = uniform;
+        }
+        else {
+            //LOG_WARN("Shader uniform %s either isn't defined or is unused", uniformName);
+        }
+    }
+}
 
 
+// might need to be able to go from buffer + size, to proper glUniformXXX call
+// store & switch on gl function pointers?
 
+// maybe specialize the template on the ogl function pointer types?
+
+
+void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform);
+
+void Shader::use() const 
+{
+    TINY_ASSERT("Invalid shader ID!" && isValid());
+    u32 shaderID = this->ID;
+    u32 oglShaderID = GetOpenGLProgramID(shaderID);
+
+    glUseProgram(oglShaderID); 
+    // TODO: use all uniforms associated with this ID
+    const auto& uniformMap = gss.cachedUniforms[shaderID];
+    for (const auto& [uniformName, uniformData] : uniformMap)
+    {
+        SetOglUniformFromBuffer(uniformName.c_str(), uniformData);
+    }
+}
+
+
+u32 UniformDataTypeToSize(UniformDataType dataType)
+{
+    switch (dataType)
+    {
+        case UniformDataType::FLOAT:
+        {
+            return sizeof(f32);
+        } break;
+        case UniformDataType::UINT:
+        {
+            return sizeof(u32);
+        } break;
+        case UniformDataType::SINT:
+        {
+            return sizeof(s32);
+        } break;
+        case UniformDataType::VEC2:
+        {
+            return sizeof(f32) * 2;
+        } break;
+        case UniformDataType::VEC3:
+        {
+            return sizeof(f32) * 3;
+        } break;
+        case UniformDataType::VEC4:
+        {
+            return sizeof(f32) * 4;
+        } break;
+        case UniformDataType::MAT4:
+        {
+            return sizeof(f32) * 16;
+        } break;
+        case UniformDataType::MAT3:
+        {
+            return sizeof(f32) * 9;
+        } break;
+        default:
+        {
+            return 0;
+        } break;
+    }
+}
 
 
 
 // ========= Shader setUniform overloads =============================
 
+#define SET_UNIFORM_IMPL(uniformName, uniformType, uniformDataCopyArr) \
+u32 uniformSize = UniformDataTypeToSize(uniformType) * ARRAY_SIZE(uniformDataCopyArr); \
+updateUniformData(this->ID, uniformName, uniformDataCopyArr, uniformSize, uniformType)
+// -------------------
+
 
 void Shader::setUniform(const s8* uniformName, f32 val) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform1f(loc, val));
+    f32 uniformData[1] = {val};
+    SET_UNIFORM_IMPL(uniformName, FLOAT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, f32 val, f32 val2) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform2f(loc, val, val2));
+    f32 uniformData[2] = {val, val2};
+    SET_UNIFORM_IMPL(uniformName, FLOAT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, f32 val, f32 val2, f32 val3) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform3f(loc, val, val2, val3));
+    f32 uniformData[3] = {val, val2, val3};
+    SET_UNIFORM_IMPL(uniformName, FLOAT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, f32 val, f32 val2, f32 val3, f32 val4) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform4f(loc, val, val2, val3, val4));
+    f32 uniformData[4] = {val, val2, val3, val4};
+    SET_UNIFORM_IMPL(uniformName, FLOAT, uniformData);
 }
 
 void Shader::setUniform(const s8* uniformName, s32 val) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform1i(loc, val));
+    s32 uniformData[1] = {val};
+    SET_UNIFORM_IMPL(uniformName, SINT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, s32 val, s32 val2) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform2i(loc, val, val2));
+    s32 uniformData[2] = {val, val2};
+    SET_UNIFORM_IMPL(uniformName, SINT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, s32 val, s32 val2, s32 val3) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform3i(loc, val, val2, val3));
+    s32 uniformData[3] = {val, val2, val3};
+    SET_UNIFORM_IMPL(uniformName, SINT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, s32 val, s32 val2, s32 val3, s32 val4) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform4i(loc, val, val2, val3, val4));
+    s32 uniformData[4] = {val, val2, val3, val4};
+    SET_UNIFORM_IMPL(uniformName, SINT, uniformData);
 }
 
 void Shader::setUniform(const s8* uniformName, u32 val) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform1ui(loc, val));
+    u32 uniformData[1] = {val};
+    SET_UNIFORM_IMPL(uniformName, UINT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, u32 val, u32 val2) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform2ui(loc, val, val2));
+    u32 uniformData[2] = {val, val2};
+    SET_UNIFORM_IMPL(uniformName, UINT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, u32 val, u32 val2, u32 val3) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform3ui(loc, val, val2, val3));
+    u32 uniformData[3] = {val, val2, val3};
+    SET_UNIFORM_IMPL(uniformName, UINT, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, u32 val, u32 val2, u32 val3, u32 val4) const
 {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniform4ui(loc, val, val2, val3, val4));
+    u32 uniformData[4] = {val, val2, val3, val4};
+    SET_UNIFORM_IMPL(uniformName, UINT, uniformData);
 }
 
 void Shader::setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose) const {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniformMatrix4fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(mat4)));
+    glm::mat4 uniformData[1] = {mat4};
+    SET_UNIFORM_IMPL(uniformName, MAT4, uniformData);
 }
 void Shader::setUniform(const s8* uniformName, glm::mat3 mat3, bool transpose ) const {
-    s32 loc = getLoc(uniformName);
-    if (loc != -1) GLCall(glUniformMatrix3fv(loc, 1, transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(mat3)));
+    glm::mat3 uniformData[1] = {mat3};
+    SET_UNIFORM_IMPL(uniformName, MAT3, uniformData);
 }
 
+
+
+
+
+
+
+
+
+
+// set actual opengl uniforms
+void OglSetUniform(const s8* uniformName, s32 loc, f32 val)
+{
+    if (loc != -1) GLCall(glUniform1f(loc, val));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, f32 val, f32 val2)
+{
+    if (loc != -1) GLCall(glUniform2f(loc, val, val2));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, f32 val, f32 val2, f32 val3)
+{
+    if (loc != -1) GLCall(glUniform3f(loc, val, val2, val3));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, f32 val, f32 val2, f32 val3, f32 val4)
+{
+    if (loc != -1) GLCall(glUniform4f(loc, val, val2, val3, val4));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, s32 val)
+{
+    if (loc != -1) GLCall(glUniform1i(loc, val));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, s32 val, s32 val2)
+{
+    if (loc != -1) GLCall(glUniform2i(loc, val, val2));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, s32 val, s32 val2, s32 val3)
+{
+    if (loc != -1) GLCall(glUniform3i(loc, val, val2, val3));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, s32 val, s32 val2, s32 val3, s32 val4)
+{
+    if (loc != -1) GLCall(glUniform4i(loc, val, val2, val3, val4));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, u32 val)
+{
+    if (loc != -1) GLCall(glUniform1ui(loc, val));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, u32 val, u32 val2)
+{
+    if (loc != -1) GLCall(glUniform2ui(loc, val, val2));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, u32 val, u32 val2, u32 val3)
+{
+    if (loc != -1) GLCall(glUniform3ui(loc, val, val2, val3));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, u32 val, u32 val2, u32 val3, u32 val4)
+{
+    if (loc != -1) GLCall(glUniform4ui(loc, val, val2, val3, val4));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, glm::mat4 mat4) {
+    if (loc != -1) GLCall(glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mat4)));
+}
+void OglSetUniform(const s8* uniformName, s32 loc, glm::mat3 mat3) {
+    if (loc != -1) GLCall(glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(mat3)));
+}
+
+
+
+void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform)
+{
+    #define ONE_VAR(type) OglSetUniform(uniformName, uniform.uniformLocation, ((type*)uniform.uniformData)[0]);
+    #define TWO_VAR(type) OglSetUniform(uniformName, uniform.uniformLocation, ((type*)uniform.uniformData)[0], ((type*)uniform.uniformData)[1]);
+    #define THREE_VAR(type) OglSetUniform(uniformName, uniform.uniformLocation, ((type*)uniform.uniformData)[0], ((type*)uniform.uniformData)[1], ((type*)uniform.uniformData)[2]);
+    #define FOUR_VAR(type) OglSetUniform(uniformName, uniform.uniformLocation, ((type*)uniform.uniformData)[0], ((type*)uniform.uniformData)[1], ((type*)uniform.uniformData)[2], ((type*)uniform.uniformData)[3]);
+
+    #define SET_FROM_TYPE(type, numElements) \
+        switch (numElements) \
+        { \
+            case 1: \
+            { \
+                ONE_VAR(type) \
+            } break; \
+            case 2:\
+            {\
+                TWO_VAR(type)\
+            } break;\
+            case 3:\
+            {   \
+                THREE_VAR(type) \
+            } break; \
+            case 4: \
+            { \
+                FOUR_VAR(type) \
+            } break; \
+            default: \
+            { \
+                LOG_WARN("Attempted to set uniform with a weird number of elements: %i", numElements); \
+            } break; \
+        }
+
+    u32 uniformSize = uniform.uniformSize;
+    u32 uniformTypeSize = UniformDataTypeToSize(uniform.dataType);
+    if (uniformSize % uniformTypeSize != 0 || uniformSize == 0 || uniformTypeSize == 0)
+    {
+        LOG_WARN("Tried to activate a shader before setting uniforms! Ignoring...");
+        return;
+    }
+    u32 uniformNumElements = uniformSize / uniformTypeSize;
+
+    switch (uniform.dataType)
+    {
+        case UniformDataType::FLOAT:
+        {
+            SET_FROM_TYPE(f32, uniformNumElements)
+        } break;
+        case UniformDataType::UINT:
+        {
+            SET_FROM_TYPE(u32, uniformNumElements)
+        } break;
+        case UniformDataType::SINT:
+        {
+            SET_FROM_TYPE(s32, uniformNumElements)
+        } break;
+        case UniformDataType::VEC2:
+        {
+            SET_FROM_TYPE(f32, uniformNumElements)
+        } break;
+        case UniformDataType::VEC3:
+        {
+            SET_FROM_TYPE(f32, uniformNumElements)
+        } break;
+        case UniformDataType::VEC4:
+        {
+            SET_FROM_TYPE(f32, uniformNumElements)
+        } break;
+        case UniformDataType::MAT4:
+        {
+            OglSetUniform(uniformName, uniform.uniformLocation, *(glm::mat4*)uniform.uniformData);
+        } break;
+        case UniformDataType::MAT3:
+        {
+            OglSetUniform(uniformName, uniform.uniformLocation, *(glm::mat3*)uniform.uniformData);
+        } break;
+        default:
+        {
+            LOG_WARN("Attempted to set uniform data with unknown type %i", uniform.dataType);
+        } break;
+    }
+}

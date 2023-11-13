@@ -280,6 +280,11 @@ void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int
     globEngineState.gameArena = arena_init(gameMemory, requestedMemSize);
     Arena* gameArena = &globEngineState.gameArena;
 
+    // give some of our memory to shaders to store uniforms
+    size_t uniformsMemBlockSize = MEGABYTES_BYTES(2);
+    TINY_ASSERT(uniformsMemBlockSize < requestedMemSize);
+    InitializeShaderSystem(gameArena, uniformsMemBlockSize);
+
     // Begin game loop
     gameFuncs.initFunc(gameArena);
     while (!ShouldCloseWindow())

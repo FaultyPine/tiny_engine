@@ -55,8 +55,7 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
     cubemap = LoadCubemap(facesPaths, props);
     if (!skyboxShader.isValid() && !skyboxCube.isValid()) {
         skyboxShader = Shader(ResPath("shaders/skybox.vert"), ResPath("shaders/skybox.frag"));
-        skyboxShader.use();
-        skyboxShader.setUniform("skybox", 0);
+        skyboxShader.TryAddSampler(cubemap.id, "skybox");
         std::vector<Vertex> vertices = {};
         for (u32 i = 0; i < ARRAY_SIZE(skyboxVertices); i+=3) {
             Vertex v = {};
