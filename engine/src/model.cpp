@@ -226,60 +226,31 @@ bool AreActiveLightsInFront(const std::vector<LightPoint>& lights) {
     return true;
 }
 
+glm::mat4 GetMVP(const Transform& tf) {
+    Camera& cam = Camera::GetMainCamera();
+    // identity matrix to start out with
+    glm::mat4 model = tf.ToModelMatrix();
+    glm::mat4 view = cam.GetViewMatrix();
+    glm::mat4 projection = cam.GetProjectionMatrix();
+    return projection * view * model;
+}
+
 void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights, LightDirectional sun) const {
-    TINY_ASSERT(AreActiveLightsInFront(lights));
-    shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
-    // set model-space matrix seperately so we can get fragment WS positions and WS normals
-    glm::mat4 model = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
-    shader.setUniform("modelMat", model);
-    glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
-    shader.setUniform("normalMat", matNormal);
-
-    for (const LightPoint& light : lights) {
-        if (light.enabled)
-            UpdatePointLightValues(shader, light);
-    }
-    UpdateSunlightValues(shader, sun);
-    shader.setUniform("numActiveLights", (s32)lights.size());
-
-    for (const Mesh& mesh : meshes) {
-        mesh.Draw(shader, tf);
-    }
-}
-void Model::Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<LightPoint>& lights, LightDirectional sun) const {
-    TINY_ASSERT(AreActiveLightsInFront(lights));
-    shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
-    // set model-space matrix seperately so we can get fragment WS positions and WS normals
-    shader.setUniform("modelMat", modelMat);
-    glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(modelMat)));
-    shader.setUniform("normalMat", matNormal);
-
-    for (const LightPoint& light : lights) {
-        if (light.enabled)
-            UpdatePointLightValues(shader, light);
-    }
-    UpdateSunlightValues(shader, sun);
-    shader.setUniform("numActiveLights", (s32)lights.size());
-
-    for (const Mesh& mesh : meshes) {
-        mesh.Draw(shader, mvp);
-    }
-}
-void Model::DrawMinimal(const Shader& shader) const {
-    for (const Mesh& mesh : meshes) {
-        mesh.DrawMinimal(shader);
-    }
-}
-
-void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     Camera& cam = Camera::GetMainCamera();
     glm::mat4 view = cam.GetViewMatrix();
     glm::mat4 projection = cam.GetProjectionMatrix();
-
+    glm::mat4 model = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
+    glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
     shader.setUniform("viewMat", view);
     shader.setUniform("projectionMat", projection);
-    shader.setUniform("viewPos", cam.cameraPos);
+    shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
+    shader.setUniform("modelMat", model);
+    shader.setUniform("normalMat", matNormal);
+    shader.setUniform("mvp", GetMVP(tf));
+    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
+    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
+    shader.setUniform("time", GetTimef());
 
     for (const LightPoint& light : lights) {
         if (light.enabled)
@@ -289,7 +260,14 @@ void Model::DrawInstanced(const Shader& shader, u32 numInstances, const std::vec
     shader.setUniform("numActiveLights", (s32)lights.size());
 
     for (const Mesh& mesh : meshes) {
-        mesh.DrawInstanced(shader, numInstances);
+        mesh.Draw(shader);
+    }
+}
+
+void Model::DrawMinimal(const Shader& shader, const Transform& tf) const
+{
+    for (const Mesh& mesh : meshes) {
+        mesh.Draw(shader);
     }
 }
 

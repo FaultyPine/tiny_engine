@@ -83,6 +83,6 @@ void Skybox::Draw(const LightDirectional& sun) {
     skyboxShader.setUniform("projection", Camera::GetMainCamera().GetProjectionMatrix());
     GLCall(glActiveTexture(GL_TEXTURE0));
     GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id));
-    skyboxCube.DrawMinimal(skyboxShader);
+    skyboxCube.Draw(skyboxShader);
     GLCall(glDepthFunc(GL_LESS));
 }

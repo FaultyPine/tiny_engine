@@ -13,30 +13,31 @@ struct Model {
 
     BoundingBox CalculateBoundingBox();
 
-    // draw with transform
     TAPI void Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const;
-    void Draw(const Transform& tf, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const {
+    void Draw(const Transform& tf, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const 
+    {
         Draw(cachedShader, tf, lights, sun);
     }
-    // draw with mvp matrix
-    TAPI void Draw(const Shader& shader, const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const;
-    void Draw(const glm::mat4& mvp, const glm::mat4& modelMat, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const {
-        Draw(cachedShader, mvp, modelMat, lights, sun);
+
+    TAPI void DrawMinimal(const Shader& shader, const Transform& tf) const;
+    void DrawMinimal(const Transform& tf) const 
+    {
+        DrawMinimal(cachedShader, tf);
     }
 
-    TAPI void DrawMinimal(const Shader& shader) const;
-    
-    // instanced drawing
-    TAPI void DrawInstanced(const Shader& shader, u32 numInstances, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const;
-    void DrawInstanced(u32 numInstances, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const {
-        DrawInstanced(cachedShader, numInstances, lights, sun);
-    }
-    void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) {
-        for (Mesh& m : meshes) m.EnableInstancing(instanceDataBuffer, sizeofSingleComponent, numComponents);
+    // sends instance data to gpu and "marks" all submeshes as instanced
+    void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) 
+    {
+        for (Mesh& m : meshes) 
+        {
+            m.EnableInstancing(instanceDataBuffer, sizeofSingleComponent, numComponents);
+        }
     }
 
-    void Delete() {
-        for (auto& mesh : meshes) {
+    void Delete() 
+    {
+        for (auto& mesh : meshes) 
+        {
             mesh.Delete();
         }
         //cachedShader.Delete(); // other meshes may be using the same shader...

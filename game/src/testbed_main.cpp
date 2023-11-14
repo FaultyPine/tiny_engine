@@ -76,7 +76,6 @@ struct GameState {
     // grass
     WorldEntity grass = {};
     Shader grassPrepassShader;
-    std::vector<glm::mat4> grassTransforms = {};
     BoundingBox grassSpawnExclusion = {};
     Texture windTexture = {};
     f32 windStrength = 0;
@@ -312,21 +311,11 @@ void DepthAndNormsPrePass() {
 
     gs.depthAndNorms.Bind();
     ClearGLBuffers();
-    glm::mat4 viewMat = Camera::GetMainCamera().GetViewMatrix();
-    glm::mat4 projMat = Camera::GetMainCamera().GetProjectionMatrix();
     // render entities to a texture where the rgb of each pixel is the normals
     // and the alpha channel is the depth
     for (WorldEntity& ent : gs.entities) {
-        glm::mat4 modelMat = ent.transform.ToModelMatrix();
-        glm::mat4 mvp = projMat * viewMat * modelMat;
+        // kinda cringe that we need to special case this
         if (ent.hash == GetHash("PondEntity")) {
-            // ewwwwwwww insanely cringe special case handling... (same with the grass prepass shader)
-            // models with vertex displacement shaders need their own specialized
-            // shader with the vert shader being the one that displaces the verts
-            // and the frag shader being our prepass one
-            // might need to add a flag to each shader if it has vertex displacement
-            
-            gs.pondPrepassShader.setUniform("mvp", mvp);
             gs.pondPrepassShader.setUniform("numActiveWaves", gs.numActiveWaves);
             for (u32 i = 0; i < NUM_WAVES; i++) {
                 Wave& wave = gs.waves[i];
@@ -336,12 +325,10 @@ void DepthAndNormsPrePass() {
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
             }
             ent.model.Draw(gs.pondPrepassShader, ent.transform);
-
             continue;
         }
-        gs.depthAndNormsShader.setUniform("mvp", mvp);
         // draw model to texture
-        ent.model.DrawMinimal(gs.depthAndNormsShader);
+        ent.model.Draw(gs.depthAndNormsShader, ent.transform);
     }
     if (enableGrassRender)
     {
@@ -350,7 +337,7 @@ void DepthAndNormsPrePass() {
         gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grassPrepassShader.TryAddSampler(gs.windTexture, "windTexture");
         gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        gs.grass.model.DrawInstanced(gs.grassPrepassShader, gs.grassTransforms.size());
+        gs.grass.model.Draw(gs.grassPrepassShader, gs.grass.transform);
     }
 }
 
@@ -381,7 +368,7 @@ void drawGameState() {
         gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
         gs.grass.model.cachedShader.TryAddSampler(gs.windTexture, "windTexture");
-        gs.grass.model.DrawInstanced(gs.grassTransforms.size(), gs.lights, gs.sunlight);
+        gs.grass.model.Draw(gs.grass.transform, gs.lights, gs.sunlight);
     }
     
     { PROFILE_SCOPE("EntityDrawing");
@@ -439,20 +426,21 @@ void init_grass(GameState& gs) {
     // area where grass CANNOT spawn
     gs.grassSpawnExclusion = BoundingBox({-5.39, 8, -0.43}, 
                                          {6.67, 8, 6.9});
+    std::vector<glm::mat4> grassTransforms = {};
     //  init grass transforms
     WorldEntity* islandModel = gs.GetEntity("island");
     if (islandModel) {
         Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
         if (grassSpawnMesh) {
             grassSpawnMesh->isVisible = false;
-            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, gs.grassTransforms, 100000);
+            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, grassTransforms, 100000);
         }
     }
 
     Shader grassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/grass.frag").c_str());
     gs.grassPrepassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/prepass.frag").c_str());
     Model grassModel = Model(grassShader, ResPath("other/island_wip/grass_blade.obj").c_str(), ResPath("other/island_wip/").c_str());
-    grassModel.EnableInstancing(gs.grassTransforms.data(), sizeof(glm::mat4), gs.grassTransforms.size());
+    grassModel.EnableInstancing(grassTransforms.data(), sizeof(glm::mat4), grassTransforms.size());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
     gs.windTexture = LoadTexture(ResPath("other/distortion.png"));

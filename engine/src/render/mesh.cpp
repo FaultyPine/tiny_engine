@@ -39,6 +39,7 @@ void ConfigureVertexAttrib(u32 attributeLoc, u32 numBytesPerComponent, u32 oglTy
 
 void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) {
     if (instanceVBO != 0) return;
+    this->numInstances = numComponents;
     GLCall(glBindVertexArray(VAO));
     GLCall(glGenBuffers(1, &instanceVBO));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanceVBO));
@@ -127,79 +128,29 @@ void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstanc
     GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
 }
 
-void Set3DMatrixUniforms(const Shader& shader, const Transform& tf) {
-    Camera& cam = Camera::GetMainCamera();
-    
-    // identity matrix to start out with
-    glm::mat4 model = tf.ToModelMatrix();
-    glm::mat4 view = cam.GetViewMatrix();
-    glm::mat4 projection = cam.GetProjectionMatrix();
 
-    // set transform uniforms with the raw data of our matricies
-    shader.setUniform("mvp", projection * view * model);
-}
-
-void Mesh::Draw(const Shader& shader, const Transform& tf) const {
+void Mesh::Draw(const Shader& shader) const {
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
 
-    // misc uniforms
-    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
-    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
-    shader.setUniform("time", GetTimef());
-    // mvp uniform
-    Set3DMatrixUniforms(shader, tf);
     // material uniforms
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
     shader.use();
-    OGLDrawDefault(VAO, indices.size(), vertices.size());
-}
-void Mesh::Draw(const Shader& shader, const glm::mat4& mvp) const {
-    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
-    if (!isVisible) return;
 
-    // misc uniforms
-    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
-    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
-    shader.setUniform("time", GetTimef());
-    // mvp uniform
-    shader.setUniform("mvp", mvp);
-    // material uniforms
-    for (u32 i = 0; i < materials.size(); i++) {
-        materials.at(i).SetShaderUniforms(shader, i);
+    if (numInstances > 0)
+    {
+        // instanced render
+        TINY_ASSERT(instanceVBO != 0 && "Tried to instance mesh that has not had EnableInstance called");
+        OGLDrawInstanced(VAO, indices.size(), vertices.size(), numInstances);
     }
-    shader.use();
-    OGLDrawDefault(VAO, indices.size(), vertices.size());
-}
-
-
-void Mesh::DrawInstanced(const Shader& shader, u32 numInstances) const {
-    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
-    TINY_ASSERT(instanceVBO != 0 && "Tried to instance mesh that has not had EnableInstance called");
-    if (!isVisible) return;
-
-    // misc uniforms
-    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
-    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
-    shader.setUniform("time", GetTimef());
-
-    // material uniforms
-    for (u32 i = 0; i < materials.size(); i++) {
-        materials.at(i).SetShaderUniforms(shader, i);
+    else
+    {
+        OGLDrawDefault(VAO, indices.size(), vertices.size());
     }
-
-    shader.use();
-    OGLDrawInstanced(VAO, indices.size(), vertices.size(), numInstances);
 }
 
-void Mesh::DrawMinimal(const Shader& shader) const {
-    TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
-    if (!isVisible) return;
-    shader.use();
-    OGLDrawDefault(VAO, indices.size(), vertices.size());
-}
 
 
 BoundingBox Mesh::CalculateMeshBoundingBox() {

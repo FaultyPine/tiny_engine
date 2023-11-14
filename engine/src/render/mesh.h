@@ -21,6 +21,7 @@ struct Vertex {
 struct Mesh {
     u32 VAO, VBO, EBO = 0; // vert array obj, vert buf obj, element buf obj
     u32 instanceVBO = 0; // extra vert data for instanced rendering
+    u32 numInstances = 0; // nonzero when this mesh has instancing enabled
     u32 vertexAttributeLocation = 0;
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
@@ -42,11 +43,8 @@ struct Mesh {
     BoundingBox CalculateMeshBoundingBox();
 
     // draw mesh with specified shader
-    TAPI void Draw(const Shader& shader, const Transform& tf) const;
-    TAPI void Draw(const Shader& shader, const glm::mat4& mvp) const;
-    TAPI void DrawMinimal(const Shader& shader) const;
+    TAPI void Draw(const Shader& shader) const;
     TAPI void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
-    TAPI void DrawInstanced(const Shader& shader, u32 numInstances) const;
    
 private:    
     void initMesh();

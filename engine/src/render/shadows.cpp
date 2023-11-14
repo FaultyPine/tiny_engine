@@ -37,5 +37,5 @@ void ShadowMap::RenderShadowCaster(const LightDirectional& light, const Model& m
     glm::mat4 mvp = lightMat * modelMat;
     depthShader.setUniform("mvp", mvp);
     // draw model to depth tex/fb
-    model.DrawMinimal(depthShader);
+    model.DrawMinimal(depthShader, tf);
 }
