@@ -43,7 +43,7 @@ def get_files_with_ext_recursive_walk(basedir, ext):
 def command(cmd):
     result = os.system(cmd)
     if result != 0: # if not success code, stop
-        exit()
+        exit(1)
 
 def get_obj_from_src_file(filename):
     return filename[filename.rfind("/")+1:].replace(".cpp", ".obj" if is_windows() else ".o")
