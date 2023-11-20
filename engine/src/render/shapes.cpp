@@ -377,6 +377,76 @@ void DrawWirePlane(const Transform& tf, const glm::vec4& color)
     SetWireframeDrawing(false);
 }
 
+void DrawPoint(glm::vec3 position, f32 size, glm::vec4 color)
+{
+        static Shader shader;
+    if (!shader.isValid()) {
+        shader = Shader::CreateShaderFromStr(
+R"(
+layout (location = 0) in vec3 vertPos;
+layout (location = 1) in vec4 vertColor;
+out vec4 color;
+uniform mat4 mvp;
+void main(){
+    color = vertColor;
+	gl_Position = mvp * vec4(vertPos, 1.0);
+}
+)",
+R"(
+out vec4 FragColor;
+in vec4 color;
+void main(){
+	FragColor = color;
+}
+)"
+        );
+    }
+    static u32 VAO = 0;
+    static u32 VBO = 0;
+    const f32 verts[] = {
+        position.x, position.y, position.z, // vert pos
+        color.r, color.g, color.b, color.a, // vert col
+    };
+    if (VAO == 0) {
+        GLCall(glGenVertexArrays(1, &VAO));
+        GLCall(glGenBuffers(1, &VBO));
+        
+        GLCall(glBindVertexArray(VAO));
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW));
+
+        // vec3 vertPos vec3 vertColor
+        GLCall(glEnableVertexAttribArray(0));
+        GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)0));
+        GLCall(glEnableVertexAttribArray(1));
+        GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)(3 * sizeof(f32))));
+        
+
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
+        GLCall(glBindVertexArray(0));
+    }
+    else {
+        // each update, reupload the vertex data to the gpu since the line positions may have changed
+        //GLCall(glBindVertexArray(quadVAO));
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+        // copy into gpu vertex buffer with offset 0
+        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts));
+        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
+    }
+    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
+    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
+    glm::mat4 model = glm::mat4(1);
+    glm::mat4 mvp = proj * view * model;
+    shader.setUniform("mvp", mvp);
+    shader.use();
+
+    GLCall(glBindVertexArray(VAO));
+    glPointSize(size);
+    GLCall(glDrawArrays(GL_POINTS, 0, 1));
+    glPointSize(1.0);
+    GLCall(glBindVertexArray(0));
+}
+
 } // namespace Shapes3D
 
 

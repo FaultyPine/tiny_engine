@@ -16,6 +16,7 @@ TAPI void DrawPlane(const Transform& tf, const glm::vec4& color = glm::vec4(1));
 TAPI void DrawWirePlane(const Transform& tf, const glm::vec4& color = glm::vec4(1));
 TAPI void DrawSphere(glm::vec3 center, f32 radius, glm::vec4 color = glm::vec4(1));
 TAPI void DrawWireSphere(glm::vec3 center, f32 radius, glm::vec4 color = glm::vec4(1));
+TAPI void DrawPoint(glm::vec3 position, f32 size = 1.0f, glm::vec4 color = glm::vec4(1));
 
 TAPI Mesh GenCubeMesh();
 TAPI Mesh GenPlaneMesh(u32 resolution = 1);
