@@ -9,9 +9,23 @@ Libraries Used:
 - [miniaudio](https://github.com/mackron/miniaudio) by David Reid
 - [GLtext](https://github.com/vallentin/glText) by Christian Vallentin 
 - [imgui](https://github.com/ocornut/imgui) ImGui by Omar
+- [Assimp](https://github.com/assimp/assimp) 
 - [metadesk](https://dion.systems/metadesk) Metadesk by Dion Systems
+- [Bullet](https://github.com/bulletphysics/bullet3) Bullet by BulletPhysics
 
-Features/Included Implementations:
+
+## Installing Dependencies
+
+This project is currently built and maintained for windows. [vcpkg](https://vcpkg.io/en/) is recommended for installing dependencies
+
+Assimp: `vcpkg install assimp`
+GLFW: `vcpkg install glfw`
+Bullet: `vcpkg install bullet3`
+
+TODO: scan for dependencies before generating ninja build. 
+Make this a bit nicer 
+
+## Features/Included Implementations
 - type reflection/metadata system
 - Postprocessing
 - Job System (multithreading)
@@ -52,13 +66,8 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 ### TODO:
 - Shader refactor
-    - have shaders own their own copies of all their uniforms
-        - this way we can tell a shader to "activate" and it'll use() and 
-            assign to all it's uniforms automatically, and we can then only setUniform outside the shader impl
-            when uniforms change
+    - ~~have shaders own their own copies of all their uniforms~~
     - implement global UBOs that apply to *all* shaders for Camera data and Lighting data
-        making a broad assumption/decision that all shaders may want access to lighting data. I think this is reasonable at the moment
-        this would also entail our GlobalShaderState having some sort of API where we could modify UBO data since Shaders don't "own" that data
 API would be used like
 
 ```C
@@ -79,9 +88,13 @@ model.Draw(shader, ....);
 GlobalShaderState::setUBOData(...); // what would this look like?
 
 ```
+further niceness:
+allow shaders to take in a lambda when initializing them
+which defines how to set their uniforms
 
-
-
+- Bullet
+- par_shapes
+- ImGuizmo
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc

@@ -18,7 +18,8 @@ EXE_NAME = f"{ENGINE_NAME}.dll" if is_windows() else f"{ENGINE_NAME}.so"
 def get_linker_args_msvc():
     return clean_string(f"""
         /LIBPATH:../external /DLL /OUT:{BUILD_DIR}/{EXE_NAME}
-        GLFW/lib/windows/glfw3_mt.lib assimp/lib/x64/assimp.lib user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib
+        GLFW/lib/windows/glfw3_mt.lib assimp/lib/x64/assimp.lib
+        user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib
         /NODEFAULTLIB:libcmt.lib /machine:x64 /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
         /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
     """)

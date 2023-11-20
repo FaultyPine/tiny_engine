@@ -7,13 +7,19 @@ struct Shader;
 
 namespace Shapes3D {
 
+// TODO: these shouldn't take in Transforms...
+// should take in raw position, (opt) rotation, (opt) scale
 TAPI void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = {1.0,1.0,1.0,1.0}, f32 width = 1.0);
 TAPI void DrawCube(const Transform& tf, const glm::vec4& color = glm::vec4(1));
-TAPI void DrawWireCube(BoundingBox box);
+TAPI void DrawWireCube(BoundingBox box, const glm::vec4& color = glm::vec4(1));
 TAPI void DrawPlane(const Transform& tf, const glm::vec4& color = glm::vec4(1));
+TAPI void DrawWirePlane(const Transform& tf, const glm::vec4& color = glm::vec4(1));
+TAPI void DrawSphere(glm::vec3 center, f32 radius, glm::vec4 color = glm::vec4(1));
+TAPI void DrawWireSphere(glm::vec3 center, f32 radius, glm::vec4 color = glm::vec4(1));
 
 TAPI Mesh GenCubeMesh();
 TAPI Mesh GenPlaneMesh(u32 resolution = 1);
+TAPI Mesh GenSphereMesh(u32 resolution = 16);
 
 } // namespace Shapes3D
 

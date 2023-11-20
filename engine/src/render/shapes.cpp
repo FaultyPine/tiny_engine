@@ -8,6 +8,10 @@
 #include "math/tiny_math.h"
 #include "tiny_ogl.h"
 
+#define PAR_SHAPES_IMPLEMENTATION
+#include "par/par_shapes.h"
+#undef PAR_SHAPES_IMPLEMENTATION
+
 // shader var is just called "shader" after this macro
 #define SHAPE_SHADER(shaderName, vertShaderPath, fragShaderPath) \
 static Shader shaderName; \
@@ -244,27 +248,92 @@ void DrawCube(const Transform& tf, const glm::vec4& color) {
 
 }
 
-void DrawWireCube(BoundingBox box)
+void DrawSphere(glm::vec3 center, f32 radius, glm::vec4 color)
 {
+    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
+    static Mesh globalSphereMesh;
+    if (!globalSphereMesh.isValid())
+    {
+        globalSphereMesh = GenSphereMesh();
+    }
+    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
+    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
+    glm::mat4 model = Math::Position3DToModelMat(center, glm::vec3(radius));
+    glm::mat4 mvp = proj * view * model;
+    shader.setUniform("color", color);
+    shader.setUniform("mvp", mvp);
+    globalSphereMesh.Draw(shader);
+}
+void DrawWireSphere(glm::vec3 center, f32 radius, glm::vec4 color)
+{
+    SetWireframeDrawing(true);
+    DrawSphere(center, radius, color);
+    SetWireframeDrawing(false);
+}
+
+Mesh GenSphereMesh(u32 resolution)
+{
+    // using par_shapes_create_parametrix_sphere generates a sphere with texcoords,
+    // but has less uniformly distributed triangles (bunched at poles)
+    // using the subdivided sphere gives good triangle distribution, but no texcoords
+#define WITH_TEXCOORDS
+
+#ifdef WITH_TEXCOORDS
+    resolution = Math::MAX(3u, resolution);
+    par_shapes_mesh* sphere = par_shapes_create_parametric_sphere(resolution, resolution);
+#else
+    TINY_ASSERT(resolution < 5 && "subdivided sphere generation should take in a reasonably low subdivision count!");
+    par_shapes_mesh* sphere = par_shapes_create_subdivided_sphere(resolution);
+#endif
+    std::vector<Vertex> vertices = {};
+    vertices.reserve(sphere->npoints * 3);
+    for (int i = 0; i < sphere->npoints * 3; i += 3)
+    {
+        Vertex v = {};
+        v.position = glm::make_vec3(&sphere->points[i]);
+        v.normal = glm::make_vec3(&sphere->normals[i]);
+#ifdef WITH_TEXCOORDS
+        v.texCoords = glm::make_vec2(&sphere->tcoords[i]);
+#endif
+        vertices.push_back(v);
+    }
+    std::vector<u32> indices = {};
+    indices.reserve(sphere->ntriangles * 3);
+    for (int i = 0; i < sphere->ntriangles * 3; i++)
+    {
+        u16 idx = sphere->triangles[i];
+        indices.push_back(idx);
+    }
+    Mesh m = Mesh(vertices, indices);
+    return m;
+}
+
+void DrawWireCube(BoundingBox box, const glm::vec4& color)
+{
+    /*SetWireframeDrawing(true);
+    glm::vec3 center = box.min + ((box.max - box.min) / 2.0f);
+    glm::vec3 scale = box.max - box.min;
+    DrawCube(Transform(center, scale));
+    SetWireframeDrawing(false);*/
     glm::vec3 min = box.min;
     glm::vec3 max = box.max;
 
-    Shapes3D::DrawLine(box.min, glm::vec3(max.x, min.y, min.z)); // min-x
-    Shapes3D::DrawLine(box.min, glm::vec3(min.x, max.y, min.z)); // min-y
-    Shapes3D::DrawLine(box.min, glm::vec3(min.x, min.y, max.z)); // min-z
+    Shapes3D::DrawLine(box.min, glm::vec3(max.x, min.y, min.z), color); // min-x
+    Shapes3D::DrawLine(box.min, glm::vec3(min.x, max.y, min.z), color); // min-y
+    Shapes3D::DrawLine(box.min, glm::vec3(min.x, min.y, max.z), color); // min-z
 
-    Shapes3D::DrawLine(box.max, glm::vec3(min.x, max.y, max.z)); // max-x
-    Shapes3D::DrawLine(box.max, glm::vec3(max.x, min.y, max.z)); // max-y
-    Shapes3D::DrawLine(box.max, glm::vec3(max.x, max.y, min.z)); // max-z
+    Shapes3D::DrawLine(box.max, glm::vec3(min.x, max.y, max.z), color); // max-x
+    Shapes3D::DrawLine(box.max, glm::vec3(max.x, min.y, max.z), color); // max-y
+    Shapes3D::DrawLine(box.max, glm::vec3(max.x, max.y, min.z), color); // max-z
 
-    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(min.x, max.y, max.z)); // min-y -> max-x
-    Shapes3D::DrawLine(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z)); // min-z -> max-x
+    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(min.x, max.y, max.z), color); // min-y -> max-x
+    Shapes3D::DrawLine(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z), color); // min-z -> max-x
     
-    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z)); // min-y -> max-z
-    Shapes3D::DrawLine(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z)); // min-x -> max-z
+    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z), color); // min-y -> max-z
+    Shapes3D::DrawLine(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z), color); // min-x -> max-z
     
-    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, min.y, min.z)); // max-y -> min-x
-    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z)); // max-y -> min-z
+    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, min.y, min.z), color); // max-y -> min-x
+    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z), color); // max-y -> min-z
 }
 
 void DrawPlane(const Transform& tf, const glm::vec4& color) {
@@ -295,12 +364,18 @@ void DrawPlane(const Transform& tf, const glm::vec4& color) {
     shader.setUniform("mvp", mvp);
     shader.setUniform("color", color);
     shader.use();
-    // render Cube
+    // render Cube 
     glBindVertexArray(planeVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 }
 
+void DrawWirePlane(const Transform& tf, const glm::vec4& color)
+{
+    SetWireframeDrawing(true);
+    DrawPlane(tf, color);
+    SetWireframeDrawing(false);
+}
 
 } // namespace Shapes3D
 
