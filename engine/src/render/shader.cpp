@@ -4,12 +4,10 @@
 #include "cubemap.h"
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
+#include "camera.h"
 #include <unordered_map>
 #include <set>
 #include <sstream>
-
-// There's a lot of static tracking stuff here meant to make Shaders
-// a simple wrapper on an ID... But is there a better way to structure this?
 
 
 enum UniformDataType
@@ -23,6 +21,16 @@ enum UniformDataType
     VEC4,
     MAT3,
     MAT4,
+};
+
+// only have 1 big UBO
+#define UBO_BINDING_POINT 0
+#define UBO_NAME "Globals"
+struct UBOInternal
+{
+    u32 uboObject = 0;
+    void* uboBlock = 0;
+    u32 uboBlockSize = 0;
 };
 
 struct UniformData
@@ -47,30 +55,104 @@ struct ShaderInternal
 };
 
 struct GlobalShaderState
-{ // TODO: use only 1 map. shader id -> {ogl id, filepaths, samplers, uniforms}
-
-    // <abstract shader "id", <OGL shader id, shaderFilePaths>>
-    //std::unordered_map<u32, std::pair<u32, ShaderLocation>> loadedShaders = {};
-
-    // map of shader id -> list of sampler ids
-    // putting this outside the shader object to keep Shaders a wrapper around an ID
-    //std::unordered_map<u32, std::vector<Texture>> samplerIDs = {};
-
-    //              shader id               uniform name    uniform
-    //std::unordered_map<u32, std::unordered_map<std::string, UniformData>> cachedUniforms = {};
-
+{
     std::unordered_map<u32, ShaderInternal> shaderMap = {};
-
-    Arena uniformsDataBlock = {};
+    UBOInternal ubo = {}; // only a single ubo, should contain all global data
+    Arena globalShaderMem = {};
 };
 static GlobalShaderState gss;
 
+void InitializeUBOs();
 
-
-void InitializeShaderSystem(Arena* arena, size_t shaderUniformDataBlockSize)
+void InitializeShaderSystem(Arena* arena, size_t shaderMemBlockSize)
 {
-    void* uniformsDataBlock = arena_alloc(arena, shaderUniformDataBlockSize);
-    gss.uniformsDataBlock = arena_init(uniformsDataBlock, shaderUniformDataBlockSize);
+    void* globalShaderMem = arena_alloc(arena, shaderMemBlockSize);
+    gss.globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize);
+    InitializeUBOs();
+}
+
+
+// ----- Updating UBO data... contains camera-specific, lighting specific, etc
+void GetUBOGlobalsCamera(const Camera& cam, UBOGlobals& globs)
+{
+    // populate uniform block structure. Need to convert from cam to this to adhere to 
+    // the uniform block memory layout
+    globs.camFront = cam.cameraFront;
+    globs.camPos = cam.cameraPos;
+    globs.farClip = cam.farClip;
+    globs.nearClip = cam.nearClip;
+    globs.FOV = cam.FOV;
+    globs.projection = cam.GetProjectionMatrix();
+    globs.view = cam.GetViewMatrix();
+}
+
+void UpdateGlobalUBOCamera(UBOGlobals& globs)
+{
+    GetUBOGlobalsCamera(Camera::GetMainCamera(), globs);
+}
+
+void UpdateGlobalUBOLighting(UBOGlobals& globs)
+{
+    // TODO: statically get main lighting data... includes directional sunlight and all other lights
+}
+
+void UpdateGlobalUBOMisc(UBOGlobals& globs)
+{
+    globs.time = GetTimef();
+}
+// -------------------------
+
+void InitializeUBOs()
+{
+    // global UBO
+    u32 uboBlockSize = sizeof(UBOGlobals);
+    void* mem = arena_alloc(&gss.globalShaderMem, uboBlockSize);
+    gss.ubo.uboBlock = mem;
+    gss.ubo.uboBlockSize = uboBlockSize;
+    u32& uboObject = gss.ubo.uboObject;
+    glGenBuffers(1, &uboObject);
+    glBindBuffer(GL_UNIFORM_BUFFER, uboObject);
+    glBufferData(GL_UNIFORM_BUFFER, uboBlockSize, NULL, GL_STATIC_DRAW); // allocate vmem
+    glBindBufferBase(GL_UNIFORM_BUFFER, UBO_BINDING_POINT, uboObject); 
+}
+
+bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 bindingPoint, u32 shaderProgram)
+{
+    u32 blockIndex = glGetUniformBlockIndex(shaderProgram, uniformBlockName);
+    if (blockIndex == GL_INVALID_INDEX) 
+    {
+        //LOG_ERROR("Failed to get uniform block index!");
+        return false;
+    }
+    else
+    {
+        GLCall(glUniformBlockBinding(shaderProgram, blockIndex, bindingPoint));
+    }
+    return true;
+}
+
+// called just before the game starts rendering a frame
+void ShaderSystemPreDraw()
+{
+    void* UBOMem = gss.ubo.uboBlock;
+    if (UBOMem)
+    {
+        UBOGlobals& globs = *(UBOGlobals*)UBOMem;
+        UpdateGlobalUBOCamera(globs);
+        UpdateGlobalUBOMisc(globs);
+    }
+
+    // update the entire ubo block every frame... maybe better to update parts at a time? no reason to do anything more complex than this for now
+    if (!gss.ubo.uboObject) return;
+    glBindBuffer(GL_UNIFORM_BUFFER, gss.ubo.uboObject);
+    glBufferData(GL_UNIFORM_BUFFER, gss.ubo.uboBlockSize, gss.ubo.uboBlock, GL_STATIC_DRAW);
+}
+
+// binds all used UBO indices to the given shader program, called just after shader initialization
+void HandleShaderUBOInit(u32 shaderProgram)
+{
+    // shaders that don't use the ubo won't have it bound
+    bool hasUBO = TryBindUniformBlockToBindingPoint(UBO_NAME, UBO_BINDING_POINT, shaderProgram);
 }
 
 
@@ -177,7 +259,12 @@ u32 GetShaderErrorLineNumber(const s8* infoLog, u32 infoLogSize)
     return 0;
 }
 
-u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std::string& vertPath = "", const std::string& fragPath = "") 
+
+u32 CreateShaderProgramFromStr(
+    const s8* vsSource, 
+    const s8* fsSource, 
+    const std::string& vertPath = "", 
+    const std::string& fragPath = "") 
 {
     // preprocess both vert and frag shader source code before compiling
     std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource);
@@ -204,6 +291,7 @@ u32 CreateShaderProgramFromStr(const s8* vsSource, const s8* fsSource, const std
     // delete vert/frag shader after we've linked them to the program object
     glDeleteShader(vertexShader);
     glDeleteShader(fragShader);
+    HandleShaderUBOInit(shaderProgram);
     return shaderProgram;
 }
 
@@ -232,30 +320,30 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
 static u32 GetOpenGLProgramID(u32 shaderID)
 {
     return gss.shaderMap.at(shaderID).oglShaderProgram;
-    //return gss.loadedShaders.at(shaderID).first;
 }
-void Shader::InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath, const std::string& fragmentPath) 
+
+u32 InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath = "", const std::string& fragmentPath = "") 
 {
     // ID is the index into the loadedShaders list that contains the OGL shader id
-    //ID = gss.loadedShaders.size();
-    ID = gss.shaderMap.size();
-    //gss.loadedShaders[ID] = std::make_pair(shaderProgram, std::make_pair(vertexPath, fragmentPath));
-    gss.shaderMap[ID].oglShaderProgram = shaderProgram;
-    gss.shaderMap[ID].filepaths = std::make_pair(vertexPath, fragmentPath);
+    u32 shaderID = gss.shaderMap.size();
+    gss.shaderMap[shaderID].oglShaderProgram = shaderProgram;
+    gss.shaderMap[shaderID].filepaths = std::make_pair(vertexPath, fragmentPath);
+    return shaderID;
 }
-Shader::Shader(u32 shaderProgram) 
-{ 
-    InitShaderFromProgramID(shaderProgram);
-}
+
 Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath) 
 {
     u32 shaderProgram = CreateShaderFromFiles(vertexPath, fragmentPath);
-    InitShaderFromProgramID(shaderProgram, vertexPath, fragmentPath);
+    ID = InitShaderFromProgramID(shaderProgram, vertexPath, fragmentPath);
 }
+
 Shader Shader::CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr) 
 {
-    return Shader(CreateShaderProgramFromStr(vsCodeStr, fsCodeStr));
+    Shader shader;
+    shader.ID = InitShaderFromProgramID(CreateShaderProgramFromStr(vsCodeStr, fsCodeStr));
+    return shader;
 }
+
 void Shader::Delete() const 
 {
     //TINY_ASSERT(false && "Proper shader deletion is currently unimplemented!");
@@ -268,7 +356,6 @@ void Shader::Delete() const
 void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram)
 {
     for (auto& [uniformName, uniformData] : gss.shaderMap[shaderID].cachedUniforms)
-    //for (auto& [uniformName, uniformData] : gss.cachedUniforms[shaderID])
     {
         s32 loc = glGetUniformLocation(oglShaderProgram, uniformName.c_str());
         if (loc != -1)
@@ -282,10 +369,7 @@ void ReloadShader(u32 shaderID)
 { // shader "id" (not opengl shader program)
     ShaderInternal& shaderInternal = gss.shaderMap[shaderID];
     u32 oglShaderProgram = shaderInternal.oglShaderProgram;
-    //std::pair<u32, ShaderLocation>& oglIDAndPaths = gss.loadedShaders.at(shaderID);
-    //const ShaderLocation& shaderLocations = oglIDAndPaths.second;
     const ShaderLocation& shaderLocations = shaderInternal.filepaths;
-
     // if shader locations are blank, this shader probably came from a string (cant reload)
     if (shaderLocations.first.empty() || shaderLocations.second.empty()) return;
 
@@ -294,7 +378,6 @@ void ReloadShader(u32 shaderID)
     if (wasShaderFilesChanged) {
         u32 newShaderProgram = CreateShaderFromFiles(shaderLocations.first, shaderLocations.second);
         LOG_INFO("New reloaded shader %i", newShaderProgram);
-
         glDeleteProgram(oglShaderProgram);
         shaderInternal.oglShaderProgram = newShaderProgram;
         // new ogl shader, old uniform locations are now invalid
@@ -317,7 +400,6 @@ void Shader::ReloadShaders() {
 void ActivateSamplers(u32 shaderID) 
 {
     if (gss.shaderMap.count(shaderID) == 0) return;
-    //if (gss.samplerIDs.count(shaderID) == 0) return;
     const std::vector<Texture>& shaderSamplers = gss.shaderMap[shaderID].samplerIDs;
     for (s32 i = 0; i < shaderSamplers.size(); i++) {
         const Texture& tex = shaderSamplers.at(i);
@@ -355,7 +437,7 @@ void Shader::TryAddSampler(const Cubemap& texture, const char* uniformName) cons
 
 void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData, u32 uniformSize, UniformDataType dataType) 
 {
-    TINY_ASSERT(gss.uniformsDataBlock.backing_mem_size > 0 && "Make sure to call InitializeShaderSystem before doing any shader calls!");
+    TINY_ASSERT(gss.globalShaderMem.backing_mem_size > 0 && "Make sure to call InitializeShaderSystem before doing any shader calls!");
     if (gss.shaderMap.count(ID) == 0) return;
     std::unordered_map<std::string, UniformData>& cachedUniforms = gss.shaderMap[ID].cachedUniforms;
     // if we already have uniform - simply update cached values. If we don't, allocate more mem in our uniform mem block
@@ -370,7 +452,7 @@ void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData
         u32 oglShaderID = GetOpenGLProgramID(ID);
         s32 loc = glGetUniformLocation(oglShaderID, uniformName.c_str());
         if (loc != -1) {
-            void* uniformDataPersistent = arena_alloc(&gss.uniformsDataBlock, uniformSize);
+            void* uniformDataPersistent = arena_alloc(&gss.globalShaderMem, uniformSize);
             TMEMCPY(uniformDataPersistent, uniformData, uniformSize);
             UniformData uniform = {};
             uniform.uniformLocation = loc;

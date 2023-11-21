@@ -7,11 +7,10 @@ layout (location = 2) in vec2 vertexTexCoord;
 layout (location = 3) in vec4 vertexColor;
 layout (location = 4) in int  vertexMaterialId;
 
-// Input uniform values
-uniform mat4 mvp;
+#include "globals.glsl"
+
 uniform mat4 modelMat;
 uniform mat3 normalMat;
-//uniform mat4 lightSpaceMatrix;
 
 // Output vertex attributes (to fragment shader)
 out VS_OUT
@@ -35,5 +34,5 @@ void main()
     vs_out.materialId = vertexMaterialId;
     vs_out.fragNormalWS = vec3(normalMat*vertexNormal);
 
-    gl_Position = mvp*vec4(vertexPosition, 1.0);
+    gl_Position = projection * view * modelMat*vec4(vertexPosition, 1.0);
 }

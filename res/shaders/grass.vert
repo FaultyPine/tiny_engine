@@ -7,10 +7,13 @@ layout (location = 3) in vec4 vertexColor;
 layout (location = 4) in int  vertexMaterialId;
 layout (location = 5) in mat4 instanceModelMat;
 
+#include "globals.glsl"
+#include "common.glsl"
+#include "noise.glsl"
+#include "hash.glsl"
+
 // Input uniform values
 uniform int numInstances;
-uniform mat4 viewMat;
-uniform mat4 projectionMat;
 uniform float time;
 
 // Output vertex attributes (to fragment shader)
@@ -24,9 +27,6 @@ out VS_OUT
     vec3 fragPositionOS;
 } vs_out;
 
-#include "noise.glsl"
-#include "hash.glsl"
-#include "common.glsl"
 
 vec2 windDirBase = normalize(vec2(0.5, 0.5));
 uniform sampler2D windTexture;
@@ -57,9 +57,9 @@ vec3 positionFromModelMat(mat4 model)
 
 void main()
 {
-    mat4 modelView = viewMat * instanceModelMat;
+    mat4 modelView = view * instanceModelMat;
     //modelView = Billboard(modelView);
-    mat4 mvp = projectionMat * modelView;
+    mat4 mvp = projection * modelView;
     
     vec3 vertPos = vertexPosition;
     // NOTE: doing all calculations in world space to account for grass blades

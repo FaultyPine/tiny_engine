@@ -9,11 +9,12 @@ in VS_OUT
     vec3 fragNormalWS;
     flat int materialId;
 } vs_in;
+
+#include "globals.glsl"
+
 // Output fragment color
 out vec4 finalColor;
 
-uniform float nearClip;
-uniform float farClip;
 uniform int shouldCrosshatch = 0;
 #include "crosshatch.glsl"
 
@@ -30,11 +31,10 @@ uniform Material materials[MAX_NUM_MATERIALS];
 uniform LightPoint lights[MAX_LIGHTS];
 uniform LightDirectional sunlight;
 uniform int numActiveLights;
-uniform vec3 viewPos;
 uniform float ambientLightIntensity = 0.15;
 
 vec3 GetViewDir() {
-    return normalize(viewPos - vs_in.fragPositionWS);
+    return normalize(camPos - vs_in.fragPositionWS);
 }
 vec3 GetNormals() {
     vec3 vertNormals = (1-useNormalMap) * normalize(vs_in.fragNormalWS);

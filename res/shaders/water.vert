@@ -7,8 +7,9 @@ layout (location = 2) in vec2 vertexTexCoord;
 layout (location = 3) in vec4 vertexColor;
 layout (location = 4) in int  vertexMaterialId;
 
+#include "globals.glsl"
+
 // Input uniform values
-uniform mat4 mvp;
 uniform mat4 modelMat;
 uniform mat3 normalMat;
 uniform mat4 lightSpaceMatrix;
@@ -108,5 +109,5 @@ void main() {
     vs_out.fragColor = vertexColor;
     vs_out.materialId = vertexMaterialId;
 
-    gl_Position = mvp*vec4(vertPos, 1.0);
+    gl_Position = projection * view * modelMat *vec4(vertPos, 1.0);
 }

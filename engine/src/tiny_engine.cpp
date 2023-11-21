@@ -291,6 +291,7 @@ void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int
     {
         gameFuncs.tickFunc(gameArena);
         ImGuiBeginFrame();
+        ShaderSystemPreDraw();
         Framebuffer screenRenderFb = gameFuncs.renderFunc(gameArena);
         glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
         Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);

@@ -238,23 +238,14 @@ glm::mat4 GetMVP(const Transform& tf) {
 void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights, LightDirectional sun) const {
     TINY_ASSERT(AreActiveLightsInFront(lights));
     Camera& cam = Camera::GetMainCamera();
-    glm::mat4 view = cam.GetViewMatrix();
-    glm::mat4 projection = cam.GetProjectionMatrix();
-    glm::mat4 model = Math::Position3DToModelMat(tf.position, tf.scale, tf.rotation, tf.rotationAxis);
+    glm::mat4 model = tf.ToModelMatrix();
     glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
-    shader.setUniform("viewMat", view);
-    shader.setUniform("projectionMat", projection);
-    shader.setUniform("viewPos", Camera::GetMainCamera().cameraPos);
     shader.setUniform("modelMat", model);
     shader.setUniform("normalMat", matNormal);
-    shader.setUniform("mvp", GetMVP(tf));
-    shader.setUniform("nearClip", Camera::GetMainCamera().nearClip);
-    shader.setUniform("farClip", Camera::GetMainCamera().farClip);
     shader.setUniform("time", GetTimef());
 
     for (const LightPoint& light : lights) {
-        if (light.enabled)
-            UpdatePointLightValues(shader, light);
+        UpdatePointLightValues(shader, light);
     }
     UpdateSunlightValues(shader, sun);
     shader.setUniform("numActiveLights", (s32)lights.size());
@@ -264,7 +255,7 @@ void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<Li
     }
 }
 
-void Model::DrawMinimal(const Shader& shader, const Transform& tf) const
+void Model::DrawMinimal(const Shader& shader) const
 {
     for (const Mesh& mesh : meshes) {
         mesh.Draw(shader);

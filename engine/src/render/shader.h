@@ -8,6 +8,27 @@
 #include "tiny_alloc.h"
 
 void InitializeShaderSystem(Arena* arena, size_t shaderUniformDataBlockSize);
+void ShaderSystemPreDraw();
+
+struct UBOGlobals
+{
+    // NOTE: keep in sync with uniform block (currently) in globals.glsl
+
+    // camera
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::vec3 camPos;
+    float nearClip;
+    glm::vec3 camFront;
+    float farClip;
+    float FOV;
+
+    // lighting
+
+
+    // misc
+    f32 time;
+};
 
 struct Texture;
 struct Cubemap;
@@ -19,19 +40,18 @@ struct Shader {
     u32 ID = 0xDEADBEEF;
 
     Shader() = default;
-    TAPI Shader(u32 id);
     TAPI Shader(const std::string& vertexPath, const std::string& fragmentPath);
     TAPI static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr);
 
     TAPI void Delete() const;
-    bool isValid() const { return ID != 0xDEADBEEF; }
+    TAPI bool isValid() const { return ID != 0xDEADBEEF; }
 
     // adds a sampler to this shader
     TAPI void TryAddSampler(const Texture& texture, const char* uniformName) const;
     TAPI void TryAddSampler(const Cubemap& texture, const char* uniformName) const;
 
     // use/activate the shader
-    TAPI void use() const;
+    void use() const;
 
     // reloads all shaders
     TAPI static void ReloadShaders();
@@ -39,6 +59,7 @@ struct Shader {
     TAPI void Reload() const;
 
     // utility uniform functions
+    // NOTE: these do not do any opengl calls
     TAPI void setUniform(const s8* uniformName, f32 val) const;
     TAPI void setUniform(const s8* uniformName, f32 val, f32 val2) const;
     TAPI void setUniform(const s8* uniformName, f32 val, f32 val2, f32 val3) const;
@@ -66,10 +87,6 @@ struct Shader {
 
     TAPI void setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose = false) const;
     TAPI void setUniform(const s8* uniformName, glm::mat3 mat3, bool transpose = false) const;
-
-
-private:
-    void InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath = "", const std::string& fragmentPath = "");
 };
 
 

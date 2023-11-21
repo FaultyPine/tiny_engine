@@ -19,10 +19,10 @@ struct Model {
         Draw(cachedShader, tf, lights, sun);
     }
 
-    TAPI void DrawMinimal(const Shader& shader, const Transform& tf) const;
-    void DrawMinimal(const Transform& tf) const 
+    TAPI void DrawMinimal(const Shader& shader) const;
+    void DrawMinimal() const 
     {
-        DrawMinimal(cachedShader, tf);
+        DrawMinimal(cachedShader);
     }
 
     // sends instance data to gpu and "marks" all submeshes as instanced
