@@ -13,9 +13,12 @@
 #include "particles/particles.h"
 #include "tiny_alloc.h"
 
+#include "bullet/btBulletDynamicsCommon.h"
+
 struct WorldEntity {
     Transform transform = {};
     Model model = {};
+    btCollisionShape* collisionShape;
     u32 hash = 0;
     const char* name = nullptr;
     bool isVisible = true;
@@ -63,6 +66,9 @@ struct GameState {
     std::vector<WorldEntity> entities = {};
     std::vector<LightPoint> lights = {};
     LightDirectional sunlight = {};
+    Shader lightingShader = {};
+
+    btDiscreteDynamicsWorld* dynamicsWorld = 0;
 
     // Main pond
     #define NUM_WAVES 8
@@ -489,8 +495,104 @@ void init_waterfall(GameState& gs) {
     */
 }
 
+void init_bullet(GameState& gs)
+{
+    btDefaultCollisionConfiguration* collisionConfiguration = new btDefaultCollisionConfiguration();
 
+	///use the default collision dispatcher. For parallel processing you can use a diffent dispatcher (see Extras/BulletMultiThreaded)
+	btCollisionDispatcher* dispatcher = new btCollisionDispatcher(collisionConfiguration);
 
+	///btDbvtBroadphase is a good general purpose broadphase. You can also try out btAxis3Sweep.
+	btBroadphaseInterface* overlappingPairCache = new btDbvtBroadphase();
+
+	///the default constraint solver. For parallel processing you can use a different solver (see Extras/BulletMultiThreaded)
+	btSequentialImpulseConstraintSolver* solver = new btSequentialImpulseConstraintSolver;
+
+	btDiscreteDynamicsWorld* dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+
+	dynamicsWorld->setGravity(btVector3(0, -10, 0));
+
+    gs.dynamicsWorld = dynamicsWorld;
+
+    { // create ground
+        btCollisionShape* groundShape = new btBoxShape(btVector3(btScalar(50.), btScalar(50.), btScalar(50.)));
+        btTransform groundTransform;
+        groundTransform.setIdentity();
+        groundTransform.setOrigin(btVector3(0, -56, 0));    
+        btScalar mass(0.);
+        //rigidbody is dynamic if and only if mass is non zero, otherwise static
+        bool isDynamic = (mass != 0.f);
+        btVector3 localInertia(0, 0, 0);
+        if (isDynamic)
+            groundShape->calculateLocalInertia(mass, localInertia);
+        //using motionstate is optional, it provides interpolation capabilities, and only synchronizes 'active' objects
+        btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
+        btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, groundShape, localInertia);
+        btRigidBody* body = new btRigidBody(rbInfo);
+        //add the body to the dynamics world
+        dynamicsWorld->addRigidBody(body);
+    }
+    { //create a dynamic rigidbody
+		//btCollisionShape* colShape = new btBoxShape(btVector3(1,1,1));
+		btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+		/// Create Dynamic Objects
+		btTransform startTransform;
+		startTransform.setIdentity();
+		btScalar mass(1.f);
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
+		btVector3 localInertia(0, 0, 0);
+		if (isDynamic)
+			colShape->calculateLocalInertia(mass, localInertia);
+		startTransform.setOrigin(btVector3(2, 10, 0));
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
+		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, myMotionState, colShape, localInertia);
+		btRigidBody* body = new btRigidBody(rbInfo);
+		dynamicsWorld->addRigidBody(body);
+	}
+}
+
+void bullet_tick(GameState& gs)
+{
+    gs.dynamicsWorld->stepSimulation(GetDeltaTime(), 10);
+}
+
+void bullet_render(GameState& gs)
+{
+    btDiscreteDynamicsWorld* dynamicsWorld = gs.dynamicsWorld;
+    for (int j = dynamicsWorld->getNumCollisionObjects() - 1; j >= 0; j--)
+    {
+        btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[j];
+        btRigidBody* body = btRigidBody::upcast(obj);
+        btTransform trans;
+        btCollisionShape* shape = 0;
+        if (body && body->getMotionState())
+        {
+            body->getMotionState()->getWorldTransform(trans);
+            shape = body->getCollisionShape();
+        }
+        else
+        {
+            trans = obj->getWorldTransform();
+            shape = obj->getCollisionShape();
+        }
+        glm::vec3 worldPosObject = glm::make_vec3(&trans.getOrigin().getX());
+        if (shape->getShapeType() == BOX_SHAPE_PROXYTYPE)
+        {
+            btVector3 min, max;
+            shape->getAabb(trans, min, max);
+            BoundingBox box = BoundingBox(glm::make_vec3(&min.getX()), glm::make_vec3(&max.getX()));
+            Shapes3D::DrawWireCube(box);
+        }
+        else if (shape->getShapeType() == SPHERE_SHAPE_PROXYTYPE)
+        {
+            btVector3 center; btScalar radius;
+            shape->getBoundingSphere(center, radius);
+            Shapes3D::DrawSphere(glm::make_vec3(&center.getX()), (f32)radius, glm::vec4(0.7, 0.7, 0.7, 1.0));
+        }
+    }
+}
 
 
 void testbed_init(Arena* gameMem) {
@@ -502,7 +604,8 @@ void testbed_init(Arena* gameMem) {
 
     GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
-    Shader lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
+    gs.lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
+    Shader& lightingShader = gs.lightingShader;
 
     //Model testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
     Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
@@ -527,6 +630,8 @@ void testbed_init(Arena* gameMem) {
 
     // waterfall
     init_waterfall(gs);
+
+    init_bullet(gs);
 
     // Init lights
     glm::vec3 sunPos = glm::vec3(7, 100, -22);
@@ -581,20 +686,20 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-        gs.sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/3.0f));
+        gs.sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
     }
 #endif
 #if 1
     {    
         // render normals+depth tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-        gs.depthAndNorms.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0, scrn.y / 2.0f), scrn/3.0f));
+        gs.depthAndNorms.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0, scrn.y / 2.0f), scrn/4.0f));
     }
 #endif
     BoundingBox box = gs.entities[0].model.cachedBoundingBox;
     Shapes3D::DrawWireCube(box);
     
-
+    bullet_render(gs);
 #ifdef ENABLE_IMGUI
     drawImGuiDebug();
 #endif
@@ -614,6 +719,7 @@ void testbed_tick(Arena* gameMem) {
     LightDirectional& mainLight = gs.sunlight;
     testbed_orbit_light(mainLight, gs.sunOrbitRadius, 0.2, glm::vec3(0, 10, 0));
     //gs.waterfallParticles.Tick({0,15,0});
+    bullet_tick(gs);
 }
 
 void testbed_terminate(Arena* gameMem) {

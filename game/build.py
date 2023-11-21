@@ -21,15 +21,17 @@ EXE_NAME = f"{APP_NAME}.exe" if is_windows() else f"{APP_NAME}.out"
 
 def get_gamedll_linker_args_msvc():
     return clean_string(f"""
-        /LIBPATH:../ /DLL /OUT:{BUILD_LIB_DIR}/{DLL_NAME}
-        external/GLFW/lib/windows/glfw3_mt.lib
+        /LIBPATH:../external /LIBPATH:../ /DLL /OUT:{BUILD_LIB_DIR}/{DLL_NAME}
+        GLFW/lib/windows/glfw3_mt.lib
         engine/build/TinyEngine.lib
+        bullet/lib/Bullet3Common.lib bullet/lib/BulletCollision.lib bullet/lib/BulletDynamics.lib bullet/lib/BulletSoftBody.lib bullet/lib/LinearMath.lib
         user32.lib gdi32.lib shell32.lib msvcrt.lib
         /NODEFAULTLIB:libcmt.lib /machine:x64 /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
         /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
     """)
 def get_gamedll_compiler_args_msvc(usePch: bool = False):
-    # MT = static link runtime lib
+    # MT = static link runtime lib (CRT)
+    # MD = dynamic link runtime lib (CRT)
     # Z7 = include debug info in object files
     # Zi = produce .pbd file with debug info
     # EHsc = catch C++ exceptions
@@ -38,12 +40,12 @@ def get_gamedll_compiler_args_msvc(usePch: bool = False):
     # LD - build DLL
     pch_part = f"/Yupch.h" if usePch else ""
     to_root = "..\\" # game dll buildfile is in game/  so going 1 out is root
+    include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\bullet\\include"]
+    include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
         /std:c++17 
-        /I{to_root}
-        /I{to_root}types\\generated /I{to_root}external 
-        /I{to_root}external\\include /I{to_root}engine\\src 
-        /EHa /MT /Zi /FS /Gm- /Od /nologo /MP {pch_part}
+        {include_paths}
+        /EHa /MD /Zi /FS /Gm- /Od /nologo /MP {pch_part}
         /LD /DTEXPORT /D_USRDLL /D_WINDLL
     """)
 def get_game_standalone_linker_args_msvc():
