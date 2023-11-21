@@ -17,6 +17,13 @@ echo =========== Engine ===========
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && popd && exit /b)
 popd
 
+:: build game
+pushd game
+echo =========== Game ===========
+%pythoncmd% build.py %*
+IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && popd && exit /b)
+popd
+
 :: build editor
 pushd editor
 echo =========== Editor ===========
@@ -24,9 +31,3 @@ echo =========== Editor ===========
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && popd && exit /b)
 popd
 
-:: build game
-pushd game
-echo =========== Game ===========
-%pythoncmd% build.py %*
-IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && popd && exit /b)
-popd
