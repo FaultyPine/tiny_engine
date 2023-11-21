@@ -34,7 +34,9 @@ const char* arena_get_name(Arena* arena) {
 void* arena_alloc(Arena* arena, size_t alloc_size) {
     size_t& offset = arena->offset;
     bool is_out_of_mem = offset + alloc_size > arena->backing_mem_size;
-    if (is_out_of_mem) {
+    if (is_out_of_mem) 
+    {
+        LOG_FATAL("Out of memory in arena %s\n", arena_get_name(arena));
         return nullptr;
     }
     // TODO: enforce alignment    
@@ -78,7 +80,7 @@ void arena_free_all(Arena* arena)
 {
     arena_clear(arena);
     arena->backing_mem_size = 0;
-    TFREE(arena->backing_mem);
+    TSYSFREE(arena->backing_mem);
 }
 
 ArenaTemp arena_temp_init(Arena* arena) {

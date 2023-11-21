@@ -4,8 +4,8 @@
 #include "tiny_defines.h"
 #include <string.h>
 
-#define TALLOC(size) malloc(size)
-#define TFREE(ptr) { free(ptr); (ptr)=0; }
+#define TSYSALLOC(size) malloc(size)
+#define TSYSFREE(ptr) { free(ptr); (ptr)=0; }
 #define TMEMSET(ptr, val, size) memset(ptr, val, size)
 #define TMEMCPY(dst, src, size) memcpy(dst, src, size)
 #define TMEMMOVE(dst, src, size) memmove(dst, src, size)

@@ -4,6 +4,7 @@
 #include "cubemap.h"
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
+#include "tiny_engine.h"
 #include "camera.h"
 #include <unordered_map>
 #include <set>
@@ -51,19 +52,27 @@ struct ShaderInternal
 struct GlobalShaderState
 {
     // only a single uniform buffer, contain all global shader data
-    u32 uboObject = {}; 
+    u32 uboObject = 0; 
     UBOGlobals uboGlobals = {};
     std::unordered_map<u32, ShaderInternal> shaderMap = {};
     Arena globalShaderMem = {};
 };
-static GlobalShaderState gss;
+
+GlobalShaderState& GetGSS()
+{
+    return *GetEngineCtx().shaderSubsystem;
+}
 
 void InitializeUBOs();
 
 void InitializeShaderSystem(Arena* arena, size_t shaderMemBlockSize)
 {
+    GlobalShaderState*& gss = GetEngineCtx().shaderSubsystem;
+    gss = (GlobalShaderState*)arena_alloc(arena, sizeof(GlobalShaderState));
+    new(&gss->shaderMap) std::unordered_map<u32, ShaderInternal>();
+
     void* globalShaderMem = arena_alloc(arena, shaderMemBlockSize);
-    gss.globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize);
+    gss->globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize);
     InitializeUBOs();
 }
 
@@ -101,7 +110,7 @@ void UpdateGlobalUBOMisc(UBOGlobals& globs)
 
 void InitializeUBOs()
 {
-    u32& uboObject = gss.uboObject;
+    u32& uboObject = GetGSS().uboObject;
     glGenBuffers(1, &uboObject);
     glBindBuffer(GL_UNIFORM_BUFFER, uboObject);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOGlobals), NULL, GL_STATIC_DRAW); // allocate vmem
@@ -126,6 +135,7 @@ bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 binding
 // called just before the game starts rendering a frame
 void ShaderSystemPreDraw()
 {
+    GlobalShaderState& gss = GetGSS();
     UBOGlobals& globs = gss.uboGlobals;
     UpdateGlobalUBOCamera(globs);
     UpdateGlobalUBOMisc(globs);
@@ -307,11 +317,12 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
 
 static u32 GetOpenGLProgramID(u32 shaderID)
 {
-    return gss.shaderMap.at(shaderID).oglShaderProgram;
+    return GetGSS().shaderMap.at(shaderID).oglShaderProgram;
 }
 
 u32 InitShaderFromProgramID(u32 shaderProgram, const std::string& vertexPath = "", const std::string& fragmentPath = "") 
 {
+    GlobalShaderState& gss = GetGSS();
     // ID is the index into the loadedShaders list that contains the OGL shader id
     u32 shaderID = gss.shaderMap.size();
     gss.shaderMap[shaderID].oglShaderProgram = shaderProgram;
@@ -343,6 +354,7 @@ void Shader::Delete() const
 
 void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram)
 {
+    GlobalShaderState& gss = GetGSS();
     for (auto& [uniformName, uniformData] : gss.shaderMap[shaderID].cachedUniforms)
     {
         s32 loc = glGetUniformLocation(oglShaderProgram, uniformName.c_str());
@@ -355,6 +367,7 @@ void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram)
 
 void ReloadShader(u32 shaderID) 
 { // shader "id" (not opengl shader program)
+    GlobalShaderState& gss = GetGSS();
     ShaderInternal& shaderInternal = gss.shaderMap[shaderID];
     u32 oglShaderProgram = shaderInternal.oglShaderProgram;
     const ShaderLocation& shaderLocations = shaderInternal.filepaths;
@@ -377,6 +390,7 @@ void Shader::Reload() const
     ReloadShader(this->ID);
 }
 void Shader::ReloadShaders() {
+    GlobalShaderState& gss = GetGSS();
     for (auto& [shaderID, shaderInternal] : gss.shaderMap) {
         ReloadShader(shaderID);
     }
@@ -387,6 +401,7 @@ void Shader::ReloadShaders() {
 
 void ActivateSamplers(u32 shaderID) 
 {
+    GlobalShaderState& gss = GetGSS();
     if (gss.shaderMap.count(shaderID) == 0) return;
     const std::vector<Texture>& shaderSamplers = gss.shaderMap[shaderID].samplerIDs;
     for (s32 i = 0; i < shaderSamplers.size(); i++) {
@@ -397,6 +412,7 @@ void ActivateSamplers(u32 shaderID)
 
 void Shader::TryAddSampler(const Texture& texture, const char* uniformName) const 
 {
+    GlobalShaderState& gss = GetGSS();
     TINY_ASSERT(texture.isValid());
     std::vector<Texture>& shaderSamplers = gss.shaderMap[ID].samplerIDs;
     s32 samplerIdx = -1;
@@ -425,6 +441,7 @@ void Shader::TryAddSampler(const Cubemap& texture, const char* uniformName) cons
 
 void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData, u32 uniformSize, UniformDataType dataType) 
 {
+    GlobalShaderState& gss = GetGSS();
     TINY_ASSERT(gss.globalShaderMem.backing_mem_size > 0 && "Make sure to call InitializeShaderSystem before doing any shader calls!");
     if (gss.shaderMap.count(ID) == 0) return;
     std::unordered_map<std::string, UniformData>& cachedUniforms = gss.shaderMap[ID].cachedUniforms;
@@ -466,6 +483,7 @@ void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform
 
 void Shader::use() const 
 {
+    GlobalShaderState& gss = GetGSS();
     TINY_ASSERT("Invalid shader ID!" && isValid());
     u32 shaderID = this->ID;
     u32 oglShaderID = GetOpenGLProgramID(shaderID);

@@ -621,23 +621,26 @@ void testbed_terminate(Arena* gameMem) {
     GameState::get().Terminate();
 }
 
-void GetTestbedAppRunCallbacks(AppRunCallbacks* out)
+AppRunCallbacks GetTestbedAppRunCallbacks()
 {
-    out->initFunc = testbed_init;
-    out->tickFunc = testbed_tick;
-    out->renderFunc = testbed_render;
-    out->terminateFunc = testbed_terminate;
+    AppRunCallbacks out;
+    out.initFunc = testbed_init;
+    out.tickFunc = testbed_tick;
+    out.renderFunc = testbed_render;
+    out.terminateFunc = testbed_terminate;
+    return out;
 }
 
 void testbed_standalone_entrypoint(int argc, char *argv[])
 {
-    EngineState engineInitState;
-    engineInitState.appName = "Testbed";
-    engineInitState.windowWidth = 1920;
-    engineInitState.windowHeight = 1080;
-    engineInitState.aspectRatioW = 16;
-    engineInitState.aspectRatioH = 9;
-    engineInitState.false2DTrue3D = true;
-    GetTestbedAppRunCallbacks(&engineInitState.appCallbacks);
-    InitEngine(engineInitState, MEGABYTES_BYTES(20), argc, argv); 
+    InitEngine(
+        argc,
+        argv,
+        "Testbed",
+        1920, 1080,
+        16, 9,
+        true,
+        GetTestbedAppRunCallbacks(), 
+        MEGABYTES_BYTES(20)
+    ); 
 }

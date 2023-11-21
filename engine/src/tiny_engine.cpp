@@ -40,9 +40,11 @@ STATIC_ASSERT(sizeof(f64) == 8);
 
 STATIC_ASSERT(sizeof(void*) == 8);
 
-static EngineState globEngineState;
+static EngineContext globEngineCtx = {};
 
-GLFWwindow* GetMainGLFWWindow() { return globEngineState.glob_glfw_window; }
+EngineContext& GetEngineCtx() { return globEngineCtx; }
+
+GLFWwindow* GetMainGLFWWindow() { return globEngineCtx.glob_glfw_window; }
 
 
 void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
@@ -54,41 +56,41 @@ void framebuffer_size_callback(GLFWwindow* window, s32 width, s32 height) {
     Camera::GetMainCamera().screenHeight = screenHeight;
 }
 void TerminateGame() {
-    globEngineState.frameCount = 0;
-    globEngineState.deltaTime = 0;
-    globEngineState.lastFrameTime = 0;
-    globEngineState.randomSeed = 0;
+    globEngineCtx.frameCount = 0;
+    globEngineCtx.deltaTime = 0;
+    globEngineCtx.lastFrameTime = 0;
+    globEngineCtx.randomSeed = 0;
 
     GLTTerminate();
     glfwTerminate();
     Profiler::Instance().endSession();
 }
 void OverwriteRandomSeed(u64 seed) {
-    globEngineState.randomSeed = seed;
+    globEngineCtx.randomSeed = seed;
 }
-u64 GetRandomSeed() { return globEngineState.randomSeed; }
+u64 GetRandomSeed() { return globEngineCtx.randomSeed; }
 s32 GetRandom(s32 start, s32 end) {
     // lazy init random seed
-    if (globEngineState.randomSeed == 0) {
+    if (globEngineCtx.randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
-        globEngineState.randomSeed = Math::hash((const char*)&time, sizeof(f64));
+        globEngineCtx.randomSeed = Math::hash((const char*)&time, sizeof(f64));
         //std::cout << "Initial random seed = " << randomSeed << "";
     }
-    srand(Math::hash((const char*)&globEngineState.randomSeed, sizeof(globEngineState.randomSeed)));
-    globEngineState.randomSeed++; // deterministic random
+    srand(Math::hash((const char*)&globEngineCtx.randomSeed, sizeof(globEngineCtx.randomSeed)));
+    globEngineCtx.randomSeed++; // deterministic random
     return start + (rand() % end);
 }
 f32 GetRandomf(f32 start, f32 end) {
     // lazy init random seed
-    if (globEngineState.randomSeed == 0) {
+    if (globEngineCtx.randomSeed == 0) {
         // truly random initial seed. Subsequent random calls simply increment the seed deterministically
         f64 time = GetTime();
-        globEngineState.randomSeed = Math::hash((const char*)&time, sizeof(f64));
+        globEngineCtx.randomSeed = Math::hash((const char*)&time, sizeof(f64));
         //std::cout << "Initial random seed = " << randomSeed << "";
     }
-    srand(Math::hash((const char*)&globEngineState.randomSeed, sizeof(globEngineState.randomSeed)));
-    globEngineState.randomSeed++; // deterministic random
+    srand(Math::hash((const char*)&globEngineCtx.randomSeed, sizeof(globEngineCtx.randomSeed)));
+    globEngineCtx.randomSeed++; // deterministic random
     f32 zeroToOneRandom = ((f32)rand()) / RAND_MAX;
     return Math::Lerp(start, end, zeroToOneRandom);
 }
@@ -104,9 +106,9 @@ void CloseGameWindow() {
     glfwSetWindowShouldClose(GetMainGLFWWindow(), true);
 }
 f32 GetDeltaTime() {
-    return globEngineState.deltaTime;
+    return globEngineCtx.deltaTime;
 }
-u32 GetFrameCount() { return globEngineState.frameCount; }
+u32 GetFrameCount() { return globEngineCtx.frameCount; }
 
 void SetMode2D() {
     // For 2D games, don't depth test so that the order they are drawn in makes sense
@@ -145,10 +147,10 @@ void SetWireframeDrawing(bool shouldDrawWireframes) {
 void EngineLoop() {
     // update deltatime
     f32 currentTime = GetTime();
-    globEngineState.deltaTime = currentTime - globEngineState.lastFrameTime;
-    globEngineState.lastFrameTime = currentTime;
+    globEngineCtx.deltaTime = currentTime - globEngineCtx.lastFrameTime;
+    globEngineCtx.lastFrameTime = currentTime;
     // inc frame
-    globEngineState.frameCount++;
+    globEngineCtx.frameCount++;
     // update cam
     Camera::UpdateCamera();
 
@@ -171,34 +173,20 @@ bool ShouldCloseWindow() {
     return glfwWindowShouldClose(GetMainGLFWWindow());
 }
 
-void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int argc, char *argv[])
-{
-    InitializeLogger();
-    globEngineState = engineInitState;
-    u32 windowWidth = engineInitState.windowWidth;
-    u32 windowHeight = engineInitState.windowHeight;
-    u32 aspectRatioW = engineInitState.aspectRatioW;
-    u32 aspectRatioH = engineInitState.aspectRatioH;
-    const s8* windowName = engineInitState.appName;
-    bool false2DTrue3D = engineInitState.false2DTrue3D;
-
-    if (argc < 2)
-    {
-        LOG_FATAL("Passed too few arguments to engine. Make sure to specify the resource directory");
-    }
-    const char* resourceDirectory = argv[1];
-    globEngineState.resourceDirectory = resourceDirectory;
-
-    TINY_ASSERT(globEngineState.resourceDirectory);
-    AppRunCallbacks& gameFuncs = globEngineState.appCallbacks;
-    TINY_ASSERT(gameFuncs.initFunc);
-    TINY_ASSERT(gameFuncs.tickFunc);
-    TINY_ASSERT(gameFuncs.renderFunc);
-    TINY_ASSERT(gameFuncs.terminateFunc);
-
-    Profiler::Instance().beginSession("Profile");
-    InitializeTinyFilesystem(resourceDirectory);
-    LOG_INFO("Resource directory: %s", resourceDirectory);
+void InitEngine(
+    int argc, 
+    char *argv[],
+    const char* windowName,
+    u32 windowWidth,
+    u32 windowHeight,
+    u32 aspectRatioW,
+    u32 aspectRatioH,
+    bool false2DTrue3D,
+    AppRunCallbacks callbacks,
+    size_t requestedGameMemSize
+) {
+    InstrumentationTimer engineInitTimer = InstrumentationTimer("Engine Init");
+    // Initialize glfw and opengl
 
     s8 cwd[PATH_MAX];
     getcwd(cwd, PATH_MAX);
@@ -226,7 +214,7 @@ void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int
         return;
     }
     glfwMakeContextCurrent(window);
-    globEngineState.glob_glfw_window = window;
+    globEngineCtx.glob_glfw_window = window;
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
@@ -270,32 +258,76 @@ void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); 
     glfwSetCursorPosCallback(window, mouse_callback);
 
+    // Initialize engine
+
     Camera::GetMainCamera().screenWidth = windowWidth;
     Camera::GetMainCamera().screenHeight = windowHeight;
 
     InitImGui();
 
-    // give a big memory pool to the game. Game shouldn't allocate outside this pool
-    void* gameMemory = TALLOC(requestedMemSize);
-    globEngineState.gameArena = arena_init(gameMemory, requestedMemSize);
-    Arena* gameArena = &globEngineState.gameArena;
+    // engine memory
+    u32 engineMemorySize = MEGABYTES_BYTES(10);
+    void* engineMemory = TSYSALLOC(engineMemorySize);
+    TMEMSET(engineMemory, 0, engineMemorySize);
+    globEngineCtx.engineArena = arena_init(engineMemory, engineMemorySize);
+    Arena* engineArena = &globEngineCtx.engineArena;
 
-    // give some of our memory to shaders to store uniforms
-    size_t uniformsMemBlockSize = MEGABYTES_BYTES(2);
-    TINY_ASSERT(uniformsMemBlockSize < requestedMemSize);
-    InitializeShaderSystem(gameArena, uniformsMemBlockSize);
+    // give some of our engine memory to shaders to store uniform data
+    size_t uniformsMemBlockSize = MEGABYTES_BYTES(1);
+    TINY_ASSERT(uniformsMemBlockSize < engineMemorySize);
+    InitializeShaderSystem(engineArena, uniformsMemBlockSize);
+    
+
+    InitializeLogger();
+
+    if (argc < 2)
+    {
+        LOG_FATAL("Passed too few arguments to engine. Make sure to specify the resource directory");
+    }
+    const char* resourceDirectory = argv[1];
+    globEngineCtx.resourceDirectory = resourceDirectory;
+
+    TINY_ASSERT(globEngineCtx.resourceDirectory);
+    globEngineCtx.appCallbacks = callbacks;
+    AppRunCallbacks& gameFuncs = globEngineCtx.appCallbacks;
+    TINY_ASSERT(gameFuncs.initFunc);
+    TINY_ASSERT(gameFuncs.tickFunc);
+    TINY_ASSERT(gameFuncs.renderFunc);
+    TINY_ASSERT(gameFuncs.terminateFunc);
+
+    Profiler::Instance().beginSession("Profile");
+    InitializeTinyFilesystem(resourceDirectory);
+    LOG_INFO("Resource directory: %s", resourceDirectory);
+
+    // give a big memory pool to the game. Game shouldn't allocate outside this pool
+    void* gameMemory = TSYSALLOC(requestedGameMemSize);
+    TMEMSET(gameMemory, 0, requestedGameMemSize);
+    globEngineCtx.gameArena = arena_init(gameMemory, requestedGameMemSize);
+    Arena* gameArena = &globEngineCtx.gameArena;
+
+    { PROFILE_SCOPE("Game Initialize");
+        gameFuncs.initFunc(gameArena);
+    }
+    engineInitTimer.stop();
 
     // Begin game loop
-    gameFuncs.initFunc(gameArena);
     while (!ShouldCloseWindow())
     {
-        gameFuncs.tickFunc(gameArena);
-        ImGuiBeginFrame();
-        ShaderSystemPreDraw();
-        Framebuffer screenRenderFb = gameFuncs.renderFunc(gameArena);
-        glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
-        Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
-        ImGuiEndFrame();
+        { PROFILE_SCOPE("Game Tick");
+            gameFuncs.tickFunc(gameArena);
+        }
+        { PROFILE_SCOPE("Engine Render");
+            ImGuiBeginFrame();
+            ShaderSystemPreDraw();
+            Framebuffer screenRenderFb;
+            { PROFILE_SCOPE("Game Render");
+                screenRenderFb = gameFuncs.renderFunc(gameArena);
+            }
+            glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
+            // blit the game's rendered frame to default framebuffer
+            Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
+            ImGuiEndFrame();
+        }
     }
     gameFuncs.terminateFunc(gameArena);
 

@@ -33,7 +33,7 @@ DynArray __DynArrayCreate(u32 stride, u32 initialCapacity)
     u32 arraySize = initialCapacity * stride;
     u32 allocSize = headerSize + arraySize;
     // TODO: allow custom allocator
-    u8* arrayBackingMem = (u8*)TALLOC(allocSize);
+    u8* arrayBackingMem = (u8*)TSYSALLOC(allocSize);
     TMEMSET(arrayBackingMem, 0, allocSize);
     // populate header
     DynArrayHeader* headerPointer = (DynArrayHeader*)arrayBackingMem;
@@ -50,7 +50,7 @@ void DynArrayDestroy(DynArray& array)
 {
     // since header info is stored before the array pointer, move back to the beginning of the allocation to free it
     void* baseArrayPtr = GetHeaderPointer(array);
-    TFREE(baseArrayPtr);
+    TSYSFREE(baseArrayPtr);
     array = (void*)0;
 }
 

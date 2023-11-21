@@ -2,7 +2,7 @@
 
 //#include "pch.h"
 #include "tiny_defines.h"
+#include "tiny_engine.h"
 
-struct AppRunCallbacks;
-TAPI void GetTestbedAppRunCallbacks(AppRunCallbacks* out);
+TAPI AppRunCallbacks GetTestbedAppRunCallbacks(); 
 TAPI void testbed_standalone_entrypoint(int argc, char *argv[]);

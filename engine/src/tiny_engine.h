@@ -24,7 +24,9 @@ struct AppRunCallbacks
     TerminateFunction terminateFunc = 0;
 };
 
-struct EngineState
+struct GlobalShaderState;
+
+struct EngineContext
 {
     u32 windowWidth = 0;
     u32 windowHeight = 0; 
@@ -35,16 +37,32 @@ struct EngineState
     AppRunCallbacks appCallbacks = {};
 
     const char* resourceDirectory = nullptr;
-    Arena gameArena;
+    Arena gameArena = {};
+    Arena engineArena = {};
     f32 deltaTime = 0.0f;
     f32 lastFrameTime = 0.0f;
     u32 frameCount = 0;
     GLFWwindow* glob_glfw_window = nullptr;
     u64 randomSeed = 0;
+
+    // engine subsystems
+    GlobalShaderState* shaderSubsystem = 0;
 };
 
+EngineContext& GetEngineCtx();
 
-TAPI void InitEngine(const EngineState& engineInitState, size_t requestedMemSize, int argc, char *argv[]);
+TAPI void InitEngine(
+    int argc, 
+    char *argv[],
+    const char* windowName,
+    u32 windowWidth,
+    u32 windowHeight,
+    u32 aspectRatioW,
+    u32 aspectRatioH,
+    bool false2DTrue3D,
+    AppRunCallbacks callbacks,
+    size_t requestedGameMemSize
+);
 
 /// Game loop should be while(!ShouldCloseWindow())
 TAPI bool ShouldCloseWindow();

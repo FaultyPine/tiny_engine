@@ -9,6 +9,8 @@
 namespace Assets
 {
 #define PREALLOCATED_ASSET_MEM_MB 10
+
+// TODO: put in engine mem
 static std::unordered_map<u32, void*> assetRecord = {};
 
 /*Arena& GetAssetArena()
@@ -17,7 +19,7 @@ static std::unordered_map<u32, void*> assetRecord = {};
     if (assetArena.backing_mem == nullptr)
     {
         u32 arenaSizeBytes = MEGABYTES_BYTES(PREALLOCATED_ASSET_MEM_MB);
-        void* backingArenaMem = TALLOC(arenaSizeBytes);
+        void* backingArenaMem = TSYSALLOC(arenaSizeBytes);
         assetArena = arena_init(backingArenaMem, arenaSizeBytes);
     }
     return assetArena;
@@ -29,7 +31,7 @@ u32 Load(const char* filepath)
 
     //Arena& assetArena = GetAssetArena();
     //void* assetData = arena_alloc(&assetArena, size);
-    void* assetData = TALLOC(size);
+    void* assetData = TSYSALLOC(size);
     u32 assetID = 0;
     if (ReadFileContentsBinary(filepath, assetData, size))
     {
@@ -49,7 +51,7 @@ void Unload(u32 id)
     {
         void* assetData = assetRecord[id];
         assetRecord.erase(id);
-        TFREE(assetData);
+        TSYSFREE(assetData);
     }
 }
 void* Get(u32 id)

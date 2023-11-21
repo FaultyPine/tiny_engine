@@ -80,7 +80,7 @@ void editor_init(Arena* mem)
     EditorState* editor = (EditorState*)arena_alloc(mem, sizeof(EditorState));
     globEditorState = editor;
     // fetch our game's callbacks
-    GetTestbedAppRunCallbacks(&editor->gameCallbacks);
+    editor->gameCallbacks = GetTestbedAppRunCallbacks();
     editor->gameCallbacks.initFunc(mem);
     
     editor->editorMainFb = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
@@ -112,22 +112,22 @@ void editor_terminate(Arena* mem)
 
 void editor_main(int argc, char *argv[])
 {
-    EngineState engineInitState;
-    engineInitState.appName = "Editor";
-    engineInitState.windowWidth = 1920;
-    engineInitState.windowHeight = 1080;
-    engineInitState.aspectRatioW = 16;
-    engineInitState.aspectRatioH = 9;
-    engineInitState.false2DTrue3D = true;
-
     // editor callbacks
     // NOTE: with this, we are running our editor as an
     // app of our engine... do we want this? 
     // or should our editor own it's own loop.. how should we tick the game then...
-    engineInitState.appCallbacks.initFunc = editor_init;
-    engineInitState.appCallbacks.tickFunc = editor_tick;
-    engineInitState.appCallbacks.renderFunc = editor_render;
-    engineInitState.appCallbacks.terminateFunc = editor_terminate;
-    InitEngine(engineInitState, MEGABYTES_BYTES(20), argc, argv);
-
+    AppRunCallbacks cb;
+    cb.initFunc = editor_init;
+    cb.tickFunc = editor_tick;
+    cb.renderFunc = editor_render;
+    cb.terminateFunc = editor_terminate;
+    InitEngine(
+        argc, argv,
+        "Editor",
+        1920, 1080,
+        16, 9,
+        true,
+        cb,
+        MEGABYTES_BYTES(20)
+    );
 }
