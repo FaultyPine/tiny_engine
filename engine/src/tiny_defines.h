@@ -43,6 +43,11 @@
 #endif
 #endif
 
+#ifdef _MSC_VER
+#define TALIGN(n) __declspec(align(n))
+#else
+#define TALIGN(n) __attribute__((aligned(n)))
+#endif
 
 
 

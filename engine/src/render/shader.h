@@ -12,16 +12,22 @@ void ShaderSystemPreDraw();
 
 struct UBOGlobals
 {
+    // NOTE: ***MUST*** follow std140 alignment rules (I.E. have no implicit padding).
+    // to keep it simple, imagine the only acceptable data types are scalars and vectors of 2 or 4 size.
+    // matrices must be 4x4 or 2x2, never 3 - same with vectors. 
+    // if you want to use a vec3, make sure there's a 4 byte padding or some other 4 byte value directly after it
+    // although it would be better to pack that scalar into a vec4 with some other vec3
+
     // NOTE: keep in sync with uniform block (currently) in globals.glsl
 
     // camera
     glm::mat4 projection;
     glm::mat4 view;
     glm::vec3 camPos;
-    float nearClip;
+    f32 nearClip;
     glm::vec3 camFront;
-    float farClip;
-    float FOV;
+    f32 farClip;
+    f32 FOV;
 
     // lighting
 

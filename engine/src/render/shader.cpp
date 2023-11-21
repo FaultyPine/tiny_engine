@@ -26,12 +26,6 @@ enum UniformDataType
 // only have 1 big UBO
 #define UBO_BINDING_POINT 0
 #define UBO_NAME "Globals"
-struct UBOInternal
-{
-    u32 uboObject = 0;
-    void* uboBlock = 0;
-    u32 uboBlockSize = 0;
-};
 
 struct UniformData
 {
@@ -56,8 +50,10 @@ struct ShaderInternal
 
 struct GlobalShaderState
 {
+    // only a single uniform buffer, contain all global shader data
+    u32 uboObject = {}; 
+    UBOGlobals uboGlobals = {};
     std::unordered_map<u32, ShaderInternal> shaderMap = {};
-    UBOInternal ubo = {}; // only a single ubo, should contain all global data
     Arena globalShaderMem = {};
 };
 static GlobalShaderState gss;
@@ -72,7 +68,6 @@ void InitializeShaderSystem(Arena* arena, size_t shaderMemBlockSize)
 }
 
 
-// ----- Updating UBO data... contains camera-specific, lighting specific, etc
 void GetUBOGlobalsCamera(const Camera& cam, UBOGlobals& globs)
 {
     // populate uniform block structure. Need to convert from cam to this to adhere to 
@@ -86,6 +81,8 @@ void GetUBOGlobalsCamera(const Camera& cam, UBOGlobals& globs)
     globs.view = cam.GetViewMatrix();
 }
 
+
+// ----- Updating UBO data... contains camera-specific, lighting specific, etc
 void UpdateGlobalUBOCamera(UBOGlobals& globs)
 {
     GetUBOGlobalsCamera(Camera::GetMainCamera(), globs);
@@ -104,15 +101,10 @@ void UpdateGlobalUBOMisc(UBOGlobals& globs)
 
 void InitializeUBOs()
 {
-    // global UBO
-    u32 uboBlockSize = sizeof(UBOGlobals);
-    void* mem = arena_alloc(&gss.globalShaderMem, uboBlockSize);
-    gss.ubo.uboBlock = mem;
-    gss.ubo.uboBlockSize = uboBlockSize;
-    u32& uboObject = gss.ubo.uboObject;
+    u32& uboObject = gss.uboObject;
     glGenBuffers(1, &uboObject);
     glBindBuffer(GL_UNIFORM_BUFFER, uboObject);
-    glBufferData(GL_UNIFORM_BUFFER, uboBlockSize, NULL, GL_STATIC_DRAW); // allocate vmem
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOGlobals), NULL, GL_STATIC_DRAW); // allocate vmem
     glBindBufferBase(GL_UNIFORM_BUFFER, UBO_BINDING_POINT, uboObject); 
 }
 
@@ -134,18 +126,14 @@ bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 binding
 // called just before the game starts rendering a frame
 void ShaderSystemPreDraw()
 {
-    void* UBOMem = gss.ubo.uboBlock;
-    if (UBOMem)
-    {
-        UBOGlobals& globs = *(UBOGlobals*)UBOMem;
-        UpdateGlobalUBOCamera(globs);
-        UpdateGlobalUBOMisc(globs);
-    }
+    UBOGlobals& globs = gss.uboGlobals;
+    UpdateGlobalUBOCamera(globs);
+    UpdateGlobalUBOMisc(globs);
 
     // update the entire ubo block every frame... maybe better to update parts at a time? no reason to do anything more complex than this for now
-    if (!gss.ubo.uboObject) return;
-    glBindBuffer(GL_UNIFORM_BUFFER, gss.ubo.uboObject);
-    glBufferData(GL_UNIFORM_BUFFER, gss.ubo.uboBlockSize, gss.ubo.uboBlock, GL_STATIC_DRAW);
+    if (!gss.uboObject) return;
+    glBindBuffer(GL_UNIFORM_BUFFER, gss.uboObject);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOGlobals), &gss.uboGlobals, GL_STATIC_DRAW);
 }
 
 // binds all used UBO indices to the given shader program, called just after shader initialization
@@ -484,7 +472,6 @@ void Shader::use() const
 
     glUseProgram(oglShaderID); 
     ActivateSamplers(shaderID);
-    // TODO: use all uniforms associated with this ID
     const auto& uniformMap = gss.shaderMap[shaderID].cachedUniforms;
     for (const auto& [uniformName, uniformData] : uniformMap)
     {
