@@ -234,11 +234,8 @@ void DrawCube(const Transform& tf, const glm::vec4& color) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
-    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
-    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
     glm::mat4 model = tf.ToModelMatrix();
-    glm::mat4 mvp = proj * view * model;
-    shader.setUniform("mvp", mvp);
+    shader.setUniform("modelMat", model);
     shader.setUniform("color", color);
     shader.use();
     // render Cube
@@ -256,12 +253,9 @@ void DrawSphere(glm::vec3 center, f32 radius, glm::vec4 color)
     {
         globalSphereMesh = GenSphereMesh();
     }
-    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
-    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
     glm::mat4 model = Math::Position3DToModelMat(center, glm::vec3(radius));
-    glm::mat4 mvp = proj * view * model;
     shader.setUniform("color", color);
-    shader.setUniform("mvp", mvp);
+    shader.setUniform("modelMat", model);
     globalSphereMesh.Draw(shader);
 }
 void DrawWireSphere(glm::vec3 center, f32 radius, glm::vec4 color)
