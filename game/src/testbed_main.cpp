@@ -281,8 +281,9 @@ void drawImGuiDebug() {
 void ShadowMapPrePass() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    const LightDirectional& sunlight = GetEngineCtx().lightsSubsystem->lights.sunlight;
-    const ShadowMap& sunShadows = sunlight.shadowMap;
+    const LightingSystem& lighting = *GetEngineCtx().lightsSubsystem;
+    const LightDirectional& sunlight = lighting.lights.sunlight;
+    const ShadowMap& sunShadows = lighting.directionalShadowMap;
     sunShadows.BeginRender();
     for (WorldEntity& ent : gs.entities) {
         //sunShadows.ReceiveShadows(ent.model.cachedShader, sunlight);
@@ -665,7 +666,8 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-        GetEngineCtx().lightsSubsystem->lights.sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
+        const ShadowMap& sunShadows = GetEngineCtx().lightsSubsystem->directionalShadowMap;
+        sunShadows.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
     }
 #endif
 #if 1

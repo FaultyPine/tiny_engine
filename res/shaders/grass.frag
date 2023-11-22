@@ -17,8 +17,6 @@ uniform int numInstances;
 #include "easings.glsl"
 
 #include "lighting.glsl"
-uniform LightDirectional sunlight;
-uniform sampler2D shadowMap;
 
 const vec3 grassBaseColor = vec3(0.05, 0.2, 0.01);
 const vec3 grassTipColor = vec3(0.1, 0.5, 0.1);
@@ -33,8 +31,7 @@ void main() {
 
     float shadow = GetDirectionalShadow(
         vs_in.fragPositionWS.xyz, 
-        vs_in.fragNormalOS, 
-        sunlight);
+        vs_in.fragNormalOS);
     // kinda simulates ambient light
     shadow = max(shadow, 0.6); 
     col *= shadow;

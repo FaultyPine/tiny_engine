@@ -37,9 +37,6 @@ Cubemap LoadCubemap(const std::vector<const char*>& facesPaths, TexturePropertie
 
     // unbind
     GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
-    
-    LOG_INFO("Loaded cubemaps: ");
-    for (const char* s : facesPaths) LOG_INFO("%s, ", s);
 
     Cubemap ret;
     ret.id = textureID;

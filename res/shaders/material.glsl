@@ -18,6 +18,8 @@ struct Material {
     MaterialProperty emissiveMat;
 };
 
+uniform int useNormalMap = 0; // If unset, use vertex normals. If set, sample normal map
+uniform Material materials[MAX_NUM_MATERIALS];
 
 vec4 GetMaterialColor(MaterialProperty mat, vec2 uv) {
     int shouldUseSampler = mat.useSampler;

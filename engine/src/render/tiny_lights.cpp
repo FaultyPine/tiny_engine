@@ -52,8 +52,9 @@ void LightDirectional::Visualize()
 
 LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 
 {
-    GlobalLights& lights = GetEngineCtx().lightsSubsystem->lights;
-    s32& pointLightIndex = GetEngineCtx().lightsSubsystem->pointLightIndex;
+    LightingSystem& lightingSystem = *GetEngineCtx().lightsSubsystem;
+    GlobalLights& lights = lightingSystem.lights;
+    s32& pointLightIndex = lightingSystem.pointLightIndex;
     TINY_ASSERT(pointLightIndex+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
     LightPoint light = {};
     light.enabled = true;
@@ -63,6 +64,7 @@ LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 atte
     light.linear = attenuationParams.y;
     light.quadratic = attenuationParams.z;
     // TODO: point light cubemap omnidirectional shadow map
+    //lightingSystem.pointLightShadowMaps[pointLightIndex] = Cubemap();
 
     lights.pointLights[pointLightIndex++] = light;
     return lights.pointLights[pointLightIndex-1];
@@ -70,13 +72,14 @@ LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 atte
 
 LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color)
 {
-    GlobalLights& lights = GetEngineCtx().lightsSubsystem->lights;
+    LightingSystem& lightingSystem = *GetEngineCtx().lightsSubsystem;
+    GlobalLights& lights = lightingSystem.lights;
     LightDirectional light = {};
     light.color = color;
     light.direction = direction;
     light.position = position;
     light.enabled = true;
-    light.shadowMap = ShadowMap(1024);
+    lightingSystem.directionalShadowMap = ShadowMap(1024);
 
     lights.sunlight = light;
     return lights.sunlight;
@@ -117,6 +120,7 @@ void SetLightingUniforms(const Shader& shader)
 
 void UpdatePointLightValues(const Shader& shader, LightPoint* lights, u32 numPointLights)
 {
+    Cubemap* pointLightShadowMaps = &GetEngineCtx().lightsSubsystem->pointLightShadowMaps[0];
     for (u32 i = 0; i < numPointLights; i++)
     {
         LightPoint& light = lights[i];
@@ -144,8 +148,8 @@ void UpdatePointLightValues(const Shader& shader, LightPoint* lights, u32 numPoi
         uniformName = TextFormat("lights[%i].intensity", i);
         shader.setUniform(uniformName, light.intensity);
 
-        uniformName = TextFormat("lights[%i].shadowMap", i);
-        shader.TryAddSampler(light.shadowMap, uniformName);
+        uniformName = TextFormat("pointLightShadowMaps[%i]", i);
+        shader.TryAddSampler(pointLightShadowMaps[i], uniformName);
     }
 }
 
@@ -158,5 +162,6 @@ void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight
     shader.setUniform("sunlight.color", sunlight.color);
     shader.setUniform("sunlight.intensity", sunlight.intensity);
     shader.setUniform("sunlight.lightSpaceMatrix", sunlight.GetLightSpacematrix());
-    shader.TryAddSampler(sunlight.shadowMap.fb.texture, "sunlight.shadowMap");
+    ShadowMap& sunlightShadowMap = GetEngineCtx().lightsSubsystem->directionalShadowMap;
+    shader.TryAddSampler(sunlightShadowMap.fb.texture, "directionalLightShadowMap");
 }

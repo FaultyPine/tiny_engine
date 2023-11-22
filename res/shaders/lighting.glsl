@@ -1,7 +1,7 @@
 
 #include "material.glsl"
 
-#define     MAX_LIGHTS              4
+#define MAX_LIGHTS 4
 
 struct LightDirectional 
 {
@@ -10,7 +10,6 @@ struct LightDirectional
     vec4 color;
     mat4 lightSpaceMatrix;
     float intensity;
-    sampler2D shadowMap;
 };
 
 struct LightPoint
@@ -22,8 +21,15 @@ struct LightPoint
     float linear;
     float quadratic;
     float intensity;
-    samplerCube shadowMap;
 };
+
+uniform samplerCube pointLightShadowMaps[MAX_LIGHTS];
+uniform sampler2D directionalLightShadowMap;
+
+uniform LightPoint lights[MAX_LIGHTS];
+uniform LightDirectional sunlight;
+uniform int numActiveLights;
+uniform float ambientLightIntensity = 0.15;
 
 float PCFShadow(
     vec2 projCoords, 
@@ -48,18 +54,17 @@ float PCFShadow(
 // 0 is in shadow, 1 is out of shadow
 float GetDirectionalShadow(
     vec3 fragPosWS, 
-    vec3 fragNormalWS,
-    in LightDirectional light) 
+    vec3 fragNormalWS) 
 {
-    vec3 lightDir = -light.direction; // points towards pixel from light, so reverse it to get pixel to light
+    vec3 lightDir = -sunlight.direction; // points towards pixel from light, so reverse it to get pixel to light
     // the light space matrix contains the view and projection matrices 
     // for our light (view representing where our light is "looking") and projection representing the shadow frustum
-    vec4 fragPosLS = light.lightSpaceMatrix * vec4(fragPosWS, 1.0);
+    vec4 fragPosLS = sunlight.lightSpaceMatrix * vec4(fragPosWS, 1.0);
 
     //const float shadowBias = 0.005;
     // bias based on the surface's normal and light direction
     //float shadowBias = max(0.01 * (1.0 - dot(fragNormalWS, -light.direction)), 0.005);  
-    float shadowBias = mix(0.005, 0.0, dot(fragNormalWS, -light.direction));  
+    float shadowBias = mix(0.005, 0.0, dot(fragNormalWS, -sunlight.direction));  
     // manual perspective divide - now we're in NDC
     // range [-1,1]
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
@@ -70,12 +75,12 @@ float GetDirectionalShadow(
 
 
     // depth value from shadow map
-    //float shadowMapDepth = texture(shadowMap, projCoords.xy).r;
+    //float shadowMapDepth = texture(directionalLightShadowMap, projCoords.xy).r;
     // [0,1] current depth of this fragment
     float currentDepth = projCoords.z;
 
     // 1.0 is in shadow, 0 is out of shadow
-    float shadow = PCFShadow(projCoords.xy, currentDepth - shadowBias, 2, light.shadowMap);
+    float shadow = PCFShadow(projCoords.xy, currentDepth - shadowBias, 2, directionalLightShadowMap);
 
     // - bias   gets rid of shadow acne
     //float shadow = currentDepth-shadowBias > shadowMapDepth ? 1.0 : 0.0;
@@ -159,10 +164,6 @@ vec3 calculateLighting(
     in Material[MAX_NUM_MATERIALS] materials, 
     int materialId,
     vec2 fragTexCoord,
-    float ambientLightIntensity,
-    in LightPoint lights[MAX_LIGHTS],
-    in LightDirectional sunlight,
-    int numActiveLights,
     vec3 fragNormalWS, 
     vec3 viewDir, 
     vec3 fragPositionWS)
@@ -174,7 +175,7 @@ vec3 calculateLighting(
     vec3 specularLight = vec3(0);
     float shininess = GetShininessMaterial(materials, materialId, fragTexCoord);
     vec3 specularMaterial = GetSpecularMaterial(materials, materialId, fragTexCoord).rgb;
-    float shadow = GetDirectionalShadow(fragPositionWS, fragNormalWS, sunlight);
+    float shadow = GetDirectionalShadow(fragPositionWS, fragNormalWS);
 
     // sunlight is seperate from other lights
     calculateLightingForDirectionalLight(

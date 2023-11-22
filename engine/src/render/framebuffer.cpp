@@ -114,7 +114,7 @@ void Framebuffer::Blit(
     glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, glFbType, GL_NEAREST);
 }
 
-void Framebuffer::DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst)
+void Framebuffer::DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst) const
 {
     dstFramebuffer.Bind();
     visualizationSprite.DrawSprite(dst, glm::vec4(1), true);

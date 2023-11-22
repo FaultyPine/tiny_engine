@@ -22,7 +22,7 @@ struct LightPoint
     f32 linear = 0.09f;
     f32 quadratic = 0.032f;
     f32 intensity = 1.0f;
-    Cubemap shadowMap;
+    //Cubemap shadowMap;
 
     TAPI void Visualize();
 };
@@ -37,7 +37,7 @@ struct LightDirectional
     glm::vec3 direction = glm::vec3(1);
     f32 intensity = 1.0f;
     glm::vec4 color = glm::vec4(1);
-    ShadowMap shadowMap;
+    //ShadowMap shadowMap;
 
     TAPI void Visualize();
     TAPI glm::mat4 GetLightSpacematrix() const;

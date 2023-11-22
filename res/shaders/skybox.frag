@@ -8,7 +8,6 @@ in vec3 TexCoords;
 
 uniform samplerCube skybox;
 #include "lighting.glsl"
-uniform LightDirectional sunlight;
 
 uniform vec3 topGradientCol = vec3(1.0, 0.3, 0.2);
 uniform vec3 bottomGradientCol = vec3(0.3, 0.3, 1.0);

@@ -15,23 +15,8 @@ in VS_OUT
 // Output fragment color
 out vec4 finalColor;
 
-uniform int shouldCrosshatch = 0;
-#include "crosshatch.glsl"
-
-// ============================ MATERIALS ==================================
 #include "material.glsl"
-uniform int useNormalMap = 0; // If unset, use vertex normals. If set, sample normal map
-uniform Material materials[MAX_NUM_MATERIALS];
-
-// ================================== LIGHTING ===================================
-
 #include "lighting.glsl"
-
-// Input lighting values
-uniform LightPoint lights[MAX_LIGHTS];
-uniform LightDirectional sunlight;
-uniform int numActiveLights;
-uniform float ambientLightIntensity = 0.15;
 
 vec3 GetViewDir() {
     return normalize(camPos - vs_in.fragPositionWS);
@@ -54,10 +39,6 @@ void main() {
         materials,
         vs_in.materialId,
         vs_in.fragTexCoord,
-        ambientLightIntensity,
-        lights,
-        sunlight,
-        numActiveLights,
         GetNormals(), 
         GetViewDir(),
         vs_in.fragPositionWS);

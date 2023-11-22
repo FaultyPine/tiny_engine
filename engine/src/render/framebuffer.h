@@ -29,7 +29,7 @@ struct Framebuffer {
                     f32 dstX0, f32 dstY0, 
                     f32 dstX1, f32 dstY1,
                     FramebufferAttachmentType type);
-    TAPI void DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst);
+    TAPI void DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst) const;
 
     TAPI glm::vec2 GetSize() const { return size; }
     TAPI Texture GetTexture() const { return texture; }
