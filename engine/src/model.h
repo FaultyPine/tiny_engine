@@ -13,10 +13,10 @@ struct Model {
 
     BoundingBox CalculateBoundingBox();
 
-    TAPI void Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const;
-    void Draw(const Transform& tf, const std::vector<LightPoint>& lights = {}, LightDirectional sun = {}) const 
+    TAPI void Draw(const Shader& shader, const Transform& tf) const;
+    void Draw(const Transform& tf) const 
     {
-        Draw(cachedShader, tf, lights, sun);
+        Draw(cachedShader, tf);
     }
 
     TAPI void DrawMinimal(const Shader& shader) const;

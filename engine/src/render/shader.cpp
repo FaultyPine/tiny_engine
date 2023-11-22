@@ -5,11 +5,12 @@
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
 #include "tiny_engine.h"
-#include "camera.h"
 #include <unordered_map>
 #include <set>
 #include <sstream>
 
+#include "camera.h"
+#include "tiny_lights.h"
 
 enum UniformDataType
 {
@@ -100,6 +101,9 @@ void UpdateGlobalUBOCamera(UBOGlobals& globs)
 void UpdateGlobalUBOLighting(UBOGlobals& globs)
 {
     // TODO: statically get main lighting data... includes directional sunlight and all other lights
+    EngineContext& ctx = GetEngineCtx();
+    GlobalLights& lightSystem = *ctx.lightsSubsystem;
+    
 }
 
 void UpdateGlobalUBOMisc(UBOGlobals& globs)

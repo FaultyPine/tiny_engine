@@ -13,7 +13,6 @@ layout (location = 4) in int  vertexMaterialId;
 uniform mat4 modelMat;
 uniform mat3 normalMat;
 uniform mat4 lightSpaceMatrix;
-uniform float time;
 
 // Output vertex attributes (to fragment shader)
 out VS_OUT

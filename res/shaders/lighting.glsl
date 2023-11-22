@@ -5,18 +5,18 @@
 
 struct LightDirectional 
 {
-    int enabled;
     vec3 direction;
+    int enabled;
     vec4 color;
-    float intensity;
     mat4 lightSpaceMatrix;
+    float intensity;
     sampler2D shadowMap;
 };
 
 struct LightPoint
 {
-    int enabled;
     vec3 position;
+    int enabled;
     vec4 color;
     float constant;
     float linear;

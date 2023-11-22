@@ -37,9 +37,9 @@ struct WorldEntity {
     void Delete() {
         model.Delete();
     }
-    void Draw(const Transform &tf, const std::vector<LightPoint> &lights = {}, LightDirectional sun = {}) {
+    void Draw(const Transform &tf) {
         if (isVisible) {
-            model.Draw(tf, lights, sun);
+            model.Draw(tf);
         }
     }
     bool isValid() { return hash != 0; }
@@ -64,8 +64,8 @@ struct GameState {
 
     // TODO: use hashmap w/int IDs
     std::vector<WorldEntity> entities = {};
-    std::vector<LightPoint> lights = {};
-    LightDirectional sunlight = {};
+    //std::vector<LightPoint> lights = {};
+    //LightDirectional sunlight = {};
     Shader lightingShader = {};
 
     btDiscreteDynamicsWorld* dynamicsWorld = 0;
@@ -265,7 +265,7 @@ void drawImGuiDebug() {
         }
     }
 
-    for (LightPoint& light : gs.lights)
+    /*for (LightPoint& light : gs.lights)
     {
         if (ImGui::CollapsingHeader("Light"))
         {
@@ -276,15 +276,15 @@ void drawImGuiDebug() {
             ImGui::Checkbox("Enabled", &light.enabled);
         }
     }
-    LightDirectional& meshLight = gs.sunlight;
+    LightDirectional& sunlight = gs.sunlight;
     if (ImGui::CollapsingHeader("Sunlight"))
     {
-        ImGui::ColorEdit4("sunlight Color", &meshLight.color[0]);
-        ImGui::DragFloat3("sunlight direction", &meshLight.direction[0], 0.1f);
-        ImGui::DragFloat3("sunlight position", &meshLight.position[0], 0.1f);
-        ImGui::DragFloat("sunlight intensity", &meshLight.intensity, 0.1f);
-        ImGui::Checkbox("sunlight Enabled", &meshLight.enabled);
-    }
+        ImGui::ColorEdit4("sunlight Color", &sunlight.color[0]);
+        ImGui::DragFloat3("sunlight direction", &sunlight.direction[0], 0.1f);
+        ImGui::DragFloat3("sunlight position", &sunlight.position[0], 0.1f);
+        ImGui::DragFloat("sunlight intensity", &sunlight.intensity, 0.1f);
+        ImGui::Checkbox("sunlight Enabled", &sunlight.enabled);
+    }*/
 
     #if 0
     static f32 ambientLightIntensity = 0.15f;
@@ -300,9 +300,9 @@ void drawImGuiDebug() {
 void ShadowMapPrePass() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    const ShadowMap& sunShadows = gs.sunlight.shadowMap;
+    const LightDirectional& sunlight = GetEngineCtx().lightsSubsystem->sunlight;
+    const ShadowMap& sunShadows = sunlight.shadowMap;
     sunShadows.BeginRender();
-    const LightDirectional& sunlight = gs.sunlight;
     for (WorldEntity& ent : gs.entities) {
         //sunShadows.ReceiveShadows(ent.model.cachedShader, sunlight);
         sunShadows.RenderShadowCaster(sunlight, ent.model, ent.transform);
@@ -374,22 +374,22 @@ void drawGameState() {
         gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
         gs.grass.model.cachedShader.TryAddSampler(gs.windTexture, "windTexture");
-        gs.grass.model.Draw(gs.grass.transform, gs.lights, gs.sunlight);
+        gs.grass.model.Draw(gs.grass.transform);
     }
     
     { PROFILE_SCOPE("EntityDrawing");
         for (const auto& ent : gs.entities) {
-            ent.model.Draw(ent.transform, gs.lights, gs.sunlight);
+            ent.model.Draw(ent.transform);
         }
     }
 
-    for (LightPoint& pointLight : gs.lights)
-    {
-        pointLight.Visualize();
-    }
+    //for (LightPoint& pointLight : gs.lights)
+    //{
+    //    pointLight.Visualize();
+    //}
 
     { PROFILE_SCOPE("Skybox draw");
-        gs.skybox.Draw(gs.sunlight);
+        gs.skybox.Draw();
     }
 }
 
@@ -637,10 +637,8 @@ void testbed_init(Arena* gameMem) {
     glm::vec3 sunPos = glm::vec3(7, 100, -22);
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
-    LightDirectional sun = CreateDirectionalLight(sunDir, sunPos, glm::vec4(1));
-    gs.sunlight = sun;
-    LightPoint meshPointLight = CreatePointLight(glm::vec3(0), glm::vec4(1));
-    gs.lights.push_back(meshPointLight);
+    CreateDirectionalLight(sunDir, sunPos, glm::vec4(1));
+    CreatePointLight(glm::vec3(0), glm::vec4(1));
 
     { PROFILE_SCOPE("Skybox Init");
     /*
@@ -686,7 +684,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-        gs.sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
+        GetEngineCtx().lightsSubsystem->sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
     }
 #endif
 #if 1
@@ -716,7 +714,7 @@ void testbed_tick(Arena* gameMem) {
     GameState& gs = GameState::get();
     testbed_inputpoll();
     // have main directional light orbit
-    LightDirectional& mainLight = gs.sunlight;
+    LightDirectional& mainLight = GetEngineCtx().lightsSubsystem->sunlight;
     testbed_orbit_light(mainLight, gs.sunOrbitRadius, 0.2, glm::vec3(0, 10, 0));
     //gs.waterfallParticles.Tick({0,15,0});
     bullet_tick(gs);

@@ -67,12 +67,13 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
 }
 
 
-void Skybox::Draw(const LightDirectional& sun) {
+void Skybox::Draw() {
     if (!skyboxShader.isValid())
     {
         LOG_WARN("Skybox shader invalid while drawing");
         return;
     }
+    LightDirectional& sun = GetEngineCtx().lightsSubsystem->sunlight;
     UpdateSunlightValues(skyboxShader, sun);
     GLCall(glDepthFunc(GL_LEQUAL));
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();

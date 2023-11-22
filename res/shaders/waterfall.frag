@@ -5,8 +5,9 @@ out vec4 finalColor;
 in vec3 Normal;
 in vec2 texCoord;
 
+#include "globals.glsl"
+
 uniform sampler2D waterfallTex;
-uniform float time;
 
 const vec3 waterColor = vec3(0.32,0.65,0.97);
 const vec3 waterHighlight = vec3(0.7,1,1);

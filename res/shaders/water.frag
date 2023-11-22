@@ -11,11 +11,10 @@ in VS_OUT
     flat int materialId;
     float waveHeight;
 } vs_in;
+
+#include "globals.glsl"
 // Output fragment color
 out vec4 finalColor;
-
-uniform float nearClip;
-uniform float farClip;
 
 const vec3 waterColor = vec3(0.32,0.65,0.97);
 const vec3 waterHighlight = vec3(0.7,1,1);
@@ -25,7 +24,6 @@ const float contrast = 3.1;
 const float brightness = 4.0;
 
 uniform sampler2D waterTexture;
-uniform float time;
 uniform vec2 waterfallPosWS = vec2(-0.5, 5.5);
 uniform float waterfallRippleDecayFactor = 5.0;
 

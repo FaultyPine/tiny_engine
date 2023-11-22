@@ -14,5 +14,5 @@ layout (std140) uniform Globals
     // lighting
 
     // misc
-    
+    float time;
 };

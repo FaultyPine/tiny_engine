@@ -65,35 +65,9 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
-- Shader refactor
-    - ~~have shaders own their own copies of all their uniforms~~
-    - implement global UBOs that apply to *all* shaders for Camera data and Lighting data
-API would be used like
-
-```C
-// init with shader paths (would compile shaders, and bind UBOs)
-Shader shader = Shader(vsPath, fsPath);
-
-// every game tick...
-// copies x into the shader's owned uniforms list, or if "myuni" doesn't already exist, add it
-// notably, the change with this system is that setUniform no longer does opengl calls.
-// it just copies the uniform or adds it to the map. All opengl uniform setting happens when we .Use() the shader
-shader.setUniform("myuni", x); 
-
-// in drawing code
-shader.Use(); // uses itself and sets all owned uniforms, also refreshes UBO data
-model.Draw(shader, ....);
-
-// if you wanted to change data in the UBO, like camera data...
-GlobalShaderState::setUBOData(...); // what would this look like?
-
-```
-further niceness:
-allow shaders to take in a lambda when initializing them
-which defines how to set their uniforms
-
+- (tiny_lights) make a lighting subsystem, store it in engine memory and put a reference to it in the engine context
+    - then tiny_lights would own and add lights to itself and wouldn't store lights gameside
 - Bullet
-- par_shapes
 - ImGuizmo
 - Resource system
     - load from filesystem

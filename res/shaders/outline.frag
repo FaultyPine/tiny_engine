@@ -7,7 +7,6 @@ uniform sampler2D depthNormals;
 uniform vec3 viewDir;
 uniform float screenWidth;
 uniform float screenHeight;
-uniform float time;
 
 uniform float _OutlineScale;
 
@@ -26,6 +25,7 @@ uniform float _NormalThickness;
 uniform float _NormalStrength = 1.0;
 
 #include "crosshatch.glsl"
+#include "globals.glsl"
 
 // https://alexanderameye.github.io/notes/rendering-outlines/
 // https://alexanderameye.github.io/notes/edge-detection-outlines/

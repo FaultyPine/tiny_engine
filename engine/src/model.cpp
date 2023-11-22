@@ -213,18 +213,6 @@ BoundingBox Model::CalculateBoundingBox() {
     return bounds;
 }
 
-bool AreActiveLightsInFront(const std::vector<LightPoint>& lights) {
-    for (u32 i = 0; i < lights.size(); i++) {
-        if (!lights.at(i).enabled) {
-            for (u32 j = i+1; j < lights.size(); j++) {
-                if (lights.at(i).enabled) {
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
-}
 
 glm::mat4 GetMVP(const Transform& tf) {
     Camera& cam = Camera::GetMainCamera();
@@ -235,21 +223,13 @@ glm::mat4 GetMVP(const Transform& tf) {
     return projection * view * model;
 }
 
-void Model::Draw(const Shader& shader, const Transform& tf, const std::vector<LightPoint>& lights, LightDirectional sun) const {
-    TINY_ASSERT(AreActiveLightsInFront(lights));
+void Model::Draw(const Shader& shader, const Transform& tf) const {
     Camera& cam = Camera::GetMainCamera();
     glm::mat4 model = tf.ToModelMatrix();
     glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
     shader.setUniform("modelMat", model);
     shader.setUniform("normalMat", matNormal);
-    shader.setUniform("time", GetTimef());
-
-    for (const LightPoint& light : lights) {
-        UpdatePointLightValues(shader, light);
-    }
-    UpdateSunlightValues(shader, sun);
-    shader.setUniform("numActiveLights", (s32)lights.size());
-
+    SetLightingUniforms(shader);
     for (const Mesh& mesh : meshes) {
         mesh.Draw(shader);
     }

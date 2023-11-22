@@ -14,7 +14,6 @@ layout (location = 5) in mat4 instanceModelMat;
 
 // Input uniform values
 uniform int numInstances;
-uniform float time;
 
 // Output vertex attributes (to fragment shader)
 

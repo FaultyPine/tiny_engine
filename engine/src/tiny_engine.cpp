@@ -16,6 +16,7 @@
 #include "tiny_log.h"
 #include "tiny_alloc.h"
 #include "tiny_imgui.h"
+#include "render/tiny_lights.h"
 
 #include "GLFW/glfw3.h"
 
@@ -276,7 +277,7 @@ void InitEngine(
     size_t uniformsMemBlockSize = MEGABYTES_BYTES(1);
     TINY_ASSERT(uniformsMemBlockSize < engineMemorySize);
     InitializeShaderSystem(engineArena, uniformsMemBlockSize);
-    
+    InitializeLightingSystem(engineArena);
 
     InitializeLogger();
 

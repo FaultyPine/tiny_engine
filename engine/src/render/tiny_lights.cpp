@@ -6,6 +6,13 @@
 #include "shader.h"
 #include "shapes.h"
 #include "render/shadows.h"
+#include "tiny_alloc.h"
+
+void InitializeLightingSystem(Arena* arena)
+{
+    EngineContext& ctx = GetEngineCtx();
+    ctx.lightsSubsystem = (GlobalLights*)arena_alloc(arena, sizeof(GlobalLights));
+}
 
 static BoundingBox GetTightBoundsOnCamFrustum(
     glm::mat4 camViewMatrix, 
@@ -38,10 +45,11 @@ void LightDirectional::Visualize()
     // TODO:
 }
 
-LightPoint CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 
+LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 
 {
-    static u32 global_num_lights = 0;
-    TINY_ASSERT(global_num_lights+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
+    GlobalLights& lights = *GetEngineCtx().lightsSubsystem;
+    s32& pointLightIndex = lights.pointLightIndex;
+    TINY_ASSERT(pointLightIndex+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
     LightPoint light = {};
     light.enabled = true;
     light.position = position;
@@ -49,20 +57,23 @@ LightPoint CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 atten
     light.constant = attenuationParams.x;
     light.linear = attenuationParams.y;
     light.quadratic = attenuationParams.z;
-    light.globalIndex = global_num_lights++;
+    light.globalIndex = pointLightIndex;
     // TODO: point light cubemap omnidirectional shadow map
-    return light;
+    lights.pointLights[pointLightIndex++] = light;
+    return lights.pointLights[pointLightIndex-1];
 }
 
-LightDirectional CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color)
+LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color)
 {
+    GlobalLights& lights = *GetEngineCtx().lightsSubsystem;
     LightDirectional light = {};
     light.color = color;
     light.direction = direction;
     light.position = position;
     light.enabled = true;
     light.shadowMap = ShadowMap(1024);
-    return light;
+    lights.sunlight = light;
+    return lights.sunlight;
 }
 
 glm::mat4 LightDirectional::GetLightSpacematrix() const
@@ -70,6 +81,38 @@ glm::mat4 LightDirectional::GetLightSpacematrix() const
     return GetDirectionalLightViewProjMatrix(position, position + direction);
 }
 
+bool AreActiveLightsInFront(LightPoint lights[MAX_NUM_LIGHTS]) {
+    for (u32 i = 0; i < MAX_NUM_LIGHTS; i++) {
+        if (!lights[i].enabled) {
+            for (u32 j = i+1; j < MAX_NUM_LIGHTS; j++) {
+                if (lights[i].enabled) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+void SetLightingUniforms(const Shader& shader)
+{
+    GlobalLights& lights = *GetEngineCtx().lightsSubsystem;
+    TINY_ASSERT(AreActiveLightsInFront(lights.pointLights));
+    for (const LightPoint& light : lights.pointLights) {
+        UpdatePointLightValues(shader, light);
+    }
+    UpdateSunlightValues(shader, lights.sunlight);
+    s32 numActiveLights = 0;
+    for (s32 i = 0; i < MAX_NUM_LIGHTS; i++)
+    {
+        if (!lights.pointLights[i].enabled)
+        {
+            numActiveLights = i;
+            break;
+        }
+    }
+    shader.setUniform("numActiveLights", numActiveLights);
+}
 
 void UpdatePointLightValues(const Shader& shader, const LightPoint& light)
 {
