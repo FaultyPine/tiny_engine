@@ -19,7 +19,7 @@ out vec4 finalColor;
 #include "lighting.glsl"
 
 vec3 GetViewDir() {
-    return normalize(camPos - vs_in.fragPositionWS);
+    return normalize(camPos.xyz - vs_in.fragPositionWS);
 }
 vec3 GetNormals() {
     vec3 vertNormals = (1-useNormalMap) * normalize(vs_in.fragNormalWS);

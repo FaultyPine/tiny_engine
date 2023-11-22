@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <set>
 #include <sstream>
+#include <string>
+#include <charconv>
 
 #include "camera.h"
 #include "tiny_lights.h"
@@ -50,6 +52,41 @@ struct ShaderInternal
     std::unordered_map<std::string, UniformData> cachedUniforms = {};
 };
 
+struct UBOGlobals
+{
+    // NOTE: ***MUST*** follow std140 alignment rules (I.E. have no implicit padding).
+    // to keep it simple, imagine the only acceptable data types are scalars and vectors of 2 or 4 size.
+    // matrices must be 4x4 or 2x2, never 3 - same with vectors. 
+    // if you want to use a vec3, make sure there's a 4 byte padding or some other 4 byte value directly after it
+    // although it would be better to pack that scalar into a vec4 with some other vec3
+
+    // NOTE: keep in sync with uniform block (currently) in globals.glsl
+
+    /*
+You never use vec3. Note that this applies to matrices that have 3 columns/rows (depending on your matrix orientation).
+You alignas/_Alignas your vector members properly. vec2 objects must be 8-byte aligned, and vec4 must be 16-byte aligned. Note that this applies to matrix types that have 2 or 4 columns/rows too.
+
+C's _Alignas feature only applies to variable declarations, so you can't apply it to the type. You have to put it on each variable as you use it.
+
+Under std140, you never make arrays of anything that isn't a vec4 or equivalent.
+Under std140, struct members of a block should be aligned to 16-bytes
+    */
+
+    // camera
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::vec4 camPos;
+    glm::vec4 camFront;
+    f32 nearClip;
+    f32 farClip;
+    f32 FOV;
+    // misc
+    f32 time;
+    
+    // TODO: lighting
+
+};
+
 struct GlobalShaderState
 {
     // only a single uniform buffer, contain all global shader data
@@ -82,8 +119,8 @@ void GetUBOGlobalsCamera(const Camera& cam, UBOGlobals& globs)
 {
     // populate uniform block structure. Need to convert from cam to this to adhere to 
     // the uniform block memory layout
-    globs.camFront = cam.cameraFront;
-    globs.camPos = cam.cameraPos;
+    globs.camFront = glm::vec4(cam.cameraFront, 0.0);
+    globs.camPos = glm::vec4(cam.cameraPos, 0.0);
     globs.farClip = cam.farClip;
     globs.nearClip = cam.nearClip;
     globs.FOV = cam.FOV;
@@ -100,10 +137,16 @@ void UpdateGlobalUBOCamera(UBOGlobals& globs)
 
 void UpdateGlobalUBOLighting(UBOGlobals& globs)
 {
-    // TODO: statically get main lighting data... includes directional sunlight and all other lights
     EngineContext& ctx = GetEngineCtx();
-    LightingSystem& lightSystem = *ctx.lightsSubsystem;
-
+    GlobalLights& lights = ctx.lightsSubsystem->lights;
+    // TODO: refactor point light data structures for proper std140 alignment
+    // TMEMCPY(globs.pointLights, lights.pointLights, sizeof(lights.pointLights));
+    
+    // globs.dirLightDirection = lights.sunlight.direction;
+    // globs.dirLightEnabled = lights.sunlight.enabled;
+    // globs.dirLightColor = lights.sunlight.color;
+    // globs.dirLightLSMatrix = lights.sunlight.GetLightSpacematrix();
+    // globs.dirLightIntensity = lights.sunlight.intensity;
 }
 
 void UpdateGlobalUBOMisc(UBOGlobals& globs)
@@ -158,6 +201,44 @@ void HandleShaderUBOInit(u32 shaderProgram)
 }
 
 
+
+s32 GetShaderErrorLineNum(s8* infoLog, u32 infoLogSize)
+{
+    std::string_view str = std::string_view(infoLog, infoLogSize);
+    size_t errorLineStrEnd = str.find(") : error ", 0); // exclusive
+    size_t errorLineStrStart = str.rfind("(", errorLineStrEnd)+1; // inclusive
+    std::string_view errorLineNum = std::string_view(infoLog + errorLineStrStart, errorLineStrEnd - errorLineStrStart);
+    s32 lineNum = -1;
+    auto result = std::from_chars(errorLineNum.data(), errorLineNum.data() + errorLineNum.size(), lineNum);
+    //if (result.ec == std::errc::invalid_argument) {
+        //LOG_WARN("Could not convert.");
+    //}
+    return lineNum;
+}
+
+void LogShaderLinesAroundError(s8* infoLog, u32 infoLogSize, const s8* shaderSource)
+{
+    s32 errorLineNum = GetShaderErrorLineNum(infoLog, infoLogSize);
+    if (errorLineNum != -1)
+    {
+        s32 currentLineNum = 0;
+        for (s32 i = 0; i < strlen(shaderSource); i++)
+        {
+            if (shaderSource[i] == '\n')
+            {
+                currentLineNum++;
+                if (Math::isInRange(currentLineNum, errorLineNum-1, errorLineNum+1))
+                {
+                    s32 col = 1;
+                    for (; col < 500 && shaderSource[i+col] != '\n'; col++) {}
+                    const char* errorLineStr = shaderSource + i;
+                    LOG_ERROR("%.*s", col, errorLineStr);
+                }
+            }
+        }
+    }
+}
+
 u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) 
 {
     u32 shaderID = glCreateShader(shaderType);
@@ -166,8 +247,10 @@ u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource)
     s32 successCode;
     glGetShaderiv(shaderID, GL_COMPILE_STATUS, &successCode);
     if (!successCode) {
-        s8 infoLog[512];
-        glGetShaderInfoLog(shaderID, 512, NULL, infoLog);
+        const u32 infoLogSize = 1024;
+        s8 infoLog[infoLogSize];
+        glGetShaderInfoLog(shaderID, infoLogSize, NULL, infoLog);
+        LogShaderLinesAroundError(infoLog, infoLogSize, shaderSource);
         LOG_ERROR("%s shader compilation failed. shaderID = %i\n%s", (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment"), shaderID, infoLog);
     }
     return shaderID;
@@ -178,7 +261,7 @@ std::string ShaderPreprocessIncludes(
     const s8* shaderSource, 
     const std::string& includeIdentifier, 
     const std::string& includeSearchDir, 
-    std::set<std::string> alreadyIncluded = {}) 
+    std::set<std::string>& alreadyIncluded) 
 {
     static bool isRecursiveCall = false;
     std::string fullSourceCode = "";
@@ -187,7 +270,7 @@ std::string ShaderPreprocessIncludes(
     // TODO: custom strings
     while (std::getline(stream, lineBuffer)) {
         // if include is in this line
-        if (lineBuffer.find(includeIdentifier) != lineBuffer.npos) {
+        if (lineBuffer.find(includeIdentifier) != lineBuffer.npos && lineBuffer.find("//") == lineBuffer.npos) {
             // Remove the include identifier, this will cause the path to remain
             lineBuffer.erase(0, includeIdentifier.size());
             lineBuffer = lineBuffer.erase(0, 1);
@@ -234,7 +317,8 @@ std::string ShaderSourcePreprocess(const s8* shaderSource)
 
     std::string includeSearchDir = ResPath("shaders/");
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
-    ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir);
+    std::set<std::string> alreadyIncluded = {};
+    ret += ShaderPreprocessIncludes(shaderSource, "#include ", includeSearchDir, alreadyIncluded);
 
     return ret;
 }
@@ -248,18 +332,11 @@ void main()
 )shad";
 static const char* fallbackVertShader = R"shad(
 layout (location = 0) in vec3 vertPos;
-uniform mat4 mvp;
 void main()
 {
-    gl_Position =  mvp * vec4(vertPos, 1.0);
+    gl_Position = vec4(vertPos, 1.0);
 }
 )shad";
-
-u32 GetShaderErrorLineNumber(const s8* infoLog, u32 infoLogSize)
-{
-    // TODO: grab error line number and print out the error line in the preprocessed string
-    return 0;
-}
 
 
 u32 CreateShaderProgramFromStr(
@@ -282,8 +359,9 @@ u32 CreateShaderProgramFromStr(
     s32 success;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
-        s8 infoLog[1024];
-        glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
+        const u32 infoLogSize = 1024;
+        s8 infoLog[infoLogSize];
+        glGetProgramInfoLog(shaderProgram, infoLogSize, NULL, infoLog);
         //LOG_ERROR("Vertex shader source: %s\n", vsSourcePreprocessed);
         //LOG_ERROR("Fragment shader source: %s\n", fsSourcePreprocessed);
         LOG_ERROR("shader linking failed. vs = %s fs = %s\n%s", vertPath.c_str(), fragPath.c_str(), infoLog);
