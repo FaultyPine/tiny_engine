@@ -102,8 +102,8 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
 {
     // TODO: statically get main lighting data... includes directional sunlight and all other lights
     EngineContext& ctx = GetEngineCtx();
-    GlobalLights& lightSystem = *ctx.lightsSubsystem;
-    
+    LightingSystem& lightSystem = *ctx.lightsSubsystem;
+
 }
 
 void UpdateGlobalUBOMisc(UBOGlobals& globs)

@@ -73,7 +73,7 @@ void Skybox::Draw() {
         LOG_WARN("Skybox shader invalid while drawing");
         return;
     }
-    LightDirectional& sun = GetEngineCtx().lightsSubsystem->sunlight;
+    LightDirectional& sun = GetEngineCtx().lightsSubsystem->lights.sunlight;
     UpdateSunlightValues(skyboxShader, sun);
     GLCall(glDepthFunc(GL_LEQUAL));
     glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();

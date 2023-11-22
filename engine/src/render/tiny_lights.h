@@ -23,11 +23,11 @@ struct LightPoint
     f32 quadratic = 0.032f;
     f32 intensity = 1.0f;
     Cubemap shadowMap;
-    s32 globalIndex = -1;
 
     TAPI void Visualize();
 };
 
+// NOTE: I've been generally assuming we only have one directional light
 struct LightDirectional
 {
     // directional lights don't really have "positions", but this
@@ -38,16 +38,23 @@ struct LightDirectional
     f32 intensity = 1.0f;
     glm::vec4 color = glm::vec4(1);
     ShadowMap shadowMap;
-    
+
     TAPI void Visualize();
     TAPI glm::mat4 GetLightSpacematrix() const;
 };
 
 struct GlobalLights
 {
-    s32 pointLightIndex = 0;
     LightPoint pointLights[MAX_NUM_LIGHTS] = {};
     LightDirectional sunlight = {};
+};
+
+struct LightingSystem
+{
+    s32 pointLightIndex = 0;
+    GlobalLights lights = {};
+    ShadowMap directionalShadowMap = {};
+    Cubemap pointLightShadowMaps[MAX_NUM_LIGHTS] = {};
 };
 
 struct Arena;
@@ -59,7 +66,7 @@ void SetLightingUniforms(const Shader& shader);
 TAPI LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams = glm::vec3(1.0f, 0.09f, 0.032f));
 TAPI LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color);
 // Send light properties to shader
-void UpdatePointLightValues(const Shader& shader, const LightPoint& light);
+void UpdatePointLightValues(const Shader& shader, LightPoint* lights, u32 numPointLights);
 void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight);
 
 #endif

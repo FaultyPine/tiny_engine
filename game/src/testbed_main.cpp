@@ -200,43 +200,28 @@ void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMult
     light.direction = glm::normalize(target - light.position);
 }
 
-static f32 _DepthThreshold = 1.002f;
-static f32 _DepthThickness = 1.001f;
-static f32 _DepthStrength = 1.0f;
-static f32 _ColorThreshold = 1.5f;
-static f32 _ColorThickness = 1.001f;
-static f32 _ColorStrength = 1.5f;
-static f32 _NormalThreshold = 2.7f;
-static f32 _NormalThickness = 1.001f;
-static f32 _NormalStrength = 1.0f;
 static bool enableGrassRender = true;
+static f32 ambientLightIntensity = 0.15f;
 
 void drawImGuiDebug() {
     GameState& gs = GameState::get();
-    //ImGuiBeginFrame();
     
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 
-    for (WorldEntity& ent : gs.entities)
+    if (ImGui::CollapsingHeader("Entities"))
     {
-        const char* entityLabel = TextFormat("Position [%s]", ent.name);
-        ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
+        ImGui::DragFloat("Ambient light intensity", &ambientLightIntensity, 0.01f);
+        for (WorldEntity& ent : gs.entities)
+        {
+            ent.model.cachedShader.setUniform("ambientLightIntensity", ambientLightIntensity);
+            const char* entityLabel = TextFormat("Position [%s]", ent.name);
+            ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
+        }
     }
 
     ImGui::DragFloat("Sun Orbit radius", &gs.sunOrbitRadius);
     ImGui::Checkbox("Enable grass render", &enableGrassRender);
-    ImGui::DragFloat("_DepthThreshold", &_DepthThreshold, 0.0001f);
-    ImGui::DragFloat("_DepthThickness", &_DepthThickness, 0.001f);
-    ImGui::DragFloat("_DepthStrength", &_DepthStrength, 0.001f);
-    ImGui::DragFloat("_ColorThreshold", &_ColorThreshold, 0.001f);
-    ImGui::DragFloat("_ColorThickness", &_ColorThickness, 0.001f);
-    ImGui::DragFloat("_ColorStrength", &_ColorStrength, 0.001f);
-    ImGui::DragFloat("_NormalThreshold", &_NormalThreshold, 0.001f);
-    ImGui::DragFloat("_NormalThickness", &_NormalThickness, 0.001f);
-    ImGui::DragFloat("_NormalStrength", &_NormalStrength, 0.001f);
-
-
 
     ImGui::DragFloat("wind str", &gs.windStrength, 0.01f);
     ImGui::DragFloat("wind freq", &gs.windFrequency, 0.01f);
@@ -265,42 +250,38 @@ void drawImGuiDebug() {
         }
     }
 
-    /*for (LightPoint& light : gs.lights)
+    if (ImGui::CollapsingHeader("Point lights"))
     {
-        if (ImGui::CollapsingHeader("Light"))
+        for (u32 i = 0; i < MAX_NUM_LIGHTS; i++)
         {
-            ImGui::ColorEdit4("Light Color", &light.color[0]);
-            ImGui::DragFloat3("Light pos", &light.position[0], 0.1f);
-            ImGui::DragFloat("Light intensity", &light.intensity, 0.01f);
-            ImGui::DragFloat3("Attenuation params", &light.constant, 0.01f);
-            ImGui::Checkbox("Enabled", &light.enabled);
+            LightPoint& light = GetEngineCtx().lightsSubsystem->lights.pointLights[i];
+            const char* lightLabel = TextFormat("Light %i", i);
+            if (ImGui::CollapsingHeader(lightLabel))
+            {
+                ImGui::ColorEdit4("Light Color", &light.color[0]);
+                ImGui::DragFloat3("Light pos", &light.position[0], 0.1f);
+                ImGui::DragFloat("Light intensity", &light.intensity, 0.01f);
+                ImGui::DragFloat3("Attenuation params", &light.constant, 0.01f);
+                ImGui::Checkbox("Enabled", (bool*)&light.enabled);
+            }
         }
     }
-    LightDirectional& sunlight = gs.sunlight;
+    LightDirectional& sunlight = GetEngineCtx().lightsSubsystem->lights.sunlight;
     if (ImGui::CollapsingHeader("Sunlight"))
     {
         ImGui::ColorEdit4("sunlight Color", &sunlight.color[0]);
         ImGui::DragFloat3("sunlight direction", &sunlight.direction[0], 0.1f);
         ImGui::DragFloat3("sunlight position", &sunlight.position[0], 0.1f);
         ImGui::DragFloat("sunlight intensity", &sunlight.intensity, 0.1f);
-        ImGui::Checkbox("sunlight Enabled", &sunlight.enabled);
-    }*/
-
-    #if 0
-    static f32 ambientLightIntensity = 0.15f;
-    ImGui::DragFloat("Ambient light intensity", &ambientLightIntensity, 0.01f);
-    for (auto& ent : gs.entities) {
-        ent.model.cachedShader.setUniform("ambientLightIntensity", ambientLightIntensity);
+        ImGui::Checkbox("sunlight Enabled", (bool*)&sunlight.enabled);
     }
-    #endif
 
-    //ImGuiEndFrame();
 }
 
 void ShadowMapPrePass() {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    const LightDirectional& sunlight = GetEngineCtx().lightsSubsystem->sunlight;
+    const LightDirectional& sunlight = GetEngineCtx().lightsSubsystem->lights.sunlight;
     const ShadowMap& sunShadows = sunlight.shadowMap;
     sunShadows.BeginRender();
     for (WorldEntity& ent : gs.entities) {
@@ -383,10 +364,10 @@ void drawGameState() {
         }
     }
 
-    //for (LightPoint& pointLight : gs.lights)
-    //{
-    //    pointLight.Visualize();
-    //}
+    for (LightPoint& pointLight : GetEngineCtx().lightsSubsystem->lights.pointLights)
+    {
+        pointLight.Visualize();
+    }
 
     { PROFILE_SCOPE("Skybox draw");
         gs.skybox.Draw();
@@ -534,7 +515,7 @@ void init_bullet(GameState& gs)
     }
     { //create a dynamic rigidbody
 		//btCollisionShape* colShape = new btBoxShape(btVector3(1,1,1));
-		btCollisionShape* colShape = new btSphereShape(btScalar(1.));
+		btCollisionShape* colShape = new btSphereShape(btScalar(0.5));
 		/// Create Dynamic Objects
 		btTransform startTransform;
 		startTransform.setIdentity();
@@ -684,7 +665,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-        GetEngineCtx().lightsSubsystem->sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
+        GetEngineCtx().lightsSubsystem->lights.sunlight.shadowMap.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
     }
 #endif
 #if 1
@@ -714,7 +695,7 @@ void testbed_tick(Arena* gameMem) {
     GameState& gs = GameState::get();
     testbed_inputpoll();
     // have main directional light orbit
-    LightDirectional& mainLight = GetEngineCtx().lightsSubsystem->sunlight;
+    LightDirectional& mainLight = GetEngineCtx().lightsSubsystem->lights.sunlight;
     testbed_orbit_light(mainLight, gs.sunOrbitRadius, 0.2, glm::vec3(0, 10, 0));
     //gs.waterfallParticles.Tick({0,15,0});
     bullet_tick(gs);

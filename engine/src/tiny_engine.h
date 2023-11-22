@@ -25,7 +25,7 @@ struct AppRunCallbacks
 };
 
 struct GlobalShaderState;
-struct GlobalLights;
+struct LightingSystem;
 
 struct EngineContext
 {
@@ -48,7 +48,7 @@ struct EngineContext
 
     // engine subsystems
     GlobalShaderState* shaderSubsystem = 0;
-    GlobalLights* lightsSubsystem = 0;
+    LightingSystem* lightsSubsystem = 0;
 };
 
 TAPI EngineContext& GetEngineCtx();

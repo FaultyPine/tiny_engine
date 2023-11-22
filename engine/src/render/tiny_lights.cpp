@@ -11,7 +11,7 @@
 void InitializeLightingSystem(Arena* arena)
 {
     EngineContext& ctx = GetEngineCtx();
-    ctx.lightsSubsystem = (GlobalLights*)arena_alloc(arena, sizeof(GlobalLights));
+    ctx.lightsSubsystem = (LightingSystem*)arena_alloc(arena, sizeof(LightingSystem));
 }
 
 static BoundingBox GetTightBoundsOnCamFrustum(
@@ -37,7 +37,12 @@ static glm::mat4 GetDirectionalLightViewProjMatrix(glm::vec3 position, glm::vec3
 
 void LightPoint::Visualize()
 {
-    Shapes3D::DrawCube(Transform(this->position, glm::vec3(0.1)));
+    glm::vec4 color = glm::vec4(1);
+    if (!this->enabled) 
+    {
+        color = glm::vec4(1,1,1,0.3);
+    }
+    Shapes3D::DrawWireSphere(this->position, 0.1, color);
 }
 
 void LightDirectional::Visualize()
@@ -47,8 +52,8 @@ void LightDirectional::Visualize()
 
 LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 
 {
-    GlobalLights& lights = *GetEngineCtx().lightsSubsystem;
-    s32& pointLightIndex = lights.pointLightIndex;
+    GlobalLights& lights = GetEngineCtx().lightsSubsystem->lights;
+    s32& pointLightIndex = GetEngineCtx().lightsSubsystem->pointLightIndex;
     TINY_ASSERT(pointLightIndex+1 < MAX_NUM_LIGHTS && "Cannot create more then MAX_NUM_LIGHTS lights!");
     LightPoint light = {};
     light.enabled = true;
@@ -57,21 +62,22 @@ LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 atte
     light.constant = attenuationParams.x;
     light.linear = attenuationParams.y;
     light.quadratic = attenuationParams.z;
-    light.globalIndex = pointLightIndex;
     // TODO: point light cubemap omnidirectional shadow map
+
     lights.pointLights[pointLightIndex++] = light;
     return lights.pointLights[pointLightIndex-1];
 }
 
 LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color)
 {
-    GlobalLights& lights = *GetEngineCtx().lightsSubsystem;
+    GlobalLights& lights = GetEngineCtx().lightsSubsystem->lights;
     LightDirectional light = {};
     light.color = color;
     light.direction = direction;
     light.position = position;
     light.enabled = true;
     light.shadowMap = ShadowMap(1024);
+
     lights.sunlight = light;
     return lights.sunlight;
 }
@@ -81,69 +87,66 @@ glm::mat4 LightDirectional::GetLightSpacematrix() const
     return GetDirectionalLightViewProjMatrix(position, position + direction);
 }
 
-bool AreActiveLightsInFront(LightPoint lights[MAX_NUM_LIGHTS]) {
+s32 ActiveLightsInFront(LightPoint lights[MAX_NUM_LIGHTS]) {
+    s32 numActiveLights = 0;
     for (u32 i = 0; i < MAX_NUM_LIGHTS; i++) {
         if (!lights[i].enabled) {
             for (u32 j = i+1; j < MAX_NUM_LIGHTS; j++) {
                 if (lights[i].enabled) {
-                    return false;
+                    return 0;
                 }
             }
         }
+        else
+        {
+            numActiveLights++;
+        }
     }
-    return true;
+    return numActiveLights;
 }
 
 void SetLightingUniforms(const Shader& shader)
 {
-    GlobalLights& lights = *GetEngineCtx().lightsSubsystem;
-    TINY_ASSERT(AreActiveLightsInFront(lights.pointLights));
-    for (const LightPoint& light : lights.pointLights) {
-        UpdatePointLightValues(shader, light);
-    }
+    GlobalLights& lights = GetEngineCtx().lightsSubsystem->lights;
+    s32 numActiveLights = ActiveLightsInFront(lights.pointLights);
+    TINY_ASSERT(numActiveLights);
+    UpdatePointLightValues(shader, lights.pointLights, numActiveLights);
     UpdateSunlightValues(shader, lights.sunlight);
-    s32 numActiveLights = 0;
-    for (s32 i = 0; i < MAX_NUM_LIGHTS; i++)
-    {
-        if (!lights.pointLights[i].enabled)
-        {
-            numActiveLights = i;
-            break;
-        }
-    }
     shader.setUniform("numActiveLights", numActiveLights);
 }
 
-void UpdatePointLightValues(const Shader& shader, const LightPoint& light)
+void UpdatePointLightValues(const Shader& shader, LightPoint* lights, u32 numPointLights)
 {
-    if (!light.enabled) return;
-    s32 lightIdx = light.globalIndex;
-    TINY_ASSERT(lightIdx < MAX_NUM_LIGHTS); 
+    for (u32 i = 0; i < numPointLights; i++)
+    {
+        LightPoint& light = lights[i];
+        if (!light.enabled) continue;
 
-    const char* uniformName;
-    uniformName = TextFormat("lights[%i].enabled", lightIdx);
-    shader.setUniform(uniformName, light.enabled);
+        const char* uniformName;
+        uniformName = TextFormat("lights[%i].enabled", i);
+        shader.setUniform(uniformName, light.enabled);
 
-    uniformName = TextFormat("lights[%i].position", lightIdx);
-    shader.setUniform(uniformName, light.position);
+        uniformName = TextFormat("lights[%i].position", i);
+        shader.setUniform(uniformName, light.position);
 
-    uniformName = TextFormat("lights[%i].color", lightIdx);
-    shader.setUniform(uniformName, light.color);
+        uniformName = TextFormat("lights[%i].color", i);
+        shader.setUniform(uniformName, light.color);
 
-    uniformName = TextFormat("lights[%i].constant", lightIdx);
-    shader.setUniform(uniformName, light.constant);
+        uniformName = TextFormat("lights[%i].constant", i);
+        shader.setUniform(uniformName, light.constant);
 
-    uniformName = TextFormat("lights[%i].linear", lightIdx);
-    shader.setUniform(uniformName, light.linear);
+        uniformName = TextFormat("lights[%i].linear", i);
+        shader.setUniform(uniformName, light.linear);
 
-    uniformName = TextFormat("lights[%i].quadratic", lightIdx);
-    shader.setUniform(uniformName, light.quadratic);
+        uniformName = TextFormat("lights[%i].quadratic", i);
+        shader.setUniform(uniformName, light.quadratic);
 
-    uniformName = TextFormat("lights[%i].intensity", lightIdx);
-    shader.setUniform(uniformName, light.intensity);
+        uniformName = TextFormat("lights[%i].intensity", i);
+        shader.setUniform(uniformName, light.intensity);
 
-    uniformName = TextFormat("lights[%i].shadowMap", lightIdx);
-    shader.TryAddSampler(light.shadowMap, uniformName);
+        uniformName = TextFormat("lights[%i].shadowMap", i);
+        shader.TryAddSampler(light.shadowMap, uniformName);
+    }
 }
 
 void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight)
