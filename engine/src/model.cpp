@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "math/tiny_math.h"
 #include "tiny_log.h"
+#include "tiny_profiler.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -27,6 +28,7 @@ static const char* textureTypeToMatKey[] = {
 };
 
 MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const char* meshMaterialDir) {
+    PROFILE_FUNCTION();
     MaterialProp ret;
     TINY_ASSERT(material->GetTextureCount(type) <= 1); // there shouldn't... (???) be more than 1 of a particular texture type in a material (I.E. cant have 2 diffuse textures)
     aiString str;
@@ -51,6 +53,7 @@ MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const
 }
 
 Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
+    PROFILE_FUNCTION();
     aiString str;
     std::string name = "";
     aiReturn hasName = material->Get(AI_MATKEY_NAME, str);
@@ -83,11 +86,13 @@ Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
 }
 
 Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir) {
+    PROFILE_FUNCTION();
     std::vector<Vertex> vertices;
     std::vector<u32> indices;
     std::vector<Material> materials;
 
-    for (u32 i = 0; i < mesh->mNumVertices; i++) {
+    for (u32 i = 0; i < mesh->mNumVertices; i++) 
+    {
         Vertex vertex;
         // process vertex positions, normals and texture coordinates
         glm::vec3 vector;
@@ -96,21 +101,24 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
         vector.z = mesh->mVertices[i].z;
         vertex.position = vector;
 
-        if (mesh->mNormals) {
+        if (mesh->mNormals) 
+        {
             vector.x = mesh->mNormals[i].x;
             vector.y = mesh->mNormals[i].y;
             vector.z = mesh->mNormals[i].z;
             vertex.normal = vector;
         }
 
-        if (mesh->mColors[0]) {
+        if (mesh->mColors[0]) 
+        {
             vector.x = mesh->mColors[0][i].r;
             vector.y = mesh->mColors[0][i].g;
             vector.z = mesh->mColors[0][i].b;
             vertex.color = vector;
         }
 
-        if (mesh->mTextureCoords[0]) {
+        if (mesh->mTextureCoords[0]) 
+        {
             glm::vec2 vec;
             vec.x = mesh->mTextureCoords[0][i].x;
             vec.y = mesh->mTextureCoords[0][i].y;
@@ -118,38 +126,30 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
         }
         else vertex.texCoords = glm::vec2(0.0f, 0.0f);
 
-        // we -1 here because assimp by default puts their "DefaultMaterial" as idx 0
+        // we -1 here because assimp by default always puts their "DefaultMaterial" as idx 0
         // and since we don't send that material to our shader, we need to pretend it doesn't
         // exist
-        vertex.materialId = mesh->mMaterialIndex - 1;
+        //vertex.materialId = mesh->mMaterialIndex - 1;
 
         vertices.push_back(vertex);
     }
     // process indices
-    for (u32 i = 0; i < mesh->mNumFaces; i++) {
+    for (u32 i = 0; i < mesh->mNumFaces; i++) 
+    {
         aiFace face = mesh->mFaces[i];
         for (u32 j = 0; j < face.mNumIndices; j++)
             indices.push_back(face.mIndices[j]);
     }
-    // process material
-    for (u32 i = 0; i < scene->mNumMaterials; i++) {
-        aiMaterial* material = scene->mMaterials[i];
-        aiString name;
-        aiReturn hasName = material->Get(AI_MATKEY_NAME, name);
-        if (hasName == aiReturn_SUCCESS) {
-            //std::cout << "mat name = " << name.C_Str() << "";
-            if (std::string(name.C_Str()) != "DefaultMaterial") {
-                Material m = aiMaterialConvert(material, meshMaterialDir);
-                materials.push_back(m);
-            }
-        }
-    }
+    // process material... assimp splits meshes with more than 1 material into multiple meshes so a mesh will always have 1 material
+    Material meshMat = aiMaterialConvert(scene->mMaterials[mesh->mMaterialIndex], meshMaterialDir);
+    materials.push_back(meshMat);
 
     Mesh m = Mesh(vertices, indices, materials);
     return m;
 }
 
 void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, const char* meshMaterialDir) {
+    PROFILE_FUNCTION();
     // process all the node's meshes (if any)
     for (u32 i = 0; i < node->mNumMeshes; i++) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
@@ -165,6 +165,7 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, 
 }
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
+    PROFILE_FUNCTION();
     Assimp::Importer import;
     //std::string extList = "";
     //import.GetExtensionList(extList);
@@ -187,6 +188,7 @@ Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) {
 
 
 BoundingBox Model::CalculateBoundingBox() {
+    PROFILE_FUNCTION();
     BoundingBox bounds = {};
 
     if (!this->meshes.empty()) {
@@ -224,6 +226,8 @@ glm::mat4 GetMVP(const Transform& tf) {
 }
 
 void Model::Draw(const Shader& shader, const Transform& tf) const {
+    PROFILE_FUNCTION();
+    if (!isValid()) return;
     Camera& cam = Camera::GetMainCamera();
     glm::mat4 model = tf.ToModelMatrix();
     glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
@@ -237,6 +241,7 @@ void Model::Draw(const Shader& shader, const Transform& tf) const {
 
 void Model::DrawMinimal(const Shader& shader) const
 {
+    PROFILE_FUNCTION();
     for (const Mesh& mesh : meshes) {
         mesh.Draw(shader);
     }

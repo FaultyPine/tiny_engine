@@ -107,6 +107,9 @@ struct Material {
     TAPI void SetShaderUniforms(const Shader& shader, u32 matIdx) const;
 };
 
+struct Arena;
+void InitializeTextureCache(Arena* arena);
+
 TAPI void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4);
 
 TAPI u8* LoadImageData(const std::string& imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);

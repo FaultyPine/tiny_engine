@@ -2,10 +2,30 @@
 #include "texture.h"
 #include "shader.h"
 #include "tiny_ogl.h"
+#include "tiny_engine.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb/stb_image.h"
 #undef STB_IMAGE_IMPLEMENTATION
+
+#include <unordered_map>
+
+struct TextureCache
+{
+    std::unordered_map<u32, Texture> cachedTextures = {};
+};
+
+void InitializeTextureCache(Arena* arena)
+{
+    TextureCache* textureCacheMem = (TextureCache*)arena_alloc(arena, sizeof(TextureCache));
+    GetEngineCtx().textureCache = textureCacheMem;
+    new(&textureCacheMem->cachedTextures) std::unordered_map<u32, Texture>();
+}
+
+static TextureCache& GetTextureCache()
+{
+    return *GetEngineCtx().textureCache;
+}
 
 enum class TextureProperties::TexWrapMode : s32 {
     CLAMP_TO_EDGE = GL_CLAMP_TO_EDGE,
@@ -37,6 +57,7 @@ enum class TextureProperties::TexFormat : s32 {
 enum class TextureProperties::ImageFormat : s32 {
     RGB = GL_RGB,
     RGBA = GL_RGBA,
+    RED = GL_RED,
 };
 enum class TextureProperties::ImageDataType : s32 {
     BYTE = GL_BYTE,
@@ -124,6 +145,8 @@ void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment) {
 }
 
 
+// loads and returns image buffer found at imgPath. 
+// NOTE: calling function is responsible for returned buffer lifetime
 u8* LoadImageData(const std::string& imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically) {
     stbi_set_flip_vertically_on_load(shouldFlipVertically);
     u8* data = stbi_load(imgPath.c_str(), width, height, numChannels, 0);
@@ -168,6 +191,13 @@ Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties 
 Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props, 
                     bool flipVertically) {
+    u32 strHash = HashBytes((u8*)imgPath.c_str(), imgPath.size());
+    std::unordered_map<u32, Texture>& texCache = GetTextureCache().cachedTextures;
+    if (texCache.count(strHash))
+    {
+        return texCache[strHash];
+    }
+
     s32 width, height, numChannels;
     u8* data = LoadImageData(imgPath, &width, &height, &numChannels, flipVertically);
     // if we didn't specify texture properties, fetch them automatically
@@ -181,10 +211,12 @@ Texture LoadTexture(const std::string& imgPath,
         else if (numChannels == 1) {
             // for L8 images   *UNTESTED*
             props = TextureProperties::RGB_LINEAR();
+            props.imgFormat = TextureProperties::ImageFormat::RED;
             props.texFormat = TextureProperties::TexFormat::RED;
             props.imgDataType = TextureProperties::ImageDataType::UNSIGNED_BYTE;
         }
         else {
+            //props = TextureProperties::RGBA_LINEAR();
             TINY_ASSERT(false && "Unknown number of channels in image!");
         }
     }
@@ -197,18 +229,19 @@ Texture LoadTexture(const std::string& imgPath,
     ret.texpath = imgPath;
     stbi_image_free(data);
     LOG_INFO("Loaded texture %s  channels: %i", ret.texpath.c_str(), numChannels);
+    texCache[strHash] = ret;
     return ret;
 }
 
 
 void Material::SetShaderUniforms(const Shader& shader, u32 matIdx) const {
     s32 matPropIdx = 0;
-   #define SET_MATERIAL_UNIFORMS(matVar) \
-        shader.setUniform(TextFormat("materials[%i].%s.useSampler", matIdx, #matVar), matVar.hasTexture); \
+    #define SET_MATERIAL_UNIFORMS(matVar) \
+        shader.setUniform(TextFormat("material.%s.useSampler", #matVar), matVar.hasTexture); \
         if (matVar.hasTexture) { \
-            shader.TryAddSampler(matVar.texture, TextFormat("materials[%i].%s.tex", matIdx, #matVar)); \
+            shader.TryAddSampler(matVar.texture, TextFormat("material.%s.tex", #matVar)); \
         } \
-        shader.setUniform(TextFormat("materials[%i].%s.color", matIdx, #matVar), matVar.color)
+        shader.setUniform(TextFormat("material.%s.color", #matVar), matVar.color)
 
     SET_MATERIAL_UNIFORMS(diffuseMat);
     SET_MATERIAL_UNIFORMS(ambientMat);

@@ -64,7 +64,7 @@ void TerminateGame() {
 
     GLTTerminate();
     glfwTerminate();
-    Profiler::Instance().endSession();
+    ProfilerEnd();
 }
 void OverwriteRandomSeed(u64 seed) {
     globEngineCtx.randomSeed = seed;
@@ -145,6 +145,22 @@ void SetWireframeDrawing(bool shouldDrawWireframes) {
     glPolygonMode(GL_FRONT_AND_BACK, shouldDrawWireframes ? GL_LINE : GL_FILL);
 }
 
+u32 HashBytes(u8* data, u32 size)
+{
+    // FNV-1 hash
+    // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+    constexpr u32 FNV_offset_basis = 0xcbf29ce484222325;
+    constexpr u32 FNV_prime = 0x100000001b3;
+    u32 hash = FNV_offset_basis;
+    for (u32 i = 0; i < size; i++)
+    {
+        u8 byte_of_data = data[i];
+        hash = hash * FNV_prime;
+        hash = hash ^ byte_of_data;
+    }
+    return hash;
+}
+
 void EngineLoop() {
     // update deltatime
     f32 currentTime = GetTime();
@@ -186,8 +202,14 @@ void InitEngine(
     AppRunCallbacks callbacks,
     size_t requestedGameMemSize
 ) {
-    InstrumentationTimer engineInitTimer = InstrumentationTimer("Engine Init");
-    // Initialize glfw and opengl
+    //InstrumentationTimer engineInitTimer = InstrumentationTimer("Engine Init");
+    
+    if (argc < 2)
+    {
+        LOG_FATAL("Passed too few arguments to engine. Make sure to specify the resource directory");
+    }
+    const char* resourceDirectory = argv[1];
+    globEngineCtx.resourceDirectory = resourceDirectory;
 
     s8 cwd[PATH_MAX];
     getcwd(cwd, PATH_MAX);
@@ -273,20 +295,17 @@ void InitEngine(
     globEngineCtx.engineArena = arena_init(engineMemory, engineMemorySize);
     Arena* engineArena = &globEngineCtx.engineArena;
 
-    // give some of our engine memory to shaders to store uniform data
+    // subsystem initialization
+    InitializeLogger();
     size_t uniformsMemBlockSize = MEGABYTES_BYTES(1);
     TINY_ASSERT(uniformsMemBlockSize < engineMemorySize);
     InitializeShaderSystem(engineArena, uniformsMemBlockSize);
     InitializeLightingSystem(engineArena);
+    InitializeTextureCache(engineArena);
+    InitializeTinyFilesystem(resourceDirectory);
+    LOG_INFO("Resource directory: %s", resourceDirectory);
+    ProfilerBegin();
 
-    InitializeLogger();
-
-    if (argc < 2)
-    {
-        LOG_FATAL("Passed too few arguments to engine. Make sure to specify the resource directory");
-    }
-    const char* resourceDirectory = argv[1];
-    globEngineCtx.resourceDirectory = resourceDirectory;
 
     TINY_ASSERT(globEngineCtx.resourceDirectory);
     globEngineCtx.appCallbacks = callbacks;
@@ -296,9 +315,7 @@ void InitEngine(
     TINY_ASSERT(gameFuncs.renderFunc);
     TINY_ASSERT(gameFuncs.terminateFunc);
 
-    Profiler::Instance().beginSession("Profile");
-    InitializeTinyFilesystem(resourceDirectory);
-    LOG_INFO("Resource directory: %s", resourceDirectory);
+    
 
     // give a big memory pool to the game. Game shouldn't allocate outside this pool
     void* gameMemory = TSYSALLOC(requestedGameMemSize);
@@ -309,12 +326,12 @@ void InitEngine(
     { PROFILE_SCOPE("Game Initialize");
         gameFuncs.initFunc(gameArena);
     }
-    engineInitTimer.stop();
+    //engineInitTimer.stop();
 
     // Begin game loop
     while (!ShouldCloseWindow())
     {
-        { PROFILE_SCOPE("Game Tick");
+        { PROFILE_SCOPE("Game tick");
             gameFuncs.tickFunc(gameArena);
         }
         { PROFILE_SCOPE("Engine Render");
@@ -329,6 +346,7 @@ void InitEngine(
             Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
             ImGuiEndFrame();
         }
+        PROFILER_FRAME_END();
     }
     gameFuncs.terminateFunc(gameArena);
 

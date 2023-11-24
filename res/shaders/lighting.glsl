@@ -155,27 +155,26 @@ void calculateLightingForDirectionalLight (
         specCo = pow(max(0.0, specularFactor), shininessMaterial);
     }
     vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
+    float shadow = GetDirectionalShadow(fragPositionWS, fragNormalWS);
 
-    diffuseLight += currentLightDiffuse * light.intensity;
-    specularLight += currentLightSpecular * light.intensity;
+    diffuseLight += currentLightDiffuse * light.intensity * shadow;
+    specularLight += currentLightSpecular * light.intensity * shadow;
 }
 
 vec3 calculateLighting(
-    in Material[MAX_NUM_MATERIALS] materials, 
-    int materialId,
+    in Material material, 
     vec2 fragTexCoord,
     vec3 fragNormalWS, 
     vec3 viewDir, 
     vec3 fragPositionWS)
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
-    vec3 ambientLight = GetAmbientMaterial(materials, materialId, fragTexCoord).rgb * ambientLightIntensity;
+    vec3 ambientLight = GetAmbientMaterial(fragTexCoord).rgb * ambientLightIntensity;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
-    float shininess = GetShininessMaterial(materials, materialId, fragTexCoord);
-    vec3 specularMaterial = GetSpecularMaterial(materials, materialId, fragTexCoord).rgb;
-    float shadow = GetDirectionalShadow(fragPositionWS, fragNormalWS);
+    float shininess = GetShininessMaterial(fragTexCoord);
+    vec3 specularMaterial = GetSpecularMaterial(fragTexCoord).rgb;
 
     // sunlight is seperate from other lights
     calculateLightingForDirectionalLight(
@@ -202,7 +201,6 @@ vec3 calculateLighting(
     }
 
     vec3 lighting = specularLight + diffuseLight;
-    lighting *= shadow;
     lighting += ambientLight; // add ambient on top of everything
     return lighting;
 }

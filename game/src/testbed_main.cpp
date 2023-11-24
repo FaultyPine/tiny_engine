@@ -15,6 +15,8 @@
 
 #include "bullet/btBulletDynamicsCommon.h"
 
+//#define ISLAND_SCENE
+
 struct WorldEntity {
     Transform transform = {};
     Model model = {};
@@ -204,6 +206,7 @@ static bool enableGrassRender = true;
 static f32 ambientLightIntensity = 0.15f;
 
 void drawImGuiDebug() {
+    PROFILE_FUNCTION();
     GameState& gs = GameState::get();
     
     ImGuiIO& io = ImGui::GetIO();
@@ -286,10 +289,8 @@ void ShadowMapPrePass() {
     const ShadowMap& sunShadows = lighting.directionalShadowMap;
     sunShadows.BeginRender();
     for (WorldEntity& ent : gs.entities) {
-        //sunShadows.ReceiveShadows(ent.model.cachedShader, sunlight);
         sunShadows.RenderShadowCaster(sunlight, ent.model, ent.transform);
     }
-    //sunShadows.ReceiveShadows(gs.grass.model.cachedShader, sunlight); // grass only receives shadows, doesn't cast
     sunShadows.EndRender();
 }
 
@@ -318,7 +319,7 @@ void DepthAndNormsPrePass() {
         // draw model to texture
         ent.model.Draw(gs.depthAndNormsShader, ent.transform);
     }
-    if (enableGrassRender)
+    if (enableGrassRender && gs.grassPrepassShader.isValid())
     {
         gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
         gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
@@ -589,6 +590,7 @@ void testbed_init(Arena* gameMem) {
     gs.lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
     Shader& lightingShader = gs.lightingShader;
 
+#ifdef ISLAND_SCENE
     //Model testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
     Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
     //Model testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
@@ -600,9 +602,6 @@ void testbed_init(Arena* gameMem) {
     
     Model bushModel = Model(lightingShader, ResPath("other/island_wip/bush.obj").c_str(), ResPath("other/island_wip/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "bush"));
-    
-    //Model sponza = Model(lightingShader, ResPath("other/crytek-sponza/sponza.obj").c_str(), ResPath("other/crytek-sponza/").c_str());
-    //gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.06)), sponza, "sponza"));
 
     // pond
     init_main_pond(gs);
@@ -612,8 +611,13 @@ void testbed_init(Arena* gameMem) {
 
     // waterfall
     init_waterfall(gs);
+#endif
+    
+    Model sponza = Model(lightingShader, "C:/Dev/resources/Sponza/sponza.obj", "C:/Dev/resources/Sponza/");
+    gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.06)), sponza, "sponza"));
 
-    init_bullet(gs);
+
+    //init_bullet(gs);
 
     // Init lights
     glm::vec3 sunPos = glm::vec3(7, 100, -22);
@@ -648,6 +652,7 @@ void testbed_init(Arena* gameMem) {
 }
 
 Framebuffer testbed_render(const Arena* const gameMem) {
+    PROFILE_FUNCTION();
     GameState& gs = GameState::get();
     #if 0
     SetWireframeDrawing(true);
@@ -677,10 +682,8 @@ Framebuffer testbed_render(const Arena* const gameMem) {
         gs.depthAndNorms.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0, scrn.y / 2.0f), scrn/4.0f));
     }
 #endif
-    BoundingBox box = gs.entities[0].model.cachedBoundingBox;
-    Shapes3D::DrawWireCube(box);
     
-    bullet_render(gs);
+    //bullet_render(gs);
 #ifdef ENABLE_IMGUI
     drawImGuiDebug();
 #endif
@@ -694,13 +697,14 @@ Framebuffer testbed_render(const Arena* const gameMem) {
 }
 
 void testbed_tick(Arena* gameMem) {
+    PROFILE_FUNCTION();
     GameState& gs = GameState::get();
     testbed_inputpoll();
     // have main directional light orbit
     LightDirectional& mainLight = GetEngineCtx().lightsSubsystem->lights.sunlight;
     testbed_orbit_light(mainLight, gs.sunOrbitRadius, 0.2, glm::vec3(0, 10, 0));
     //gs.waterfallParticles.Tick({0,15,0});
-    bullet_tick(gs);
+    //bullet_tick(gs);
 }
 
 void testbed_terminate(Arena* gameMem) {

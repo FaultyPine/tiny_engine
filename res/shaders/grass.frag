@@ -1,22 +1,18 @@
  
 
-// Input vertex attributes (from vertex shader)
-
 in VS_OUT 
 {
     vec3 fragPositionWS;
     vec2 fragTexCoord;
-    vec3 fragNormalOS;
-    flat int materialId;
+    vec3 fragNormal;
     vec3 fragPositionOS;
 } vs_in;
-// Output fragment color
 out vec4 finalColor;
-uniform int numInstances;
 
 #include "easings.glsl"
-
+#include "globals.glsl"
 #include "lighting.glsl"
+#include "material.glsl"
 
 const vec3 grassBaseColor = vec3(0.05, 0.2, 0.01);
 const vec3 grassTipColor = vec3(0.1, 0.5, 0.1);
@@ -31,7 +27,7 @@ void main() {
 
     float shadow = GetDirectionalShadow(
         vs_in.fragPositionWS.xyz, 
-        vs_in.fragNormalOS);
+        vs_in.fragNormal);
     // kinda simulates ambient light
     shadow = max(shadow, 0.6); 
     col *= shadow;

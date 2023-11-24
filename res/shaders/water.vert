@@ -5,7 +5,6 @@ layout (location = 0) in vec3 vertexPosition;
 layout (location = 1) in vec3 vertexNormal;
 layout (location = 2) in vec2 vertexTexCoord;
 layout (location = 3) in vec4 vertexColor;
-layout (location = 4) in int  vertexMaterialId;
 
 #include "globals.glsl"
 
@@ -22,7 +21,6 @@ out VS_OUT
     vec4 fragColor;
     vec3 fragNormalOS;
     vec4 fragPosLightSpace;
-    flat int materialId;
     float waveHeight;
 } vs_out;
 
@@ -106,7 +104,6 @@ void main() {
     vs_out.fragPosLightSpace = lightSpaceMatrix * vec4(vs_out.fragPositionWS, 1.0);
     vs_out.fragTexCoord = vertexTexCoord;
     vs_out.fragColor = vertexColor;
-    vs_out.materialId = vertexMaterialId;
 
     gl_Position = projection * view * modelMat *vec4(vertPos, 1.0);
 }

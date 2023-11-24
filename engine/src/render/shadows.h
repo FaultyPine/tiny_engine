@@ -16,8 +16,6 @@ struct ShadowMap {
     }
     bool isValid() const { return fb.isValid(); }
     TAPI void BeginRender() const;
-    // makes the passed in shader "receive" shadows (just gets shadow uniforms set)
-    TAPI void ReceiveShadows(Shader& shader, const LightDirectional& light) const;
     // makes passed in model cast shadows (just renders the model into the depth texture)
     TAPI void RenderShadowCaster(const LightDirectional& light, const Model& model, const Transform& tf) const;
     TAPI void EndRender() const;

@@ -5,6 +5,7 @@
 #include "tiny_ogl.h"
 #include "render/tiny_lights.h"
 #include "model.h"
+#include "tiny_profiler.h"
 
 
 ShadowMap::ShadowMap(u32 resolution) {
@@ -25,17 +26,14 @@ void ShadowMap::EndRender() const {
     // bind default fb
     Framebuffer::BindDefaultFrameBuffer();
 }
-void ShadowMap::ReceiveShadows(Shader& shader, const LightDirectional& light) const {
-    if (!shader.isValid() || !light.enabled) return;
-    shader.TryAddSampler(fb.GetTexture(), "shadowMap");
-    shader.setUniform("lightSpaceMatrix", light.GetLightSpacematrix());
-}
+
 void ShadowMap::RenderShadowCaster(const LightDirectional& light, const Model& model, const Transform& tf) const {
+    PROFILE_FUNCTION();
     if (!depthShader.isValid() || !light.enabled) return;
-    glm::mat4 lightMat = light.GetLightSpacematrix();
+    glm::mat4 lightMat = light.GetLightSpacematrix(); // projection & view
     glm::mat4 modelMat = tf.ToModelMatrix();
     glm::mat4 mvp = lightMat * modelMat;
     depthShader.setUniform("mvp", mvp);
     // draw model to depth tex/fb
-    model.Draw(depthShader, tf);
+    model.DrawMinimal(depthShader); 
 }

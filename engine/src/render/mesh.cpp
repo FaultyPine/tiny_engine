@@ -5,11 +5,15 @@
 #include "tiny_engine.h"
 #include "tiny_ogl.h"
 #include "shader.h"
+#include "tiny_profiler.h"
 
-Mesh::Mesh(const std::vector<Vertex>& verts, 
-            const std::vector<u32>& idxs, 
-            const std::vector<Material>& mats,
-            const std::string& name) {
+Mesh::Mesh(
+    const std::vector<Vertex>& verts, 
+    const std::vector<u32>& idxs, 
+    const std::vector<Material>& mats,
+    const std::string& name
+) {
+    PROFILE_FUNCTION();
     vertices = verts; indices = idxs; materials = mats; this->name = name;
     if (materials.size() == 0) {
         // if no materials, push a default one
@@ -38,6 +42,7 @@ void ConfigureVertexAttrib(u32 attributeLoc, u32 numBytesPerComponent, u32 oglTy
 }
 
 void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) {
+    PROFILE_FUNCTION();
     if (instanceVBO != 0) return;
     this->numInstances = numComponents;
     GLCall(glBindVertexArray(VAO));
@@ -63,6 +68,7 @@ void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent,
 }
 
 void Mesh::initMesh() {
+    PROFILE_FUNCTION();
     // create buffers
     GLCall(glGenVertexArrays(1, &VAO));
     GLCall(glGenBuffers(1, &VBO));
@@ -91,8 +97,8 @@ void Mesh::initMesh() {
         vertexAttributeLocation++, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
     ConfigureVertexAttrib( // vert color
         vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
-    ConfigureVertexAttrib( // material id
-        vertexAttributeLocation++, 1, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialId));
+    //ConfigureVertexAttrib( // material id
+    //    vertexAttributeLocation++, 1, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialId));
 
     // unbind
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
@@ -130,10 +136,12 @@ void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstanc
 
 
 void Mesh::Draw(const Shader& shader) const {
+    PROFILE_FUNCTION();
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
 
     // material uniforms
+    // TODO: extract this to a seperate func, and call it from model draw
     for (u32 i = 0; i < materials.size(); i++) {
         materials.at(i).SetShaderUniforms(shader, i);
     }
@@ -154,6 +162,7 @@ void Mesh::Draw(const Shader& shader) const {
 
 
 BoundingBox Mesh::CalculateMeshBoundingBox() {
+    PROFILE_FUNCTION();
     // Get min and max vertex to construct bounds (AABB)
     glm::vec3 minVertex = glm::vec3(0);
     glm::vec3 maxVertex = glm::vec3(0);

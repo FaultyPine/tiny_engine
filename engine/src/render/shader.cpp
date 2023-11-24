@@ -13,6 +13,7 @@
 
 #include "camera.h"
 #include "tiny_lights.h"
+#include "tiny_profiler.h"
 
 enum UniformDataType
 {
@@ -523,6 +524,7 @@ void Shader::TryAddSampler(const Cubemap& texture, const char* uniformName) cons
 
 void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData, u32 uniformSize, UniformDataType dataType) 
 {
+    PROFILE_FUNCTION();
     GlobalShaderState& gss = GetGSS();
     TINY_ASSERT(gss.globalShaderMem.backing_mem_size > 0 && "Make sure to call InitializeShaderSystem before doing any shader calls!");
     if (gss.shaderMap.count(ID) == 0) return;

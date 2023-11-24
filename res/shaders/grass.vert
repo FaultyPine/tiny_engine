@@ -5,24 +5,19 @@ layout (location = 1) in vec3 vertexNormal;
 layout (location = 2) in vec2 vertexTexCoord;
 layout (location = 3) in vec4 vertexColor;
 layout (location = 4) in int  vertexMaterialId;
-layout (location = 5) in mat4 instanceModelMat;
+//layout (location = 5) in mat4 instanceModelMat;
 
 #include "globals.glsl"
 #include "common.glsl"
 #include "noise.glsl"
 #include "hash.glsl"
 
-// Input uniform values
-uniform int numInstances;
-
-// Output vertex attributes (to fragment shader)
 
 out VS_OUT 
 {
     vec3 fragPositionWS;
     vec2 fragTexCoord;
-    vec3 fragNormalOS;
-    flat int materialId;
+    vec3 fragNormal;
     vec3 fragPositionOS;
 } vs_out;
 
@@ -95,11 +90,10 @@ void main()
     vertPos = vec3(inverse(instanceModelMat) * vec4(ogVertPositionWS, 1.0));
 
     vs_out.fragPositionWS = vec3(instanceModelMat*vec4(vertPos, 1.0));
-    vs_out.fragNormalOS = vertexNormal;
+    vs_out.fragNormal = vertexNormal;
     vs_out.fragPositionOS = vertPos;
 
     vs_out.fragTexCoord = vertexTexCoord;
-    vs_out.materialId = vertexMaterialId;
 
     gl_Position = mvp*vec4(vertPos, 1.0);
 }

@@ -8,7 +8,6 @@ in VS_OUT
     vec4 fragColor;
     vec3 fragNormalOS;
     vec4 fragPosLightSpace;
-    flat int materialId;
     float waveHeight;
 } vs_in;
 

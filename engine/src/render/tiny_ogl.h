@@ -2,6 +2,7 @@
 #define TINY_OPENGL_H
 
 #include "tiny_log.h"
+//#define GLAD_GLAPI_EXPORT
 #include <glad/glad.h>
 
 void GLAPIENTRY

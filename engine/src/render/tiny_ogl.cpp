@@ -2,6 +2,7 @@
 
 #include "tiny_log.h"
 
+#define GLAD_GLAPI_EXPORT
 #include <glad/glad.c>
 
 #define OGL_LOG_NOTIFS_ENABLED 0

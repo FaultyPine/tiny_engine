@@ -1,7 +1,5 @@
 
 
-#define MAX_NUM_MATERIALS 4
-
 struct MaterialProperty {
     vec4 color;
     int useSampler;
@@ -19,7 +17,7 @@ struct Material {
 };
 
 uniform int useNormalMap = 0; // If unset, use vertex normals. If set, sample normal map
-uniform Material materials[MAX_NUM_MATERIALS];
+uniform Material material;
 
 vec4 GetMaterialColor(MaterialProperty mat, vec2 uv) {
     int shouldUseSampler = mat.useSampler;
@@ -28,21 +26,27 @@ vec4 GetMaterialColor(MaterialProperty mat, vec2 uv) {
     // if useSampler is true, color is 0, if it's false, tex is 0
     return color + tex;
 }
-vec4 GetDiffuseMaterial(in Material materials[MAX_NUM_MATERIALS], int materialId, vec2 uv) {
-    return GetMaterialColor(materials[materialId].diffuseMat, uv);
+vec4 GetDiffuseMaterial(vec2 uv) {
+    return GetMaterialColor(material.diffuseMat, uv);
 }
-vec4 GetAmbientMaterial(in Material materials[MAX_NUM_MATERIALS], int materialId, vec2 uv) {
-    return GetMaterialColor(materials[materialId].ambientMat, uv);
+vec4 GetAmbientMaterial(vec2 uv) {
+    return GetMaterialColor(material.ambientMat, uv);
 }
-vec4 GetSpecularMaterial(in Material materials[MAX_NUM_MATERIALS], int materialId, vec2 uv) {
-    return GetMaterialColor(materials[materialId].specularMat, uv);
+vec4 GetSpecularMaterial(vec2 uv) {
+    return GetMaterialColor(material.specularMat, uv);
 }
-vec4 GetNormalMaterial(in Material materials[MAX_NUM_MATERIALS], int materialId, vec2 uv) {
-    return GetMaterialColor(materials[materialId].normalMat, uv);
+vec4 GetNormalMaterial(vec2 uv) {
+    return GetMaterialColor(material.normalMat, uv);
 }
-float GetShininessMaterial(in Material materials[MAX_NUM_MATERIALS], int materialId, vec2 uv) {
-    return GetMaterialColor(materials[materialId].shininessMat, uv).r;
+float GetShininessMaterial(vec2 uv) {
+    return GetMaterialColor(material.shininessMat, uv).r;
 }
-vec4 GetEmissiveMaterial(in Material materials[MAX_NUM_MATERIALS], int materialId, vec2 uv) {
-    return GetMaterialColor(materials[materialId].emissiveMat, uv);
+vec4 GetEmissiveMaterial(vec2 uv) {
+    return GetMaterialColor(material.emissiveMat, uv);
+}
+
+vec3 GetNormals(vec3 fragNormalWS, vec2 fragTexCoord) {
+    vec3 vertNormals = (1-useNormalMap) * normalize(fragNormalWS);
+    vec3 normalMapNormals = (useNormalMap) * GetNormalMaterial(fragTexCoord).rgb;
+    return vertNormals + normalMapNormals;
 }

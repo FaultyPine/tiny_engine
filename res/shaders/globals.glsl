@@ -15,3 +15,8 @@ layout (std140) uniform Globals
 
     // TODO: lighting
 };
+
+vec3 GetViewDir(vec3 fragPosWS) 
+{
+    return normalize(camPos.xyz - fragPosWS);
+}

@@ -2,6 +2,7 @@
 #include "skybox.h"
 #include "tiny_ogl.h"
 #include "tiny_log.h"
+#include "tiny_profiler.h"
 
 static f32 skyboxVertices[] = {
     // positions          
@@ -51,7 +52,9 @@ static f32 skyboxVertices[] = {
 static Shader skyboxShader;
 static Mesh skyboxCube;
 
-Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties props) {
+Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties props) 
+{
+    PROFILE_FUNCTION();
     cubemap = LoadCubemap(facesPaths, props);
     if (!skyboxShader.isValid() && !skyboxCube.isValid()) {
         skyboxShader = Shader(ResPath("shaders/skybox.vert"), ResPath("shaders/skybox.frag"));
@@ -67,7 +70,9 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
 }
 
 
-void Skybox::Draw() {
+void Skybox::Draw() 
+{
+    PROFILE_FUNCTION();
     if (!skyboxShader.isValid())
     {
         LOG_WARN("Skybox shader invalid while drawing");
