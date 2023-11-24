@@ -89,7 +89,8 @@
         "complex": "cpp",
         "queue": "cpp",
         "ranges": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "shared_mutex": "cpp"
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "editor.minimap.enabled": false,

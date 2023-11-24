@@ -19,6 +19,7 @@ def get_linker_args_msvc():
     return clean_string(f"""
         /LIBPATH:../external /DLL /OUT:{BUILD_DIR}/{EXE_NAME}
         GLFW/lib/windows/glfw3_mt.lib assimp/lib/x64/assimp.lib
+        bullet/lib/Bullet3Common.lib bullet/lib/BulletCollision.lib bullet/lib/BulletDynamics.lib bullet/lib/BulletSoftBody.lib bullet/lib/LinearMath.lib
         user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib
         /NODEFAULTLIB:libcmt.lib /machine:x64 /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
         /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
@@ -35,12 +36,12 @@ def get_compiler_args_msvc(usePch: bool = False):
 
     pch_part = f"/Yupch.h" if usePch else ""
     to_root = "..\\"
-    include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\imgui"]
+    include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\imgui", "external\\bullet\\include"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
         /std:c++17 
         {include_paths}
-        /EHa /MT /Zi /FS /Gm- /Od /nologo /MP {pch_part}
+        /EHa /MD /Zi /FS /Gm- /Od /nologo /MP {pch_part}
         /LD /DTEXPORT /D_USRDLL /D_WINDLL
     """)
 

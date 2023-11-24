@@ -9,7 +9,7 @@
 // press this button to unlock the cursor from the window
 
 struct Camera {
-    f32 speed = 6.5f;
+    f32 speed = 10.0f;
     glm::vec3 cameraPos = glm::vec3(0);
     glm::vec3 cameraFront = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
@@ -22,7 +22,7 @@ struct Camera {
     u32 maxScreenHeight = 975;
     f32 FOV = 45.0f;
     f32 nearClip = 0.1f;
-    f32 farClip = 700.0f;
+    f32 farClip = 3000.0f;
     bool isSwivelable = false;
     enum Projection {
         PERSPECTIVE,

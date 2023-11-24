@@ -17,6 +17,7 @@
 #include "tiny_alloc.h"
 #include "tiny_imgui.h"
 #include "render/tiny_lights.h"
+#include "physics/tiny_physics.h"
 
 #include "GLFW/glfw3.h"
 
@@ -202,7 +203,6 @@ void InitEngine(
     AppRunCallbacks callbacks,
     size_t requestedGameMemSize
 ) {
-    //InstrumentationTimer engineInitTimer = InstrumentationTimer("Engine Init");
     
     if (argc < 2)
     {
@@ -303,6 +303,7 @@ void InitEngine(
     InitializeLightingSystem(engineArena);
     InitializeTextureCache(engineArena);
     InitializeTinyFilesystem(resourceDirectory);
+    InitializePhysics(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
     ProfilerBegin();
 
@@ -326,11 +327,11 @@ void InitEngine(
     { PROFILE_SCOPE("Game Initialize");
         gameFuncs.initFunc(gameArena);
     }
-    //engineInitTimer.stop();
 
     // Begin game loop
     while (!ShouldCloseWindow())
     {
+        PhysicsTick();
         { PROFILE_SCOPE("Game tick");
             gameFuncs.tickFunc(gameArena);
         }

@@ -24,7 +24,6 @@ def get_gamedll_linker_args_msvc():
         /LIBPATH:../external /LIBPATH:../ /DLL /OUT:{BUILD_LIB_DIR}/{DLL_NAME}
         GLFW/lib/windows/glfw3_mt.lib
         engine/build/TinyEngine.lib
-        bullet/lib/Bullet3Common.lib bullet/lib/BulletCollision.lib bullet/lib/BulletDynamics.lib bullet/lib/BulletSoftBody.lib bullet/lib/LinearMath.lib
         user32.lib gdi32.lib shell32.lib msvcrt.lib
         /NODEFAULTLIB:libcmt.lib /machine:x64 /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
         /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
@@ -40,7 +39,7 @@ def get_gamedll_compiler_args_msvc(usePch: bool = False):
     # LD - build DLL
     pch_part = f"/Yupch.h" if usePch else ""
     to_root = "..\\" # game dll buildfile is in game/  so going 1 out is root
-    include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\bullet\\include"]
+    include_root_paths = ["", "types\\generated", "external", "engine\\src"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
         /std:c++17 

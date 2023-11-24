@@ -41,10 +41,22 @@ struct Transform2D {
     }
 };
 
+// TODO: this should be center + half extents
+// also create func to initialize a center/halfextents from a min/max
 struct BoundingBox {
     BoundingBox() = default;
     BoundingBox(glm::vec3 mn, glm::vec3 mx) {min = mn; max = mx;}
     glm::vec3 min, max = glm::vec3(0);
+    glm::vec3 center()
+    {
+        glm::vec3 center = min + ((max - min) / 2.0f);
+        return center;
+    }
+    glm::vec3 halfExtents()
+    {
+        glm::vec3 halfExtents = max - center();
+        return halfExtents;
+    }
 };
 
 struct BoundingBox2D {
