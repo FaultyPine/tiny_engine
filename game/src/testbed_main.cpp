@@ -317,7 +317,8 @@ void DepthAndNormsPrePass() {
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
             }
-            ent.model.Draw(gs.pondPrepassShader, ent.transform);
+            gs.pondPrepassShader.setUniform("modelMat", ent.transform.ToModelMatrix());
+            ent.model.DrawMinimal(gs.pondPrepassShader);
             continue;
         }
         // draw model to texture
@@ -527,7 +528,7 @@ void testbed_init(Arena* gameMem) {
     Model sponza = Model(lightingShader, "C:/Dev/resources/Sponza/sponza.obj", "C:/Dev/resources/Sponza/");
     WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
 
-    PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
+    //PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
 
     // Init lights
     glm::vec3 sunPos = glm::vec3(7, 100, -22);

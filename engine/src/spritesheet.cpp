@@ -7,6 +7,7 @@ Spritesheet::Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, 
     // load spritesheet
     s32 width, height, numChannels;
     u8* imgData = LoadImageData(spritesheetPath, &width, &height, &numChannels);
+    u32 imgHash = HashBytes((u8*)spritesheetPath, strlen(spritesheetPath));
 
     // determine how to iterate through the image
     s32 singleSpriteWidth = width / numCols;
@@ -24,7 +25,7 @@ Spritesheet::Spritesheet(const char* spritesheetPath, u32 numRows, u32 numCols, 
             SetPixelReadSettings(width, singleSpriteWidth*col, singleSpriteHeight*row);
             // NOTE: using glPixelStorei to tell opengl to skip pixels so that I can just use the x,y,width,height to
             // read the relevant part of the spritesheet
-            Texture thisTex = GenTextureFromImg(imgData, singleSpriteWidth, singleSpriteHeight, props);
+            Texture thisTex = LoadGPUTextureFromImg(imgData, singleSpriteWidth, singleSpriteHeight, props, imgHash);
             
             s32 resultTexturesIdx = col + (row*numCols);
             this->sprites.emplace_back(Sprite(thisTex));            

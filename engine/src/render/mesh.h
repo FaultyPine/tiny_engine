@@ -13,7 +13,6 @@ struct Vertex {
     glm::vec3 normal = glm::vec3(0);
     glm::vec2 texCoords = glm::vec3(0);
     glm::vec3 color = glm::vec3(1);
-    //u32 materialId = 0;
     inline std::string str() {
         return "[Pos = " + glm::to_string(position) + "  Normals = " + glm::to_string(normal) + "  TexCoords = " + glm::to_string(texCoords) + "  Colors = " + glm::to_string(color) + " ]";
     }
@@ -25,7 +24,7 @@ struct Mesh {
     u32 vertexAttributeLocation = 0;
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
-    std::vector<Material> materials = {};
+    Material material = {};
     BoundingBox cachedBoundingBox = {};
     std::string name = "";
     bool isVisible = true;
@@ -33,7 +32,7 @@ struct Mesh {
     Mesh() = default;
     TAPI Mesh( const std::vector<Vertex>& verts, 
         const std::vector<u32>& idxs = {}, 
-        const std::vector<Material>& mats = {},
+        const Material& mat = {},
         const std::string& name = "");
     TAPI void Delete();
     inline bool isValid() const {

@@ -26,6 +26,7 @@
 #define TOGGLE_NTH_BIT(bitfield, n_bit) \
     ( (bitfield) ^ (1 << (n_bit)) )
 
+#define U32_INVALID_ID 0xDEADBEEF
 
 // exports
 #ifdef TEXPORT

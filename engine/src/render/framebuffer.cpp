@@ -77,12 +77,12 @@ Framebuffer::Framebuffer(f32 width, f32 height, FramebufferAttachmentType fbtype
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));  
 
-    Texture result = Texture(textureID, GL_TEXTURE_2D, width, height);
+    Texture result = Texture::FromGPUTex(textureID, width, height, GL_TEXTURE_2D);
     this->texture = result;
     visualizationSprite = Sprite(GetTexture());
 }
 
-bool Framebuffer::isValid() const { return framebufferID != 0xDEADBEEF; }
+bool Framebuffer::isValid() const { return framebufferID != U32_INVALID_ID; }
 void Framebuffer::Bind() const {
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, framebufferID)); 
     GLCall(glViewport(0, 0, size.x, size.y));
@@ -173,7 +173,7 @@ Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height) {
     GLCall(glBindTexture(GL_TEXTURE_2D, 0));
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
  
-    Texture result = Texture(textureID, GL_TEXTURE_2D, width, height);
+    Texture result = Texture::FromGPUTex(textureID, width, height, GL_TEXTURE_2D);
     fb.texture = result;
     fb.visualizationSprite = Sprite(fb.GetTexture());
     return fb;

@@ -10,16 +10,11 @@
 Mesh::Mesh(
     const std::vector<Vertex>& verts, 
     const std::vector<u32>& idxs, 
-    const std::vector<Material>& mats,
+    const Material& mat,
     const std::string& name
 ) {
     PROFILE_FUNCTION();
-    vertices = verts; indices = idxs; materials = mats; this->name = name;
-    if (materials.size() == 0) {
-        // if no materials, push a default one
-        Material defaultMat = Material();
-        materials.push_back(defaultMat);
-    }
+    vertices = verts; indices = idxs; material = mat; this->name = name;
     initMesh();
     cachedBoundingBox = CalculateMeshBoundingBox();
 }
@@ -27,9 +22,7 @@ void Mesh::Delete() {
     GLCall(glDeleteVertexArrays(1, &VAO));
     GLCall(glDeleteBuffers(1, &VBO));
     GLCall(glDeleteBuffers(1, &EBO));
-    for (Material& m : materials) {
-        m.Delete();
-    }
+    material.Delete();
 }
 
 // Note: numBytesPerComponent must be between [1, 4]
@@ -137,14 +130,8 @@ void Mesh::Draw(const Shader& shader) const {
     PROFILE_FUNCTION();
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
-
-    // material uniforms
-    // TODO: extract this to a seperate func, and call it from model draw
-    for (u32 i = 0; i < materials.size(); i++) {
-        materials.at(i).SetShaderUniforms(shader, i);
-    }
+    material.SetShaderUniforms(shader);
     shader.use();
-
     if (numInstances > 0)
     {
         // instanced render

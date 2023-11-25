@@ -489,14 +489,18 @@ void ActivateSamplers(u32 shaderID)
     const std::vector<Texture>& shaderSamplers = gss.shaderMap[shaderID].samplerIDs;
     for (s32 i = 0; i < shaderSamplers.size(); i++) {
         const Texture& tex = shaderSamplers.at(i);
-        Texture::bindUnit(i, tex.id, tex.type);
+        tex.bindUnit(i);
     }
 }
 
 void Shader::TryAddSampler(const Texture& texture, const char* uniformName) const 
 {
     GlobalShaderState& gss = GetGSS();
-    TINY_ASSERT(texture.isValid());
+    if (!texture.isValid())
+    {
+        //LOG_WARN("Tried to add sampler on invalid texture");
+        return;
+    }
     std::vector<Texture>& shaderSamplers = gss.shaderMap[ID].samplerIDs;
     s32 samplerIdx = -1;
     for (s32 i = 0; i < shaderSamplers.size(); i++)
@@ -507,7 +511,8 @@ void Shader::TryAddSampler(const Texture& texture, const char* uniformName) cons
             break;
         }
     }
-    if (samplerIdx == -1) {
+    if (samplerIdx == -1) 
+    {
         samplerIdx = shaderSamplers.size();
         shaderSamplers.push_back(texture);
     }
@@ -516,7 +521,7 @@ void Shader::TryAddSampler(const Texture& texture, const char* uniformName) cons
 }
 void Shader::TryAddSampler(const Cubemap& texture, const char* uniformName) const
 {
-    Texture cubemapTex = Texture(texture.id, GL_TEXTURE_CUBE_MAP, texture.width, texture.height);
+    Texture cubemapTex = Texture::FromGPUTex(texture.id, texture.width, texture.height, GL_TEXTURE_CUBE_MAP);
     this->TryAddSampler(cubemapTex, uniformName);
 }
 

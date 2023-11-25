@@ -35,7 +35,7 @@ struct Framebuffer {
     TAPI Texture GetTexture() const { return texture; }
 
     FramebufferAttachmentType type = COLOR;
-    u32 framebufferID = 0xDEADBEEF;
+    u32 framebufferID = U32_INVALID_ID;
     u32 renderBufferObjectID = 0;
     Texture texture = {};
     glm::vec2 size = glm::vec2(0);

@@ -23,8 +23,8 @@ struct Sprite {
     TAPI void DrawSpriteFullscreen(glm::vec4 color = glm::vec4(1.0f)) const;
 
     bool isValid() const { return mainTex.isValid() && shader.isValid() && quadVAO != 0; }
-    inline f32 GetTextureWidth() const { return mainTex.width; }
-    inline f32 GetTextureHeight() const { return mainTex.height; }
+    inline f32 GetTextureWidth() const { return mainTex.GetWidth(); }
+    inline f32 GetTextureHeight() const { return mainTex.GetHeight(); }
 
     template<typename T>
     TAPI void setShaderUniform(const char* name, T val) const;

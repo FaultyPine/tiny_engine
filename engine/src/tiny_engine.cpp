@@ -18,6 +18,7 @@
 #include "tiny_imgui.h"
 #include "render/tiny_lights.h"
 #include "physics/tiny_physics.h"
+#include "job_system.h"
 
 #include "GLFW/glfw3.h"
 
@@ -296,13 +297,14 @@ void InitEngine(
     Arena* engineArena = &globEngineCtx.engineArena;
 
     // subsystem initialization
+    JobSystem::Instance().Initialize();
     InitializeLogger();
     size_t uniformsMemBlockSize = MEGABYTES_BYTES(1);
     TINY_ASSERT(uniformsMemBlockSize < engineMemorySize);
+    InitializeTinyFilesystem(resourceDirectory);
     InitializeShaderSystem(engineArena, uniformsMemBlockSize);
     InitializeLightingSystem(engineArena);
     InitializeTextureCache(engineArena);
-    InitializeTinyFilesystem(resourceDirectory);
     InitializePhysics(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
     ProfilerBegin();
@@ -335,6 +337,7 @@ void InitEngine(
         { PROFILE_SCOPE("Game tick");
             gameFuncs.tickFunc(gameArena);
         }
+        JobSystem::Instance().FlushMainThreadJobs();
         { PROFILE_SCOPE("Engine Render");
             ImGuiBeginFrame();
             ShaderSystemPreDraw();
@@ -351,7 +354,9 @@ void InitEngine(
     }
     gameFuncs.terminateFunc(gameArena);
 
-    arena_free_all(gameArena);
-    ImGuiTerminate();
+    JobSystem::Instance().Shutdown();
     TerminateGame();
+    arena_free_all(gameArena);
+    arena_free_all(engineArena);
+    ImGuiTerminate();
 }

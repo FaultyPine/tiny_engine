@@ -16,14 +16,14 @@ struct Shader {
     // ID is not the OpenGL shader id!
     // this is to facilitate shader hot reloading - 
     // we can keep this same ID but have it refer to a different ogl shader program
-    u32 ID = 0xDEADBEEF;
+    u32 ID = U32_INVALID_ID;
 
     Shader() = default;
     TAPI Shader(const std::string& vertexPath, const std::string& fragmentPath);
     TAPI static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr);
 
     TAPI void Delete() const;
-    TAPI bool isValid() const { return ID != 0xDEADBEEF; }
+    TAPI bool isValid() const { return ID != U32_INVALID_ID; }
 
     // adds a sampler to this shader
     TAPI void TryAddSampler(const Texture& texture, const char* uniformName) const;

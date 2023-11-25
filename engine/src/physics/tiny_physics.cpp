@@ -6,11 +6,13 @@
 #include "model.h"
 #include "render/shapes.h"
 #include "tiny_log.h"
+#include "tiny_profiler.h"
 
 btIDebugDraw* GetTinyPhysicsDebugDrawer(Arena* arena);
 
 void InitializePhysics(Arena* arena)
 {
+    PROFILE_FUNCTION();
     PhysicsWorld* physWorld = (PhysicsWorld*)arena_alloc(arena, sizeof(PhysicsWorld));
     GetEngineCtx().physicsWorld = physWorld;
 
@@ -39,12 +41,14 @@ PhysicsWorld& GetPhysicsWorld() { return *GetEngineCtx().physicsWorld; }
 
 void PhysicsTick()
 {
+    PROFILE_FUNCTION();
     PhysicsWorld& pw = GetPhysicsWorld();
     pw.dynamicsWorld->stepSimulation(GetDeltaTime());
 
 }
 void PhysicsDebugRender()
 {
+    PROFILE_FUNCTION();
     PhysicsWorld& pw = GetPhysicsWorld();
     btDiscreteDynamicsWorld* dynamicsWorld = pw.dynamicsWorld;
 
@@ -56,6 +60,7 @@ void PhysicsDebugRender()
 }
 void PhysicsAddModel(const Model& model, const Transform& tf)
 {
+    PROFILE_FUNCTION();
     PhysicsWorld& pw = GetPhysicsWorld();
     btCompoundShape* shape = new btCompoundShape();
 

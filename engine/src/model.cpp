@@ -45,7 +45,7 @@ MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const
     else {
         std::string texturePath = meshMaterialDir;
         texturePath.append(str.C_Str());
-        Texture tex = LoadTexture(texturePath, TextureProperties::None(), true); // flip vert for opengl
+        Texture tex = LoadTextureAsync(texturePath, TextureProperties::None(), true); // flip vert for opengl
         ret.hasTexture = true;
         ret.texture = tex;
     }
@@ -55,10 +55,10 @@ MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const
 Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
     aiString str;
-    std::string name = "";
+    const char* name = "";
     aiReturn hasName = material->Get(AI_MATKEY_NAME, str);
     if (hasName == aiReturn_SUCCESS) {
-        name = std::string(str.C_Str());
+        name = str.C_Str();
     }
 
     MaterialProp diffuse = GetMaterialFromType(material, aiTextureType_DIFFUSE, meshMaterialDir);
@@ -67,6 +67,15 @@ Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
     MaterialProp emissive = GetMaterialFromType(material, aiTextureType_EMISSIVE, meshMaterialDir);
     //MaterialProp height = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
     MaterialProp normal = GetMaterialFromType(material, aiTextureType_NORMALS, meshMaterialDir);
+    if (!normal.hasTexture)
+    {
+        // the material api is kind of vague in some cases - for obj's, normal maps are often loaded into the heightmap slot.
+        MaterialProp normalsFromHeightmap = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
+        if (normalsFromHeightmap.hasTexture)
+        {
+            normal = normalsFromHeightmap;
+        }
+    }
     // Usually there is a conversion function defined to map the linear color values in the texture to a suitable exponent
     MaterialProp shininess = GetMaterialFromType(material, aiTextureType_SHININESS, meshMaterialDir);
     //MaterialProp opacity = GetMaterialFromType(material, aiTextureType_OPACITY, meshMaterialDir);
@@ -89,7 +98,6 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
     PROFILE_FUNCTION();
     std::vector<Vertex> vertices;
     std::vector<u32> indices;
-    std::vector<Material> materials;
 
     for (u32 i = 0; i < mesh->mNumVertices; i++) 
     {
@@ -142,9 +150,8 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
     }
     // process material... assimp splits meshes with more than 1 material into multiple meshes so a mesh will always have 1 material
     Material meshMat = aiMaterialConvert(scene->mMaterials[mesh->mMaterialIndex], meshMaterialDir);
-    materials.push_back(meshMat);
 
-    Mesh m = Mesh(vertices, indices, materials);
+    Mesh m = Mesh(vertices, indices, meshMat);
     return m;
 }
 
@@ -171,7 +178,10 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
     //import.GetExtensionList(extList);
     //std::cout << extList << "";
     //std::cout << aiGetVersionMajor() << "." << aiGetVersionMinor() << "." << aiGetVersionRevision() << "";
-    const aiScene* scene = import.ReadFile(meshObjFile, aiProcess_Triangulate);
+    const aiScene* scene = nullptr;
+    { PROFILE_SCOPE("Assimp mesh read");
+        scene = import.ReadFile(meshObjFile, aiProcess_Triangulate);
+    }
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         LOG_ERROR("[ASSIMP] Error: %s", import.GetErrorString());
         return;

@@ -5,7 +5,6 @@
 #include "tiny_defines.h"
 //#include "tiny_ogl.h"
 #include "math/tiny_math.h"
-#include <string>
 
 enum TextureMaterialType {
     DIFFUSE = 0,
@@ -45,17 +44,24 @@ struct TextureProperties {
 };
 
 struct Texture {
-    u32 id = 0xDEADBEEF; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
-    u32 type = 0;
-    u32 width, height = 0;
-    std::string texpath = "";
+    u32 id = U32_INVALID_ID; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
 
     Texture() = default;
-    Texture(u32 id, u32 type, u32 width, u32 height);
-    bool isValid() const { return id != 0xDEADBEEF && type != 0; }
+    Texture(u32 id) { this->id = id; }
+    bool isValid() const;
     void Delete();
-    static void bindUnit(u32 textureUnit, u32 id, u32 textureType);
+    u32 OglID() const;
+    u32 GetWidth() const;
+    u32 GetHeight() const;
+    u32 GetType() const;
+    void bindUnit(u32 textureUnit) const;
+    static Texture FromGPUTex(u32 oglId, u32 width, u32 height, u32 type);
     static void activate(u32 textureUnit);
+
+    bool operator==(const Texture& p) const
+    {
+        return id == p.id;
+    }
 };
 
 struct MaterialProp {
@@ -72,14 +78,15 @@ struct MaterialProp {
     void Delete() { texture.Delete(); }
 };
 struct Shader;
-struct Material {
+struct Material 
+{
     MaterialProp diffuseMat = {};
     MaterialProp ambientMat = {};
     MaterialProp specularMat = {};
     MaterialProp normalMat = {};
     MaterialProp shininessMat = {};
     MaterialProp emissiveMat = {};
-    std::string name = "DefaultMat";
+    const char* name = "DefaultMat";
 
     Material() = default;
     TAPI Material(
@@ -89,7 +96,7 @@ struct Material {
         MaterialProp normal, 
         MaterialProp shininess, 
         MaterialProp emissive,
-        std::string name) {
+        const char* name) {
         diffuseMat = diffuse;
         ambientMat = ambient;
         specularMat = specular;
@@ -104,7 +111,7 @@ struct Material {
         specularMat.Delete();
         normalMat.Delete();
     }
-    TAPI void SetShaderUniforms(const Shader& shader, u32 matIdx) const;
+    TAPI void SetShaderUniforms(const Shader& shader) const;
 };
 
 struct Arena;
@@ -117,6 +124,10 @@ TAPI u8* LoadImageData(const std::string& imgPath, s32* width, s32* height, s32*
 TAPI Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props = TextureProperties::None(), 
                     bool flipVertically = false);
-TAPI Texture GenTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props);
+TAPI Texture LoadTextureAsync(
+    const std::string& imgPath, 
+    TextureProperties props = TextureProperties::None(), 
+    bool flipVertically = false);
+Texture LoadGPUTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props, u32 texHash);
 
 #endif
