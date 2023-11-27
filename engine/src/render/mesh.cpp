@@ -22,7 +22,7 @@ void Mesh::Delete() {
     GLCall(glDeleteVertexArrays(1, &VAO));
     GLCall(glDeleteBuffers(1, &VBO));
     GLCall(glDeleteBuffers(1, &EBO));
-    material.Delete();
+    //material.Delete();
 }
 
 // Note: numBytesPerComponent must be between [1, 4]

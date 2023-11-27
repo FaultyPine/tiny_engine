@@ -18,4 +18,8 @@ if ["%1"]==["editor"] (
     popd
 )
 
-
+if ["%1"]==[""] (
+    pushd game
+    %pythoncmd% build.py run
+    popd
+)

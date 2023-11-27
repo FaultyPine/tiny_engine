@@ -14,10 +14,10 @@
 #include "camera.h"
 #include "tiny_lights.h"
 #include "tiny_profiler.h"
+#include "tiny_material.h"
 
-enum UniformDataType
+enum UniformDataType : s32
 {
-    UNK = 0,
     FLOAT,
     UINT,
     SINT,
@@ -26,6 +26,18 @@ enum UniformDataType
     VEC4,
     MAT3,
     MAT4,
+    NUM_DATA_TYPES,
+};
+static const u32 UniformDataTypeSizes[NUM_DATA_TYPES] = 
+{
+    sizeof(f32),
+    sizeof(u32),
+    sizeof(s32),
+    sizeof(f32) * 2,
+    sizeof(f32) * 3,
+    sizeof(f32) * 4,
+    sizeof(f32) * 9,
+    sizeof(f32) * 16,
 };
 
 // only have 1 big UBO
@@ -37,7 +49,7 @@ struct UniformData
     // pointer into the dedicated uniform memory block given to us by the engine
     void* uniformData = 0;
     u32 uniformSize = 0;
-    UniformDataType dataType = UNK;
+    UniformDataType dataType;
     s32 uniformLocation = 0;
     // TODO: dirty flag and only set when we actually change the data
 };
@@ -78,13 +90,18 @@ Under std140, struct members of a block should be aligned to 16-bytes
     glm::mat4 view;
     glm::vec4 camPos;
     glm::vec4 camFront;
+    //                  16 aligned bytes
     f32 nearClip;
     f32 farClip;
     f32 FOV;
     // misc
     f32 time;
+    //                  ----------
     
     // TODO: lighting
+
+
+    // TODO: materials
 
 };
 
@@ -150,6 +167,13 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
     // globs.dirLightIntensity = lights.sunlight.intensity;
 }
 
+void UpdateGlobalUBOMaterials(UBOGlobals& globs)
+{
+    // TODO:
+    MaterialRegistry& matRegistry = *GetEngineCtx().materialRegistry;
+    
+}
+
 void UpdateGlobalUBOMisc(UBOGlobals& globs)
 {
     globs.time = GetTimef();
@@ -161,8 +185,9 @@ void InitializeUBOs()
     u32& uboObject = GetGSS().uboObject;
     glGenBuffers(1, &uboObject);
     glBindBuffer(GL_UNIFORM_BUFFER, uboObject);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOGlobals), NULL, GL_STATIC_DRAW); // allocate vmem
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOGlobals), NULL, GL_DYNAMIC_DRAW); // allocate vmem
     glBindBufferBase(GL_UNIFORM_BUFFER, UBO_BINDING_POINT, uboObject); 
+    TINY_ASSERT(sizeof(UBOGlobals) <= KILOBYTES_BYTES(16)); // guarenteed 16kb max UBO size. Usually it's more
 }
 
 bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 bindingPoint, u32 shaderProgram)
@@ -186,12 +211,14 @@ void ShaderSystemPreDraw()
     GlobalShaderState& gss = GetGSS();
     UBOGlobals& globs = gss.uboGlobals;
     UpdateGlobalUBOCamera(globs);
+    UpdateGlobalUBOLighting(globs);
+    UpdateGlobalUBOMaterials(globs);
     UpdateGlobalUBOMisc(globs);
 
-    // update the entire ubo block every frame... maybe better to update parts at a time? no reason to do anything more complex than this for now
+    // update the entire ubo block every frame
     if (!gss.uboObject) return;
     glBindBuffer(GL_UNIFORM_BUFFER, gss.uboObject);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOGlobals), &gss.uboGlobals, GL_STATIC_DRAW);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBOGlobals), &gss.uboGlobals);
 }
 
 // binds all used UBO indices to the given shader program, called just after shader initialization
@@ -400,6 +427,7 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
 
 static u32 GetOpenGLProgramID(u32 shaderID)
 {
+    PROFILE_FUNCTION();
     return GetGSS().shaderMap.at(shaderID).oglShaderProgram;
 }
 
@@ -484,8 +512,8 @@ void Shader::ReloadShaders() {
 
 void ActivateSamplers(u32 shaderID) 
 {
+    PROFILE_FUNCTION();
     GlobalShaderState& gss = GetGSS();
-    if (gss.shaderMap.count(shaderID) == 0) return;
     const std::vector<Texture>& shaderSamplers = gss.shaderMap[shaderID].samplerIDs;
     for (s32 i = 0; i < shaderSamplers.size(); i++) {
         const Texture& tex = shaderSamplers.at(i);
@@ -532,16 +560,17 @@ void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData
     PROFILE_FUNCTION();
     GlobalShaderState& gss = GetGSS();
     TINY_ASSERT(gss.globalShaderMem.backing_mem_size > 0 && "Make sure to call InitializeShaderSystem before doing any shader calls!");
-    if (gss.shaderMap.count(ID) == 0) return;
     std::unordered_map<std::string, UniformData>& cachedUniforms = gss.shaderMap[ID].cachedUniforms;
     // if we already have uniform - simply update cached values. If we don't, allocate more mem in our uniform mem block
     if (cachedUniforms.count(uniformName)) 
     {
+        PROFILE_SCOPE("Update cached uniform");
         UniformData& uniform = cachedUniforms[uniformName];
         TINY_ASSERT(dataType == uniform.dataType && uniformSize == uniform.uniformSize);
         TMEMCPY(uniform.uniformData, uniformData, uniformSize);
     }
     else {
+        PROFILE_SCOPE("Initialize new uniform");
         // new uniform, cache it
         u32 oglShaderID = GetOpenGLProgramID(ID);
         s32 loc = glGetUniformLocation(oglShaderID, uniformName.c_str());
@@ -572,6 +601,7 @@ void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform
 
 void Shader::use() const 
 {
+    PROFILE_FUNCTION();
     GlobalShaderState& gss = GetGSS();
     TINY_ASSERT("Invalid shader ID!" && isValid());
     u32 shaderID = this->ID;
@@ -587,55 +617,11 @@ void Shader::use() const
 }
 
 
-u32 UniformDataTypeToSize(UniformDataType dataType)
-{
-    switch (dataType)
-    {
-        case UniformDataType::FLOAT:
-        {
-            return sizeof(f32);
-        } break;
-        case UniformDataType::UINT:
-        {
-            return sizeof(u32);
-        } break;
-        case UniformDataType::SINT:
-        {
-            return sizeof(s32);
-        } break;
-        case UniformDataType::VEC2:
-        {
-            return sizeof(f32) * 2;
-        } break;
-        case UniformDataType::VEC3:
-        {
-            return sizeof(f32) * 3;
-        } break;
-        case UniformDataType::VEC4:
-        {
-            return sizeof(f32) * 4;
-        } break;
-        case UniformDataType::MAT4:
-        {
-            return sizeof(f32) * 16;
-        } break;
-        case UniformDataType::MAT3:
-        {
-            return sizeof(f32) * 9;
-        } break;
-        default:
-        {
-            return 0;
-        } break;
-    }
-}
-
-
 
 // ========= Shader setUniform overloads =============================
 
 #define SET_UNIFORM_IMPL(uniformName, uniformType, uniformDataCopyArr) \
-u32 uniformSize = UniformDataTypeToSize(uniformType) * ARRAY_SIZE(uniformDataCopyArr); \
+u32 uniformSize = UniformDataTypeSizes[uniformType] * ARRAY_SIZE(uniformDataCopyArr); \
 updateUniformData(this->ID, uniformName, uniformDataCopyArr, uniformSize, uniformType)
 // -------------------
 
@@ -781,6 +767,7 @@ void OglSetUniform(const s8* uniformName, s32 loc, glm::mat3 mat3) {
 
 void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform)
 {
+    PROFILE_FUNCTION();
     #define ONE_VAR(type) OglSetUniform(uniformName, uniform.uniformLocation, ((type*)uniform.uniformData)[0]);
     #define TWO_VAR(type) OglSetUniform(uniformName, uniform.uniformLocation, ((type*)uniform.uniformData)[0], ((type*)uniform.uniformData)[1]);
     #define THREE_VAR(type) OglSetUniform(uniformName, uniform.uniformLocation, ((type*)uniform.uniformData)[0], ((type*)uniform.uniformData)[1], ((type*)uniform.uniformData)[2]);
@@ -812,7 +799,7 @@ void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform
         }
 
     u32 uniformSize = uniform.uniformSize;
-    u32 uniformTypeSize = UniformDataTypeToSize(uniform.dataType);
+    u32 uniformTypeSize = UniformDataTypeSizes[uniform.dataType];
     if (uniformSize % uniformTypeSize != 0 || uniformSize == 0 || uniformTypeSize == 0)
     {
         LOG_WARN("Tried to activate a shader before setting uniforms! Ignoring...");

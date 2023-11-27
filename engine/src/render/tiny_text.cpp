@@ -11,7 +11,11 @@
 #include "external/GlText/glText.h"
 
 void UpdateGLTViewport(s32 width, s32 height) {
-    gltViewport(width, height);
+    // for some reason gltViewport can't handle width/height of 0 (which happens when you minimize the window)
+    if (width > 0 && height > 0)
+    {
+        gltViewport(width, height);
+    }
 }
 bool GLTInitialize() {
     return gltInit();

@@ -6,6 +6,8 @@
 #include "tiny_profiler.h"
 #include "tiny_fs.h"
 #include "job_system.h"
+#include "math/tiny_math.h"
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb/stb_image.h"
@@ -45,7 +47,7 @@ void InitializeTextureCache(Arena* arena)
     GetEngineCtx().textureCache = textureCacheMem;
     new(&textureCacheMem->cachedTextures) TextureCacheMap();
 
-    Texture dummyTex = LoadTexture(ResPath("invalid_img.jpg"));
+    Texture dummyTex = LoadTexture(ResPath("invalid_img.jpg").c_str());
     textureCacheMem->dummyTexture = dummyTex;
 }
 
@@ -130,23 +132,10 @@ TextureProperties TextureProperties::None() {
     return texProps;
 }
 
-const char* GetTexMatTypeString(TextureMaterialType type) {
-    switch (type) {
-        case DIFFUSE: return "tex_diffuse";
-        case SPECULAR: return "tex_specular";
-        case AMBIENT: return "tex_ambient";
-        case NORMAL: return "tex_normal";
-        case ROUGHNESS: return "tex_roughness";
-        case EMISSION: return "tex_emission";
-        case OTHER: return "tex_other";
-
-        default: return "tex_unknown";
-    }
-}
-
 
 u32 Texture::OglID() const
 {
+    PROFILE_FUNCTION();
     TextureCache& texCache = GetTextureCache();
     if (texCache.cachedTextures.count(*this))
     {
@@ -169,6 +158,7 @@ bool Texture::isValid() const
 
 void Texture::bindUnit(u32 textureUnit) const 
 {
+    PROFILE_FUNCTION();
     const TextureInternal& ti = GetTextureCache().cachedTextures[*this];
     if (!isValid() || ti.oglTexID == 0)
     {
@@ -177,6 +167,7 @@ void Texture::bindUnit(u32 textureUnit) const
     }
     else
     {
+        PROFILE_SCOPE("Activate & bind texture");
         // bind id to given texture unit
         activate(textureUnit);
         u32 oglId = OglID();
@@ -204,6 +195,7 @@ u32 Texture::GetType() const
 
 void Texture::activate(u32 textureUnit) 
 { 
+    PROFILE_FUNCTION();
     GLCall(glActiveTexture(GL_TEXTURE0 + textureUnit)); 
 }
 
@@ -218,13 +210,14 @@ void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment) {
 
 // loads and returns image buffer found at imgPath. 
 // NOTE: calling function is responsible for returned buffer lifetime
-u8* LoadImageData(const std::string& imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically) {
+u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically) {
     PROFILE_FUNCTION();
     stbi_set_flip_vertically_on_load(shouldFlipVertically);
-    u8* data = stbi_load(imgPath.c_str(), width, height, numChannels, 0);
+    u8* data = stbi_load(imgPath, width, height, numChannels, 0);
     if (!data)
     {
-        LOG_ERROR("Failed to load image at %s", imgPath.c_str());
+        LOG_ERROR("Failed to load image data from %s", imgPath);
+        TINY_ASSERT(false);
     }
     return data;
 }
@@ -322,7 +315,7 @@ Texture LoadTexture(
     texCache[tex] = TextureInternal();
 
     s32 width, height, numChannels = 0;
-    u8* data = LoadImageData(imgPath, &width, &height, &numChannels, flipVertically);
+    u8* data = LoadImageData(imgPath.c_str(), &width, &height, &numChannels, flipVertically);
     // if we didn't specify texture properties, fetch them automatically
     if (props.isNone) 
     {
@@ -345,6 +338,7 @@ Texture LoadTexture(
 Texture LoadTextureAsync(
     const std::string& imgPath, 
     TextureProperties props, 
+    TextureLoadSuccessCallback onSuccess,
     bool flipVertically
 ) {
     PROFILE_FUNCTION();
@@ -356,11 +350,11 @@ Texture LoadTextureAsync(
         return tex;
     }
     texCache[tex] = TextureInternal();
-    JobSystem::Instance().Execute([strHash, props, imgPath, flipVertically](){
+    JobSystem::Instance().Execute([strHash, props, imgPath, flipVertically, onSuccess](){
         PROFILE_SCOPE("Load image data");
         s32 width, height, numChannels;
-        u8* data = LoadImageData(imgPath, &width, &height, &numChannels, flipVertically);     
-        JobSystem::Instance().ExecuteOnMainThread([strHash, imgPath, data, width, height, numChannels, props](){
+        u8* data = LoadImageData(imgPath.c_str(), &width, &height, &numChannels, flipVertically);     
+        JobSystem::Instance().ExecuteOnMainThread([strHash, imgPath, data, width, height, numChannels, props, onSuccess](){
             PROFILE_SCOPE("initialize loaded tex data");
             TextureProperties newProps = props; // cpy to make mutable, lambda captures are const
             if (props.isNone)
@@ -378,26 +372,20 @@ Texture LoadTextureAsync(
             ti.texpath = imgPath;
             stbi_image_free(data);
             LOG_INFO("Loaded texture %s  channels: %i", imgPath.c_str(), numChannels);
+            if (onSuccess)
+            {
+                onSuccess(ret);
+            }
         });
     });
     return tex;
 }
 
-void Material::SetShaderUniforms(const Shader& shader) const
-{
-    s32 matPropIdx = 0;
-    #define SET_MATERIAL_UNIFORMS(matVar) \
-        shader.setUniform(TextFormat("material.%s.useSampler", #matVar), matVar.hasTexture); \
-        if (matVar.hasTexture) { \
-            shader.TryAddSampler(matVar.texture, TextFormat("material.%s.tex", #matVar)); \
-        } \
-        shader.setUniform(TextFormat("material.%s.color", #matVar), matVar.color)
 
-    SET_MATERIAL_UNIFORMS(diffuseMat);
-    SET_MATERIAL_UNIFORMS(ambientMat);
-    SET_MATERIAL_UNIFORMS(specularMat);
-    SET_MATERIAL_UNIFORMS(normalMat);
-    SET_MATERIAL_UNIFORMS(shininessMat);
-    SET_MATERIAL_UNIFORMS(emissiveMat);
-    shader.setUniform("useNormalMap", normalMat.hasTexture);
+void DeleteTexture(Texture tex)
+{
+    TextureCache& texCache = GetTextureCache();
+    TextureInternal& ti = texCache.cachedTextures[tex];
+    GLCall(glDeleteTextures(1, &ti.oglTexID)); 
+    texCache.cachedTextures.erase(tex);
 }

@@ -306,6 +306,7 @@ void InitEngine(
     InitializeLightingSystem(engineArena);
     InitializeTextureCache(engineArena);
     InitializePhysics(engineArena);
+    InitializeMaterialSystem(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
     ProfilerBegin();
 

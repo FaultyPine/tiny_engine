@@ -28,6 +28,7 @@ struct GlobalShaderState;
 struct LightingSystem;
 struct TextureCache;
 struct PhysicsWorld;
+struct MaterialRegistry;
 
 struct EngineContext
 {
@@ -53,6 +54,7 @@ struct EngineContext
     LightingSystem* lightsSubsystem = 0;
     TextureCache* textureCache = 0;
     PhysicsWorld* physicsWorld = 0;
+    MaterialRegistry* materialRegistry = 0;
 };
 
 TAPI EngineContext& GetEngineCtx();

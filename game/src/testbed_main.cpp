@@ -38,11 +38,6 @@ struct WorldEntity {
     void Delete() {
         model.Delete();
     }
-    void Draw(const Transform &tf) {
-        if (isVisible) {
-            model.Draw(tf);
-        }
-    }
     bool isValid() { return hash != 0; }
 };
 

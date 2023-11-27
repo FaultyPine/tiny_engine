@@ -66,7 +66,15 @@ struct Shader {
 
     TAPI void setUniform(const s8* uniformName, glm::mat4 mat4, bool transpose = false) const;
     TAPI void setUniform(const s8* uniformName, glm::mat3 mat3, bool transpose = false) const;
+
+    bool operator==(const Shader& p) const { return ID == p.ID; }
 };
 
+struct ShaderHasher {
+    size_t operator()(const Shader& p) const
+    {
+        return p.ID;
+    }
+};
 
 #endif

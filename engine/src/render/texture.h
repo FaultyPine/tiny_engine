@@ -1,10 +1,9 @@
 #ifndef TINY_TEXTURE_H
 #define TINY_TEXTURE_H
 
-//#include "pch.h"
 #include "tiny_defines.h"
-//#include "tiny_ogl.h"
-#include "math/tiny_math.h"
+#include <string>
+#include <functional>
 
 enum TextureMaterialType {
     DIFFUSE = 0,
@@ -15,10 +14,9 @@ enum TextureMaterialType {
     EMISSION,
     OTHER,
 
-    NUM_TYPES,
+    NUM_MATERIAL_TYPES,
 };
-const char* GetTexMatTypeString(TextureMaterialType type);
-// TODO: get rid of the ogl usages in this header
+
 struct TextureProperties {
     enum class TexWrapMode : s32;
     enum class TexMinFilter : s32;
@@ -64,70 +62,25 @@ struct Texture {
     }
 };
 
-struct MaterialProp {
-    bool hasTexture = false;
-    glm::vec4 color = glm::vec4(1);
-    Texture texture = {};
-    MaterialProp() = default;
-    MaterialProp(glm::vec4 col) {
-        color = col;
-    }
-    MaterialProp(const Texture& tex) {
-        texture = tex;
-    }
-    void Delete() { texture.Delete(); }
-};
-struct Shader;
-struct Material 
-{
-    MaterialProp diffuseMat = {};
-    MaterialProp ambientMat = {};
-    MaterialProp specularMat = {};
-    MaterialProp normalMat = {};
-    MaterialProp shininessMat = {};
-    MaterialProp emissiveMat = {};
-    const char* name = "DefaultMat";
-
-    Material() = default;
-    TAPI Material(
-        MaterialProp diffuse, 
-        MaterialProp ambient, 
-        MaterialProp specular, 
-        MaterialProp normal, 
-        MaterialProp shininess, 
-        MaterialProp emissive,
-        const char* name) {
-        diffuseMat = diffuse;
-        ambientMat = ambient;
-        specularMat = specular;
-        normalMat = normal;
-        shininessMat = shininess;
-        emissiveMat = emissive;
-        this->name = name;
-    }
-    void Delete() {
-        diffuseMat.Delete();
-        ambientMat.Delete();
-        specularMat.Delete();
-        normalMat.Delete();
-    }
-    TAPI void SetShaderUniforms(const Shader& shader) const;
-};
+typedef std::function<void(Texture onSuccessTexture)> TextureLoadSuccessCallback;
 
 struct Arena;
 void InitializeTextureCache(Arena* arena);
 
 TAPI void SetPixelReadSettings(s32 width, s32 offsetX, s32 offsetY, s32 alignment = 4);
 
-TAPI u8* LoadImageData(const std::string& imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);
+TAPI u8* LoadImageData(const char* imgPath, s32* width, s32* height, s32* numChannels, bool shouldFlipVertically = false);
 
 TAPI Texture LoadTexture(const std::string& imgPath, 
                     TextureProperties props = TextureProperties::None(), 
                     bool flipVertically = false);
 TAPI Texture LoadTextureAsync(
     const std::string& imgPath, 
-    TextureProperties props = TextureProperties::None(), 
+    TextureProperties props = TextureProperties::None(),
+    TextureLoadSuccessCallback onSuccess = {},
     bool flipVertically = false);
 Texture LoadGPUTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props, u32 texHash);
+
+void DeleteTexture(Texture tex);
 
 #endif

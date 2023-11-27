@@ -22,7 +22,11 @@ glm::mat4 Camera::GetOrthographicProjection() const {
     }
 }
 glm::mat4 Camera::GetPerspectiveProjection() const {
-    f32 aspect = (f32)screenWidth / screenHeight;
+    f32 aspect = (f32)screenWidth / (f32)screenHeight;
+    if (screenHeight == 0)
+    {
+        aspect = 0.0f;
+    } 
     return glm::perspective(glm::radians(FOV), aspect, nearClip, farClip);
 }
 glm::mat4 Camera::GetViewMatrix() const {

@@ -14,6 +14,8 @@ layout (std140) uniform Globals
     float time;
 
     // TODO: lighting
+
+    // TODO: materials
 };
 
 vec3 GetViewDir(vec3 fragPosWS) 

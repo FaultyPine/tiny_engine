@@ -5,6 +5,7 @@
 #include "math/tiny_math.h"
 #include "tiny_log.h"
 #include "tiny_profiler.h"
+#include "render/tiny_material.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -38,33 +39,36 @@ MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const
         const char* matkey = textureTypeToMatKey[type];
         aiReturn hasColor = material->Get(matkey, 0, 0, col);
         if (hasColor == aiReturn_SUCCESS) {
-            ret.hasTexture = false;
-            ret.color = glm::vec4(col.r, col.g, col.b, col.a);
+            ret = MaterialProp(glm::vec4(col.r, col.g, col.b, col.a));
         }
     }
     else {
         std::string texturePath = meshMaterialDir;
         texturePath.append(str.C_Str());
-        Texture tex = LoadTextureAsync(texturePath, TextureProperties::None(), true); // flip vert for opengl
-        ret.hasTexture = true;
-        ret.texture = tex;
+        Texture tex = LoadTextureAsync(texturePath.c_str(), TextureProperties::None(), {}, true); // flip vert for opengl
+        ret = MaterialProp(tex);
     }
     return ret;
 }
 
 Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
+
     aiString str;
     const char* name = "";
     aiReturn hasName = material->Get(AI_MATKEY_NAME, str);
     if (hasName == aiReturn_SUCCESS) {
         name = str.C_Str();
     }
-
+    Material ret = NewMaterial(name);
     MaterialProp diffuse = GetMaterialFromType(material, aiTextureType_DIFFUSE, meshMaterialDir);
-    MaterialProp specular = GetMaterialFromType(material, aiTextureType_SPECULAR, meshMaterialDir);
+    OverwriteMaterialProperty(ret, diffuse, DIFFUSE);
     MaterialProp ambient = GetMaterialFromType(material, aiTextureType_AMBIENT, meshMaterialDir);
+    OverwriteMaterialProperty(ret, ambient, AMBIENT);
+    MaterialProp specular = GetMaterialFromType(material, aiTextureType_SPECULAR, meshMaterialDir);
+    OverwriteMaterialProperty(ret, specular, SPECULAR);
     MaterialProp emissive = GetMaterialFromType(material, aiTextureType_EMISSIVE, meshMaterialDir);
+    OverwriteMaterialProperty(ret, emissive, EMISSION);
     //MaterialProp height = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
     MaterialProp normal = GetMaterialFromType(material, aiTextureType_NORMALS, meshMaterialDir);
     if (!normal.hasTexture)
@@ -76,8 +80,10 @@ Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
             normal = normalsFromHeightmap;
         }
     }
+    OverwriteMaterialProperty(ret, normal, NORMAL);
     // Usually there is a conversion function defined to map the linear color values in the texture to a suitable exponent
     MaterialProp shininess = GetMaterialFromType(material, aiTextureType_SHININESS, meshMaterialDir);
+    OverwriteMaterialProperty(ret, shininess, ROUGHNESS);
     //MaterialProp opacity = GetMaterialFromType(material, aiTextureType_OPACITY, meshMaterialDir);
     //MaterialProp displacement = GetMaterialFromType(material, aiTextureType_DISPLACEMENT, meshMaterialDir);
     //MaterialProp lightmap = GetMaterialFromType(material, aiTextureType_LIGHTMAP, meshMaterialDir);
@@ -90,7 +96,7 @@ Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
         shininess.color.r = Math::Remap(shininess.color.r, 0.0, 1000.0, 0.0, 50.0);
     }
     
-    Material ret = Material(diffuse, ambient, specular, normal, shininess, emissive, name);
+    //Material ret = RegisterMaterial(diffuse, ambient, specular, normal, shininess, emissive, name);
     return ret;
 }
 
@@ -173,11 +179,12 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, 
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
+    cachedShader = shader;
     Assimp::Importer import;
     //std::string extList = "";
     //import.GetExtensionList(extList);
-    //std::cout << extList << "";
-    //std::cout << aiGetVersionMajor() << "." << aiGetVersionMinor() << "." << aiGetVersionRevision() << "";
+    //LOG_INFO("Assimp extension list: %s", extList.c_str());
+    LOG_INFO("Assimp version %i.%i.%i", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision());
     const aiScene* scene = nullptr;
     { PROFILE_SCOPE("Assimp mesh read");
         scene = import.ReadFile(meshObjFile, aiProcess_Triangulate);
@@ -187,7 +194,6 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
         return;
     }
     processNode(scene->mRootNode, scene, meshes, meshMaterialDir);
-    cachedShader = shader;
     cachedBoundingBox = CalculateBoundingBox();
 }
 Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) {
@@ -244,7 +250,8 @@ void Model::Draw(const Shader& shader, const Transform& tf) const {
     shader.setUniform("modelMat", model);
     shader.setUniform("normalMat", matNormal);
     SetLightingUniforms(shader);
-    for (const Mesh& mesh : meshes) {
+    for (const Mesh& mesh : meshes) 
+    {
         mesh.Draw(shader);
     }
 }
@@ -252,7 +259,8 @@ void Model::Draw(const Shader& shader, const Transform& tf) const {
 void Model::DrawMinimal(const Shader& shader) const
 {
     PROFILE_FUNCTION();
-    for (const Mesh& mesh : meshes) {
+    for (const Mesh& mesh : meshes) 
+    {
         mesh.Draw(shader);
     }
 }

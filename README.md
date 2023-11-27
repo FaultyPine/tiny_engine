@@ -65,9 +65,7 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
-- (tiny_lights) make a lighting subsystem, store it in engine memory and put a reference to it in the engine context
-    - then tiny_lights would own and add lights to itself and wouldn't store lights gameside
-- Bullet
+- Put lighting and material data in UBOs
 - ImGuizmo
 - Resource system
     - load from filesystem

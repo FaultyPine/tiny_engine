@@ -5,6 +5,7 @@
 #include "math/tiny_math.h"
 #include "texture.h"
 #include "tiny_types.h"
+#include "tiny_material.h"
 #include <vector>
 
  
