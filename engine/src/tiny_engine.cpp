@@ -334,6 +334,7 @@ void InitEngine(
     // Begin game loop
     while (!ShouldCloseWindow())
     {
+        PROFILER_FRAME_MARK();
         PhysicsTick();
         { PROFILE_SCOPE("Game tick");
             gameFuncs.tickFunc(gameArena);
@@ -351,7 +352,6 @@ void InitEngine(
             Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
             ImGuiEndFrame();
         }
-        PROFILER_FRAME_END();
     }
     gameFuncs.terminateFunc(gameArena);
 
