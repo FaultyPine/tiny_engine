@@ -66,7 +66,6 @@ void TerminateGame() {
 
     GLTTerminate();
     glfwTerminate();
-    ProfilerEnd();
 }
 void OverwriteRandomSeed(u64 seed) {
     globEngineCtx.randomSeed = seed;
@@ -308,7 +307,6 @@ void InitEngine(
     InitializePhysics(engineArena);
     InitializeMaterialSystem(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
-    ProfilerBegin();
 
 
     TINY_ASSERT(globEngineCtx.resourceDirectory);
@@ -345,6 +343,8 @@ void InitEngine(
             ShaderSystemPreDraw();
             Framebuffer screenRenderFb;
             { PROFILE_SCOPE("Game Render");
+                ImGui::Text("Game memory: %.2f%%", ((f32)gameArena->offset / gameArena->backing_mem_size) * 100.0f);
+                ImGui::Text("Engine memory: %.2f%%", ((f32)engineArena->offset / engineArena->backing_mem_size) * 100.0f);
                 screenRenderFb = gameFuncs.renderFunc(gameArena);
             }
             glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());

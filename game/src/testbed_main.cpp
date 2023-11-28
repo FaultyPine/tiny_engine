@@ -520,7 +520,7 @@ void testbed_init(Arena* gameMem) {
     init_waterfall(gs);
 #endif
     
-    Model sponza = Model(lightingShader, "C:/Dev/resources/Sponza/sponza.obj", "C:/Dev/resources/Sponza/");
+    Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
     WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
 
     //PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);

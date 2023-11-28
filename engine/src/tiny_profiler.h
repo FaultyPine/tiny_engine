@@ -8,16 +8,7 @@
 #include <mutex>
 #include "tiny_defines.h"
 
-// Author(s): The Cherno and davechurchill with some modifications by me
-// https://gist.github.com/TheCherno/31f135eea6ee729ab5f26a6908eb3a5e
-
-// chrome tracing event format
-// https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview#
-
-// HOW TO USE:
-// Enable profiling -> run game -> close game -> open google chrome -> enter chrome://tracing into
-// URL -> drag profiling_results.json onto that window
-
+ 
 #define TRACY_ENABLE
 #define TRACY_EXPORTS
 #include "external/tracy/tracy/Tracy.hpp"
@@ -32,6 +23,3 @@
     #define PROFILER_FRAME_MARK()
 #endif
 #define PROFILE_FUNCTION()  PROFILE_SCOPE(__FUNCTION__)
-
-void ProfilerBegin();
-void ProfilerEnd();
