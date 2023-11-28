@@ -427,7 +427,6 @@ u32 CreateShaderFromFiles(const std::string& vertexPath, const std::string& frag
 
 static u32 GetOpenGLProgramID(u32 shaderID)
 {
-    PROFILE_FUNCTION();
     return GetGSS().shaderMap.at(shaderID).oglShaderProgram;
 }
 
@@ -564,13 +563,11 @@ void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData
     // if we already have uniform - simply update cached values. If we don't, allocate more mem in our uniform mem block
     if (cachedUniforms.count(uniformName)) 
     {
-        PROFILE_SCOPE("Update cached uniform");
         UniformData& uniform = cachedUniforms[uniformName];
         TINY_ASSERT(dataType == uniform.dataType && uniformSize == uniform.uniformSize);
         TMEMCPY(uniform.uniformData, uniformData, uniformSize);
     }
     else {
-        PROFILE_SCOPE("Initialize new uniform");
         // new uniform, cache it
         u32 oglShaderID = GetOpenGLProgramID(ID);
         s32 loc = glGetUniformLocation(oglShaderID, uniformName.c_str());

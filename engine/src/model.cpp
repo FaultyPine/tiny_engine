@@ -51,16 +51,19 @@ MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const
     return ret;
 }
 
-Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
+Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
-
-    aiString str;
-    const char* name = "";
-    aiReturn hasName = material->Get(AI_MATKEY_NAME, str);
-    if (hasName == aiReturn_SUCCESS) {
-        name = str.C_Str();
+    if (DoesMaterialIdExist(meshMaterialIndex))
+    {
+        return Material(meshMaterialIndex);
     }
-    Material ret = NewMaterial(name);
+    aiMaterial* material = materials[meshMaterialIndex];
+    aiString str;
+    aiReturn hasName = material->Get(AI_MATKEY_NAME, str);
+    if (hasName != aiReturn_SUCCESS) {
+        str = "UnnamedMaterial";
+    }
+    Material ret = NewMaterial(str.C_Str(), meshMaterialIndex);
     MaterialProp diffuse = GetMaterialFromType(material, aiTextureType_DIFFUSE, meshMaterialDir);
     OverwriteMaterialProperty(ret, diffuse, DIFFUSE);
     MaterialProp ambient = GetMaterialFromType(material, aiTextureType_AMBIENT, meshMaterialDir);
@@ -96,7 +99,6 @@ Material aiMaterialConvert(aiMaterial* material, const char* meshMaterialDir) {
         shininess.color.r = Math::Remap(shininess.color.r, 0.0, 1000.0, 0.0, 50.0);
     }
     
-    //Material ret = RegisterMaterial(diffuse, ambient, specular, normal, shininess, emissive, name);
     return ret;
 }
 
@@ -155,7 +157,7 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
             indices.push_back(face.mIndices[j]);
     }
     // process material... assimp splits meshes with more than 1 material into multiple meshes so a mesh will always have 1 material
-    Material meshMat = aiMaterialConvert(scene->mMaterials[mesh->mMaterialIndex], meshMaterialDir);
+    Material meshMat = aiMaterialConvert(scene->mMaterials, mesh->mMaterialIndex, meshMaterialDir);
 
     Mesh m = Mesh(vertices, indices, meshMat);
     return m;
@@ -163,19 +165,29 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
 
 void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
-    // process all the node's meshes (if any)
-    for (u32 i = 0; i < node->mNumMeshes; i++) {
+    for (u32 i = 0; i < node->mNumMeshes; i++) 
+    {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
         Mesh converted = processMesh(mesh, scene, meshMaterialDir);
         aiString meshName = node->mName;
         converted.name = meshName.C_Str();
         meshes.push_back(converted);
     }
-    // then do the same for each of its children
-    for (u32 i = 0; i < node->mNumChildren; i++) {
+    // process children
+    for (u32 i = 0; i < node->mNumChildren; i++) 
+    {
         processNode(node->mChildren[i], scene, meshes, meshMaterialDir);
     }
 }
+
+// sort by material
+struct MeshCompare 
+{
+    bool operator() (const Mesh& mesh1, const Mesh& mesh2) const 
+    {
+        return mesh1.material.id < mesh2.material.id;
+    }
+};
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
@@ -187,13 +199,19 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
     LOG_INFO("Assimp version %i.%i.%i", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision());
     const aiScene* scene = nullptr;
     { PROFILE_SCOPE("Assimp mesh read");
-        scene = import.ReadFile(meshObjFile, aiProcess_Triangulate);
+        scene = import.ReadFile(meshObjFile, 
+            aiProcess_Triangulate | 
+            aiProcess_OptimizeMeshes | 
+            aiProcess_RemoveRedundantMaterials | 
+            aiProcess_SplitLargeMeshes | 
+            aiProcess_CalcTangentSpace);
     }
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         LOG_ERROR("[ASSIMP] Error: %s", import.GetErrorString());
         return;
     }
     processNode(scene->mRootNode, scene, meshes, meshMaterialDir);
+    std::sort(meshes.begin(), meshes.end(), MeshCompare()); // when I implement a real renderer, meshes will be inserted in sorted order
     cachedBoundingBox = CalculateBoundingBox();
 }
 Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) {
@@ -250,17 +268,22 @@ void Model::Draw(const Shader& shader, const Transform& tf) const {
     shader.setUniform("modelMat", model);
     shader.setUniform("normalMat", matNormal);
     SetLightingUniforms(shader);
-    for (const Mesh& mesh : meshes) 
-    {
-        mesh.Draw(shader);
-    }
+    DrawMinimal(shader);
 }
 
 void Model::DrawMinimal(const Shader& shader) const
 {
     PROFILE_FUNCTION();
+    Material currentMat = {};
     for (const Mesh& mesh : meshes) 
     {
+        // assuming meshes are sorted by material id, only change material uniforms when we switch materials
+        if (currentMat.id != mesh.material.id)
+        {
+            mesh.material.SetShaderUniforms(shader);
+            shader.use();
+            currentMat = mesh.material;
+        }
         mesh.Draw(shader);
     }
 }

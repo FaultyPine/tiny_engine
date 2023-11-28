@@ -19,8 +19,9 @@ struct MaterialProp
 struct Shader;
 struct Material 
 {
-    u32 id;
+    u32 id = U32_INVALID_ID;
     Material() = default;
+    Material(u32 id) { this->id = id; }
     TAPI void SetShaderUniforms(const Shader& shader) const;
     bool operator==(const Material& p) const { return id == p.id; }
 };
@@ -51,11 +52,12 @@ struct MaterialRegistry
 struct Arena;
 void InitializeMaterialSystem(Arena* arena);
 
-Material NewMaterial(const char* name);
+Material NewMaterial(const char* name, s32 materialIndex = -1);
 
 void DeleteMaterial(Material material);
 
 void OverwriteMaterialProperty(Material material, const MaterialProp& prop, TextureMaterialType type);
 
+bool DoesMaterialIdExist(u32 materialID);
 
 #endif

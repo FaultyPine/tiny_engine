@@ -130,8 +130,6 @@ void Mesh::Draw(const Shader& shader) const {
     PROFILE_FUNCTION();
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
-    material.SetShaderUniforms(shader);
-    shader.use();
     if (numInstances > 0)
     {
         // instanced render

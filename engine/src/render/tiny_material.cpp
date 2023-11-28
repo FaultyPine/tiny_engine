@@ -31,11 +31,15 @@ MaterialInternal& GetMaterialInternal(Material material)
     return GetMaterialRegistry().materialRegistry[material];
 }
 
+bool DoesMaterialIdExist(u32 materialID)
+{
+    return GetMaterialRegistry().materialRegistry.count(Material(materialID)) > 0;
+}
 
-Material NewMaterial(const char* name) {
+Material NewMaterial(const char* name, s32 materialIndex) {
     MaterialRegistry& matRegistry = GetMaterialRegistry();
     Material newMaterial = {};
-    newMaterial.id = matRegistry.currentMaterialId++;
+    newMaterial.id = materialIndex != -1 ? materialIndex : HashBytes((u8*)name, strnlen(name, 64));
     MaterialInternal newMaterialInternal;
     newMaterialInternal.properties[DIFFUSE] = {};
     newMaterialInternal.properties[AMBIENT] = {};

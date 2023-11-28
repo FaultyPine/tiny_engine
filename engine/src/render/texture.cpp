@@ -135,7 +135,6 @@ TextureProperties TextureProperties::None() {
 
 u32 Texture::OglID() const
 {
-    PROFILE_FUNCTION();
     TextureCache& texCache = GetTextureCache();
     if (texCache.cachedTextures.count(*this))
     {
@@ -167,7 +166,6 @@ void Texture::bindUnit(u32 textureUnit) const
     }
     else
     {
-        PROFILE_SCOPE("Activate & bind texture");
         // bind id to given texture unit
         activate(textureUnit);
         u32 oglId = OglID();
@@ -195,7 +193,6 @@ u32 Texture::GetType() const
 
 void Texture::activate(u32 textureUnit) 
 { 
-    PROFILE_FUNCTION();
     GLCall(glActiveTexture(GL_TEXTURE0 + textureUnit)); 
 }
 
