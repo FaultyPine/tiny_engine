@@ -37,17 +37,14 @@ static glm::mat4 GetDirectionalLightViewProjMatrix(glm::vec3 position, glm::vec3
 
 void LightPoint::Visualize()
 {
+    if (!this->enabled) return;
     glm::vec4 color = glm::vec4(1);
-    if (!this->enabled) 
-    {
-        color = glm::vec4(1,1,1,0.3);
-    }
     Shapes3D::DrawWireSphere(this->position, 0.1, color);
 }
 
 void LightDirectional::Visualize()
 {
-    // TODO:
+    Shapes3D::DrawSphere(this->position, 5.0f, glm::vec4(1));
 }
 
 LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 
