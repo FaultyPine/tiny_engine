@@ -81,14 +81,7 @@ void Skybox::Draw()
     LightDirectional& sun = GetEngineCtx().lightsSubsystem->lights.sunlight;
     UpdateSunlightValues(skyboxShader, sun);
     GLCall(glDepthFunc(GL_LEQUAL));
-    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
-    // remove translation from the view matrix
-    // This centers the cube on the camera since the vertices are [-1, 1]
-    view = glm::mat4(glm::mat3(view)); 
-    skyboxShader.setUniform("view", view);
-    skyboxShader.setUniform("projection", Camera::GetMainCamera().GetProjectionMatrix());
-    GLCall(glActiveTexture(GL_TEXTURE0));
-    GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.id));
+    skyboxShader.use();
     skyboxCube.Draw(skyboxShader);
     GLCall(glDepthFunc(GL_LESS));
 }

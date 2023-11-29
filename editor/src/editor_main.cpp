@@ -21,7 +21,7 @@ static EditorState* globEditorState;
 void* editor_render_game(const Arena* const mem)
 {
     Framebuffer outGameWindow = globEditorState->gameCallbacks.renderFunc(mem);
-    return (void*)outGameWindow.GetTexture().id;
+    return (void*)outGameWindow.GetTexture().OglID();
 }
 
 void editor_render_game_window(void* renderedGameFrameHandle)
@@ -79,7 +79,7 @@ void editor_init(Arena* mem)
 {
     EditorState* editor = (EditorState*)arena_alloc(mem, sizeof(EditorState));
     globEditorState = editor;
-    // fetch our game's callbacks
+    // fetch our game's callbacks.. TODO: make this agnostic. App should initialize the editor so it can pass it's callbacks and this doesn't have to be hardcoded
     editor->gameCallbacks = GetTestbedAppRunCallbacks();
     editor->gameCallbacks.initFunc(mem);
     
@@ -92,14 +92,12 @@ void editor_tick(Arena* mem)
 Framebuffer editor_render(const Arena* const mem)
 {
     void* renderedGameFrame = editor_render_game(mem);
-    //ImGuiBeginFrame();
     EditorState* editor = globEditorState;
     editor->editorMainFb.Bind();
     editor_render_game_window(renderedGameFrame);
     editor_render_toolbar(mem, editor);
     editor_render_inspector(mem, editor);
     editor_render_scene_hierarchy(mem, editor);
-    //ImGuiEndFrame();
     return editor->editorMainFb;
 }
 void editor_terminate(Arena* mem)
