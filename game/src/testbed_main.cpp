@@ -93,6 +93,8 @@ struct GameState {
     Skybox skybox = {};
 
     f32 sunOrbitRadius = 100.0f;
+    f32 sunSpeedMultiplier = 0.2f;
+    glm::vec3 sunTarget = glm::vec3(0, 0, 0);
 
     inline static GameState* gs = nullptr;
     // sets the static gamestate to a copy of the passed in gamestate
@@ -223,6 +225,8 @@ void drawImGuiDebug() {
     }
 
     ImGui::DragFloat("Sun Orbit radius", &gs.sunOrbitRadius);
+    ImGui::DragFloat("Sun orbit speed", &gs.sunSpeedMultiplier);
+    ImGui::DragFloat3("Sun target", &gs.sunTarget[0]);
     ImGui::Checkbox("Enable grass render", &enableGrassRender);
 
     ImGui::DragFloat("wind str", &gs.windStrength, 0.01f);
@@ -374,6 +378,7 @@ void drawGameState() {
     {
         pointLight.Visualize();
     }
+    GetEngineCtx().lightsSubsystem->lights.sunlight.Visualize();
 
     
 
@@ -526,7 +531,7 @@ void testbed_init(Arena* gameMem) {
     //PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
 
     // Init lights
-    glm::vec3 sunPos = glm::vec3(7, 100, -22);
+    glm::vec3 sunPos = glm::vec3(7, 170, -22);
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
     CreateDirectionalLight(sunDir, sunPos, glm::vec4(1));
@@ -607,7 +612,7 @@ void testbed_tick(Arena* gameMem) {
     testbed_inputpoll();
     // have main directional light orbit
     LightDirectional& mainLight = GetEngineCtx().lightsSubsystem->lights.sunlight;
-    testbed_orbit_light(mainLight, gs.sunOrbitRadius, 0.2, glm::vec3(0, 10, 0));
+    testbed_orbit_light(mainLight, gs.sunOrbitRadius, gs.sunSpeedMultiplier, gs.sunTarget);
     //gs.waterfallParticles.Tick({0,15,0});
 }
 
