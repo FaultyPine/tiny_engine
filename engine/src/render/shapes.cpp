@@ -256,6 +256,7 @@ void DrawSphere(glm::vec3 center, f32 radius, glm::vec4 color)
     glm::mat4 model = Math::Position3DToModelMat(center, glm::vec3(radius));
     shader.setUniform("color", color);
     shader.setUniform("modelMat", model);
+    shader.use();
     globalSphereMesh.Draw(shader);
 }
 void DrawWireSphere(glm::vec3 center, f32 radius, glm::vec4 color)
