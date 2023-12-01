@@ -14,7 +14,10 @@ Mesh::Mesh(
     const std::string& name
 ) {
     PROFILE_FUNCTION();
-    vertices = verts; indices = idxs; material = mat; this->name = name;
+    material = mat;
+    vertices = verts; 
+    indices = idxs;
+    this->name = name;
     initMesh();
     cachedBoundingBox = CalculateMeshBoundingBox();
 }

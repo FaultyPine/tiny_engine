@@ -112,7 +112,7 @@ Mesh GenPlaneMesh(u32 resolution) {
         for (s32 x = 0; x < resolution; x++) {
             // [-width/2, width/2]
             f32 xPos = ((f32)x/(resolution - 1) - 0.5f);
-            Vertex v;
+            Vertex v = {};
             v.normal = {0,1,0};
             v.texCoords = {xPos, zPos};
             v.position = {xPos, 0, zPos};
@@ -135,7 +135,7 @@ Mesh GenPlaneMesh(u32 resolution) {
         indices.push_back(i + 1);
     }
 
-    return Mesh(planeverts, indices, {}, "GeneratedPlane");
+    return Mesh(planeverts, indices, GetDummyMaterial(), "GeneratedPlane");
 }
 
 void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color, f32 width) {

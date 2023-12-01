@@ -47,6 +47,7 @@ void InitializeTextureCache(Arena* arena)
     GetEngineCtx().textureCache = textureCacheMem;
     new(&textureCacheMem->cachedTextures) TextureCacheMap();
 
+    // TODO: hardcode this invalid image into the source to reduce dependencies
     Texture dummyTex = LoadTexture(ResPath("invalid_img.jpg").c_str());
     textureCacheMem->dummyTexture = dummyTex;
 }
@@ -54,6 +55,11 @@ void InitializeTextureCache(Arena* arena)
 static TextureCache& GetTextureCache()
 {
     return *GetEngineCtx().textureCache;
+}
+
+Texture GetDummyTexture()
+{
+    return GetTextureCache().dummyTexture;
 }
 
 enum class TextureProperties::TexWrapMode : s32 {

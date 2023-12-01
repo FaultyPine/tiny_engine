@@ -16,9 +16,15 @@ MaterialInternal& MaterialInternal::operator=(const MaterialInternal &mat)
 
 void InitializeMaterialSystem(Arena* arena)
 {
+    EngineContext& ctx = GetEngineCtx();
+    TINY_ASSERT(ctx.textureCache && "Initialize the texture cache before the material system!");
     MaterialRegistry* reg = (MaterialRegistry*)arena_alloc(arena, sizeof(MaterialRegistry));
     new(&reg->materialRegistry) MaterialMap();
-    GetEngineCtx().materialRegistry = reg;
+    ctx.materialRegistry = reg;
+
+    Material dummyMaterial = NewMaterial("DummyMaterial");
+    OverwriteMaterialProperty(dummyMaterial, MaterialProp(GetDummyTexture()), TextureMaterialType::DIFFUSE);
+    ctx.materialRegistry->dummyMaterial = dummyMaterial;
 }
 
 MaterialRegistry& GetMaterialRegistry()
@@ -29,6 +35,11 @@ MaterialRegistry& GetMaterialRegistry()
 MaterialInternal& GetMaterialInternal(Material material)
 {
     return GetMaterialRegistry().materialRegistry[material];
+}
+
+Material GetDummyMaterial()
+{
+    return GetMaterialRegistry().dummyMaterial;
 }
 
 bool DoesMaterialIdExist(u32 materialID)

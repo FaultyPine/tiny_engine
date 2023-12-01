@@ -69,6 +69,8 @@ TAPI Texture LoadTextureAsync(
     bool flipVertically = false);
 Texture LoadGPUTextureFromImg(u8* imgData, u32 width, u32 height, TextureProperties props, u32 texHash);
 
+Texture GetDummyTexture();
+
 void DeleteTexture(Texture tex);
 
 #endif

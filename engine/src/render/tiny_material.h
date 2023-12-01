@@ -35,6 +35,7 @@ struct Material
     u32 id = U32_INVALID_ID;
     Material() = default;
     Material(u32 id) { this->id = id; }
+    TAPI bool isValid() const { return id == U32_INVALID_ID; }
     TAPI void SetShaderUniforms(const Shader& shader) const;
     bool operator==(const Material& p) const { return id == p.id; }
 };
@@ -60,6 +61,7 @@ typedef std::unordered_map<Material, MaterialInternal, MaterialHasher> MaterialM
 struct MaterialRegistry 
 {
     u32 currentMaterialId = 0;
+    Material dummyMaterial = {};
     MaterialMap materialRegistry = {};
 };
 
@@ -74,4 +76,5 @@ void OverwriteMaterialProperty(Material material, const MaterialProp& prop, Text
 
 bool DoesMaterialIdExist(u32 materialID);
 
+Material GetDummyMaterial();
 #endif
