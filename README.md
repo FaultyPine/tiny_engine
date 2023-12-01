@@ -19,14 +19,13 @@ Libraries Used:
 This project is currently built and maintained for windows. [vcpkg](https://vcpkg.io/en/) is recommended for installing dependencies
 
 Assimp: `vcpkg install assimp`
-GLFW: `vcpkg install glfw`
+GLFW: `vcpkg install glfw3`
 Bullet: `vcpkg install bullet3`
 
 TODO: scan for dependencies before generating ninja build. 
 Make this a bit nicer 
 
 ## Features/Included Implementations
-- type reflection/metadata system
 - Postprocessing
 - Job System (multithreading)
 - deterministic randomness
@@ -38,11 +37,9 @@ Make this a bit nicer
 - .obj loading/rendering (w/material support)
 - shadow mapping
 - skybox
-- postprocessing
-- Profiling with chrome://tracing api
 - Shader hot reloading & #include parser
 - custom arena allocator
-- custom dynamic array type
+- custom container types
 - compile-time reflection / type metadata generation system (backed by Metadesk)
 
 
