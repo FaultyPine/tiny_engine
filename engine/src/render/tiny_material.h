@@ -42,7 +42,8 @@ struct Material
 struct MaterialInternal
 {
     MaterialProp properties[TextureMaterialType::NUM_MATERIAL_TYPES] = {};
-    const char name[64] = "DefaultMat";
+    #define MATERIAL_INTERNAL_NAME_MAX_LEN 64
+    const char name[MATERIAL_INTERNAL_NAME_MAX_LEN] = "DefaultMat";
 
     MaterialInternal& MaterialInternal::operator=(const MaterialInternal &mat);
 };

@@ -10,7 +10,7 @@
 MaterialInternal& MaterialInternal::operator=(const MaterialInternal &mat)
 {
     TMEMCPY(properties, mat.properties, sizeof(properties));
-    TMEMCPY(properties, mat.properties, sizeof(properties));
+    TMEMCPY((void*)name, mat.name, MATERIAL_INTERNAL_NAME_MAX_LEN);
     return *this;
 }
 
@@ -39,7 +39,8 @@ bool DoesMaterialIdExist(u32 materialID)
 Material NewMaterial(const char* name, s32 materialIndex) {
     MaterialRegistry& matRegistry = GetMaterialRegistry();
     Material newMaterial = {};
-    newMaterial.id = materialIndex != -1 ? materialIndex : HashBytes((u8*)name, strnlen(name, 64));
+    u32 nameHash = HashBytes((u8*)name, strnlen(name, MATERIAL_INTERNAL_NAME_MAX_LEN));
+    newMaterial.id = materialIndex != -1 ? nameHash+materialIndex : nameHash;
     MaterialInternal newMaterialInternal;
     newMaterialInternal.properties[DIFFUSE] = {};
     newMaterialInternal.properties[AMBIENT] = {};

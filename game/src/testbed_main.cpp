@@ -15,7 +15,7 @@
 #include "physics/tiny_physics.h"
 
 
-//#define ISLAND_SCENE
+#define ISLAND_SCENE
 
 struct WorldEntity {
     Transform transform = {};
@@ -524,8 +524,8 @@ void testbed_init(Arena* gameMem) {
     init_waterfall(gs);
 #endif
     
-    Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
-    WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
+    //Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
+    //WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
 
     //PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
 
@@ -598,7 +598,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
 #endif
     // red is x, green is y, blue is z
     // should put this on the screen in the corner permanently
-    f32 axisGizmoScale = 0.2f;
+    f32 axisGizmoScale = 0.03f;
     static glm::vec3 offset = glm::vec3(0);
     ImGui::DragFloat3("Gizmo offset", &offset[0], 0.01f);
     glm::vec3 camFront = Camera::GetMainCamera().cameraFront;
