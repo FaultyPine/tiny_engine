@@ -215,10 +215,8 @@ void drawImGuiDebug() {
 
     if (ImGui::CollapsingHeader("Entities"))
     {
-        ImGui::DragFloat("Ambient light intensity", &ambientLightIntensity, 0.01f);
         for (WorldEntity& ent : gs.entities)
         {
-            ent.model.cachedShader.setUniform("ambientLightIntensity", ambientLightIntensity);
             const char* entityLabel = TextFormat("Position [%s]", ent.name);
             ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
         }
@@ -256,6 +254,7 @@ void drawImGuiDebug() {
         }
     }
 
+    ImGui::DragFloat("Ambient light intensity", &GetEngineCtx().lightsSubsystem->ambientLightIntensity, 0.01f);
     if (ImGui::CollapsingHeader("Point lights"))
     {
         for (u32 i = 0; i < MAX_NUM_LIGHTS; i++)
@@ -278,7 +277,7 @@ void drawImGuiDebug() {
         ImGui::ColorEdit4("sunlight Color", &sunlight.color[0]);
         ImGui::DragFloat3("sunlight direction", &sunlight.direction[0], 0.1f);
         ImGui::DragFloat3("sunlight position", &sunlight.position[0], 0.1f);
-        ImGui::DragFloat("sunlight intensity", &sunlight.intensity, 0.1f);
+        ImGui::DragFloat("sunlight intensity", &sunlight.intensity, 0.01f);
         ImGui::Checkbox("sunlight Enabled", (bool*)&sunlight.enabled);
     }
 
@@ -534,20 +533,20 @@ void testbed_init(Arena* gameMem) {
     glm::vec3 sunPos = glm::vec3(7, 170, -22);
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
-    CreateDirectionalLight(sunDir, sunPos, glm::vec4(1));
+    CreateDirectionalLight(sunDir, sunPos, glm::vec4(1), 0.1);
     CreatePointLight(glm::vec3(0), glm::vec4(1));
 
     { PROFILE_SCOPE("Skybox Init");
-    /*
-    gs.skybox = Skybox({
-        ResPath("skybox/right.jpg").c_str(),
-        ResPath("skybox/left.jpg").c_str(),
-        ResPath("skybox/top.jpg").c_str(),
-        ResPath("skybox/bottom.jpg").c_str(),
-        ResPath("skybox/front.jpg").c_str(),
-        ResPath("skybox/back.jpg").c_str()}, TextureProperties::RGB_LINEAR());
-    */
-    gs.skybox = Skybox({}, TextureProperties::RGB_LINEAR());
+        /*
+        gs.skybox = Skybox({
+            ResPath("skybox/right.jpg").c_str(),
+            ResPath("skybox/left.jpg").c_str(),
+            ResPath("skybox/top.jpg").c_str(),
+            ResPath("skybox/bottom.jpg").c_str(),
+            ResPath("skybox/front.jpg").c_str(),
+            ResPath("skybox/back.jpg").c_str()}, TextureProperties::RGB_LINEAR());
+        */
+        gs.skybox = Skybox({}, TextureProperties::RGB_LINEAR());
     }
 
     // init main game framebuffer
@@ -597,12 +596,25 @@ Framebuffer testbed_render(const Arena* const gameMem) {
 #ifdef ENABLE_IMGUI
     drawImGuiDebug();
 #endif
-    Framebuffer::BindDefaultFrameBuffer();
     // red is x, green is y, blue is z
     // should put this on the screen in the corner permanently
-    Shapes3D::DrawLine(glm::vec3(0), {1,0,0}, {1,0,0,1});
-    Shapes3D::DrawLine(glm::vec3(0), {0,1,0}, {0,1,0,1});
-    Shapes3D::DrawLine(glm::vec3(0), {0,0,1}, {0,0,1,1});
+    f32 axisGizmoScale = 0.2f;
+    static glm::vec3 offset = glm::vec3(0);
+    ImGui::DragFloat3("Gizmo offset", &offset[0], 0.01f);
+    glm::vec3 camFront = Camera::GetMainCamera().cameraFront;
+    glm::vec3 camUp = Camera::GetMainCamera().cameraUp;
+    glm::vec3 cameraRight = glm::normalize(glm::cross(camFront, camUp));
+    camUp = glm::normalize(glm::cross(camFront, cameraRight));
+    ImGui::Text("cam front: %f %f %f", camFront.x, camFront.y, camFront.z);
+    ImGui::Text("cam up: %f %f %f", camUp.x, camUp.y, camUp.z);
+    ImGui::Text("cam right: %f %f %f", cameraRight.x, cameraRight.y, cameraRight.z);
+    glm::vec3 axisGizmoOffsetWS = cameraRight * offset;
+    glm::vec3 camRel = Camera::GetMainCamera().cameraPos + camFront + axisGizmoOffsetWS;
+    Shapes3D::DrawLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
+    Shapes3D::DrawLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
+    Shapes3D::DrawLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
+    
+    Framebuffer::BindDefaultFrameBuffer();
     return gs.postprocessingFB;
 }
 

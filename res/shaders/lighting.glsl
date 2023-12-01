@@ -1,5 +1,6 @@
 
 #include "material.glsl"
+#include "common.glsl"
 
 #define MAX_LIGHTS 4
 
@@ -64,7 +65,7 @@ float GetDirectionalShadow(
     //const float shadowBias = 0.005;
     // bias based on the surface's normal and light direction
     //float shadowBias = max(0.01 * (1.0 - dot(fragNormalWS, -light.direction)), 0.005);  
-    float shadowBias = mix(0.005, 0.0, dot(fragNormalWS, -sunlight.direction));  
+    float shadowBias = mix(0.005, 0.0, dot(fragNormalWS, lightDir));  
     // manual perspective divide - now we're in NDC
     // range [-1,1]
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
@@ -95,10 +96,10 @@ void calculateLightingForPointLight (
     vec3 fragNormalWS,
     vec3 fragPositionWS,
     vec3 viewDir,
-    float shininessMaterial,
+    float shininess,
     vec3 specularMaterial) 
 {
-    vec3 lightColor = light.color.rgb;
+    vec3 lightColor = light.color.rgb * light.intensity;
     // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
     vec3 lightDir = normalize(light.position - fragPositionWS);
 
@@ -113,13 +114,13 @@ void calculateLightingForPointLight (
         // blinn-phong
         vec3 halfwayDir = normalize(lightDir + viewDir);
         float specularFactor = dot(fragNormalWS, halfwayDir);
-        specCo = pow(max(0.0, specularFactor), shininessMaterial);
+        specCo = pow(max(0.0, specularFactor), max(EPSILON, shininess));
     }
     vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
 
     // dist from current fragment to light source
     // TODO: https://lisyarus.github.io/blog/graphics/2022/07/30/point-light-attenuation.html
-    float distance = length(light.position - fragPositionWS) / light.intensity;
+    float distance = length(light.position - fragPositionWS);
     float attenuation = 1.0 / (light.constant + light.linear * distance + 
     		    light.quadratic * (distance * distance));
 
@@ -134,10 +135,10 @@ void calculateLightingForDirectionalLight (
     vec3 fragNormalWS,
     vec3 fragPositionWS,
     vec3 viewDir,
-    float shininessMaterial,
+    float shininess,
     vec3 specularMaterial) 
 {
-    vec3 lightColor = light.color.rgb;
+    vec3 lightColor = light.color.rgb * light.intensity;
     // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
     vec3 lightDir = normalize(-light.direction);
 
@@ -148,17 +149,18 @@ void calculateLightingForDirectionalLight (
 
     // specular light
     float specCo = 0.0;
-    if (NdotL > 0.0) {
+    if (NdotL > 0.0) 
+    {
         // blinn-phong
         vec3 halfwayDir = normalize(lightDir + viewDir);
-        float specularFactor = dot(fragNormalWS, halfwayDir);
-        specCo = pow(max(0.0, specularFactor), shininessMaterial);
+        float specularFactor = max(0.0, dot(fragNormalWS, halfwayDir));
+        specCo = pow(max(0.0, specularFactor), max(EPSILON, shininess));
     }
     vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
     float shadow = GetDirectionalShadow(fragPositionWS, fragNormalWS);
 
-    diffuseLight += currentLightDiffuse * light.intensity * shadow;
-    specularLight += currentLightSpecular * light.intensity * shadow;
+    diffuseLight += currentLightDiffuse * shadow;
+    specularLight += currentLightSpecular * shadow;
 }
 
 vec3 calculateLighting(
@@ -173,8 +175,8 @@ vec3 calculateLighting(
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
-    float shininess = GetShininessMaterial(fragTexCoord);
-    vec3 specularMaterial = GetSpecularMaterial(fragTexCoord).rgb;
+    float shininess = clamp01(GetSpecularMaterial(fragTexCoord).r);
+    vec3 specularMaterial = vec3(1);//GetSpecularMaterial(fragTexCoord).rgb;
 
     // sunlight is seperate from other lights
     calculateLightingForDirectionalLight(
@@ -187,8 +189,8 @@ vec3 calculateLighting(
         shininess,
         specularMaterial);
     // assumes active lights are at the front of the lights array
-    // this is asserted in the model drawing functions
-    for (int i = 0; i < numActiveLights; i++) {
+    for (int i = 0; i < numActiveLights; i++) 
+    {
         calculateLightingForPointLight(
             specularLight, 
             diffuseLight,
@@ -200,7 +202,6 @@ vec3 calculateLighting(
             specularMaterial);
     }
 
-    vec3 lighting = specularLight + diffuseLight;
-    lighting += ambientLight; // add ambient on top of everything
+    vec3 lighting = diffuseLight + specularLight + ambientLight;
     return lighting;
 }

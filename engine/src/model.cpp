@@ -28,25 +28,35 @@ static const char* textureTypeToMatKey[] = {
     "unk_NOKEY"
 };
 
-MaterialProp GetMaterialFromType(aiMaterial* material, aiTextureType type, const char* meshMaterialDir) {
+struct AssimpMaterialKey
+{
+    const char *pKey = 0; unsigned int type = 0; unsigned int idx = 0;
+    AssimpMaterialKey() = default;
+    AssimpMaterialKey(const char *pKey, unsigned int type, unsigned int idx) :
+    pKey(pKey), type(type), idx(idx) {}
+};
+
+MaterialProp GetMaterialFromType(aiMaterial* material, AssimpMaterialKey texture, AssimpMaterialKey fallbackColor, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
-    MaterialProp ret;
-    TINY_ASSERT(material->GetTextureCount(type) <= 1); // there shouldn't... (???) be more than 1 of a particular texture type in a material (I.E. cant have 2 diffuse textures)
+    MaterialProp ret = MaterialProp();
+    //TINY_ASSERT(material->GetTextureCount(type) <= 1); // there shouldn't... (???) be more than 1 of a particular texture type in a material (I.E. cant have 2 diffuse textures)
     aiString str;
-    aiReturn hasTexture = material->GetTexture(type, 0, &str);
-    if (hasTexture != aiReturn::aiReturn_SUCCESS) {
-        aiColor4D col;
-        const char* matkey = textureTypeToMatKey[type];
-        aiReturn hasColor = material->Get(matkey, 0, 0, col);
-        if (hasColor == aiReturn_SUCCESS) {
-            ret = MaterialProp(glm::vec4(col.r, col.g, col.b, col.a));
-        }
-    }
-    else {
+    aiReturn hasTexture = material->Get(texture.pKey, texture.type, texture.idx, str);
+    if (hasTexture == aiReturn::aiReturn_SUCCESS) 
+    {
         std::string texturePath = meshMaterialDir;
         texturePath.append(str.C_Str());
         Texture tex = LoadTextureAsync(texturePath.c_str(), TextureProperties::None(), {}, true); // flip vert for opengl
         ret = MaterialProp(tex);
+    }
+    if (fallbackColor.pKey)
+    {
+        aiColor4D col;
+        aiReturn hasColor = material->Get(fallbackColor.pKey, fallbackColor.type, fallbackColor.idx, col);
+        if (hasColor == aiReturn_SUCCESS) 
+        {
+            ret.color = glm::vec4(col.r, col.g, col.b, col.a);
+        }
     }
     return ret;
 }
@@ -60,24 +70,25 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     aiMaterial* material = materials[meshMaterialIndex];
     aiString str;
     aiReturn hasName = material->Get(AI_MATKEY_NAME, str);
-    if (hasName != aiReturn_SUCCESS) {
+    if (hasName != aiReturn_SUCCESS) 
+    {
         str = "UnnamedMaterial";
     }
     Material ret = NewMaterial(str.C_Str(), meshMaterialIndex);
-    MaterialProp diffuse = GetMaterialFromType(material, aiTextureType_DIFFUSE, meshMaterialDir);
+    MaterialProp diffuse = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_DIFFUSE(0)), AssimpMaterialKey(AI_MATKEY_COLOR_DIFFUSE), meshMaterialDir);
     OverwriteMaterialProperty(ret, diffuse, DIFFUSE);
-    MaterialProp ambient = GetMaterialFromType(material, aiTextureType_AMBIENT, meshMaterialDir);
+    MaterialProp ambient = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_AMBIENT(0)), AssimpMaterialKey(AI_MATKEY_COLOR_AMBIENT), meshMaterialDir);
     OverwriteMaterialProperty(ret, ambient, AMBIENT);
-    MaterialProp specular = GetMaterialFromType(material, aiTextureType_SPECULAR, meshMaterialDir);
+    MaterialProp specular = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_SPECULAR(0)), AssimpMaterialKey(AI_MATKEY_COLOR_SPECULAR), meshMaterialDir);
     OverwriteMaterialProperty(ret, specular, SPECULAR);
-    MaterialProp emissive = GetMaterialFromType(material, aiTextureType_EMISSIVE, meshMaterialDir);
+    MaterialProp emissive = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_EMISSIVE(0)), AssimpMaterialKey(AI_MATKEY_COLOR_EMISSIVE), meshMaterialDir);
     OverwriteMaterialProperty(ret, emissive, EMISSION);
     //MaterialProp height = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
-    MaterialProp normal = GetMaterialFromType(material, aiTextureType_NORMALS, meshMaterialDir);
+    MaterialProp normal = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_NORMALS(0)), AssimpMaterialKey(), meshMaterialDir);
     if (!normal.hasTexture)
     {
         // the material api is kind of vague in some cases - for obj's, normal maps are often loaded into the heightmap slot.
-        MaterialProp normalsFromHeightmap = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
+        MaterialProp normalsFromHeightmap = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_HEIGHT(0)), AssimpMaterialKey(), meshMaterialDir);
         if (normalsFromHeightmap.hasTexture)
         {
             normal = normalsFromHeightmap;
@@ -85,9 +96,10 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     }
     OverwriteMaterialProperty(ret, normal, NORMAL);
     // Usually there is a conversion function defined to map the linear color values in the texture to a suitable exponent
-    MaterialProp shininess = GetMaterialFromType(material, aiTextureType_SHININESS, meshMaterialDir);
-    OverwriteMaterialProperty(ret, shininess, ROUGHNESS);
-    //MaterialProp opacity = GetMaterialFromType(material, aiTextureType_OPACITY, meshMaterialDir);
+    MaterialProp shininess = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_SHININESS(0)), AssimpMaterialKey(), meshMaterialDir);
+    OverwriteMaterialProperty(ret, shininess, SHININESS);
+    MaterialProp opacity = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_OPACITY(0)), AssimpMaterialKey(AI_MATKEY_COLOR_TRANSPARENT), meshMaterialDir);
+    OverwriteMaterialProperty(ret, opacity, OPACITY);
     //MaterialProp displacement = GetMaterialFromType(material, aiTextureType_DISPLACEMENT, meshMaterialDir);
     //MaterialProp lightmap = GetMaterialFromType(material, aiTextureType_LIGHTMAP, meshMaterialDir);
     
@@ -96,7 +108,7 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     if (!shininess.hasTexture)
     {
         // TODO: make configurable
-        shininess.color.r = Math::Remap(shininess.color.r, 0.0, 1000.0, 0.0, 50.0);
+        shininess.color.r = Math::Remap(shininess.color.r, 0.0, 1000.0, 0.0, 10.0);
     }
     
     return ret;
@@ -105,12 +117,13 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
 Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
     std::vector<Vertex> vertices;
+    vertices.reserve(mesh->mNumVertices);
     std::vector<u32> indices;
 
     for (u32 i = 0; i < mesh->mNumVertices; i++) 
     {
         Vertex vertex;
-        // process vertex positions, normals and texture coordinates
+        // process vertex attributes
         glm::vec3 vector;
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
@@ -123,6 +136,14 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
             vector.y = mesh->mNormals[i].y;
             vector.z = mesh->mNormals[i].z;
             vertex.normal = vector;
+        }
+
+        if (mesh->mTangents)
+        {
+            vector.x = mesh->mTangents[i].x;
+            vector.y = mesh->mTangents[i].y;
+            vector.z = mesh->mTangents[i].z;
+            vertex.tangent = vector;
         }
 
         if (mesh->mColors[0]) 
@@ -189,14 +210,11 @@ struct MeshCompare
     }
 };
 
-Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) {
+Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) 
+{
     PROFILE_FUNCTION();
     cachedShader = shader;
     Assimp::Importer import;
-    //std::string extList = "";
-    //import.GetExtensionList(extList);
-    //LOG_INFO("Assimp extension list: %s", extList.c_str());
-    LOG_INFO("Assimp version %i.%i.%i", aiGetVersionMajor(), aiGetVersionMinor(), aiGetVersionRevision());
     const aiScene* scene = nullptr;
     { PROFILE_SCOPE("Assimp mesh read");
         scene = import.ReadFile(meshObjFile, 
@@ -206,7 +224,8 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
             aiProcess_SplitLargeMeshes | 
             aiProcess_CalcTangentSpace);
     }
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) 
+    {
         LOG_ERROR("[ASSIMP] Error: %s", import.GetErrorString());
         return;
     }
@@ -214,22 +233,26 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
     std::sort(meshes.begin(), meshes.end(), MeshCompare()); // when I implement a real renderer, meshes will be inserted in sorted order
     cachedBoundingBox = CalculateBoundingBox();
 }
-Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) {
+Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) 
+{
     cachedShader = shader;
     this->meshes = meshes;
     cachedBoundingBox = CalculateBoundingBox();
 }
 
 
-BoundingBox Model::CalculateBoundingBox() {
+BoundingBox Model::CalculateBoundingBox() 
+{
     PROFILE_FUNCTION();
     BoundingBox bounds = {};
 
-    if (!this->meshes.empty()) {
+    if (!this->meshes.empty()) 
+    {
         glm::vec3 temp = glm::vec3(0);
         bounds = this->meshes[0].cachedBoundingBox;
 
-        for (s32 i = 1; i < this->meshes.size(); i++) {
+        for (s32 i = 1; i < this->meshes.size(); i++) 
+        {
             BoundingBox tempBounds = this->meshes[i].cachedBoundingBox;
 
             // get min for each component
@@ -250,7 +273,8 @@ BoundingBox Model::CalculateBoundingBox() {
 }
 
 
-glm::mat4 GetMVP(const Transform& tf) {
+glm::mat4 GetMVP(const Transform& tf) 
+{
     Camera& cam = Camera::GetMainCamera();
     // identity matrix to start out with
     glm::mat4 model = tf.ToModelMatrix();
@@ -259,7 +283,8 @@ glm::mat4 GetMVP(const Transform& tf) {
     return projection * view * model;
 }
 
-void Model::Draw(const Shader& shader, const Transform& tf) const {
+void Model::Draw(const Shader& shader, const Transform& tf) const 
+{
     PROFILE_FUNCTION();
     if (!isValid()) return;
     Camera& cam = Camera::GetMainCamera();
@@ -288,8 +313,10 @@ void Model::DrawMinimal(const Shader& shader) const
     }
 }
 
-Mesh* Model::GetMesh(const std::string& name) {
-    for (Mesh& mesh : meshes) {
+Mesh* Model::GetMesh(const std::string& name) 
+{
+    for (Mesh& mesh : meshes) 
+    {
         if (mesh.name == name) return &mesh;
     }
     return nullptr;

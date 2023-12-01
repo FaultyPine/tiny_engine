@@ -9,16 +9,21 @@
 #include <vector>
 
  
-struct Vertex {
+struct Vertex 
+{
     glm::vec3 position = glm::vec3(0);
     glm::vec3 normal = glm::vec3(0);
+    glm::vec3 tangent = glm::vec3(0);
     glm::vec2 texCoords = glm::vec3(0);
     glm::vec3 color = glm::vec3(1);
-    inline std::string str() {
-        return "[Pos = " + glm::to_string(position) + "  Normals = " + glm::to_string(normal) + "  TexCoords = " + glm::to_string(texCoords) + "  Colors = " + glm::to_string(color) + " ]";
+    inline std::string str() 
+    {
+        return "[Pos = " + glm::to_string(position) + "  Normals = " + glm::to_string(normal) + " Tangent = " + glm::to_string(tangent) + "  TexCoords = " + glm::to_string(texCoords) + "  Colors = " + glm::to_string(color) + " ]";
     }
 };
-struct Mesh {
+
+struct Mesh 
+{
     u32 VAO, VBO, EBO = 0; // vert array obj, vert buf obj, element buf obj
     u32 instanceVBO = 0; // extra vert data for instanced rendering
     u32 numInstances = 0; // nonzero when this mesh has instancing enabled
@@ -43,6 +48,7 @@ struct Mesh {
     BoundingBox CalculateMeshBoundingBox();
 
     // draw mesh with specified shader
+    // NOTE: this function does *not* call use() on the shader
     TAPI void Draw(const Shader& shader) const;
     TAPI void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
    

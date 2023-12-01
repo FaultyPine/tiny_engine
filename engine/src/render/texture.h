@@ -5,18 +5,6 @@
 #include <string>
 #include <functional>
 
-enum TextureMaterialType {
-    DIFFUSE = 0,
-    AMBIENT,
-    SPECULAR,
-    NORMAL,
-    ROUGHNESS,
-    EMISSION,
-    OTHER,
-
-    NUM_MATERIAL_TYPES,
-};
-
 struct TextureProperties {
     enum class TexWrapMode : s32;
     enum class TexMinFilter : s32;
@@ -48,7 +36,7 @@ struct Texture {
     Texture(u32 id) { this->id = id; }
     bool isValid() const;
     void Delete();
-    u32 OglID() const;
+    TAPI u32 OglID() const;
     u32 GetWidth() const;
     u32 GetHeight() const;
     u32 GetType() const;

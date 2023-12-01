@@ -16,7 +16,7 @@
 struct LightPoint 
 {   
     glm::vec3 position = glm::vec3(0);
-    s32 enabled = true;
+    s32 enabled = false;
     glm::vec4 color = glm::vec4(1);
     f32 constant = 1.0f;
     f32 linear = 0.09f;
@@ -51,6 +51,7 @@ struct LightingSystem
 {
     s32 pointLightIndex = 0;
     GlobalLights lights = {};
+    f32 ambientLightIntensity = 0.8f;
     ShadowMap directionalShadowMap = {};
     Cubemap pointLightShadowMaps[MAX_NUM_LIGHTS] = {};
 };
@@ -62,7 +63,7 @@ void SetLightingUniforms(const Shader& shader);
 
 // Create a light and get shader locations
 TAPI LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams = glm::vec3(1.0f, 0.09f, 0.032f));
-TAPI LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color);
+TAPI LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color, f32 intensity);
 // Send light properties to shader
 void UpdatePointLightValues(const Shader& shader, LightPoint* lights, u32 numPointLights);
 void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight);

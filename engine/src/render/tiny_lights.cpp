@@ -12,6 +12,7 @@ void InitializeLightingSystem(Arena* arena)
 {
     EngineContext& ctx = GetEngineCtx();
     ctx.lightsSubsystem = (LightingSystem*)arena_alloc(arena, sizeof(LightingSystem));
+    *ctx.lightsSubsystem = {};
 }
 
 static BoundingBox GetTightBoundsOnCamFrustum(
@@ -44,7 +45,8 @@ void LightPoint::Visualize()
 
 void LightDirectional::Visualize()
 {
-    Shapes3D::DrawSphere(this->position, 5.0f, glm::vec4(1));
+    Shapes3D::DrawWireSphere(this->position, 5.0f, glm::vec4(1));
+    Shapes3D::DrawLine(this->position, this->position + (this->direction * 10.0f), glm::vec4(1), 2.0f);
 }
 
 LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 
@@ -67,7 +69,7 @@ LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 atte
     return lights.pointLights[pointLightIndex-1];
 }
 
-LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color)
+LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color, f32 intensity)
 {
     LightingSystem& lightingSystem = *GetEngineCtx().lightsSubsystem;
     GlobalLights& lights = lightingSystem.lights;
@@ -75,8 +77,9 @@ LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position
     light.color = color;
     light.direction = direction;
     light.position = position;
+    light.intensity = intensity;
     light.enabled = true;
-    lightingSystem.directionalShadowMap = ShadowMap(1024);
+    lightingSystem.directionalShadowMap = ShadowMap(2048);
 
     lights.sunlight = light;
     return lights.sunlight;
@@ -107,12 +110,14 @@ s32 ActiveLightsInFront(LightPoint lights[MAX_NUM_LIGHTS]) {
 
 void SetLightingUniforms(const Shader& shader)
 {
-    GlobalLights& lights = GetEngineCtx().lightsSubsystem->lights;
+    LightingSystem& lightSystem = *GetEngineCtx().lightsSubsystem;
+    GlobalLights& lights = lightSystem.lights;
     s32 numActiveLights = ActiveLightsInFront(lights.pointLights);
     TINY_ASSERT(numActiveLights);
     UpdatePointLightValues(shader, lights.pointLights, numActiveLights);
     UpdateSunlightValues(shader, lights.sunlight);
     shader.setUniform("numActiveLights", numActiveLights);
+    shader.setUniform("ambientLightIntensity", lightSystem.ambientLightIntensity);
 }
 
 void UpdatePointLightValues(const Shader& shader, LightPoint* lights, u32 numPointLights)

@@ -50,6 +50,12 @@
 #define TALIGN(n) __attribute__((aligned(n)))
 #endif
 
-
+#ifdef _MSC_VER
+#define TINLINE __forceinline
+#define TNOINLINE __declspec(noinline)
+#else
+#define TINLINE static inline
+#define TNOINLINE
+#endif
 
 #endif

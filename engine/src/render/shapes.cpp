@@ -251,7 +251,7 @@ void DrawSphere(glm::vec3 center, f32 radius, glm::vec4 color)
     static Mesh globalSphereMesh;
     if (!globalSphereMesh.isValid())
     {
-        globalSphereMesh = GenSphereMesh();
+        globalSphereMesh = GenSphereMesh(8);
     }
     glm::mat4 model = Math::Position3DToModelMat(center, glm::vec3(radius));
     shader.setUniform("color", color);

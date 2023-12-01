@@ -6,6 +6,19 @@
 #include "math/tiny_math.h"
 #include "render/texture.h"
 
+enum TextureMaterialType {
+    DIFFUSE = 0,
+    AMBIENT,
+    SPECULAR,
+    NORMAL,
+    SHININESS,
+    EMISSION,
+    OPACITY,
+    OTHER,
+
+    NUM_MATERIAL_TYPES,
+};
+
 struct MaterialProp 
 {
     MaterialProp() = default;

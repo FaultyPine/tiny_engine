@@ -64,7 +64,7 @@ void Camera::UpdateTabbingOut()
 void Camera::LookAt(glm::vec3 pos) {
     glm::vec3 diff = pos - cameraPos;
     glm::vec3 forward = glm::normalize(diff);
-    glm::vec3 side = glm::normalize(glm::cross({0,1,0}, forward));
+    glm::vec3 side = glm::normalize(glm::cross(cameraUp, forward));
     glm::vec3 newUp = glm::cross(forward, side);
     cameraFront = forward;
     cameraUp = newUp;

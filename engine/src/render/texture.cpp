@@ -111,7 +111,7 @@ TextureProperties TextureProperties::RGBA_LINEAR() {
 TextureProperties TextureProperties::RGBA_NEAREST() {
     TextureProperties texProps = RGBA_LINEAR();
     texProps.magFilter = TextureProperties::TexMagFilter::NEAREST;
-    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST;
+    texProps.minFilter = TextureProperties::TexMinFilter::NEAREST_MIPMAP_NEAREST;
     return texProps;
 }
 TextureProperties TextureProperties::RGB_LINEAR() {

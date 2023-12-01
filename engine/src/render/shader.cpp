@@ -255,7 +255,8 @@ void LogShaderLinesAroundError(s8* infoLog, u32 infoLogSize, const s8* shaderSou
             if (shaderSource[i] == '\n')
             {
                 currentLineNum++;
-                if (Math::isInRange(currentLineNum, errorLineNum-1, errorLineNum+1))
+                constexpr s32 errorLinesPrintRage = 1; // num lines to print around the erroneous line
+                if (Math::isInRange(currentLineNum, errorLineNum-errorLinesPrintRage, errorLineNum+errorLinesPrintRage))
                 {
                     s32 col = 1;
                     for (; col < 500 && shaderSource[i+col] != '\n'; col++) {}
@@ -468,10 +469,7 @@ void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram)
     for (auto& [uniformName, uniformData] : gss.shaderMap[shaderID].cachedUniforms)
     {
         s32 loc = glGetUniformLocation(oglShaderProgram, uniformName.c_str());
-        if (loc != -1)
-        {
-            uniformData.uniformLocation = loc;
-        }
+        uniformData.uniformLocation = loc;
     }
 }
 

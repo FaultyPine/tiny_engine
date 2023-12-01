@@ -53,7 +53,8 @@ void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent,
     for (u64 i = 0; i < numVec4sInComponent; i++) {
         ConfigureVertexAttrib( // instance data
             vertexAttributeLocation+i, numFloatsInComponent / 4, GL_FLOAT, false, sizeofSingleComponent, (void*)(i*numFloatsInComponent));
-        GLCall(glVertexAttribDivisor(vertexAttributeLocation+i, 1));  // update vertex attribute on every new instance of the mesh, not on every vertex
+        // update vertex attribute on every new instance of the mesh, not on every vertex (1 is a magic opengl number corresponding to "update-per-instance", rather than update-per-vertex)
+        GLCall(glVertexAttribDivisor(vertexAttributeLocation+i, 1));  
     }
     vertexAttributeLocation += numVec4sInComponent;
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
@@ -83,13 +84,15 @@ void Mesh::initMesh() {
     // bind vertex attributes to VAO
     // also stores reference to VBO when glVertexAttribPointer is called
     ConfigureVertexAttrib( // vert positions
-        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, position));
+        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, position)); // 0
     ConfigureVertexAttrib( // vert normals
-        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, normal)); // 1
+    ConfigureVertexAttrib( // vert tangent
+        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, tangent)); // 2
     ConfigureVertexAttrib( // vert tex coords
-        vertexAttributeLocation++, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
+        vertexAttributeLocation++, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texCoords)); // 3
     ConfigureVertexAttrib( // vert color
-        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color));
+        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color)); // 4
 
     // unbind
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));

@@ -1,7 +1,8 @@
  
 layout (location = 0) in vec3 vertPos;
 layout (location = 1) in vec3 vertNormal;
-layout (location = 2) in vec2 vertTexCoord;
+layout (location = 2) in vec3 vertexTangent;
+layout (location = 3) in vec2 vertTexCoord;
 
 #include "globals.glsl"
 

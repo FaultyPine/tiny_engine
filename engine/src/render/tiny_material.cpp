@@ -45,8 +45,9 @@ Material NewMaterial(const char* name, s32 materialIndex) {
     newMaterialInternal.properties[AMBIENT] = {};
     newMaterialInternal.properties[SPECULAR] = {};
     newMaterialInternal.properties[NORMAL] = {};
-    newMaterialInternal.properties[ROUGHNESS] = {}; // :/ unify naming
+    newMaterialInternal.properties[SHININESS] = {}; // :/ unify naming
     newMaterialInternal.properties[EMISSION] = {};
+    newMaterialInternal.properties[OPACITY] = {};
     u32 materialMaxNameSize = ARRAY_SIZE(newMaterialInternal.name);
     TMEMCPY((void*)&newMaterialInternal.name[0], name, strnlen(name, materialMaxNameSize));
     matRegistry.materialRegistry[newMaterial] = newMaterialInternal;
@@ -95,8 +96,9 @@ const char* GetTexMatTypeString(TextureMaterialType type) {
         case SPECULAR: return "specularMat";
         case AMBIENT: return "ambientMat";
         case NORMAL: return "normalMat";
-        case ROUGHNESS: return "shininessMat";
+        case SHININESS: return "shininessMat";
         case EMISSION: return "emissiveMat";
+        case OPACITY: return "opacityMat";
         case OTHER: return "otherMat";
         default: return "unknownMat";
     }
@@ -124,9 +126,9 @@ void Material::SetShaderUniforms(const Shader& shader) const
     SET_MATERIAL_UNIFORMS(AMBIENT);
     SET_MATERIAL_UNIFORMS(SPECULAR);
     SET_MATERIAL_UNIFORMS(NORMAL);
-    SET_MATERIAL_UNIFORMS(ROUGHNESS);
+    SET_MATERIAL_UNIFORMS(SHININESS);
+    SET_MATERIAL_UNIFORMS(OPACITY);
     SET_MATERIAL_UNIFORMS(EMISSION);
-    shader.setUniform("useNormalMap", properties[NORMAL].hasTexture);
 }
 
 
