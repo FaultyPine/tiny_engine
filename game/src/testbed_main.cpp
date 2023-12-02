@@ -16,6 +16,7 @@
 
 
 #define ISLAND_SCENE
+//#define SPONZA_SCENE
 
 struct WorldEntity {
     Transform transform = {};
@@ -92,7 +93,7 @@ struct GameState {
 
     Skybox skybox = {};
 
-    f32 sunOrbitRadius = 100.0f;
+    f32 sunOrbitRadius = 35.0f;
     f32 sunSpeedMultiplier = 0.2f;
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
 
@@ -502,10 +503,7 @@ void testbed_init(Arena* gameMem) {
     Shader& lightingShader = gs.lightingShader;
 
 #ifdef ISLAND_SCENE
-    //Model testModel = Model(lightingShader, UseResPath("other/floating_island/island.obj").c_str(), UseResPath("other/floating_island/").c_str());
     Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
-    //Model testModel = Model(lightingShader, UseResPath("other/HumanMesh.obj").c_str(), UseResPath("other/").c_str());
-    //Model testModel = Model(lightingShader, UseResPath("other/cartoon_land/cartoon_land.obj").c_str(), UseResPath("other/cartoon_land/").c_str());
     gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "island"));
 
     Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
@@ -524,13 +522,14 @@ void testbed_init(Arena* gameMem) {
     init_waterfall(gs);
 #endif
     
-    //Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
-    //WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
-
+#ifdef SPONZA_SCENE
+    Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
+    WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
     //PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
+#endif
 
     // Init lights
-    glm::vec3 sunPos = glm::vec3(7, 170, -22);
+    glm::vec3 sunPos = glm::vec3(7, 30, -22);
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
     CreateDirectionalLight(sunDir, sunPos, glm::vec4(1), 0.1);

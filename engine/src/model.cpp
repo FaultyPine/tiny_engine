@@ -222,7 +222,8 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
             aiProcess_OptimizeMeshes | 
             aiProcess_RemoveRedundantMaterials | 
             aiProcess_SplitLargeMeshes | 
-            aiProcess_CalcTangentSpace);
+            aiProcess_CalcTangentSpace |
+            aiProcess_GenSmoothNormals);
     }
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) 
     {

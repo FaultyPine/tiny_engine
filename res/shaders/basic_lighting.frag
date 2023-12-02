@@ -28,13 +28,14 @@ void main()
     // base diffuse material texture
     vec3 diffuseColor = GetDiffuseMaterial(texCoord).rgb;
     vec3 normalWS = GetNormals(vs_in.fragNormal, vs_in.fragTangent, texCoord);
+    vec3 viewDir = GetViewDir(vs_in.fragPositionWS);
 
     // colored lighting
     vec3 lighting = calculateLighting(
         material,
         texCoord,
         normalWS, 
-        GetViewDir(vs_in.fragPositionWS),
+        viewDir,
         vs_in.fragPositionWS);
     vec3 col = lighting * diffuseColor;
     float alpha = 1.0;
@@ -48,12 +49,13 @@ void main()
 
 
 
-    //vec3 lightDir = normalize(sunlight.direction);
+    //vec3 lightDir = normalize(-sunlight.direction);
     //float NdotL = max(dot(normalWS, lightDir), 0.0);
     //finalColor = vec4(vec3(NdotL), 1.0);
     //finalColor = vec4(GetSpecularMaterial(texCoord).rgb, 1.0);
 
     //finalColor = vec4(diffuseColor, 1.0);
     //finalColor = vec4(GetSpecularMaterial(texCoord).rgb, 1.0);
-    //finalColor = vec4(GetNormalMaterial(texCoord).rgb, 1.0);
+    //finalColor = vec4(vec3(vs_in.fragNormal), 1.0);
+    //finalColor = vec4(vec3(normalWS), 1.0);
 }
