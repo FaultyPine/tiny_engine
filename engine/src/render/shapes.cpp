@@ -342,39 +342,86 @@ void main(){
 
 Mesh GenSphereMesh(u32 resolution)
 {
-    // using par_shapes_create_parametrix_sphere generates a sphere with texcoords,
-    // but has less uniformly distributed triangles (bunched at poles)
-    // using the subdivided sphere gives good triangle distribution, but no texcoords
-#define WITH_TEXCOORDS
-
-#ifdef WITH_TEXCOORDS
-    resolution = Math::MAX(3u, resolution);
-    par_shapes_mesh* sphere = par_shapes_create_parametric_sphere(resolution, resolution);
-#else
-    TINY_ASSERT(resolution < 5 && "subdivided sphere generation should take in a reasonably low subdivision count!");
-    par_shapes_mesh* sphere = par_shapes_create_subdivided_sphere(resolution);
-#endif
+    f32 radius = 1.0f;
+    u32 stackCount = resolution;
+    u32 sectorCount = resolution;
     std::vector<Vertex> vertices = {};
-    vertices.reserve(sphere->npoints * 3);
-    for (int i = 0; i < sphere->npoints * 3; i += 3)
-    {
-        Vertex v = {};
-        v.position = glm::make_vec3(&sphere->points[i]);
-        v.normal = glm::make_vec3(&sphere->normals[i]);
-#ifdef WITH_TEXCOORDS
-        v.texCoords = glm::make_vec2(&sphere->tcoords[i]);
-#endif
-        vertices.push_back(v);
-    }
     std::vector<u32> indices = {};
-    indices.reserve(sphere->ntriangles * 3);
-    for (int i = 0; i < sphere->ntriangles * 3; i++)
+    vertices.reserve(stackCount * sectorCount);
+    indices.reserve(stackCount * sectorCount);
+
+    float x, y, z, xy;                              // vertex position
+    float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
+    float s, t;                                     // vertex texCoord
+
+    float sectorStep = 2 * PI / sectorCount;
+    float stackStep = PI / stackCount;
+    float sectorAngle, stackAngle;
+
+    for(int i = 0; i <= stackCount; ++i)
     {
-        u16 idx = sphere->triangles[i];
-        indices.push_back(idx);
+        stackAngle = PI / 2 - i * stackStep;        // starting from pi/2 to -pi/2
+        xy = radius * cosf(stackAngle);             // r * cos(u)
+        z = radius * sinf(stackAngle);              // r * sin(u)
+
+        // add (sectorCount+1) vertices per stack
+        // first and last vertices have same position and normal, but different tex coords
+        for(int j = 0; j <= sectorCount; ++j)
+        {
+            sectorAngle = j * sectorStep;           // starting from 0 to 2pi
+            Vertex v = {};
+            // vertex position (x, y, z)
+            x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
+            y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
+            glm::vec3 vertexPosition = glm::vec3(x,y,z);
+            v.position = vertexPosition;
+
+            // normalized vertex normal (nx, ny, nz)
+            nx = x * lengthInv;
+            ny = y * lengthInv;
+            nz = z * lengthInv;
+            glm::vec3 normal = glm::vec3(nx, ny, nz);
+            v.normal = normal;
+
+            // vertex tex coord (s, t) range between [0, 1]
+            s = (float)j / sectorCount;
+            t = (float)i / stackCount;
+            glm::vec2 texcoord = glm::vec2(s,t);
+            v.texCoords = texcoord;
+
+            vertices.push_back(v);
+        }
     }
-    Mesh m = Mesh(vertices, indices);
-    return m;
+
+    u32 k1, k2;
+    for(int i = 0; i < stackCount; ++i)
+    {
+        k1 = i * (sectorCount + 1);     // beginning of current stack
+        k2 = k1 + sectorCount + 1;      // beginning of next stack
+
+        for(int j = 0; j < sectorCount; ++j, ++k1, ++k2)
+        {
+            // 2 triangles per sector excluding first and last stacks
+            // k1 => k2 => k1+1
+            if(i != 0)
+            {
+                indices.push_back(k1);
+                indices.push_back(k2);
+                indices.push_back(k1 + 1);
+            }
+
+            // k1+1 => k2 => k2+1
+            if(i != (stackCount-1))
+            {
+                indices.push_back(k1 + 1);
+                indices.push_back(k2);
+                indices.push_back(k2 + 1);
+            }
+        }
+    }
+    vertices.shrink_to_fit();
+    indices.shrink_to_fit();
+    return Mesh(vertices, indices);
 }
 
 void DrawWireCube(BoundingBox box, const glm::vec4& color)
