@@ -30,6 +30,6 @@ void main()
     vs_out.fragTexCoord = vertexTexCoord;
     vs_out.fragColor = vertexColor;
     vs_out.fragNormal = vec3(normalMat*vertexNormal);
-    vs_out.fragTangent = normalMat*vertexTangent;
+    vs_out.fragTangent = vertexTangent;
     gl_Position = projection * view * modelMat*vec4(vertexPosition, 1.0);
 }

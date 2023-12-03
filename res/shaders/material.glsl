@@ -65,10 +65,10 @@ vec3 GetNormals(vec3 fragNormalOS, vec3 fragTangentOS, vec2 fragTexCoord)
     bool shouldUseSampler = material.normalMat.useSampler == 1;
     if (shouldUseSampler)
     {
-        // normal from map TODO: but TBN in vert shader
-        fragTangentOS = (fragTangentOS - dot(fragTangentOS, fragNormalOS) * fragNormalOS);
+        // TODO: put TBN in vert shader
+        vec3 reOrthoFragTangentOS = (fragTangentOS - dot(fragTangentOS, fragNormalOS) * fragNormalOS);
         vec3 bitangentOS = cross(fragNormalOS, fragTangentOS);
-        mat3 TBN = mat3(fragTangentOS, bitangentOS, fragNormalOS);
+        mat3 TBN = mat3(reOrthoFragTangentOS, bitangentOS, fragNormalOS);
         vec3 localNormal = 2.0 * GetNormalMaterial(fragTexCoord).rgb - 1.0;
         normal = normalize(TBN * localNormal); // world space normal
     }
