@@ -175,8 +175,8 @@ vec3 calculateLighting(
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
-    float shininess = clamp01(GetSpecularMaterial(fragTexCoord).r);
-    vec3 specularMaterial = vec3(1);//GetSpecularMaterial(fragTexCoord).rgb;
+    float shininess = GetShininessMaterial(fragTexCoord).r;
+    vec3 specularMaterial = GetSpecularMaterial(fragTexCoord).rgb;
 
     // sunlight is seperate from other lights
     calculateLightingForDirectionalLight(

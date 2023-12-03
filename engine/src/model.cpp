@@ -96,7 +96,7 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     }
     OverwriteMaterialProperty(ret, normal, NORMAL);
     // Usually there is a conversion function defined to map the linear color values in the texture to a suitable exponent
-    MaterialProp shininess = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_SHININESS(0)), AssimpMaterialKey(), meshMaterialDir);
+    MaterialProp shininess = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_SHININESS(0)), AssimpMaterialKey(AI_MATKEY_SHININESS), meshMaterialDir);
     OverwriteMaterialProperty(ret, shininess, SHININESS);
     MaterialProp opacity = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_OPACITY(0)), AssimpMaterialKey(AI_MATKEY_COLOR_TRANSPARENT), meshMaterialDir);
     OverwriteMaterialProperty(ret, opacity, OPACITY);
