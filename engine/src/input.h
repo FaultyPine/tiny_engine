@@ -59,12 +59,9 @@ struct MouseInput {
         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         return glm::normalize(direction);
     }
-    TAPI void UpdateMouse(f64 xpos, f64 ypos);
+    TAPI void UpdateMouse(f32 xpos, f32 ypos);
     // mouse singleton
-    static MouseInput& GetMouse() {
-        static MouseInput mouseInput;
-        return mouseInput;
-    }
+    TAPI static MouseInput& GetMouse();
 };
 
 // maps to GLFW_CURSOR_XXXX

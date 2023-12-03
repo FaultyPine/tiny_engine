@@ -3,6 +3,7 @@
 #include "tiny_defines.h"
 #include "tiny_engine.h"
 #include "tiny_log.h"
+#include "tiny_imgui.h"
 #include "GLFW/glfw3.h"
 #include <unordered_map>
 // gamepad
@@ -81,12 +82,18 @@ bool isKeyUp(s32 key) {
 
 }
 
-// mouse callbacks
-void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
-    MouseInput::GetMouse().UpdateMouse(xpos, ypos);
+MouseInput& MouseInput::GetMouse()
+{
+    static MouseInput mouseInput;
+    return mouseInput;
 }
 
-void MouseInput::UpdateMouse(f64 xpos, f64 ypos) {
+// mouse callbacks
+void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos) {
+    MouseInput::GetMouse().UpdateMouse((f32)xpos, (f32)ypos);
+}
+
+void MouseInput::UpdateMouse(f32 xpos, f32 ypos) {
     static bool firstMouse = true;
     if (firstMouse)
     {
@@ -95,10 +102,10 @@ void MouseInput::UpdateMouse(f64 xpos, f64 ypos) {
         firstMouse = false;
     }
   
+    lastX = mousePos.x;
+    lastY = mousePos.y;
     f32 xoffset = xpos - lastX;
     f32 yoffset = lastY - ypos; 
-    lastX = xpos;
-    lastY = ypos;
 
     f32 sensitivity = this->sensitivity;
     xoffset *= sensitivity;

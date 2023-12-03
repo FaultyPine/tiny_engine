@@ -39,6 +39,7 @@ Camera& Camera::GetMainCamera() {
 void Camera::UpdateCamera() {
     Camera& cam = GetMainCamera();
     MouseInput& mouseInput = MouseInput::GetMouse();
+    mouseInput.UpdateMouse(mouseInput.mousePos.x, mouseInput.mousePos.y);
     if (cam.isSwivelable) {
         cam.cameraFront = mouseInput.GetNormalizedLookDir();
     }
@@ -54,10 +55,13 @@ void Camera::UpdateTabbingOut()
         if (getCursorMode() == CursorMode::NORMAL) {
             setCursorMode(CursorMode::DISABLED);
             setCursorPosition(lastMousePos.x, lastMousePos.y);
+            MouseInput::GetMouse().UpdateMouse(lastMousePos.x, lastMousePos.y);
+            UpdateCamera();
         }
         else {
             lastMousePos = {MouseInput::GetMouse().lastX, MouseInput::GetMouse().lastY};
             setCursorMode(CursorMode::NORMAL);
+            setCursorPosition(GetMainCamera().screenWidth/2.0f, GetMainCamera().screenHeight/2.0f);
         }
     }
 }

@@ -145,7 +145,7 @@ struct GameState {
 #include "render/shadows.h"
 
 
-void testbed_inputpoll() {
+void testbed_camera_tick() {
     Camera& cam = Camera::GetMainCamera();
     f32 cameraSpeed = cam.speed * GetDeltaTime();
     if (Keyboard::isKeyDown(TINY_KEY_LEFT_CONTROL))
@@ -416,7 +416,8 @@ void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, co
             randomPointBetweenVerts = glm::vec2(point.x, point.z);
         } while (Math::isPointInRectangle(randomPointBetweenVerts, exclusionMin, exclusionMax));
         f32 randRotation = GetRandomf(0.0f, 360.0f);
-        Transform grassTransform = Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(0.5), randRotation);
+        f32 randScale = GetRandomf(0.3f, 0.7f);
+        Transform grassTransform = Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(randScale), randRotation);
         grassTransforms.emplace_back(grassTransform.ToModelMatrix());
     }
 }
@@ -533,7 +534,7 @@ void testbed_init(Arena* gameMem) {
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
     CreateDirectionalLight(sunDir, sunPos, glm::vec4(1), 1.0);
-    CreatePointLight(glm::vec3(0), glm::vec4(1));
+    CreatePointLight(glm::vec3(0,10,0), glm::vec4(1));
 
     { PROFILE_SCOPE("Skybox Init");
         /*
@@ -620,11 +621,16 @@ Framebuffer testbed_render(const Arena* const gameMem) {
 void testbed_tick(Arena* gameMem) {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    testbed_inputpoll();
+    testbed_camera_tick();
     // have main directional light orbit
-    LightDirectional& mainLight = GetEngineCtx().lightsSubsystem->lights.sunlight;
+    LightingSystem* lightsSystem = GetEngineCtx().lightsSubsystem;
+    LightDirectional& mainLight = lightsSystem->lights.sunlight;
     testbed_orbit_light(mainLight, gs.sunOrbitRadius, gs.sunSpeedMultiplier, gs.sunTarget);
-    //gs.waterfallParticles.Tick({0,15,0});
+    for (u32 i = 0; i < ARRAY_SIZE(lightsSystem->lights.pointLights); i++)
+    {
+        lightsSystem->lights.pointLights[i].position.x = sinf(GetTimef()) * 10;
+        lightsSystem->lights.pointLights[i].position.z = cosf(GetTimef()) * 10;
+    }
 }
 
 void testbed_terminate(Arena* gameMem) {

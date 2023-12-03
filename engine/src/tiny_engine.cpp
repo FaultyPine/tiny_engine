@@ -186,8 +186,8 @@ void EngineLoop() {
 /// Game loop should be while(!ShouldCloseWindow())
 bool ShouldCloseWindow() {
     glfwSwapBuffers(GetMainGLFWWindow());
-    glfwPollEvents();
     EngineLoop();
+    glfwPollEvents();
     return glfwWindowShouldClose(GetMainGLFWWindow());
 }
 
