@@ -45,17 +45,4 @@ void main()
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     finalColor = pow(finalColor, vec4(1.0/2.2));
-
-
-
-
-    //vec3 lightDir = normalize(-sunlight.direction);
-    //float NdotL = max(dot(normalWS, lightDir), 0.0);
-    //finalColor = vec4(vec3(NdotL), 1.0);
-    //finalColor = vec4(GetSpecularMaterial(texCoord).rgb, 1.0);
-
-    //finalColor = vec4(diffuseColor, 1.0);
-    //finalColor = vec4(GetSpecularMaterial(texCoord).rgb, 1.0);
-    //finalColor = vec4(vec3(vs_in.fragNormal), 1.0);
-    //finalColor = vec4(vec3(normalWS), 1.0);
 }

@@ -93,7 +93,7 @@ struct GameState {
 
     Skybox skybox = {};
 
-    f32 sunOrbitRadius = 35.0f;
+    f32 sunOrbitRadius = 52.0f;
     f32 sunSpeedMultiplier = 0.2f;
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
 
@@ -224,7 +224,7 @@ void drawImGuiDebug() {
     }
 
     ImGui::DragFloat("Sun Orbit radius", &gs.sunOrbitRadius);
-    ImGui::DragFloat("Sun orbit speed", &gs.sunSpeedMultiplier);
+    ImGui::DragFloat("Sun orbit speed", &gs.sunSpeedMultiplier, 0.01f);
     ImGui::DragFloat3("Sun target", &gs.sunTarget[0]);
     ImGui::Checkbox("Enable grass render", &enableGrassRender);
 
@@ -529,10 +529,10 @@ void testbed_init(Arena* gameMem) {
 #endif
 
     // Init lights
-    glm::vec3 sunPos = glm::vec3(7, 30, -22);
+    glm::vec3 sunPos = glm::vec3(7, 13, -22);
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
-    CreateDirectionalLight(sunDir, sunPos, glm::vec4(1), 0.1);
+    CreateDirectionalLight(sunDir, sunPos, glm::vec4(1), 1.0);
     CreatePointLight(glm::vec3(0), glm::vec4(1));
 
     { PROFILE_SCOPE("Skybox Init");

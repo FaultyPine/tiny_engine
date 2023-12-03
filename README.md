@@ -64,26 +64,27 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 ### TODO:
 - Put lighting and material data in UBOs
 - ImGuizmo
+- growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
+- Renderer
+    - Centralized system that takes in draw commands. At end of frame draws all requests and can
+        do pre-processing on those commands like batching
+- HDR/Tonemapping & Bloom
+- PBR
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc
     - allow access to these things through ids
+    - would let me "unify" my current subsystems.. each of these subsystems rn has it's own map
+        would be neat to have those all under the same umbrella like d4's SNOs
+- Scene graph/frustum culling 
+    - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
+    - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
 - "entities"/serialize objects... 
     - entities are an int ID (and a pointer to the thing that manages them?)
         - could then use an entity to get all entities like that one...
         - struct with array of some type, each entity contains a pointer back to that array
         - or some way to reverse-lookup an ID to an entity type array
     - use rel pointers/arrays to make everything one big blob?
-- growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
-- better grass sway w/distortion texture to emulate wind better
-- Renderer
-    - Centralized system that takes in draw commands. At end of frame draws all requests and can
-        do pre-processing on those commands like batching
-- PBR
-- HDR/Tonemapping & Bloom
-- Scene graph/frustum culling 
-    - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
-    - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
 - Space partitioning
     - OctTree (?)
     - BVH

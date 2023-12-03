@@ -51,7 +51,7 @@ struct LightingSystem
 {
     s32 pointLightIndex = 0;
     GlobalLights lights = {};
-    f32 ambientLightIntensity = 0.8f;
+    f32 ambientLightIntensity = 0.2f;
     ShadowMap directionalShadowMap = {};
     Cubemap pointLightShadowMaps[MAX_NUM_LIGHTS] = {};
 };
