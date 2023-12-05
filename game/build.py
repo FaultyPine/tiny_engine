@@ -73,11 +73,9 @@ def get_game_standalone_app_sources():
 
 def build_game(standalone_ninjafile_dir = ""):
     # build game dll
-    print("Building game dll...")
     generic_ninja_build(PYTHON_SCRIPT_PATH, get_gamedll_compiler_args_msvc(), get_gamedll_linker_args_msvc(), BUILD_LIB_DIR, get_game_dll_sources, DLL_NAME, BIN_DIR)
     if (len(standalone_ninjafile_dir) > 0):
         #standalone game runner exe
-        print("Building standalone game app...")
         generic_ninja_build(standalone_ninjafile_dir, get_game_standalone_compiler_args_msvc(), get_game_standalone_linker_args_msvc(), BUILD_STANDALONE_DIR, get_game_standalone_app_sources, EXE_NAME, BIN_DIR)
 
 def run_game():

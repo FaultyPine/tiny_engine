@@ -58,7 +58,6 @@ def generate_types_ninjafile(buildninja_path, build_dir, get_source_files_func, 
     buildfile.close()
 
 def build_types_metaprogram():
-    print("Building meta types...")
     # build our types metaprogram
     generic_ninja_build(
         PYTHON_SCRIPT_PATH,

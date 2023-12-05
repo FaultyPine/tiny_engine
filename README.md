@@ -62,7 +62,9 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
+
 - Put lighting and material data in UBOs
+- Use transformation matrices instead of pos + rotation + scale transforms
 - ImGuizmo
 - growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
 - Renderer

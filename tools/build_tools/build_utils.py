@@ -1,4 +1,5 @@
 import sys, os, glob, shutil, time
+from colorama import Fore, Back, Style
 from ninja_syntax import Writer
 
 UTILS_PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
@@ -43,7 +44,8 @@ def get_files_with_ext_recursive_walk(basedir, ext):
 def command(cmd):
     result = os.system(cmd)
     if result != 0: # if not success code, stop
-        exit(1)
+        exit(result)
+    return result
 
 def get_obj_from_src_file(filename):
     return filename[filename.rfind("/")+1:].replace(".cpp", ".obj" if is_windows() else ".o")
@@ -91,7 +93,7 @@ def generate_ninjafile(
         link_files.append(f"$builddir/{get_obj_from_src_file(src_cpp)}")
     # link
     n.build(f"$builddir/{output_exe_name}", "link", link_files)
-    print("Regenerated ninja build!")
+    print(f"{Fore.GREEN}Regenerated{Style.RESET_ALL} ninja build!")
     buildfile.close()
 
 
@@ -113,7 +115,7 @@ def generic_ninja_build(buildninja_path: str,
     start_time = time.time()
     command(get_ninja_command(buildninja_path)) # actual build
     elapsed = round(time.time() - start_time, 3)
-    print(f"{output_exe_name} build took {elapsed} seconds")
+    print(f"{Fore.GREEN}{output_exe_name}{Style.RESET_ALL} build took {elapsed} seconds")
 
     src = os.path.join(build_dir, output_exe_name)
     dst = os.path.join(output_dir, output_exe_name)
@@ -127,12 +129,11 @@ def clean(dir: str):
             os.unlink(os.path.join(root, f))
         for d in dirs:
             shutil.rmtree(os.path.join(root, d))
-    print("Cleaned!")
+    print(f"{Fore.GREEN}Cleaned!{Style.RESET_ALL}")
 
 
 def copy_file(src, dst):
     if os.path.exists(src):
         shutil.copy(src, dst)
-        print(f"Copied {src} -> {dst}")
     else:
-        print(f"{src} doesn't exist, didn't copy.")
+        print(f"{Fore.RED}{src} doesn't exist, didn't copy.{Style.RESET_ALL}")
