@@ -4,7 +4,7 @@
 #include "tiny_imgui.h"
 
 // =============== testbed_main.h ========================
-#include "model.h"
+#include "render/model.h"
 #include "tiny_types.h"
 #include "tiny_engine.h"
 #include "render/sprite.h"
@@ -61,8 +61,6 @@ struct GameState {
 
     // TODO: use hashmap w/int IDs
     std::vector<WorldEntity> entities = {};
-    //std::vector<LightPoint> lights = {};
-    //LightDirectional sunlight = {};
     Shader lightingShader = {};
 
 
@@ -317,7 +315,8 @@ void DepthAndNormsPrePass() {
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
             }
             gs.pondPrepassShader.setUniform("modelMat", ent.transform.ToModelMatrix());
-            ent.model.DrawMinimal(gs.pondPrepassShader);
+            gs.pondPrepassShader.use();
+            ent.model.DrawMinimal();
             continue;
         }
         // draw model to texture

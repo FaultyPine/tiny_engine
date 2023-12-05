@@ -30,7 +30,7 @@ struct Shader {
     TAPI void TryAddSampler(const Cubemap& texture, const char* uniformName) const;
 
     // use/activate the shader
-    void use() const;
+    TAPI void use() const;
 
     // reloads all shaders
     TAPI static void ReloadShaders();

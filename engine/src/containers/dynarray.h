@@ -23,6 +23,12 @@ u32 DynArrayGetCapcity(DynArray array);
 // Retrives the stride from the DynArray header
 u32 DynArrayGetStride(DynArray array);
 
+template <typename T>
+T& DynArrayGet(DynArray array, u32 index)
+{
+    return ((T*)array[index]);
+}
+
 void* __DynArrayPushAt(DynArray array, void* obj, u32 index);
 // Copies an object to a specified index (and moves all other elements over)
 // passing reference as this could potentially reallocate if backing mem is full

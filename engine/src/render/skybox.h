@@ -5,7 +5,7 @@
 #include "cubemap.h"
 #include "shader.h"
 #include "camera.h"
-#include "model.h"
+#include "render/model.h"
 #include "tiny_fs.h"
 
 

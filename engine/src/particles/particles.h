@@ -5,7 +5,7 @@
 #include "render/sprite.h"
 #include "render/texture.h"
 #include "tiny_fs.h"
-#include "model.h"
+#include "render/model.h"
 #include <memory>
 
 struct Particle {

@@ -4,7 +4,7 @@
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
 #include "shader.h"
-#include "model.h"
+#include "render/model.h"
 
 static s32 GetOGLFramebufferAttachmentType(Framebuffer::FramebufferAttachmentType type)
 {

@@ -49,7 +49,7 @@ struct Mesh
 
     // draw mesh with specified shader
     // NOTE: this function does *not* call use() on the shader
-    TAPI void Draw(const Shader& shader) const;
+    TAPI void Draw() const;
     TAPI void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
    
 private:    

@@ -4,7 +4,7 @@
 #include "tiny_fs.h"
 #include "tiny_ogl.h"
 #include "render/tiny_lights.h"
-#include "model.h"
+#include "render/model.h"
 #include "tiny_profiler.h"
 
 
@@ -34,6 +34,7 @@ void ShadowMap::RenderShadowCaster(const LightDirectional& light, const Model& m
     glm::mat4 modelMat = tf.ToModelMatrix();
     glm::mat4 mvp = lightMat * modelMat;
     depthShader.setUniform("mvp", mvp);
+    depthShader.use();
     // draw model to depth tex/fb
-    model.DrawMinimal(depthShader); 
+    model.DrawMinimal(); 
 }

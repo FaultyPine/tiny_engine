@@ -284,20 +284,7 @@ glm::mat4 GetMVP(const Transform& tf)
     return projection * view * model;
 }
 
-void Model::Draw(const Shader& shader, const Transform& tf) const 
-{
-    PROFILE_FUNCTION();
-    if (!isValid()) return;
-    Camera& cam = Camera::GetMainCamera();
-    glm::mat4 model = tf.ToModelMatrix();
-    glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
-    shader.setUniform("modelMat", model);
-    shader.setUniform("normalMat", matNormal);
-    SetLightingUniforms(shader);
-    DrawMinimal(shader);
-}
-
-void Model::DrawMinimal(const Shader& shader) const
+void DrawWithMaterials(const Shader& shader, const std::vector<Mesh>& meshes)
 {
     PROFILE_FUNCTION();
     Material currentMat = {};
@@ -310,7 +297,29 @@ void Model::DrawMinimal(const Shader& shader) const
             shader.use();
             currentMat = mesh.material;
         }
-        mesh.Draw(shader);
+        mesh.Draw();
+    }
+}
+
+void Model::Draw(const Shader& shader, const Transform& tf) const 
+{
+    PROFILE_FUNCTION();
+    if (!isValid()) return;
+    Camera& cam = Camera::GetMainCamera();
+    glm::mat4 model = tf.ToModelMatrix();
+    glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
+    shader.setUniform("modelMat", model);
+    shader.setUniform("normalMat", matNormal);
+    SetLightingUniforms(shader);
+    DrawWithMaterials(shader, meshes);
+}
+
+void Model::DrawMinimal() const
+{
+    PROFILE_FUNCTION();
+    for (const Mesh& mesh : meshes) 
+    {
+        mesh.Draw();
     }
 }
 

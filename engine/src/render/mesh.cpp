@@ -132,7 +132,7 @@ void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstanc
 }
 
 
-void Mesh::Draw(const Shader& shader) const {
+void Mesh::Draw() const {
     PROFILE_FUNCTION();
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;

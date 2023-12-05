@@ -3,7 +3,7 @@
 #include "bullet/btBulletDynamicsCommon.h"
 #include "tiny_alloc.h"
 #include "tiny_engine.h"
-#include "model.h"
+#include "render/model.h"
 #include "render/shapes.h"
 #include "tiny_log.h"
 #include "tiny_profiler.h"

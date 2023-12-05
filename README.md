@@ -80,7 +80,8 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
 - "entities"/serialize objects... 
-    - entities are an int ID (and a pointer to the thing that manages them?)
+    - Big refactor - move types to the type reflection system
+    - entities are an int ID 
         - could then use an entity to get all entities like that one...
         - struct with array of some type, each entity contains a pointer back to that array
         - or some way to reverse-lookup an ID to an entity type array

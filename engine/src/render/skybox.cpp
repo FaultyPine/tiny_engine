@@ -82,6 +82,6 @@ void Skybox::Draw()
     UpdateSunlightValues(skyboxShader, sun);
     GLCall(glDepthFunc(GL_LEQUAL));
     skyboxShader.use();
-    skyboxCube.Draw(skyboxShader);
+    skyboxCube.Draw();
     GLCall(glDepthFunc(GL_LESS));
 }

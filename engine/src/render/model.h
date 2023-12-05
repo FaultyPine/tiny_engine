@@ -19,11 +19,7 @@ struct Model {
         Draw(cachedShader, tf);
     }
 
-    TAPI void DrawMinimal(const Shader& shader) const;
-    void DrawMinimal() const 
-    {
-        DrawMinimal(cachedShader);
-    }
+    TAPI void DrawMinimal() const;
 
     // sends instance data to gpu and "marks" all submeshes as instanced
     void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) 
