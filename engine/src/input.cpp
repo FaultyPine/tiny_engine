@@ -97,15 +97,13 @@ void MouseInput::UpdateMouse(f32 xpos, f32 ypos) {
     static bool firstMouse = true;
     if (firstMouse)
     {
-        lastX = xpos;
-        lastY = ypos;
+        lastMousePos = glm::vec2(xpos, ypos);
         firstMouse = false;
     }
   
-    lastX = mousePos.x;
-    lastY = mousePos.y;
-    f32 xoffset = xpos - lastX;
-    f32 yoffset = lastY - ypos; 
+    lastMousePos = mousePos;
+    f32 xoffset = xpos - lastMousePos.x;
+    f32 yoffset = lastMousePos.y - ypos; 
 
     f32 sensitivity = this->sensitivity;
     xoffset *= sensitivity;
@@ -121,6 +119,15 @@ void MouseInput::UpdateMouse(f32 xpos, f32 ypos) {
         pitch = -89.0f;
 
     mousePos = glm::vec2(xpos, ypos);
+}
+
+bool MouseInput::isMouseButtonDown(s32 button)
+{
+    return glfwGetMouseButton(GetMainGLFWWindow(), button) == GLFW_PRESS;
+}
+bool MouseInput::isMouseButtonUp(s32 button)
+{
+    return glfwGetMouseButton(GetMainGLFWWindow(), button) == GLFW_RELEASE;
 }
 
 static CursorMode glfwToTinyCursorMode(s32 glfwCursorMode)

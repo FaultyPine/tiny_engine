@@ -11,6 +11,15 @@
 constexpr double PI   = 3.141592653589793238463;
 constexpr float  PI_F = 3.14159265358979f;
 
+inline f32 DegToRad(f32 deg)
+{
+    return deg * (PI / 180);
+}
+inline f32 RadToDeg(f32 rad)
+{
+    return rad * (180/PI);
+}
+
 struct Frustum
 {
     glm::vec4 nearTopLeft;

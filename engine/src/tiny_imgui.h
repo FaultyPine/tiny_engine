@@ -4,8 +4,6 @@
 #include "tiny_defines.h"
 #include "imgui/imgui.h"
 
-#define ENABLE_IMGUI
-
 
 TAPI void InitImGui();
 TAPI void ImGuiBeginFrame();

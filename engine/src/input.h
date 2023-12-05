@@ -46,11 +46,10 @@ struct GLFWwindow;
 void mouse_callback(GLFWwindow* window, f64 xpos, f64 ypos);
 
 struct MouseInput {
-    f32 lastX = 400;
-    f32 lastY = 300;
     f32 yaw = 0.0f;
     f32 pitch = 0.0f;
     f32 sensitivity = 0.1f;
+    glm::vec2 lastMousePos = glm::vec2(0.0f, 0.0f);
     glm::vec2 mousePos = glm::vec2(0.0f, 0.0f);
     glm::vec3 GetNormalizedLookDir() {
         glm::vec3 direction = glm::vec3(0);
@@ -59,6 +58,8 @@ struct MouseInput {
         direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
         return glm::normalize(direction);
     }
+    TAPI static bool isMouseButtonDown(s32 button);
+    TAPI static bool isMouseButtonUp(s32 button);
     TAPI void UpdateMouse(f32 xpos, f32 ypos);
     // mouse singleton
     TAPI static MouseInput& GetMouse();

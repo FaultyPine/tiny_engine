@@ -21,37 +21,29 @@
 static ImGuiContext* engine_imgui_ctx = nullptr;
 
 void InitImGui() {
-#ifdef ENABLE_IMGUI
     engine_imgui_ctx = ImGui::CreateContext();
     TINY_ASSERT(engine_imgui_ctx);
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(GetMainGLFWWindow(), true);
     static const char* glsl_version = "#version 330";
     ImGui_ImplOpenGL3_Init(glsl_version);
-#endif
 }
 
 
 void ImGuiBeginFrame() {
-#ifdef ENABLE_IMGUI
     ImGui::SetCurrentContext(engine_imgui_ctx);
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-#endif
 }
 
 
 void ImGuiEndFrame() {
-#ifdef ENABLE_IMGUI
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-#endif
 }
 
 void ImGuiTerminate() {
-#ifdef ENABLE_IMGUI
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-#endif
 }

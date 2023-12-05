@@ -59,19 +59,18 @@ void Camera::UpdateTabbingOut()
             UpdateCamera();
         }
         else {
-            lastMousePos = {MouseInput::GetMouse().lastX, MouseInput::GetMouse().lastY};
+            lastMousePos = MouseInput::GetMouse().lastMousePos;
             setCursorMode(CursorMode::NORMAL);
             setCursorPosition(GetMainCamera().screenWidth/2.0f, GetMainCamera().screenHeight/2.0f);
         }
     }
 }
 void Camera::LookAt(glm::vec3 pos) {
-    glm::vec3 diff = pos - cameraPos;
-    glm::vec3 forward = glm::normalize(diff);
+    glm::vec3 forward = glm::normalize(pos - cameraPos);
     glm::vec3 side = glm::normalize(glm::cross(cameraUp, forward));
     glm::vec3 newUp = glm::cross(forward, side);
     cameraFront = forward;
-    cameraUp = newUp;
+    //cameraUp = newUp;
 }
 void Camera::SetMode2D() {
     isSwivelable = false;
