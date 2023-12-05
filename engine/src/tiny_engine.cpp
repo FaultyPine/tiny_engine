@@ -223,6 +223,7 @@ void InitEngine(
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_SAMPLES, 4); // ask for multisampled buffers so we can do multisampling if we want
 #ifdef TINY_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
@@ -346,8 +347,8 @@ void InitEngine(
             ShaderSystemPreDraw();
             Framebuffer screenRenderFb;
             { PROFILE_SCOPE("Game Render");
-                ImGui::Text("Game memory: %.2f%%", ((f32)gameArena->offset / gameArena->backing_mem_size) * 100.0f);
-                ImGui::Text("Engine memory: %.2f%%", ((f32)engineArena->offset / engineArena->backing_mem_size) * 100.0f);
+                //ImGui::Text("Game memory: %.2f%%", ((f32)gameArena->offset / gameArena->backing_mem_size) * 100.0f);
+                //ImGui::Text("Engine memory: %.2f%%", ((f32)engineArena->offset / engineArena->backing_mem_size) * 100.0f);
                 screenRenderFb = gameFuncs.renderFunc(gameArena);
             }
             glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
