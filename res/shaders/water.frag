@@ -6,10 +6,12 @@ in VS_OUT
     vec3 fragPositionWS;
     vec2 fragTexCoord;
     vec4 fragColor;
-    vec3 fragNormalOS;
-    vec4 fragPosLightSpace;
-    float waveHeight;
+    vec3 fragNormal;
+    vec3 fragTangent;
+    vec3 fragPositionOS;
 } vs_in;
+in vec4 fragPosLightSpace;
+in float waveHeight;
 
 #include "globals.glsl"
 // Output fragment color
@@ -40,7 +42,7 @@ void main() {
     vec3 waterTextureCol = texture(waterTexture, vs_in.fragTexCoord+time).rgb;
     float alpha = length(waterTextureCol)*1.2;
     
-    float mask = (vs_in.waveHeight - offset) * contrast;
+    float mask = (waveHeight - offset) * contrast;
     vec3 col = mix(waterColor, waterHighlight, mask) * brightness;
 
     col *= waterTextureCol;

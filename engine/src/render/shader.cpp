@@ -184,15 +184,16 @@ void InitializeUBOs()
 {
     u32& uboObject = GetGSS().uboObject;
     glGenBuffers(1, &uboObject);
-    glBindBuffer(GL_UNIFORM_BUFFER, uboObject);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(UBOGlobals), NULL, GL_DYNAMIC_DRAW); // allocate vmem
-    glBindBufferBase(GL_UNIFORM_BUFFER, UBO_BINDING_POINT, uboObject); 
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uboObject);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(UBOGlobals), NULL, GL_DYNAMIC_DRAW); // allocate vmem
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UBO_BINDING_POINT, uboObject); 
     TINY_ASSERT(sizeof(UBOGlobals) <= KILOBYTES_BYTES(16)); // guarenteed 16kb max UBO size. Usually it's more
 }
 
 bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 bindingPoint, u32 shaderProgram)
 {
-    u32 blockIndex = glGetUniformBlockIndex(shaderProgram, uniformBlockName);
+    //u32 blockIndex = glGetUniformBlockIndex(shaderProgram, uniformBlockName);
+    u32 blockIndex = glGetProgramResourceIndex(shaderProgram, GL_SHADER_STORAGE_BLOCK, uniformBlockName);
     if (blockIndex == GL_INVALID_INDEX) 
     {
         //LOG_ERROR("Failed to get uniform block index!");
@@ -200,7 +201,8 @@ bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 binding
     }
     else
     {
-        GLCall(glUniformBlockBinding(shaderProgram, blockIndex, bindingPoint));
+        //GLCall(glUniformBlockBinding(shaderProgram, blockIndex, bindingPoint));
+        GLCall(glShaderStorageBlockBinding (shaderProgram, blockIndex, bindingPoint));
     }
     return true;
 }
@@ -216,9 +218,13 @@ void ShaderSystemPreDraw()
     UpdateGlobalUBOMisc(globs);
 
     // update the entire ubo block every frame
-    if (!gss.uboObject) return;
-    glBindBuffer(GL_UNIFORM_BUFFER, gss.uboObject);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(UBOGlobals), &gss.uboGlobals);
+    if (!gss.uboObject) 
+    {
+        LOG_FATAL("UBO's not initialized. Make sure InitializeShaderSystem is being called");
+        return;
+    }
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gss.uboObject);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(UBOGlobals), &gss.uboGlobals);
 }
 
 // binds all used UBO indices to the given shader program, called just after shader initialization
@@ -342,7 +348,7 @@ std::string ShaderSourcePreprocess(const s8* shaderSource)
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
 
-    ret += "#version 330 core\n";
+    ret += "#version 440 core\n";
 
     std::string includeSearchDir = ResPath("shaders/");
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
@@ -354,9 +360,10 @@ std::string ShaderSourcePreprocess(const s8* shaderSource)
 
 
 static const char* fallbackFragShader = R"shad(
+out vec4 outColor;
 void main()
 {
-    gl_FragColor = vec4(1.0, 0.0, 0.5, 1.0);
+    outColor = vec4(1.0, 0.0, 0.5, 1.0);
 }
 )shad";
 static const char* fallbackVertShader = R"shad(

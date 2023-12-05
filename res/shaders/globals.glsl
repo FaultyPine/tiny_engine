@@ -1,6 +1,6 @@
 
 
-layout (std140) uniform Globals
+layout (std140) buffer Globals
 {
     // camera
     mat4 projection;

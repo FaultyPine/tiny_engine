@@ -18,7 +18,7 @@ void main()
     vec3 sun = -sunlight.direction;
     float sunMask = dot(normalize(sun), normalize(TexCoords)) / 2.0 + 0.5; // 1 directly in sun, 0 directly opposite of sun
     
-    sunMask = smoothstep(0.98,1,sunMask)*2;
+    sunMask = smoothstep(0.98,1.0,sunMask)*2;
 
     //vec3 skyboxCol = texture(skybox, TexCoords).rgb;
     //vec3 col = vec3(sunMask*0.4) + (skyboxCol);

@@ -17,6 +17,7 @@ out VS_OUT
 {
     vec3 fragPositionWS;
     vec2 fragTexCoord;
+    vec4 fragColor;
     vec3 fragNormal;
     vec3 fragTangent;
     vec3 fragPositionOS;

@@ -8,9 +8,17 @@ layout (location = 2) in vec3 vertexTangent;
 
 uniform mat4 modelMat;
 
-out vec3 fragNormalOS;
+out VS_OUT 
+{
+    vec3 fragPositionWS;
+    vec2 fragTexCoord;
+    vec4 fragColor;
+    vec3 fragNormal;
+    vec3 fragTangent;
+    vec3 fragPositionOS;
+} vs_out;
 
 void main() {
-    fragNormalOS = vertexNormal;
+    vs_out.fragNormal = vertexNormal;
     gl_Position = projection * view * modelMat * vec4(vertexPosition, 1.0);
 }
