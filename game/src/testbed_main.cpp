@@ -56,6 +56,12 @@ inline u32 GetHash(const std::string& str) {
     return std::hash<std::string>{}(str);
 }
 
+enum ManipMode
+{
+    XY,
+    XZ,
+};
+
 struct GameState {
     Arena* gameMem;
 
@@ -96,6 +102,14 @@ struct GameState {
     f32 sunOrbitRadius = 52.0f;
     f32 sunSpeedMultiplier = 0.2f;
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
+
+    f32 camOrbitRadius = 50;
+    f32 camOrbitHeight = 30;
+    f32 camOrbitSpeed = 0.01;
+    bool isCamOrbiting = true;
+    bool manipItemTSunFPoint = true;
+    ManipMode pointLightManipMode = ManipMode::XZ;
+    ManipMode sunManipMode = ManipMode::XZ;
 
     inline static GameState* gs = nullptr;
     // sets the static gamestate to a copy of the passed in gamestate
@@ -143,7 +157,7 @@ struct GameState {
 #include "particles/particle_behaviors.h"
 #include "tiny_log.h"
 #include "render/shadows.h"
-
+#include "render/tiny_text.h"
 
 void testbed_camera_tick() {
     Camera& cam = Camera::GetMainCamera();
@@ -171,36 +185,109 @@ void testbed_camera_tick() {
     if (Keyboard::isKeyDown(TINY_KEY_LEFT_SHIFT)) {
         cam.cameraPos.y -= cameraSpeed;
     }
-    if (Keyboard::isKeyDown(TINY_KEY_ESCAPE)) {
-        CloseGameWindow();
-    }
-
-
     if (Keyboard::isKeyPressed(TINY_KEY_R)) {
         Shader::ReloadShaders();
     }
-
-
 }
 
-void testbed_orbit_cam(f32 orbitRadius, f32 cameraOrbitHeight, glm::vec3 lookAtPos) {
+void testbed_orbit_cam(f32 orbitRadius, f32 cameraOrbitHeight, f32 cameraOrbitSpeed, glm::vec3 lookAtPos) {
     Camera& cam = Camera::GetMainCamera();
-    f32 time = (f32)GetTime();
+    static f32 cachedTime = 0;
+    if (cachedTime < 1)
+    {
+        cachedTime = GetTimef();
+    }
+    // f32 time = (f32)GetTime() * cameraOrbitSpeed;
+    f32 time = cachedTime * cameraOrbitSpeed;
+    cachedTime++;
     f32 x = sinf(time) * orbitRadius;
     f32 z = cosf(time) * orbitRadius;
     cam.cameraPos = glm::vec3(x, cameraOrbitHeight, z);
-    cam.LookAt(lookAtPos);
+    cam.cameraFront = glm::normalize(lookAtPos - cam.cameraPos);
+    //cam.cameraUp = glm::vec3(0,1,0);
 }
 void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMultiplier, glm::vec3 target) {
     f32 time = (f32)GetTime()*speedMultiplier;
     f32 x = sinf(time) * orbitRadius;
     f32 z = cosf(time) * orbitRadius;
-    //f32 x = sinf(time);
-    //f32 z = cosf(time);
     light.position.x = x;
     light.position.z = z;
     light.direction = glm::normalize(target - light.position);
 }
+
+void xyxz_movement(glm::vec3& toMove, ManipMode mode)
+{
+    glm::vec2 mouseDelta = MouseInput::GetMouse().mousePos - MouseInput::GetMouse().lastMousePos;
+    
+    if (glm::length(mouseDelta) > 0.0f)
+    {
+        if (mode == XZ)
+        {
+            toMove.x += mouseDelta.x;
+            toMove.z += mouseDelta.y;
+        }
+        else if (mode == XY)
+        {
+            toMove.x += mouseDelta.x;
+            toMove.y += mouseDelta.y;
+        }
+    }
+}
+
+void testbed_control_sun(LightDirectional& sun, f32 sunOrbitRadius, glm::vec3 sunTarget)
+{
+    #if 0
+    glm::vec2 mouseDelta = MouseInput::GetMouse().mousePos - MouseInput::GetMouse().lastMousePos;
+    f32 amt = glm::length(mouseDelta) * 0.01f;
+    glm::vec2 mouseDeltaDir = glm::normalize(mouseDelta);
+    // TODO: Rollingball with sun position
+
+    // https://nerdhut.de/2019/12/04/arcball-camera-opengl/
+
+    if (glm::length(mouseDelta) > 0.0f)
+    {
+        glm::vec2 perpDelta = glm::normalize(glm::vec2(-mouseDeltaDir.y, mouseDeltaDir.x));
+
+        if (perpDelta.x > 0)
+        {
+            glm::mat4 m = glm::mat4(1);
+            m = glm::rotate(m, amt, glm::vec3(0.0, 1.0, 0.0));
+            sun.position = m * glm::vec4(sun.position, 1.0);
+        }
+        else if (perpDelta.x < 0)
+        {
+            glm::mat4 m = glm::mat4(1);
+            m = glm::rotate(m, -amt, glm::vec3(0.0, 1.0, 0.0));
+            sun.position = m * glm::vec4(sun.position, 1.0);
+        }
+
+        if (perpDelta.y < 0)
+        {
+            glm::mat4 m = glm::mat4(1);
+            m = glm::rotate(m, amt, glm::vec3(1.0, 0.0, 0.0));
+            sun.position = m * glm::vec4(sun.position, 1.0);
+        }
+        else if (perpDelta.y > 0)
+        {
+            glm::mat4 m = glm::mat4(1);
+            m = glm::rotate(m, -amt, glm::vec3(1.0, 0.0, 0.0));
+            sun.position = m * glm::vec4(sun.position, 1.0);
+        }
+        sun.direction = glm::normalize(sunTarget - sun.position);
+    }
+    #else
+
+    xyxz_movement(sun.position, GameState::get().sunManipMode);
+    sun.direction = glm::normalize(sunTarget - sun.position);
+
+    #endif
+}
+
+void testbed_control_point_light(LightPoint& light)
+{
+    xyxz_movement(light.position, GameState::get().pointLightManipMode);
+}
+
 
 static bool enableGrassRender = true;
 static f32 ambientLightIntensity = 0.15f;
@@ -222,6 +309,10 @@ void drawImGuiDebug() {
             ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
         }
     }
+
+    ImGui::DragFloat("Cam obit speed", &gs.camOrbitSpeed, 0.001f);
+    ImGui::DragFloat("Cam obit height", &gs.camOrbitHeight, 0.01f);
+    ImGui::DragFloat("Cam obit radius", &gs.camOrbitRadius, 0.01f);
 
     ImGui::DragFloat("Sun Orbit radius", &gs.sunOrbitRadius);
     ImGui::DragFloat("Sun orbit speed", &gs.sunSpeedMultiplier, 0.01f);
@@ -493,7 +584,7 @@ void init_waterfall(GameState& gs) {
 
 void testbed_init(Arena* gameMem) {
     PROFILE_FUNCTION();
-    
+
     {
         GameState::Initialize(gameMem);
     }
@@ -577,7 +668,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     ClearGLBuffers();
     drawGameState();
 
-#if 1
+#if 0
     {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
@@ -585,7 +676,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
         sunShadows.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
     }
 #endif
-#if 1
+#if 0
     {    
         // render normals+depth tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
@@ -593,27 +684,46 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     }
 #endif
     
-#ifdef ENABLE_IMGUI
-    drawImGuiDebug();
-#endif
+    //drawImGuiDebug();
+
     // red is x, green is y, blue is z
-    // should put this on the screen in the corner permanently
+    // TODO: should put this in screenspace in the corner
     f32 axisGizmoScale = 0.03f;
-    static glm::vec3 offset = glm::vec3(0);
-    ImGui::DragFloat3("Gizmo offset", &offset[0], 0.01f);
     glm::vec3 camFront = Camera::GetMainCamera().cameraFront;
     glm::vec3 camUp = Camera::GetMainCamera().cameraUp;
     glm::vec3 cameraRight = glm::normalize(glm::cross(camFront, camUp));
-    camUp = glm::normalize(glm::cross(camFront, cameraRight));
-    ImGui::Text("cam front: %f %f %f", camFront.x, camFront.y, camFront.z);
-    ImGui::Text("cam up: %f %f %f", camUp.x, camUp.y, camUp.z);
-    ImGui::Text("cam right: %f %f %f", cameraRight.x, cameraRight.y, cameraRight.z);
-    glm::vec3 axisGizmoOffsetWS = cameraRight * offset;
+    glm::vec3 axisGizmoOffsetWS = cameraRight;
     glm::vec3 camRel = Camera::GetMainCamera().cameraPos + camFront + axisGizmoOffsetWS;
     Shapes3D::DrawLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
     Shapes3D::DrawLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
     Shapes3D::DrawLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
     
+    static GLTtext* controlsText = nullptr;
+    static GLTtext* modeText = nullptr;
+    if (!controlsText)
+    {
+        controlsText = CreateText(R"txt(
+            Press "O" to toggle camera orbit/freecam
+            In freecam mode: WASD to move, Space to ascend, Left Shift to descend
+            
+            Press "Tab" to lock/unlock cursor.
+            With cursor unlocked: Click and drag to move sun/point light
+
+            Press "I" to toggle manipulation mode (XZ or XY)
+
+            Press "U" to toggle between manipulating the Sun or the Point light
+        )txt");
+        modeText = CreateText("");
+    }
+    DrawText(controlsText);
+    const char* camModeStr = gs.isCamOrbiting ? "Orbit" : "Freecam";
+    const char* cursorModeStr = getCursorMode() == CursorMode::NORMAL ? "Unlocked" : "Locked";
+    const char* manipItemStr = gs.manipItemTSunFPoint ? "Sun" : "Point Light";
+    const char* manipModeStr = gs.manipItemTSunFPoint ? (gs.sunManipMode == XZ ? "XZ" : "XY") : (gs.pointLightManipMode == XZ ? "XZ" : "XY");
+    SetText(modeText, TextFormat("Cam mode: %s\nCursor mode: %s\nManipulation item: %s\nManipulation mode: %s", camModeStr, cursorModeStr, manipItemStr, manipModeStr));
+    DrawText(modeText, 10.0f, 300.0f);
+
+
     Framebuffer::BindDefaultFrameBuffer();
     return gs.postprocessingFB;
 }
@@ -625,11 +735,48 @@ void testbed_tick(Arena* gameMem) {
     // have main directional light orbit
     LightingSystem* lightsSystem = GetEngineCtx().lightsSubsystem;
     LightDirectional& mainLight = lightsSystem->lights.sunlight;
-    testbed_orbit_light(mainLight, gs.sunOrbitRadius, gs.sunSpeedMultiplier, gs.sunTarget);
-    for (u32 i = 0; i < ARRAY_SIZE(lightsSystem->lights.pointLights); i++)
+    //testbed_orbit_light(mainLight, gs.sunOrbitRadius, gs.sunSpeedMultiplier, gs.sunTarget);
+    if (getCursorMode() == CursorMode::NORMAL && MouseInput::isMouseButtonDown(TINY_MOUSE_BUTTON_1))
     {
-        lightsSystem->lights.pointLights[i].position.x = sinf(GetTimef()) * 10;
-        lightsSystem->lights.pointLights[i].position.z = cosf(GetTimef()) * 10;
+        if (gs.manipItemTSunFPoint)
+        {
+            testbed_control_sun(GetEngineCtx().lightsSubsystem->lights.sunlight, gs.sunOrbitRadius, gs.sunTarget);
+        }
+        else
+        {
+            testbed_control_point_light(GetEngineCtx().lightsSubsystem->lights.pointLights[0]);
+        }
+    }
+    if (gs.isCamOrbiting)
+    {
+        testbed_orbit_cam(gs.camOrbitRadius, gs.camOrbitHeight, gs.camOrbitSpeed, glm::vec3(0));
+    }
+    else
+    {
+        testbed_camera_tick();
+    }
+    if (Keyboard::isKeyPressed(TINY_KEY_O))
+    {
+        gs.isCamOrbiting = !gs.isCamOrbiting;
+        Camera::GetMainCamera().LookAt(glm::vec3(0));
+        Camera::GetMainCamera().UpdateCamera();
+    }
+    if (Keyboard::isKeyPressed(TINY_KEY_U))
+    {
+        gs.manipItemTSunFPoint = !gs.manipItemTSunFPoint;
+    }
+    if (Keyboard::isKeyPressed(TINY_KEY_I))
+    {
+        if (gs.manipItemTSunFPoint)
+        {
+            if (gs.sunManipMode == XY) gs.sunManipMode = XZ;
+            else gs.sunManipMode = XY;
+        }
+        else
+        {
+            if (gs.pointLightManipMode == XY) gs.pointLightManipMode = XZ;
+            else gs.pointLightManipMode = XY;
+        }
     }
 }
 
