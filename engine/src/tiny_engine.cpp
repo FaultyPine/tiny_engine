@@ -163,6 +163,9 @@ u32 HashBytes(u8* data, u32 size)
 }
 
 void EngineLoop() {
+    if (Keyboard::isKeyDown(TINY_KEY_ESCAPE)) {
+        CloseGameWindow();
+    }
     // update deltatime
     f32 currentTime = GetTime();
     globEngineCtx.deltaTime = currentTime - globEngineCtx.lastFrameTime;
@@ -206,9 +209,9 @@ void InitEngine(
     
     if (argc < 2)
     {
-        LOG_FATAL("Passed too few arguments to engine. Make sure to specify the resource directory");
+        LOG_WARN("No resource directory passed. Using default ./res/");
     }
-    const char* resourceDirectory = argv[1];
+    const char* resourceDirectory = argc < 2 ? "./res/" : argv[1];
     globEngineCtx.resourceDirectory = resourceDirectory;
 
     s8 cwd[PATH_MAX];
