@@ -19,6 +19,7 @@
 #include "render/tiny_lights.h"
 #include "physics/tiny_physics.h"
 #include "job_system.h"
+#include "render/tiny_renderer.h"
 
 #include "GLFW/glfw3.h"
 
@@ -163,6 +164,7 @@ u32 HashBytes(u8* data, u32 size)
 }
 
 void EngineLoop() {
+    PROFILE_FUNCTION();
     if (Keyboard::isKeyDown(TINY_KEY_ESCAPE)) {
         CloseGameWindow();
     }
@@ -188,6 +190,7 @@ void EngineLoop() {
 
 /// Game loop should be while(!ShouldCloseWindow())
 bool ShouldCloseWindow() {
+    PROFILE_FUNCTION();
     glfwSwapBuffers(GetMainGLFWWindow());
     EngineLoop();
     glfwPollEvents();
@@ -307,8 +310,9 @@ void InitEngine(
     InitializeShaderSystem(engineArena, uniformsMemBlockSize);
     InitializeLightingSystem(engineArena);
     InitializeTextureCache(engineArena);
-    InitializePhysics(engineArena);
     InitializeMaterialSystem(engineArena);
+    InitializeRenderer(engineArena);
+    InitializePhysics(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
 
 

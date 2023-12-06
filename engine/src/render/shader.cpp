@@ -98,8 +98,24 @@ Under std140, struct members of a block should be aligned to 16-bytes
     f32 time;
     //                  ----------
     
-    // TODO: lighting
+    // lighting
+    struct LightDirectionalUBO
+    {
+        glm::mat4 lightSpaceMatrix;
+        glm::vec4 direction; // intensity in alpha
+        glm::vec4 color;
+    };
 
+    struct LightPointUBO
+    {
+        glm::vec4 position; // unused alpha
+        glm::vec4 color;
+        glm::vec4 attenuationParams; // {constant, linear, quadratic, light intensity}
+    };
+    LightDirectionalUBO sunlight;
+    LightPointUBO lights[MAX_NUM_LIGHTS];
+    s32 numActiveLights;
+    f32 ambientLightIntensity;
 
     // TODO: materials
 
@@ -157,14 +173,24 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
 {
     EngineContext& ctx = GetEngineCtx();
     GlobalLights& lights = ctx.lightsSubsystem->lights;
-    // TODO: refactor point light data structures for proper std140 alignment
-    // TMEMCPY(globs.pointLights, lights.pointLights, sizeof(lights.pointLights));
-    
-    // globs.dirLightDirection = lights.sunlight.direction;
-    // globs.dirLightEnabled = lights.sunlight.enabled;
-    // globs.dirLightColor = lights.sunlight.color;
-    // globs.dirLightLSMatrix = lights.sunlight.GetLightSpacematrix();
-    // globs.dirLightIntensity = lights.sunlight.intensity;
+    s32 lightIdx = 0;
+    for (s32 i = 0; i < MAX_NUM_LIGHTS; i++)
+    {
+        if (lights.pointLights->enabled)
+        {
+            const LightPoint& pointLight = lights.pointLights[i];
+            globs.lights[lightIdx].position = glm::vec4(pointLight.position, 0.0);
+            globs.lights[lightIdx].color = pointLight.color;
+            globs.lights[lightIdx].attenuationParams = glm::vec4(pointLight.constant, pointLight.linear, pointLight.quadratic, pointLight.intensity);
+            lightIdx++;
+        }
+    }
+    globs.sunlight.color = lights.sunlight.color;
+    globs.sunlight.direction = glm::vec4(lights.sunlight.direction, lights.sunlight.intensity);
+    globs.sunlight.lightSpaceMatrix = lights.sunlight.GetLightSpacematrix();
+
+    globs.numActiveLights = lights.GetNumActiveLights();
+    globs.ambientLightIntensity = ctx.lightsSubsystem->ambientLightIntensity;
 }
 
 void UpdateGlobalUBOMaterials(UBOGlobals& globs)
@@ -212,6 +238,7 @@ void ShaderSystemPreDraw()
 {
     GlobalShaderState& gss = GetGSS();
     UBOGlobals& globs = gss.uboGlobals;
+    TMEMSET(&globs, 0, sizeof(UBOGlobals));
     UpdateGlobalUBOCamera(globs);
     UpdateGlobalUBOLighting(globs);
     UpdateGlobalUBOMaterials(globs);

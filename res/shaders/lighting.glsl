@@ -1,36 +1,12 @@
 
 #include "material.glsl"
 #include "common.glsl"
+#include "globals.glsl"
 
-#define MAX_LIGHTS 4
+// light data structures in globals.glsl
 
-struct LightDirectional 
-{
-    vec3 direction;
-    int enabled;
-    vec4 color;
-    mat4 lightSpaceMatrix;
-    float intensity;
-};
-
-struct LightPoint
-{
-    vec3 position;
-    int enabled;
-    vec4 color;
-    float constant;
-    float linear;
-    float quadratic;
-    float intensity;
-};
-
-uniform samplerCube pointLightShadowMaps[MAX_LIGHTS];
+uniform samplerCube pointLightShadowMaps[MAX_NUM_LIGHTS];
 uniform sampler2D directionalLightShadowMap;
-
-uniform LightPoint lights[MAX_LIGHTS];
-uniform LightDirectional sunlight;
-uniform int numActiveLights;
-uniform float ambientLightIntensity = 0.15;
 
 float PCFShadow(
     vec2 projCoords, 
@@ -57,7 +33,7 @@ float GetDirectionalShadow(
     vec3 fragPosWS, 
     vec3 fragNormalWS) 
 {
-    vec3 lightDir = -sunlight.direction; // points towards pixel from light, so reverse it to get pixel to light
+    vec3 lightDir = -sunlight.direction.xyz; // points towards pixel from light, so reverse it to get pixel to light
     // the light space matrix contains the view and projection matrices 
     // for our light (view representing where our light is "looking") and projection representing the shadow frustum
     vec4 fragPosLS = sunlight.lightSpaceMatrix * vec4(fragPosWS, 1.0);
@@ -99,9 +75,11 @@ void calculateLightingForPointLight (
     float shininess,
     vec3 specularMaterial) 
 {
-    vec3 lightColor = light.color.rgb * light.intensity;
+    float lightIntensity = light.attenuationParams.a;
+    vec3 lightColor = light.color.rgb * lightIntensity;
+    vec3 lightPos = light.position.xyz;
     // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
-    vec3 lightDir = normalize(light.position - fragPositionWS);
+    vec3 lightDir = normalize(lightPos - fragPositionWS);
 
     // Diffuse light
     // [0-1] 0 being totally unlit, 1 being in full light
@@ -120,9 +98,13 @@ void calculateLightingForPointLight (
 
     // dist from current fragment to light source
     // TODO: https://lisyarus.github.io/blog/graphics/2022/07/30/point-light-attenuation.html
-    float distance = length(light.position - fragPositionWS);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + 
-    		    light.quadratic * (distance * distance));
+    float distance = length(lightPos - fragPositionWS);
+    vec4 attenuationParams = light.attenuationParams;
+    float constant = attenuationParams.r;
+    float linear = attenuationParams.g;
+    float quadratic = attenuationParams.b;
+    float attenuation = 1.0 / (constant + linear * distance + 
+    		                    quadratic * (distance * distance));
 
     diffuseLight += currentLightDiffuse * attenuation;
     specularLight += currentLightSpecular * attenuation;
@@ -138,9 +120,10 @@ void calculateLightingForDirectionalLight (
     float shininess,
     vec3 specularMaterial) 
 {
-    vec3 lightColor = light.color.rgb * light.intensity;
+    float lightIntensity = light.direction.a; // intensity is in alpha of direction
     // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
-    vec3 lightDir = normalize(-light.direction);
+    vec3 lightDir = normalize(-light.direction.xyz);
+    vec3 lightColor = light.color.rgb * lightIntensity; 
 
     // Diffuse light
     // [0-1] 0 being totally unlit, 1 being in full light

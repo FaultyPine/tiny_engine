@@ -31,8 +31,8 @@ void main() {
     vec3 lighting = calculateLighting(
         material,
         vs_in.fragTexCoord,
-        -sunlight.direction, 
-        -sunlight.direction,
+        -sunlight.direction.xyz, 
+        -sunlight.direction.xyz,
         vs_in.fragPositionWS);
 
     //float shadow = GetDirectionalShadow(

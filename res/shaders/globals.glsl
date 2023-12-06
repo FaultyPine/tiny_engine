@@ -1,5 +1,21 @@
 
 
+#define MAX_NUM_LIGHTS 4
+
+struct LightDirectional 
+{
+    mat4 lightSpaceMatrix;
+    vec4 direction; // intensity in alpha
+    vec4 color;
+};
+
+struct LightPoint
+{
+    vec4 position; // unused alpha
+    vec4 color;
+    vec4 attenuationParams; // {constant, linear, quadratic, light intensity}
+};
+
 layout (std140) buffer Globals
 {
     // camera
@@ -13,8 +29,11 @@ layout (std140) buffer Globals
     // misc
     float time;
 
-    // TODO: lighting
-
+    // lighting
+    LightDirectional sunlight;
+    LightPoint lights[MAX_NUM_LIGHTS];
+    int numActiveLights;
+    float ambientLightIntensity;
     // TODO: materials
 };
 

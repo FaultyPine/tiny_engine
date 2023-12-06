@@ -62,11 +62,13 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
-
 - Put lighting and material data in UBOs
 - Use transformation matrices instead of pos + rotation + scale transforms
 - ImGuizmo
 - growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
+- "entities"/serialize objects... 
+    - Big refactor - move types to the type reflection system
+    - rel pointers to make all entities one big blob?
 - Renderer
     - Centralized system that takes in draw commands. At end of frame draws all requests and can
         do pre-processing on those commands like batching
@@ -81,13 +83,6 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 - Scene graph/frustum culling 
     - https://learnopengl.com/Guest-Articles/2021/Scene/Scene-Graph
     - https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling
-- "entities"/serialize objects... 
-    - Big refactor - move types to the type reflection system
-    - entities are an int ID 
-        - could then use an entity to get all entities like that one...
-        - struct with array of some type, each entity contains a pointer back to that array
-        - or some way to reverse-lookup an ID to an entity type array
-    - use rel pointers/arrays to make everything one big blob?
 - Space partitioning
     - OctTree (?)
     - BVH

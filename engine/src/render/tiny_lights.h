@@ -45,6 +45,7 @@ struct GlobalLights
 {
     LightPoint pointLights[MAX_NUM_LIGHTS] = {};
     LightDirectional sunlight = {};
+    u32 GetNumActiveLights();
 };
 
 struct LightingSystem
@@ -65,7 +66,7 @@ void SetLightingUniforms(const Shader& shader);
 TAPI LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams = glm::vec3(1.0f, 0.09f, 0.032f));
 TAPI LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position, glm::vec4 color, f32 intensity);
 // Send light properties to shader
-void UpdatePointLightValues(const Shader& shader, LightPoint* lights, u32 numPointLights);
+void UpdatePointLightValues(const Shader& shader, LightPoint* lights);
 void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight);
 
 #endif
