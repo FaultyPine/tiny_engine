@@ -62,8 +62,7 @@ struct EngineContext
 TAPI EngineContext& GetEngineCtx();
 
 TAPI void InitEngine(
-    int argc, 
-    char *argv[],
+    char* resourceDirectory,
     const char* windowName,
     u32 windowWidth,
     u32 windowHeight,

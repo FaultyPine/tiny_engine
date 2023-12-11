@@ -576,7 +576,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     ClearGLBuffers();
     drawGameState();
 
-#if 1
+#if 0
     {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
@@ -584,7 +584,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
         sunShadows.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
     }
 #endif
-#if 1
+#if 0
     {    
         // render normals+depth tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
@@ -592,9 +592,8 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     }
 #endif
     
-#ifdef ENABLE_IMGUI
     drawImGuiDebug();
-#endif
+
     // red is x, green is y, blue is z
     // should put this on the screen in the corner permanently
     f32 axisGizmoScale = 0.03f;
@@ -649,9 +648,17 @@ AppRunCallbacks GetTestbedAppRunCallbacks()
 
 void testbed_standalone_entrypoint(int argc, char *argv[])
 {
+    char* resourceDirectory = "./res/";
+    if (argc < 2)
+    {
+        LOG_WARN("no resource directory passed. Using default ./res/");
+    }
+    else
+    {
+        resourceDirectory = argv[1];
+    }
     InitEngine(
-        argc,
-        argv,
+        resourceDirectory,
         "Testbed",
         1280, 720,
         16, 9,

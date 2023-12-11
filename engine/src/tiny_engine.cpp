@@ -198,8 +198,7 @@ bool ShouldCloseWindow() {
 }
 
 void InitEngine(
-    int argc, 
-    char *argv[],
+    char* resourceDirectory,
     const char* windowName,
     u32 windowWidth,
     u32 windowHeight,
@@ -209,12 +208,7 @@ void InitEngine(
     AppRunCallbacks callbacks,
     size_t requestedGameMemSize
 ) {
-    
-    if (argc < 2)
-    {
-        LOG_WARN("No resource directory passed. Using default ./res/");
-    }
-    const char* resourceDirectory = argc < 2 ? "./res/" : argv[1];
+    TINY_ASSERT(resourceDirectory);
     globEngineCtx.resourceDirectory = resourceDirectory;
 
     s8 cwd[PATH_MAX];

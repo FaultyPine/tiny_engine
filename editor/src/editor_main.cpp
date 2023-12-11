@@ -7,6 +7,7 @@
 #include "tiny_engine.h"
 #include "camera.h"
 #include "render/framebuffer.h"
+#include "tiny_log.h"
 
 struct EditorState
 {
@@ -119,8 +120,18 @@ void editor_main(int argc, char *argv[])
     cb.tickFunc = editor_tick;
     cb.renderFunc = editor_render;
     cb.terminateFunc = editor_terminate;
+    char* resourceDirectory = "./res/";
+    if (argc < 2)
+    {
+        LOG_WARN("no resource directory passed. Using default ./res/");
+    }
+    else
+    {
+        resourceDirectory = argv[1];
+    }
+    
     InitEngine(
-        argc, argv,
+        resourceDirectory,
         "Editor",
         1920, 1080,
         16, 9,
