@@ -83,7 +83,8 @@ void calculateLightingForPointLight (
 
     // Diffuse light
     // [0-1] 0 being totally unlit, 1 being in full light
-    float NdotL = max(dot(fragNormalWS, lightDir), 0.0);
+    //float NdotL = max(dot(fragNormalWS, lightDir), 0.0);
+    float NdotL = 1/max(distance(fragPositionWS, lightPos), EPSILON);
     vec3 currentLightDiffuse = lightColor * NdotL;
 
     // specular light
