@@ -17,12 +17,15 @@ void ShadowMap::BeginRender() const {
     fb.Bind();
     // completely clear depth texture
     ClearGLBuffers();
-    // cull front faces when rendering to depth tex
-    glCullFace(GL_FRONT);
+    // cull front faces when rendering to depth tex?
+    // this theoretically helps peter panning, but some models really
+    // aren't meant to be front face culled. This would need to happen on a per-mesh basis which
+    // isn't feasible rn
+    //glCullFace(GL_FRONT);
 }
 void ShadowMap::EndRender() const {
     // reset cull mode
-    glCullFace(GL_BACK);
+    //glCullFace(GL_BACK);
     // bind default fb
     Framebuffer::BindDefaultFrameBuffer();
 }

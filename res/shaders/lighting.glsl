@@ -20,7 +20,8 @@ float PCFShadow(
         for(int y = -resolution; y <= resolution; y++) {
             vec2 shadowMapUVOffset = vec2(x, y) * texelSize;
             float shadowMapDepth = texture(shadowMap, projCoords.xy + shadowMapUVOffset).r; 
-            shadow += currentDepth > shadowMapDepth ? 1.0 : 0.0;        
+            bool isInShadow = currentDepth > shadowMapDepth;
+            shadow += isInShadow ? 1.0 : 0.0;
         }    
     }
     // average shadow across samples
@@ -28,7 +29,6 @@ float PCFShadow(
     return shadow;
 }
 
-// 0 is in shadow, 1 is out of shadow
 float GetDirectionalShadow(
     vec3 fragPosWS, 
     vec3 fragNormalWS) 
