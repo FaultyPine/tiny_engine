@@ -3,7 +3,7 @@
 
 #include <atomic> 
 #include <mutex>
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 #include "tiny_log.h"
 
 // Fixed size very simple thread safe ring buffer

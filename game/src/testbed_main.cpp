@@ -11,12 +11,12 @@
 #include "render/framebuffer.h"
 #include "render/skybox.h"
 #include "particles/particles.h"
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 #include "physics/tiny_physics.h"
 
 
-#define ISLAND_SCENE
-//#define SPONZA_SCENE
+//#define ISLAND_SCENE
+#define SPONZA_SCENE
 
 struct WorldEntity {
     Transform transform = {};
@@ -576,7 +576,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     ClearGLBuffers();
     drawGameState();
 
-#if 0
+#if 1
     {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
@@ -623,12 +623,7 @@ void testbed_tick(Arena* gameMem) {
     // have main directional light orbit
     LightingSystem* lightsSystem = GetEngineCtx().lightsSubsystem;
     LightDirectional& mainLight = lightsSystem->lights.sunlight;
-    testbed_orbit_light(mainLight, gs.sunOrbitRadius, gs.sunSpeedMultiplier, gs.sunTarget);
-    for (u32 i = 0; i < ARRAY_SIZE(lightsSystem->lights.pointLights); i++)
-    {
-        lightsSystem->lights.pointLights[i].position.x = sinf(GetTimef()) * 10;
-        lightsSystem->lights.pointLights[i].position.z = cosf(GetTimef()) * 10;
-    }
+    //testbed_orbit_light(mainLight, gs.sunOrbitRadius, gs.sunSpeedMultiplier, gs.sunTarget);
 }
 
 void testbed_terminate(Arena* gameMem) {

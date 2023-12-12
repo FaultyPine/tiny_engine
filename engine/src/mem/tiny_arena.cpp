@@ -1,5 +1,5 @@
 //#include "pch.h"
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 #include "tiny_log.h"
 
 #define MAX_ARENA_NAME_LEN 30
@@ -37,6 +37,7 @@ void* arena_alloc(Arena* arena, size_t alloc_size) {
     if (is_out_of_mem) 
     {
         LOG_FATAL("Out of memory in arena %s\n", arena_get_name(arena));
+        // maybe we automatically resize here?
         return nullptr;
     }
     // TODO: enforce alignment    
@@ -94,3 +95,5 @@ void arena_temp_end(ArenaTemp tmp_arena) {
     tmp_arena.arena->offset = tmp_arena.offset;
     tmp_arena.arena->prev_offset = tmp_arena.prev_offset;
 }
+
+

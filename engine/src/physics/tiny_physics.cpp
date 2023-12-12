@@ -1,7 +1,7 @@
 #include "tiny_physics.h"
 
 #include "bullet/btBulletDynamicsCommon.h"
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 #include "tiny_engine.h"
 #include "render/model.h"
 #include "render/shapes.h"

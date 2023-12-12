@@ -6,7 +6,7 @@
 #include "shader.h"
 #include "shapes.h"
 #include "render/shadows.h"
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 
 void InitializeLightingSystem(Arena* arena)
 {
@@ -29,7 +29,7 @@ static BoundingBox GetTightBoundsOnCamFrustum(
 // camera frustum info and calculate the optimal size of the projection matrix
 static glm::mat4 GetDirectionalLightViewProjMatrix(glm::vec3 position, glm::vec3 target) 
 {
-    const f32 boxScale = 30.0f;
+    const f32 boxScale = 100.0f;
     glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, 0.01f, 500.0f);
     glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
     glm::mat4 lightMat = lightProj * lightView;
@@ -46,6 +46,7 @@ void LightDirectional::Visualize()
 {
     Shapes3D::DrawWireSphere(this->position, 5.0f, this->color);
     Shapes3D::DrawLine(this->position, this->position + (this->direction * 10.0f), this->color, 2.0f);
+    
 }
 
 LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 

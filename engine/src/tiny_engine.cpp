@@ -14,7 +14,7 @@
 #include "render/tiny_ogl.h"
 #include "render/framebuffer.h"
 #include "tiny_log.h"
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 #include "tiny_imgui.h"
 #include "render/tiny_lights.h"
 #include "physics/tiny_physics.h"

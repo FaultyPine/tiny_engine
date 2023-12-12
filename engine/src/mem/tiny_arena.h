@@ -2,19 +2,7 @@
 
 //#include "pch.h"
 #include "tiny_defines.h"
-#include <string.h>
-
-#define TSYSALLOC(size) malloc(size)
-#define TSYSFREE(ptr) { free(ptr); (ptr)=0; }
-#define TMEMSET(ptr, val, size) memset(ptr, val, size)
-#define TMEMCPY(dst, src, size) memcpy(dst, src, size)
-#define TMEMMOVE(dst, src, size) memmove(dst, src, size)
-
-#define KILOBYTES_BYTES(kb) (kb*1024)
-#define MEGABYTES_BYTES(mb) (mb*KILOBYTES_BYTES(1024))
-#define GIGABYTES_BYTES(gb) (gb*MEGABYTES_BYTES(1024))
-
-typedef void*(*AllocFunction)(size_t size);
+#include "tiny_mem.h"
 
 // ARENAS
 
@@ -34,7 +22,6 @@ TAPI void arena_clear(Arena* arena);
 TAPI void arena_free_all(Arena* arena);
 TAPI const char* arena_get_name(Arena* arena);
 
-
 struct ArenaTemp {
     Arena* arena;
     size_t prev_offset;
@@ -51,3 +38,4 @@ inline void* arena_resize(ArenaTemp* arena, void* old_mem, size_t old_size, size
 
 TAPI ArenaTemp arena_temp_init(Arena* arena);
 TAPI void arena_temp_end(ArenaTemp tmp_arena);
+

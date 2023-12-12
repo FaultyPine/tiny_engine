@@ -2,7 +2,7 @@
 
 
 #include "tiny_log.h"
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 
 #define ARRAY_CHECKS 1
 

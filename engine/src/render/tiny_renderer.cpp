@@ -1,6 +1,6 @@
 #include "tiny_renderer.h"
 
-#include "tiny_alloc.h"
+#include "mem/tiny_arena.h"
 #include "tiny_engine.h"
 
 struct Renderer
