@@ -47,8 +47,8 @@ void InitializeTextureCache(Arena* arena)
     GetEngineCtx().textureCache = textureCacheMem;
     new(&textureCacheMem->cachedTextures) TextureCacheMap();
 
-    // TODO: hardcode this invalid image into the source to reduce dependencies
-    Texture dummyTex = LoadTexture(ResPath("invalid_img.jpg").c_str());
+    u8 dummyImgData[] = {255,17,250,255};
+    Texture dummyTex = LoadGPUTextureFromImg(dummyImgData, 1, 1, TextureProperties::RGBA_NEAREST(), 0xBEEFEE);
     textureCacheMem->dummyTexture = dummyTex;
 }
 

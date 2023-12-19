@@ -62,6 +62,7 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
+- MOVE TO CLANG
 - Put lighting and material data in UBOs
 - Use transformation matrices instead of pos + rotation + scale transforms
 - ImGuizmo
