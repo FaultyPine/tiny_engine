@@ -18,5 +18,6 @@ build.ninja
 *.pdb
 *.pch
 *.exp
+*.d
 profiler_results.json
 vcpkg_installed/

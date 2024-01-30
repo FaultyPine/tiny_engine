@@ -25,7 +25,7 @@ def get_types_source_files():
 def get_types_metaprogram_compiler_args():
     # /TP forces C++ compilation mode despite .c extension
     return clean_string(f"""
-        -gfull -O0 {cpp_ver_arg()} 
+        -gfull -O0 {build_common_compiler_args()} {cpp_ver_arg()} 
     """)
 
 def get_types_metaprogram_linker_args():

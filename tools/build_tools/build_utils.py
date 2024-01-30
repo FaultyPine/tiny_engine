@@ -35,6 +35,9 @@ def build_dll_compiler_args():
 def build_dll_linker_args():
     return "/DLL"
 
+def build_common_compiler_args():
+    return "-MD -MF $out.d"
+
 # ===========================================================================================
 
 def is_windows():
@@ -110,7 +113,7 @@ def generate_ninjafile(
         #command="$cxx -showIncludes $compiler_args -c $in -Fo$out",
         command="$cxx $compiler_args -c $in -o $out -w",
         description="BUILD $out",
-        #deps="msvc")
+        deps="gcc",
         depfile="$out.d")
     n.rule(
         name="link",

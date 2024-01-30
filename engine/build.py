@@ -56,7 +56,7 @@ def get_compiler_args_clang():
     include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\imgui", "external\\bullet\\include"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
-        -gfull -O0 {build_dll_compiler_args()} {include_paths} {cpp_ver_arg()}
+        -gfull -O0 {build_common_compiler_args()} {build_dll_compiler_args()} {include_paths} {cpp_ver_arg()}
     """)
 
 
