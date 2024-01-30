@@ -19,3 +19,4 @@ build.ninja
 *.pch
 *.exp
 profiler_results.json
+vcpkg_installed/

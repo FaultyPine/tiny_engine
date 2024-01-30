@@ -25,12 +25,12 @@ def get_types_source_files():
 def get_types_metaprogram_compiler_args():
     # /TP forces C++ compilation mode despite .c extension
     return clean_string(f"""
-        /Zi /TP /std:c++17 /EHsc /nologo
+        -gfull -O0 {cpp_ver_arg()} 
     """)
 
 def get_types_metaprogram_linker_args():
     return clean_string(f"""
-        /DEBUG /NOLOGO
+        /DEBUG /NOLOGO libcmt.lib
     """)
 
 

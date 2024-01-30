@@ -16,9 +16,13 @@ from build_utils import *
 
 EDITOR_EXE_NAME = f"{EDITOR_NAME}.exe" if is_windows() else f"{EDITOR_NAME}.out"
 
-def get_linker_args_msvc():
+def get_linker_args_lld_link():
+    to_root = "..\\"
+    library_root_paths = ["", "external"]
+    library_paths = library_paths_str(to_root, library_root_paths)
     return clean_string(f"""
-        /LIBPATH:../external /LIBPATH:../ /OUT:{BUILD_DIR}/{EDITOR_EXE_NAME}
+        {library_paths}
+        /OUT:{BUILD_DIR}/{EDITOR_EXE_NAME}
         engine/build/TinyEngine.lib
         game/build/{APP_NAME}.lib
         user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib
@@ -26,30 +30,26 @@ def get_linker_args_msvc():
         /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
     """)
 
-def get_compiler_args_msvc(usePch: bool = False):
-    # MT = static link runtime lib
-    # Z7 = include debug info in object files
-    # Zi = produce .pbd file with debug info
-    # EHsc = catch C++ exceptions
-    # EHa = Enable c++ exceptions with SEH information
-    # Od = disable optimizations, faster compilation and simpler debugging
-    # LD - build DLL
+def get_compiler_args_clang():
+    # -g<level>   0/1/2/full  debug level
+    # -O<level> optimization level
+    # -shared   build dll
+    # -D <name>  preprocessor define
+    # -c    only compile, don't link (provided by default)
+    # -o    output object files (provided by default)
 
-    pch_part = f"/Yupch.h" if usePch else ""
     to_root = "..\\"
     include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\imgui", "game\\src"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
-        /std:c++17 
-        {include_paths}
-        /EHa /MT /Zi /FS /Gm- /Od /nologo /MP {pch_part}
+        -gfull -O0 {build_dll_compiler_args()} {include_paths} {cpp_ver_arg()}
     """)
 
 def get_editor_dll_sources():
     return get_files_with_ext_recursive_walk(SOURCE_DIR, "cpp")
 
 def build_editor():
-    generic_ninja_build(PYTHON_SCRIPT_PATH, get_compiler_args_msvc(), get_linker_args_msvc(), BUILD_DIR, get_editor_dll_sources, EDITOR_EXE_NAME, BIN_DIR)
+    generic_ninja_build(PYTHON_SCRIPT_PATH, get_compiler_args_clang(), get_linker_args_lld_link(), BUILD_DIR, get_editor_dll_sources, EDITOR_EXE_NAME, BIN_DIR)
 
 def run_editor():
     if is_windows():
@@ -61,7 +61,7 @@ def main():
         if "clean" in args:
             clean(BUILD_DIR)
         elif "regen" in args:
-            generate_ninjafile(PYTHON_SCRIPT_PATH, get_compiler_args_msvc(), get_linker_args_msvc(), BUILD_DIR, get_editor_dll_sources, EDITOR_EXE_NAME, True)
+            generate_ninjafile(PYTHON_SCRIPT_PATH, get_compiler_args_clang(), get_linker_args_lld_link(), BUILD_DIR, get_editor_dll_sources, EDITOR_EXE_NAME, True)
         elif "norun" in args:
             # we can't "run" the core engine dll, so just build
             build_editor()

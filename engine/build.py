@@ -15,41 +15,63 @@ from build_utils import *
 
 EXE_NAME = f"{ENGINE_NAME}.dll" if is_windows() else f"{ENGINE_NAME}.so"
 
-def get_linker_args_msvc():
+# unix flavor of lld
+# def get_linker_args_ld_lld():
+#     to_root = "..\\"
+#     library_root_paths = ["external"]
+#     library_paths = library_paths_str(to_root, library_root_paths)
+#     return clean_string(f"""
+#         {library_paths}
+#         -shared -o {BUILD_DIR}/{EXE_NAME}
+#         -l:GLFW/lib/windows/glfw3_mt.lib -l:assimp/lib/x64/assimp.lib
+#         -l:bullet/lib/Bullet3Common.lib -l:bullet/lib/BulletCollision.lib -l:bullet/lib/BulletDynamics.lib -l:bullet/lib/BulletSoftBody.lib -l:bullet/lib/LinearMath.lib
+#         -l:user32.lib -l:gdi32.lib -l:shell32.lib -l:msvcrt.lib -l:ws2_32.lib -l:winmm.lib
+#     """)
+
+# windows flavor of lld
+def get_linker_args_lld_link():
+    to_root = "..\\"
+    library_root_paths = ["external"]
+    library_paths = library_paths_str(to_root, library_root_paths)
     return clean_string(f"""
-        /LIBPATH:../external /DLL /OUT:{BUILD_DIR}/{EXE_NAME}
+        {library_paths}
+        {build_dll_linker_args()} /OUT:{BUILD_DIR}/{EXE_NAME} /MAP
         GLFW/lib/windows/glfw3_mt.lib assimp/lib/x64/assimp.lib
         bullet/lib/Bullet3Common.lib bullet/lib/BulletCollision.lib bullet/lib/BulletDynamics.lib bullet/lib/BulletSoftBody.lib bullet/lib/LinearMath.lib
         user32.lib gdi32.lib shell32.lib msvcrt.lib ws2_32.lib winmm.lib
-        /NODEFAULTLIB:libcmt.lib /machine:x64 /NODEFAULTLIB:libcmtd.lib /NODEFAULTLIB:msvcrtd.lib
+        /machine:x64
         /FUNCTIONPADMIN /OPT:NOREF /OPT:NOICF /DEBUG:FULL /NOLOGO /INCREMENTAL
     """)
 
-def get_compiler_args_msvc(usePch: bool = False):
-    # MT = static link runtime lib
-    # Z7 = include debug info in object files
-    # Zi = produce .pbd file with debug info
-    # EHsc = catch C++ exceptions
-    # EHa = Enable c++ exceptions with SEH information
-    # Od = disable optimizations, faster compilation and simpler debugging
-    # LD - build DLL
+def get_compiler_args_clang():
+    # -g<level>   0/1/2/full  debug level
+    # -O<level> optimization level
+    # -shared   build dll
+    # -D <name>  preprocessor define
+    # -c    only compile, don't link (provided by default)
+    # -o    output object files (provided by default)
+    # NOTE: the -D_DLL flag seems be the (a?) key to dynamically linking CRT. Maybe some windows header has a gaurd on a pragma link?
 
-    pch_part = f"/Yupch.h" if usePch else ""
     to_root = "..\\"
     include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\imgui", "external\\bullet\\include"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
-        /std:c++17 
-        {include_paths}
-        /EHa /MD /Zi /FS /Gm- /Od /nologo /MP {pch_part}
-        /LD /DTEXPORT /D_USRDLL /D_WINDLL
+        -gfull -O0 {build_dll_compiler_args()} {include_paths} {cpp_ver_arg()}
     """)
+
+
+def get_compiler_args():
+    return get_compiler_args_clang()
+def get_linker_args():
+    return get_linker_args_lld_link()
+    #return get_linker_args_ld_lld()
+
 
 def get_engine_dll_sources():
     return get_files_with_ext_recursive_walk(SOURCE_DIR, "cpp")
 
 def build_engine():
-    generic_ninja_build(PYTHON_SCRIPT_PATH, get_compiler_args_msvc(), get_linker_args_msvc(), BUILD_DIR, get_engine_dll_sources, EXE_NAME, BIN_DIR)
+    generic_ninja_build(PYTHON_SCRIPT_PATH, get_compiler_args(), get_linker_args(), BUILD_DIR, get_engine_dll_sources, EXE_NAME, BIN_DIR)
 
 
 def main():
@@ -58,7 +80,7 @@ def main():
         if "clean" in args:
             clean(BUILD_DIR)
         elif "regen" in args:
-            generate_ninjafile(PYTHON_SCRIPT_PATH, get_compiler_args_msvc(), get_linker_args_msvc(), BUILD_DIR, get_engine_dll_sources, EXE_NAME, True)
+            generate_ninjafile(PYTHON_SCRIPT_PATH, get_compiler_args(), get_linker_args(), BUILD_DIR, get_engine_dll_sources, EXE_NAME, True)
         elif "norun" in args:
             # we can't "run" the core engine dll, so just build
             build_engine()

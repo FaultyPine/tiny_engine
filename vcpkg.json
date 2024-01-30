@@ -1,0 +1,8 @@
+{
+  "dependencies": [
+    "llvm",
+    "assimp",
+    "glfw3",
+    "bullet3"
+  ]
+}

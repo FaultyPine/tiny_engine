@@ -5,6 +5,38 @@ from ninja_syntax import Writer
 UTILS_PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
 platform = sys.platform
 
+# ========== Compiler / Linker options generation =============================================
+
+def cpp_ver_arg():
+    return "-std=c++17"
+
+def include_arg(to_root, path):
+    return f"-I{to_root}\\{path}"
+
+def include_paths_str(to_root: str, paths: list) -> str:
+    include_paths = str.join(" ", [include_arg(to_root, inc_path) for inc_path in paths])
+    return include_paths
+
+def library_path_arg(to_root, path):
+    return f"/LIBPATH:{to_root}\\{path}"
+
+def library_paths_str(to_root: str, paths: list) -> str:
+    lib_paths = str.join(" ", [library_path_arg(to_root, lib_path) for lib_path in paths])
+    return lib_paths
+
+def get_compiler_driver():
+    return "clang++"
+
+def get_linker_driver():
+    return "lld-link"
+
+def build_dll_compiler_args():
+    return "-DTEXPORT -D_USRDLL -D_WINDLL -D_DLL"
+def build_dll_linker_args():
+    return "/DLL"
+
+# ===========================================================================================
+
 def is_windows():
     return platform == "win32" or platform == "cygwin"
 def is_linux():
@@ -68,19 +100,23 @@ def generate_ninjafile(
     os.makedirs(buildninja_path, exist_ok=True)
     buildfile = open(ninja_build_filename, "w")
     n = Writer(buildfile)
-    n.variable("cxx", "cl")
+    #n.variable("cxx", "cl")
+    n.variable("cxx", get_compiler_driver())
     n.variable("compiler_args", compiler_args)
     n.variable("linker_args", linker_args)
     n.variable("builddir", build_dir) # "builddir" is a special ninja var that dictates the output directory
     n.rule(
         name="compile", 
-        command="$cxx -showIncludes $compiler_args -c $in -Fo$out",
+        #command="$cxx -showIncludes $compiler_args -c $in -Fo$out",
+        command="$cxx $compiler_args -c $in -o $out -w",
         description="BUILD $out",
-        deps="msvc")
+        #deps="msvc")
+        depfile="$out.d")
     n.rule(
         name="link",
-        command="LINK -OUT:$out $in $linker_args",
-        description="LINK $out"
+        #command="LINK -OUT:$out $in $linker_args",
+        command=f"{get_linker_driver()} $in $linker_args",
+        description="link $out"
     )
     link_files = []
     source_files = get_source_files_func()
@@ -96,13 +132,6 @@ def generate_ninjafile(
     print(f"{Fore.GREEN}Regenerated{Style.RESET_ALL} ninja build!")
     buildfile.close()
 
-
-def include_arg(to_root, path):
-    return f"/I{to_root}\\{path}"
-
-def include_paths_str(to_root: str, paths: list) -> str:
-    include_paths = str.join(" ", [include_arg(to_root, inc_path) for inc_path in paths])
-    return include_paths
 
 def generic_ninja_build(buildninja_path: str, 
         compiler_args: str, 

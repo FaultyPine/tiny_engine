@@ -18,12 +18,7 @@ Libraries Used:
 
 This project is currently built and maintained for windows. [vcpkg](https://vcpkg.io/en/) is recommended for installing dependencies
 
-Assimp: `vcpkg install assimp`
-GLFW: `vcpkg install glfw3`
-Bullet: `vcpkg install bullet3`
-
-TODO: scan for dependencies before generating ninja build. 
-Make this a bit nicer 
+Run `vcpkg install` in the root directory of this project (same directory as the vcpkg.json file)
 
 ## Features/Included Implementations
 - Postprocessing
@@ -62,7 +57,9 @@ https://user-images.githubusercontent.com/53064235/232272366-69ce9e2f-c13b-4db3-
 
 
 ### TODO:
-- MOVE TO CLANG
+- MOVE TO CLANG - seems to be all good
+
+
 - Put lighting and material data in UBOs
 - Use transformation matrices instead of pos + rotation + scale transforms
 - ImGuizmo
