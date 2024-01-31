@@ -582,10 +582,17 @@ void DrawSquare(const glm::vec2& pos, const glm::vec2& size,
     Shapes2D::DrawShape(pos, size, rotation, rotationAxis, color, shader);
 }
 
-void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color, bool isHollow) {
+void DrawCircle(
+    const glm::vec2& pos, 
+    f32 radius, 
+    const glm::vec4& color, 
+    bool isHollow, 
+    f32 outlineThickness) 
+{
     SHAPE_SHADER(shader, "shaders/shapes/shape.vert", "shaders/shapes/circle.frag");
     s32 hollow = isHollow ? 1 : 0;
     shader.setUniform("isHollow", hollow);
+    shader.setUniform("circleThickness", outlineThickness);
     Shapes2D::DrawShape(pos, glm::vec2(radius, radius), 0.0, glm::vec3(0.0, 0.0, 1.0), color, shader);
 }
 

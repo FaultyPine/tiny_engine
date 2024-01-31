@@ -6,7 +6,7 @@ in vec2 TexCoords;
 
 uniform vec4 color;
 uniform int isHollow;
-
+uniform float circleThickness;
 
 void main()
 {
@@ -16,8 +16,7 @@ void main()
     float circle = 1-step(halfway, distFromCenter);
     
     if (isHollow == 1) {
-        float outlineThickness = 0.07; // higher = thicker
-        float outline = step(halfway-outlineThickness, distFromCenter);
+        float outline = step(halfway-circleThickness, distFromCenter);
         circle *= outline;
     }
 

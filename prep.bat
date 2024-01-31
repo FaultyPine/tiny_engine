@@ -1,5 +1,6 @@
 @echo off
 
+cls
 
 set pythoncmd=python
 WHERE %pythoncmd% >nul 2>nul

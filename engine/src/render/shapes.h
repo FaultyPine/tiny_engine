@@ -32,7 +32,12 @@ TAPI void DrawShape(const glm::vec2& pos, const glm::vec2& size,
             const glm::vec4& color, const Shader& shader);
 
 
-TAPI void DrawCircle(const glm::vec2& pos, f32 radius, const glm::vec4& color = glm::vec4(1), bool isHollow = false);
+TAPI void DrawCircle(
+    const glm::vec2& pos, 
+    f32 radius, 
+    const glm::vec4& color = glm::vec4(1), 
+    bool isHollow = false, 
+    f32 outlineThickness = 0.07f);
 
 TAPI void DrawWireframeSquare(const glm::vec2& start, const glm::vec2& end, glm::vec4 color, f32 width);
 TAPI void DrawSquare(const glm::vec2& pos, const glm::vec2& size, 

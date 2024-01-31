@@ -3,7 +3,7 @@
 call "prep.bat"
 
 
-pushd game
+pushd movement_proj
 echo =========== Game ===========
 %pythoncmd% build.py %*
 popd
