@@ -13,6 +13,18 @@
         "console": "integratedTerminal"
     },
     {
+        "name": "Movementproj",
+        "type": "cppvsdbg",
+        "request": "launch",
+        "program": "${workspaceFolder}\\bin\\Movement.exe",
+        "args": ["${workspaceFolder}\\res\\"],
+        "stopAtEntry": false,
+        //"preLaunchTask": "build_all",
+        "cwd": "${workspaceFolder}\\bin",
+        "environment": [],
+        "console": "integratedTerminal"
+    },
+    {
         "name": "Editor",
         "type": "cppvsdbg",
         "request": "launch",

@@ -344,13 +344,14 @@ void InitEngine(
             ShaderSystemPreDraw();
             Framebuffer screenRenderFb;
             { PROFILE_SCOPE("Game Render");
-                ImGui::Text("Game memory: %.2f%%", ((f32)gameArena->offset / gameArena->backing_mem_size) * 100.0f);
-                ImGui::Text("Engine memory: %.2f%%", ((f32)engineArena->offset / engineArena->backing_mem_size) * 100.0f);
                 screenRenderFb = gameFuncs.renderFunc(gameArena);
             }
             glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
             // blit the game's rendered frame to default framebuffer
-            Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
+            if (screenRenderFb.isValid())
+            {
+                Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
+            }
             ImGuiEndFrame();
         }
     }

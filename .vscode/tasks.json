@@ -4,7 +4,7 @@
         {
             "taskName": "build_all",
             "type": "shell",
-            "command": "build_all.bat",
+            "command": "build.bat",
             "group": {
                 "kind": "build",
                 "isDefault": true

@@ -90,7 +90,17 @@
         "queue": "cpp",
         "ranges": "cpp",
         "span": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "string_view": "cpp"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/*.d": true,
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "editor.minimap.enabled": false,

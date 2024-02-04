@@ -8,7 +8,7 @@ void update(PhysicsObject* objs, u32 numObjs, float dt)
 {
     Solver::apply_gravity(objs, numObjs);
     Solver::apply_constraints(objs, numObjs);
-    //Solver::solve_collisions(objs, numObjs);
+    Solver::solve_collisions(objs, numObjs);
 
     Solver::update_positions(objs, numObjs, dt);
 }
@@ -30,17 +30,17 @@ void apply_gravity(PhysicsObject* objs, u32 numObjs)
     }
 }
 
-void apply_circle_constraint(PhysicsObject* objs, u32 numObjs, glm::vec2 position, f32 radius)
+void apply_circle_constraint(PhysicsObject* objs, u32 numObjs, glm::vec2 constraintPos, f32 constraintRadius)
 {
     for (u32 i = 0; i < numObjs; i++)
     {
         PhysicsObject& obj = objs[i];
-        glm::vec2 to_obj = obj.position - position; // obj -> circle constraint center
+        glm::vec2 to_obj = obj.position - constraintPos; // obj -> circle constraint center
         f32 dist = glm::length(to_obj);
-        if (dist > (radius - obj.radius))
+        if (dist > (constraintRadius - obj.radius))
         {
             glm::vec2 displacement = to_obj / dist;
-            obj.position = position + displacement * (radius - obj.radius);
+            obj.position = constraintPos + displacement * (constraintRadius - obj.radius);
         }
     }
 }

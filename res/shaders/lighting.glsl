@@ -8,6 +8,7 @@
 uniform samplerCube pointLightShadowMaps[MAX_NUM_LIGHTS];
 uniform sampler2D directionalLightShadowMap;
 
+// TODO: poisson disk sampling for less bandy smoother shadow edges
 float PCFShadow(
     vec2 projCoords, 
     float currentDepth, 

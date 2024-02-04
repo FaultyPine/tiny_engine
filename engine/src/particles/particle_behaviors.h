@@ -38,7 +38,7 @@ struct ParticleAlphaDecay : ParticleBehavior {
     void OnTick(std::vector<Particle>& particles) override {
         for (auto& particle : particles) {
             particle.color.a -= alphaDecayPerTick;
-            particle.color.a = Math::MAX(0.0f, particle.color.a);
+            particle.color.a = Math::Max(0.0f, particle.color.a);
         }
     }
 };

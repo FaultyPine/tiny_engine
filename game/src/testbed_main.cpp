@@ -659,6 +659,6 @@ void testbed_standalone_entrypoint(int argc, char *argv[])
         16, 9,
         true,
         GetTestbedAppRunCallbacks(), 
-        MEGABYTES_BYTES(20)
+        MEGABYTES_BYTES(5)
     ); 
 }

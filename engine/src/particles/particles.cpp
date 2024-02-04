@@ -34,9 +34,9 @@ void ParticleSystem::TrySpawnNewParticles(glm::vec3 position) {
         numNewParticles += behavior->ShouldEmitParticle();
     }
     if (numNewParticles) {
-        LOG_INFO("Spawning %i particles. Adjusted numNewParticles: %i", numNewParticles, Math::MIN(numNewParticles, (u32)particles.size()));
+        LOG_INFO("Spawning %i particles. Adjusted numNewParticles: %i", numNewParticles, Math::Min(numNewParticles, (u32)particles.size()));
     }
-    numNewParticles = Math::MIN(numNewParticles, (u32)particles.size());
+    numNewParticles = Math::Min(numNewParticles, (u32)particles.size());
 
     for (u32 i = 0; i < numNewParticles; i++) {
         Particle newParticle = Particle();

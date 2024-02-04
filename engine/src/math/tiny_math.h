@@ -50,10 +50,10 @@ TAPI glm::vec3 Lerp(glm::vec3 a, glm::vec3 b, f32 t);
 TAPI glm::vec2 RandomPointInCircle(f32 radius);
 TAPI glm::vec3 RandomPointInSphere(f32 radius);
 
-template<typename T> inline T MAX(T x, T y) { return x > y ? x : y; }
-template<typename T> inline T MIN(T x, T y) { return x < y ? x : y; }
-template <typename T> void CLAMP(T& value, const T& low, const T& high) {
-    value = value < low ? low : (value > high ? high : value); 
+template<typename T> inline T Max(T x, T y) { return x > y ? x : y; }
+template<typename T> inline T Min(T x, T y) { return x < y ? x : y; }
+template <typename T> inline T Clamp(T& value, const T& low, const T& high) {
+    return value < low ? low : (value > high ? high : value); 
 }
 
 template <typename T> int signof(T val) {

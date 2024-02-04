@@ -328,7 +328,7 @@ Texture LoadTexture(
     tex = LoadGPUTextureFromImg(data, width, height, props, strHash);
     if (!tex.isValid()) 
     {
-        LOG_ERROR("Couldn't load %s", imgPath);
+        LOG_ERROR("Couldn't load %s", imgPath.c_str());
         TINY_ASSERT(false && "failed to load texture!");
     }
     TextureInternal& ti = GetTextureCache().cachedTextures[tex];
@@ -368,7 +368,7 @@ Texture LoadTextureAsync(
             Texture ret = LoadGPUTextureFromImg(data, width, height, newProps, strHash);
             if (!ret.isValid())
             {
-                LOG_ERROR("Couldn't load %s", imgPath);
+                LOG_ERROR("Couldn't load %s", imgPath.c_str());
                 TINY_ASSERT(false && "failed to load texture!");
             }
             TextureInternal& ti = GetTextureCache().cachedTextures[ret];

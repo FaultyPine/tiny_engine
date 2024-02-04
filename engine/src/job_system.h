@@ -5,7 +5,7 @@
 #include "tiny_defines.h"
 #include "containers/mutex_queue.h"
 #include <functional>
-
+#include <vector>
 
 struct Job {
     std::function<void()> func;

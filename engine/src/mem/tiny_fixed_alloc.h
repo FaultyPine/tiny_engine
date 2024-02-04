@@ -4,6 +4,7 @@
 // a simple fixed-size block allocator w/ freelist
 #include "tiny_defines.h"
 
+// TODO: Test this!
 
 struct FixedBlockAllocator
 {

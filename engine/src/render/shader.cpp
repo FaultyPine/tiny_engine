@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <charconv>
+#include <xstring>
 
 #include "camera.h"
 #include "tiny_lights.h"
@@ -265,12 +266,14 @@ void HandleShaderUBOInit(u32 shaderProgram)
 
 s32 GetShaderErrorLineNum(s8* infoLog, u32 infoLogSize)
 {
-    std::string_view str = std::string_view(infoLog, infoLogSize);
+    std::string str = std::string(infoLog, infoLogSize);
     size_t errorLineStrEnd = str.find(") : error ", 0); // exclusive
     size_t errorLineStrStart = str.rfind("(", errorLineStrEnd)+1; // inclusive
-    std::string_view errorLineNum = std::string_view(infoLog + errorLineStrStart, errorLineStrEnd - errorLineStrStart);
-    s32 lineNum = -1;
-    auto result = std::from_chars(errorLineNum.data(), errorLineNum.data() + errorLineNum.size(), lineNum);
+    std::string errorLineNum = std::string(infoLog + errorLineStrStart, errorLineStrEnd - errorLineStrStart);
+    //s32 lineNum = -1;
+    //auto result = std::from_chars(errorLineNum.data(), errorLineNum.data() + errorLineNum.size(), lineNum);
+    char** end = 0;
+    s32 lineNum = strtol(errorLineNum.data(), end, 10);
     //if (result.ec == std::errc::invalid_argument) {
         //LOG_WARN("Could not convert.");
     //}
@@ -351,7 +354,7 @@ std::string ShaderPreprocessIncludes(
                     fullSourceCode += recursiveShaderSource;
                 }
                 else {
-                    LOG_ERROR("Failed to open shader include: %s", path);
+                    LOG_ERROR("Failed to open shader include: %s", path.c_str());
                     TINY_ASSERT(false);
                 }
             }

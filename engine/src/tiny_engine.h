@@ -30,6 +30,7 @@ struct TextureCache;
 struct PhysicsWorld;
 struct MaterialRegistry;
 struct Renderer;
+struct EntityRegistry;
 
 struct EngineContext
 {
@@ -57,6 +58,7 @@ struct EngineContext
     PhysicsWorld* physicsWorld = 0;
     MaterialRegistry* materialRegistry = 0;
     Renderer* renderer = 0;
+    EntityRegistry* entityRegistry = 0;
 };
 
 TAPI EngineContext& GetEngineCtx();
