@@ -17,7 +17,7 @@ Arena arena_init(void* backing_buffer, size_t arena_size) {
 Arena arena_init(void* backing_buffer, size_t arena_size, const char* name) {
     Arena a = arena_init(backing_buffer, arena_size);
     char* name_mem = (char*)arena_alloc(&a, strnlen(name, MAX_ARENA_NAME_LEN)); 
-    strcpy((char*)name, name_mem);
+    strcpy(name_mem, (char*)name);
     return a;
 }
 

@@ -13,6 +13,7 @@ struct Arena {
     size_t prev_offset = 0;
 };
 
+#define arena_alloc_type(arena, type, num) ((type*)arena_alloc(arena, sizeof(type) * num))
 
 TAPI Arena arena_init(void* backing_buffer, size_t arena_size);
 TAPI Arena arena_init(void* backing_buffer, size_t arena_size, const char* name);
