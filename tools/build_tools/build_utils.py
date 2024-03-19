@@ -36,7 +36,7 @@ def build_dll_linker_args():
     return "/DLL"
 
 def build_common_compiler_args():
-    return "-MD -MF $out.d"
+    return "-MD -MF out.d"
 
 # ===========================================================================================
 
@@ -114,7 +114,7 @@ def generate_ninjafile(
         command="$cxx $compiler_args -c $in -o $out -w",
         description="BUILD $out",
         deps="gcc",
-        depfile="$out.d")
+        depfile="out.d")
     n.rule(
         name="link",
         #command="LINK -OUT:$out $in $linker_args",
@@ -143,6 +143,8 @@ def generic_ninja_build(buildninja_path: str,
         get_source_files_func,
         output_exe_name: str,
         output_dir: str):
+    os.makedirs(build_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     generate_ninjafile(buildninja_path, compiler_args, linker_args, build_dir, get_source_files_func, output_exe_name, False)
     start_time = time.time()
     command(get_ninja_command(buildninja_path)) # actual build
