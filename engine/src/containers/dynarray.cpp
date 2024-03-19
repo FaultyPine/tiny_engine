@@ -15,6 +15,9 @@ struct DynArrayHeader
     u32 capacity;
     // size in bytes of each element
     u32 stride;
+    // allocation function
+    DynArrayAllocFunc allocFunc;
+    DynArrayFreeFunc freeFunc;
 };
 
 inline DynArrayHeader* GetHeaderPointer(DynArray array)
@@ -27,19 +30,45 @@ inline DynArrayHeader* GetHeaderPointer(DynArray array)
 
 // ===== Create & Destroy =====
 
-DynArray __DynArrayCreate(u32 stride, u32 initialCapacity)
+void* DynArrayInternalAlloc(DynArrayAllocFunc allocFunc, size_t size)
+{
+    if (allocFunc == nullptr)
+    {
+        return TSYSALLOC(size);
+    }
+    else
+    {
+        return allocFunc(size);
+    }
+}
+
+void DynArrayInternalFree(DynArrayFreeFunc freeFunc, void* data)
+{
+    if (freeFunc == nullptr)
+    {
+        TSYSFREE(data);
+    }
+    else
+    {
+        freeFunc(data);
+    }
+}
+
+DynArray __DynArrayCreate(u32 stride, u32 initialCapacity, DynArrayAllocFunc allocFunc, DynArrayFreeFunc freeFunc)
 {
     u32 headerSize = sizeof(DynArrayHeader);
     u32 arraySize = initialCapacity * stride;
     u32 allocSize = headerSize + arraySize;
     // TODO: allow custom allocator
-    u8* arrayBackingMem = (u8*)TSYSALLOC(allocSize);
+    u8* arrayBackingMem = (u8*)DynArrayInternalAlloc(allocFunc, allocSize);
     TMEMSET(arrayBackingMem, 0, allocSize);
     // populate header
     DynArrayHeader* headerPointer = (DynArrayHeader*)arrayBackingMem;
     headerPointer->size = 0;
     headerPointer->capacity = initialCapacity;
     headerPointer->stride = stride;
+    headerPointer->allocFunc = allocFunc;
+    headerPointer->freeFunc = freeFunc;
     // our DynArray is a pointer to our array elements, and metadata about the array
     // is stored just before that pointer
     DynArray result = arrayBackingMem + headerSize; 
@@ -49,8 +78,8 @@ DynArray __DynArrayCreate(u32 stride, u32 initialCapacity)
 void DynArrayDestroy(DynArray& array)
 {
     // since header info is stored before the array pointer, move back to the beginning of the allocation to free it
-    void* baseArrayPtr = GetHeaderPointer(array);
-    TSYSFREE(baseArrayPtr);
+    DynArrayHeader* baseArrayPtr = GetHeaderPointer(array);
+    DynArrayInternalFree(baseArrayPtr->freeFunc, baseArrayPtr);
     array = (void*)0;
 }
 
@@ -62,7 +91,7 @@ DynArray DynArrayResize(DynArray array)
     TINY_ASSERT(header->capacity != 0 && "resize called on array with 0 capacity");
 #endif
     u32 newCapacity = header->size * GROWTH_FACTOR;
-    DynArray newArray = __DynArrayCreate(header->stride, newCapacity);
+    DynArray newArray = __DynArrayCreate(header->stride, newCapacity, header->allocFunc, header->freeFunc);
     DynArrayHeader* newArrayBasePtr = GetHeaderPointer(newArray);
     u32 totalOldArraySize = (header->size * header->stride) + sizeof(DynArrayHeader);
     TMEMCPY(newArrayBasePtr, header, totalOldArraySize);

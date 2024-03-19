@@ -60,12 +60,8 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 
 
 ### TODO:
-- MOVE TO CLANG - seems to be all good
 
-
-- Put lighting and material data in UBOs
-- Use transformation matrices instead of pos + rotation + scale transforms
-- ImGuizmo
+- Put material data in UBOs so we can batch
 - growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
 - "entities"/serialize objects... 
     - Big refactor - move types to the type reflection system
@@ -73,8 +69,10 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 - Renderer
     - Centralized system that takes in draw commands. At end of frame draws all requests and can
         do pre-processing on those commands like batching
+    - deferred renderer
 - HDR/Tonemapping & Bloom
 - PBR
+- ImGuizmo
 - Resource system
     - load from filesystem
     - store things like Shader, Mesh, Model, etc

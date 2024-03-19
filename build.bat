@@ -18,7 +18,7 @@ IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && popd && exit /b)
 popd
 
 :: build game
-pushd movement_proj
+pushd game
 echo =========== Game ===========
 %pythoncmd% build.py %*
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && popd && exit /b)

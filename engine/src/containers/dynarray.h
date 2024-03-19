@@ -3,15 +3,22 @@
 
 #include "tiny_defines.h"
 
+// "stretchy buffer" implementation
+// dynamic array that resizes itself when capacity is reached
+// stores capacity/size in a header section stored *before* the actual array pointer
+
 typedef void* DynArray;
 constexpr static u32 INITIAL_CAPACITY = 5;
+
+typedef void* (*DynArrayAllocFunc)(size_t size);
+typedef void (*DynArrayFreeFunc)(void* data);
 
 // Create an array with an optional initial capacity (number of elements)
 DynArray __DynArrayCreate(u32 stride, u32 initialCapacity);
 template<typename T>
-T* DynArrayCreate(u32 initialCapacity = INITIAL_CAPACITY)
+T* DynArrayCreate(u32 initialCapacity = INITIAL_CAPACITY, DynArrayAllocFunc allocFunc = nullptr, DynArrayFreeFunc freeFunc = nullptr)
 {
-    return (T*)__DynArrayCreate(sizeof(T), initialCapacity);
+    return (T*)__DynArrayCreate(sizeof(T), initialCapacity, allocFunc, freeFunc);
 }
 // Frees backing memory
 void DynArrayDestroy(DynArray& array);
@@ -24,9 +31,9 @@ u32 DynArrayGetCapcity(DynArray array);
 u32 DynArrayGetStride(DynArray array);
 
 template <typename T>
-T& DynArrayGet(DynArray array, u32 index)
+inline T& DynArrayGet(DynArray array, u32 index)
 {
-    return ((T*)array[index]);
+    return ((T*)array)[index];
 }
 
 void* __DynArrayPushAt(DynArray array, void* obj, u32 index);
