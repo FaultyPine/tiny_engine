@@ -6,12 +6,14 @@
 // array that stores a fixed-size number of elements in place
 // if we go over the fixed size of this array, we dynamically allocate
 // more space for extra elements in addition to the fixed size buffer
+// extra elements will always be allocated with the system allocator right now. 
+// The extra elements are meant as a fallback/backup allocation strat - for that reason
+// I won't be allowing those to be allocated with an Arena or things like that
 
 template <typename T, u32 fixedSize>
 struct FixedGrowableArray
 {
     FixedGrowableArray();
-    FixedGrowableArray(Arena* arena);
 
     // adds element to end of array
     void push_back(const T& element);

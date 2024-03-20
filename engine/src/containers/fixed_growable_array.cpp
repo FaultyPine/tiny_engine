@@ -136,8 +136,9 @@ void FixedGrowableArrayTests()
     TINY_ASSERT(arr.at(0) == testFixedSize); // should still be the case...
     TINY_ASSERT(arr.at(1) == 99);
     TINY_ASSERT(arr.at(2) == 2);
+    TINY_ASSERT(arr.at(arr.size-1) == 9);
     arr.clear();
     TINY_ASSERT(arr.size == 0);
-    arr.insert(999, 3);
+    //arr.insert(999, 3); // should report an error
     LOG_INFO("FixedGrowableArray tests successful!");
 }

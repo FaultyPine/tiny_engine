@@ -100,7 +100,7 @@
         "**/CVS": true,
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
-        "**/*.d": true,
+        //"**/*.d": true,
     },
     "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "editor.minimap.enabled": false,
