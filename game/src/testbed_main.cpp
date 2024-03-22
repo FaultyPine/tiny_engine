@@ -13,7 +13,7 @@
 #include "particles/particles.h"
 #include "mem/tiny_arena.h"
 #include "physics/tiny_physics.h"
-
+#include "render/tiny_renderer.h"
 
 //#define ISLAND_SCENE
 #define SPONZA_SCENE
@@ -378,9 +378,7 @@ void drawGameState() {
         pointLight.Visualize();
     }
     GetEngineCtx().lightsSubsystem->lights.sunlight.Visualize();
-
     
-
     { PROFILE_SCOPE("Skybox draw");
         gs.skybox.Draw();
     }
@@ -525,7 +523,7 @@ void testbed_init(Arena* gameMem) {
 #ifdef SPONZA_SCENE
     Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
     WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
-    //PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
+    PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
 #endif
 
     // Init lights
@@ -563,9 +561,6 @@ void testbed_init(Arena* gameMem) {
 Framebuffer testbed_render(const Arena* const gameMem) {
     PROFILE_FUNCTION();
     GameState& gs = GameState::get();
-    #if 0
-    SetWireframeDrawing(true);
-    #endif
 
     ShadowMapPrePass();
     DepthAndNormsPrePass();
@@ -608,11 +603,10 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     ImGui::Text("cam right: %f %f %f", cameraRight.x, cameraRight.y, cameraRight.z);
     glm::vec3 axisGizmoOffsetWS = cameraRight * offset;
     glm::vec3 camRel = Camera::GetMainCamera().cameraPos + camFront + axisGizmoOffsetWS;
-    Shapes3D::DrawLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
-    Shapes3D::DrawLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
-    Shapes3D::DrawLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
+    Renderer::PushLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
+    Renderer::PushLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
+    Renderer::PushLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
     
-    Framebuffer::BindDefaultFrameBuffer();
     return gs.postprocessingFB;
 }
 

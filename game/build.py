@@ -72,7 +72,7 @@ def get_game_standalone_compiler_args_msvc():
     include_root_paths = ["", "engine\\src", "types\\generated"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
-        -gfull -O0 {include_paths} {cpp_ver_arg()}
+        -ggdb -O0 {include_paths} {cpp_ver_arg()}
     """)
 
 def get_game_dll_sources():

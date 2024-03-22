@@ -1,20 +1,22 @@
-#include "fixed_growable_array.h"
+//#include "fixed_growable_array.h"
 
 #include "tiny_log.h"
 #include "mem/tiny_mem.h"
-#include "math/tiny_math.h"
 
-
+constexpr u32 GROWTH_FACTOR = 2;
 template <typename T, u32 fixedSize>
 static void CheckArrayResize(FixedGrowableArray<T, fixedSize>& array)
 {
-    // if elements points to fixedMem, we haven't initialized our dynamic mem
-    if (array.size + 1 > fixedSize && array.elements == &array.fixedMem[0])
+    TINY_ASSERT(array.size <= array.capacity);
+    if (array.size >= array.capacity)
     {
-        // system heap allocating rn. Would be good to allow this to use a user-specified arena
-        array.elements = TSYSALLOC(sizeof(T) * array.size * 2);
-        // move elements from fixed buffer to dynamic one
-        TMEMMOVE(array.elements, array.fixedMem, sizeof(T) * array.size);
+        array.capacity = array.size * GROWTH_FACTOR;
+        // moving old buffer (could be our fixed mem or a dyn alloc) to a new allocation
+        T* prevAlloc = array.elements == &array.fixedMem[0] ? nullptr : array.elements;
+        T* prevElements = array.elements;
+        array.elements = (T*)TSYSREALLOC(prevAlloc, sizeof(T) * array.capacity);
+        // move elements from prev buffer to new one
+        TMEMCPY(array.elements, prevElements, sizeof(T) * array.size);
         // notably... this will invalidate pointers to these elements. This is fine, use indices instead
     }
 }
@@ -22,7 +24,8 @@ static void CheckArrayResize(FixedGrowableArray<T, fixedSize>& array)
 template <typename T, u32 fixedSize>
 FixedGrowableArray<T, fixedSize>::FixedGrowableArray()
 {
-    elements = fixedMem;
+    elements = &fixedMem[0];
+    capacity = fixedSize;
     size = 0;
 }
 
@@ -82,7 +85,7 @@ T FixedGrowableArray<T, fixedSize>::erase(u32 index)
     T tmp = DynArrayGet<T>(elements, index); // copy
     // move everything from the right of this index to the left
     size_t moveSize = sizeof(T) * (size-index);
-    TMEMCPY(&DynArrayGet<T>(elements, index), &DynArrayGet<T>(elements, index+1), moveSize); 
+    TMEMMOVE(&DynArrayGet<T>(elements, index), &DynArrayGet<T>(elements, index+1), moveSize); 
     size--;
     return tmp;
 }

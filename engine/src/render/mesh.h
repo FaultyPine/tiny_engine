@@ -6,21 +6,9 @@
 #include "texture.h"
 #include "tiny_types.h"
 #include "tiny_material.h"
+#include "tiny_renderer.h"
 #include <vector>
 
- 
-struct Vertex 
-{
-    glm::vec3 position = glm::vec3(0);
-    glm::vec3 normal = glm::vec3(0);
-    glm::vec3 tangent = glm::vec3(0);
-    glm::vec2 texCoords = glm::vec3(0);
-    glm::vec3 color = glm::vec3(1);
-    inline std::string str() 
-    {
-        return "[Pos = " + glm::to_string(position) + "  Normals = " + glm::to_string(normal) + " Tangent = " + glm::to_string(tangent) + "  TexCoords = " + glm::to_string(texCoords) + "  Colors = " + glm::to_string(color) + " ]";
-    }
-};
 
 struct Mesh 
 {

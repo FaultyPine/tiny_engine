@@ -189,7 +189,7 @@ u32 DynArrayGetSize(DynArray array)
     return headerPtr->size;
 }
 
-u32 DynArrayGetCapcity(DynArray array)
+u32 DynArrayGetCapacity(DynArray array)
 {
     DynArrayHeader* headerPtr = GetHeaderPointer(array);
     return headerPtr->capacity;
@@ -226,7 +226,7 @@ void DynArrayTests()
         TINY_ASSERT(expected_2[i] == arr[i]);
         LOG_INFO("%i",arr[i]);
     }
-    TINY_ASSERT(DynArrayGetCapcity(arr) == 5);
+    TINY_ASSERT(DynArrayGetCapacity(arr) == 5);
     TINY_ASSERT(DynArrayGetStride(arr) == sizeof(s32));
 
     for (int i = 0; i < 20; i++)
@@ -235,7 +235,7 @@ void DynArrayTests()
     }
 
     TINY_ASSERT(DynArrayGetSize(arr) == 24);
-    TINY_ASSERT(DynArrayGetCapcity(arr) == 40);
+    TINY_ASSERT(DynArrayGetCapacity(arr) == 40);
 
     s32 lastElem;
     DynArrayPop(arr, lastElem);

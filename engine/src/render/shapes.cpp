@@ -7,6 +7,7 @@
 #include "tiny_fs.h"
 #include "math/tiny_math.h"
 #include "tiny_ogl.h"
+#include "tiny_renderer.h"
 
 #define PAR_SHAPES_IMPLEMENTATION
 #include "par/par_shapes.h"
@@ -138,80 +139,6 @@ Mesh GenPlaneMesh(u32 resolution) {
     return Mesh(planeverts, indices, GetDummyMaterial(), "GeneratedPlane");
 }
 
-void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color, f32 width) {
-    static Shader shader;
-    if (!shader.isValid()) {
-        shader = Shader::CreateShaderFromStr(
-R"(
- 
-layout (location = 0) in vec3 vertPos;
-layout (location = 1) in vec4 vertColor;
-out vec4 color;
-uniform mat4 mvp;
-void main(){
-    color = vertColor;
-	gl_Position = mvp * vec4(vertPos, 1.0);
-}
-)",
-R"(
- 
-out vec4 FragColor;
-in vec4 color;
-void main(){
-	FragColor = color;
-}
-)"
-        );
-    }
-    static u32 quadVAO = 0;
-    static u32 VBO = 0;
-    const f32 lineVerts[] = {
-        start.x, start.y, start.z, // vert pos
-        color.r, color.g, color.b, color.a, // vert col
-
-        end.x,   end.y,   end.z,
-        color.r, color.g, color.b, color.a,
-    };
-    if (quadVAO == 0) {
-        GLCall(glGenVertexArrays(1, &quadVAO));
-        GLCall(glGenBuffers(1, &VBO));
-        
-        GLCall(glBindVertexArray(quadVAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(lineVerts), lineVerts, GL_DYNAMIC_DRAW));
-
-        // this shader has vert attributes: vec3 vertPos  vec3 vertNormal  vec2 vertTexCoord  vec3 vertColor
-        GLCall(glEnableVertexAttribArray(0));
-        GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)0));
-        GLCall(glEnableVertexAttribArray(1));
-        GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)(3 * sizeof(f32))));
-        
-
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-        GLCall(glBindVertexArray(0));
-    }
-    else {
-        // each update, reupload the vertex data to the gpu since the line positions may have changed
-        //GLCall(glBindVertexArray(quadVAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        // copy into gpu vertex buffer with offset 0
-        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVerts), lineVerts));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-    }
-    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
-    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
-    glm::mat4 model = glm::mat4(1); // specifying start/end pos in vertex data, don't need anything here
-    glm::mat4 mvp = proj * view * model;
-    shader.setUniform("mvp", mvp);
-    shader.use();
-
-    GLCall(glBindVertexArray(quadVAO));
-    glLineWidth(width);
-    GLCall(glDrawArrays(GL_LINES, 0, 2));
-    glLineWidth(1.0);
-    GLCall(glBindVertexArray(0));
-}
-
 void DrawCube(const Transform& tf, const glm::vec4& color) {
     SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
     static u32 cubeVAO = 0;
@@ -264,80 +191,6 @@ void DrawWireSphere(glm::vec3 center, f32 radius, glm::vec4 color)
     SetWireframeDrawing(true);
     DrawSphere(center, radius, color);
     SetWireframeDrawing(false);
-}
-
-void DrawTriangle(glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec4 color)
-{
-    static Shader shader;
-    if (!shader.isValid()) {
-        shader = Shader::CreateShaderFromStr(
-R"(
- 
-layout (location = 0) in vec3 vertPos;
-layout (location = 1) in vec4 vertColor;
-out vec4 color;
-uniform mat4 mvp;
-void main(){
-    color = vertColor;
-	gl_Position = mvp * vec4(vertPos, 1.0);
-}
-)",
-R"(
- 
-out vec4 FragColor;
-in vec4 color;
-void main(){
-	FragColor = color;
-}
-)"
-        );
-    }
-    static u32 quadVAO = 0;
-    static u32 VBO = 0;
-    const f32 lineVerts[] = {
-        a.x, a.y, a.z, // vert pos
-        color.r, color.g, color.b, color.a, // vert col
-        b.x,   b.y,   b.z,
-        color.r, color.g, color.b, color.a,
-        c.x,   c.y,   c.z,
-        color.r, color.g, color.b, color.a,
-    };
-    if (quadVAO == 0) {
-        GLCall(glGenVertexArrays(1, &quadVAO));
-        GLCall(glGenBuffers(1, &VBO));
-        
-        GLCall(glBindVertexArray(quadVAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(lineVerts), lineVerts, GL_DYNAMIC_DRAW));
-
-        // this shader has vert attributes: vec3 vertPos  vec3 vertNormal  vec2 vertTexCoord  vec3 vertColor
-        GLCall(glEnableVertexAttribArray(0));
-        GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)0));
-        GLCall(glEnableVertexAttribArray(1));
-        GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)(3 * sizeof(f32))));
-        
-
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-        GLCall(glBindVertexArray(0));
-    }
-    else {
-        // each update, reupload the vertex data to the gpu since the line positions may have changed
-        //GLCall(glBindVertexArray(quadVAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        // copy into gpu vertex buffer with offset 0
-        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVerts), lineVerts));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-    }
-    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
-    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
-    glm::mat4 model = glm::mat4(1); // specifying start/end pos in vertex data, don't need anything here
-    glm::mat4 mvp = proj * view * model;
-    shader.setUniform("mvp", mvp);
-    shader.use();
-
-    GLCall(glBindVertexArray(quadVAO));
-    GLCall(glDrawArrays(GL_TRIANGLES, 0, 1));
-    GLCall(glBindVertexArray(0));
 }
 
 Mesh GenSphereMesh(u32 resolution)
@@ -434,22 +287,22 @@ void DrawWireCube(BoundingBox box, const glm::vec4& color)
     glm::vec3 min = box.min;
     glm::vec3 max = box.max;
 
-    Shapes3D::DrawLine(box.min, glm::vec3(max.x, min.y, min.z), color); // min-x
-    Shapes3D::DrawLine(box.min, glm::vec3(min.x, max.y, min.z), color); // min-y
-    Shapes3D::DrawLine(box.min, glm::vec3(min.x, min.y, max.z), color); // min-z
+    Renderer::PushLine(box.min, glm::vec3(max.x, min.y, min.z), color); // min-x
+    Renderer::PushLine(box.min, glm::vec3(min.x, max.y, min.z), color); // min-y
+    Renderer::PushLine(box.min, glm::vec3(min.x, min.y, max.z), color); // min-z
 
-    Shapes3D::DrawLine(box.max, glm::vec3(min.x, max.y, max.z), color); // max-x
-    Shapes3D::DrawLine(box.max, glm::vec3(max.x, min.y, max.z), color); // max-y
-    Shapes3D::DrawLine(box.max, glm::vec3(max.x, max.y, min.z), color); // max-z
+    Renderer::PushLine(box.max, glm::vec3(min.x, max.y, max.z), color); // max-x
+    Renderer::PushLine(box.max, glm::vec3(max.x, min.y, max.z), color); // max-y
+    Renderer::PushLine(box.max, glm::vec3(max.x, max.y, min.z), color); // max-z
 
-    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(min.x, max.y, max.z), color); // min-y -> max-x
-    Shapes3D::DrawLine(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z), color); // min-z -> max-x
+    Renderer::PushLine(glm::vec3(min.x, max.y, min.z), glm::vec3(min.x, max.y, max.z), color); // min-y -> max-x
+    Renderer::PushLine(glm::vec3(min.x, min.y, max.z), glm::vec3(min.x, max.y, max.z), color); // min-z -> max-x
     
-    Shapes3D::DrawLine(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z), color); // min-y -> max-z
-    Shapes3D::DrawLine(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z), color); // min-x -> max-z
+    Renderer::PushLine(glm::vec3(min.x, max.y, min.z), glm::vec3(max.x, max.y, min.z), color); // min-y -> max-z
+    Renderer::PushLine(glm::vec3(max.x, min.y, min.z), glm::vec3(max.x, max.y, min.z), color); // min-x -> max-z
     
-    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, min.y, min.z), color); // max-y -> min-x
-    Shapes3D::DrawLine(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z), color); // max-y -> min-z
+    Renderer::PushLine(glm::vec3(max.x, min.y, max.z), glm::vec3(max.x, min.y, min.z), color); // max-y -> min-x
+    Renderer::PushLine(glm::vec3(max.x, min.y, max.z), glm::vec3(min.x, min.y, max.z), color); // max-y -> min-z
 }
 
 void DrawPlane(const Transform& tf, const glm::vec4& color) {
@@ -491,76 +344,6 @@ void DrawWirePlane(const Transform& tf, const glm::vec4& color)
     SetWireframeDrawing(true);
     DrawPlane(tf, color);
     SetWireframeDrawing(false);
-}
-
-void DrawPoint(glm::vec3 position, f32 size, glm::vec4 color)
-{
-        static Shader shader;
-    if (!shader.isValid()) {
-        shader = Shader::CreateShaderFromStr(
-R"(
-layout (location = 0) in vec3 vertPos;
-layout (location = 1) in vec4 vertColor;
-out vec4 color;
-uniform mat4 mvp;
-void main(){
-    color = vertColor;
-	gl_Position = mvp * vec4(vertPos, 1.0);
-}
-)",
-R"(
-out vec4 FragColor;
-in vec4 color;
-void main(){
-	FragColor = color;
-}
-)"
-        );
-    }
-    static u32 VAO = 0;
-    static u32 VBO = 0;
-    const f32 verts[] = {
-        position.x, position.y, position.z, // vert pos
-        color.r, color.g, color.b, color.a, // vert col
-    };
-    if (VAO == 0) {
-        GLCall(glGenVertexArrays(1, &VAO));
-        GLCall(glGenBuffers(1, &VBO));
-        
-        GLCall(glBindVertexArray(VAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_DYNAMIC_DRAW));
-
-        // vec3 vertPos vec3 vertColor
-        GLCall(glEnableVertexAttribArray(0));
-        GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)0));
-        GLCall(glEnableVertexAttribArray(1));
-        GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)(3 * sizeof(f32))));
-        
-
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-        GLCall(glBindVertexArray(0));
-    }
-    else {
-        // each update, reupload the vertex data to the gpu since the line positions may have changed
-        //GLCall(glBindVertexArray(quadVAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        // copy into gpu vertex buffer with offset 0
-        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(verts), verts));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-    }
-    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
-    glm::mat4 view = Camera::GetMainCamera().GetViewMatrix();
-    glm::mat4 model = glm::mat4(1);
-    glm::mat4 mvp = proj * view * model;
-    shader.setUniform("mvp", mvp);
-    shader.use();
-
-    GLCall(glBindVertexArray(VAO));
-    glPointSize(size);
-    GLCall(glDrawArrays(GL_POINTS, 0, 1));
-    glPointSize(1.0);
-    GLCall(glBindVertexArray(0));
 }
 
 } // namespace Shapes3D
@@ -658,86 +441,12 @@ void DrawShape(const glm::vec2& pos, const glm::vec2& size, f32 rotationDegrees,
 }
 
 
-void DrawLine(const glm::vec2& origin, const glm::vec2& dest, const glm::vec4& color, f32 width) {
-        static Shader shader;
-    if (!shader.isValid()) {
-        shader = Shader::CreateShaderFromStr(
-R"(
- 
-layout (location = 0) in vec3 vertPos;
-layout (location = 1) in vec4 vertColor;
-out vec4 color;
-uniform mat4 mvp;
-void main(){
-    color = vertColor;
-	gl_Position = mvp * vec4(vertPos, 1.0);
-}
-)",
-R"(
- 
-out vec4 FragColor;
-in vec4 color;
-void main(){
-	FragColor = color;
-}
-)"
-        );
-    }
-    static u32 quadVAO = 0;
-    static u32 VBO = 0;
-    const f32 lineVerts[] = {
-        origin.x, origin.y, 0.0f, // vert pos
-        color.r, color.g, color.b, color.a, // vert col
+void DrawWireframeSquare(const glm::vec2& start, const glm::vec2& end, glm::vec4 color) {
+    Renderer::PushLine(glm::vec3(start, 0.0), glm::vec3(end.x, start.y, 0.0), color);
+    Renderer::PushLine(glm::vec3(start, 0.0), glm::vec3(start.x, end.y, 0.0), color);
 
-        dest.x,   dest.y,   0.0f,
-        color.r, color.g, color.b, color.a,
-    };
-    if (quadVAO == 0) {
-        GLCall(glGenVertexArrays(1, &quadVAO));
-        GLCall(glGenBuffers(1, &VBO));
-        
-        GLCall(glBindVertexArray(quadVAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(lineVerts), lineVerts, GL_DYNAMIC_DRAW));
-
-        // this shader has vert attributes: vec3 vertPos  vec3 vertNormal  vec2 vertTexCoord  vec3 vertColor
-        GLCall(glEnableVertexAttribArray(0));
-        GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)0));
-        GLCall(glEnableVertexAttribArray(1));
-        GLCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(f32), (void*)(3 * sizeof(f32))));
-        
-
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-        GLCall(glBindVertexArray(0));
-    }
-    else {
-        // each update, reupload the vertex data to the gpu since the line positions may have changed
-        //GLCall(glBindVertexArray(quadVAO));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        // copy into gpu vertex buffer with offset 0
-        GLCall(glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(lineVerts), lineVerts));
-        GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));  
-    }
-    glm::mat4 proj = Camera::GetMainCamera().GetProjectionMatrix();
-    glm::mat4 view = glm::mat4(1);
-    glm::mat4 model = glm::mat4(1); // specifying start/end pos in vertex data, don't need anything here
-    glm::mat4 mvp = proj * view * model;
-    shader.setUniform("mvp", mvp);
-    shader.use();
-
-    GLCall(glBindVertexArray(quadVAO));
-    glLineWidth(width);
-    GLCall(glDrawArrays(GL_LINES, 0, 2));
-    glLineWidth(1.0);
-    GLCall(glBindVertexArray(0));
-}
-
-void DrawWireframeSquare(const glm::vec2& start, const glm::vec2& end, glm::vec4 color, f32 width) {
-    Shapes2D::DrawLine(start, glm::vec2(end.x, start.y), color, width);
-    Shapes2D::DrawLine(start, glm::vec2(start.x, end.y), color, width);
-
-    Shapes2D::DrawLine(end, glm::vec2(end.x, start.y), color, width);
-    Shapes2D::DrawLine(end, glm::vec2(start.x, end.y), color, width);
+    Renderer::PushLine(glm::vec3(end, 0.0), glm::vec3(end.x, start.y, 0.0), color);
+    Renderer::PushLine(glm::vec3(end, 0.0), glm::vec3(start.x, end.y, 0.0), color);
 }
 
     

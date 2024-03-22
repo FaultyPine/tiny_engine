@@ -305,7 +305,7 @@ void InitEngine(
     InitializeLightingSystem(engineArena);
     InitializeTextureCache(engineArena);
     InitializeMaterialSystem(engineArena);
-    InitializeRenderer(engineArena);
+    Renderer::InitializeRenderer(engineArena);
     InitializePhysics(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
 
@@ -345,7 +345,10 @@ void InitEngine(
             Framebuffer screenRenderFb;
             { PROFILE_SCOPE("Game Render");
                 screenRenderFb = gameFuncs.renderFunc(gameArena);
+                screenRenderFb.Bind(); // make super sure our renderer draws to the game framebuffer
+                Renderer::RendererDraw();
             }
+            Framebuffer::BindDefaultFrameBuffer();
             glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
             // blit the game's rendered frame to default framebuffer
             if (screenRenderFb.isValid())

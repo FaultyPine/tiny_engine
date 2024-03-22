@@ -2,6 +2,7 @@
 #define TINY_DYNARRAY_H
 
 #include "tiny_defines.h"
+#include "tiny_log.h"
 
 // "stretchy buffer" implementation
 // dynamic array that resizes itself when capacity is reached
@@ -26,7 +27,7 @@ void DynArrayDestroy(DynArray& array);
 // Retrives the size from the DynArray header
 u32 DynArrayGetSize(DynArray array);
 // Retrives the capacity from the DynArray header
-u32 DynArrayGetCapcity(DynArray array);
+u32 DynArrayGetCapacity(DynArray array);
 // Retrives the stride from the DynArray header
 u32 DynArrayGetStride(DynArray array);
 

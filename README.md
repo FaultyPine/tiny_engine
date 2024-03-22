@@ -62,7 +62,6 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 ### TODO:
 
 - Put material data in UBOs so we can batch
-- growable-fixed-vector datatype (fixed mem of certain size, when exceeds transition to heap)
 - "entities"/serialize objects... 
     - Big refactor - move types to the type reflection system
     - rel pointers to make all entities one big blob?

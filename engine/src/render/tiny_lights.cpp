@@ -45,8 +45,7 @@ void LightPoint::Visualize()
 void LightDirectional::Visualize()
 {
     Shapes3D::DrawWireSphere(this->position, 5.0f, this->color);
-    Shapes3D::DrawLine(this->position, this->position + (this->direction * 10.0f), this->color, 2.0f);
-    
+    Renderer::PushLine(this->position, this->position + (this->direction * 10.0f), this->color);
 }
 
 LightPoint& CreatePointLight(glm::vec3 position, glm::vec4 color, glm::vec3 attenuationParams) 

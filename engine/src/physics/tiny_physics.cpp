@@ -5,6 +5,7 @@
 #include "tiny_engine.h"
 #include "render/model.h"
 #include "render/shapes.h"
+#include "render/tiny_renderer.h"
 #include "tiny_log.h"
 #include "tiny_profiler.h"
 
@@ -111,12 +112,16 @@ virtual ~GLDebugDrawer()
 
 virtual void    drawLine(const btVector3& from,const btVector3& to,const btVector3&  fromColor, const btVector3& toColor)
 {
-    Shapes3D::DrawLine(glm::make_vec3(&from.getX()), glm::make_vec3(&to.getX()), glm::vec4(fromColor.x(), fromColor.y(), fromColor.z(), 1.0));
+    glm::vec3 start = glm::make_vec3(&from.getX());
+    glm::vec3 end = glm::make_vec3(&to.getX());
+    Renderer::PushLine(start, end, glm::vec4(fromColor.x(), fromColor.y(), fromColor.z(), 1.0));
 }
 
 virtual void    drawLine(const btVector3& from,const btVector3& to,const btVector3& color)
 {
-    Shapes3D::DrawLine(glm::make_vec3(&from.getX()), glm::make_vec3(&to.getX()), glm::vec4(color.x(), color.y(), color.z(), 1.0));
+    glm::vec3 start = glm::make_vec3(&from.getX());
+    glm::vec3 end = glm::make_vec3(&to.getX());
+    Renderer::PushLine(start, end, glm::vec4(color.x(), color.y(), color.z(), 1.0));
 }
 
 virtual void    drawSphere (const btVector3& p, btScalar radius, const btVector3& color)
@@ -126,12 +131,16 @@ virtual void    drawSphere (const btVector3& p, btScalar radius, const btVector3
 
 virtual void    drawTriangle(const btVector3& a,const btVector3& b,const btVector3& c,const btVector3& color,btScalar alpha)
 {
-    Shapes3D::DrawTriangle(glm::make_vec3(&a.getX()), glm::make_vec3(&b.getX()), glm::make_vec3(&c.getX()), glm::vec4(color.x(), color.y(), color.z(), alpha));
+    glm::vec3 posa = glm::make_vec3(&a.getX());
+    glm::vec3 posb = glm::make_vec3(&b.getX());
+    glm::vec3 posc = glm::make_vec3(&c.getX());
+    Renderer::PushTriangle(posa, posb, posc, glm::vec4(color.x(), color.y(), color.z(), alpha));
 }
 
-virtual void    drawContactPoint(const btVector3& PointOnB,const btVector3& normalOnB,btScalar distance,int lifeTime,const btVector3& color)
+virtual void    drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color)
 {
-    Shapes3D::DrawPoint(glm::make_vec3(&PointOnB.getX()), 1.0f, glm::vec4(color.x(), color.y(), color.z(), 1.0));
+    glm::vec3 point = glm::make_vec3(&PointOnB.getX());
+    Renderer::PushPoint(point, glm::vec4(color.x(), color.y(), color.z(), 1.0));
     drawLine(PointOnB, PointOnB + normalOnB, color);
 }
 

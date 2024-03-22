@@ -4,6 +4,7 @@
 #include <string.h>
 
 #define TSYSALLOC(size) malloc(size)
+#define TSYSREALLOC(ptr, size) realloc(ptr, size)
 #define TSYSFREE(ptr) { free(ptr); (ptr)=0; }
 #define TMEMSET(ptr, val, size) memset(ptr, val, size)
 #define TMEMCPY(dst, src, size) memcpy(dst, src, size)

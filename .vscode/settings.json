@@ -91,7 +91,8 @@
         "ranges": "cpp",
         "span": "cpp",
         "shared_mutex": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "*.tcc": "cpp"
     },
     "files.exclude": {
         "**/.git": true,

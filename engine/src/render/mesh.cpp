@@ -111,7 +111,6 @@ void OGLDrawDefault(u32 VAO, u32 indicesSize, u32 verticesSize) {
     else { // indices is empty, draw arrays
         GLCall(glDrawArrays(GL_TRIANGLES, 0, verticesSize));
     }
-    
     // clean up
     GLCall(glBindVertexArray(0)); // unbind vert array
     GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
@@ -125,7 +124,6 @@ void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstanc
     else { // indices is empty, draw arrays
         GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, verticesSize, numInstances));
     }
-    
     // clean up
     GLCall(glBindVertexArray(0)); // unbind vert array
     GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex

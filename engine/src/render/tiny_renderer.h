@@ -3,6 +3,24 @@
 
 #include "math/tiny_math.h"
 
+struct Vertex 
+{
+    glm::vec3 position = glm::vec3(0);
+    glm::vec3 normal = glm::vec3(0);
+    glm::vec3 tangent = glm::vec3(0);
+    glm::vec2 texCoords = glm::vec3(0);
+    glm::vec3 color = glm::vec3(1);
+    inline std::string str() 
+    {
+        return "[Pos = " + glm::to_string(position) + "  Normals = " + glm::to_string(normal) + " Tangent = " + glm::to_string(tangent) + "  TexCoords = " + glm::to_string(texCoords) + "  Colors = " + glm::to_string(color) + " ]";
+    }
+};
+struct SimpleVertex
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
+
 /*
 WIP
 Notes:
@@ -47,12 +65,17 @@ Color pass
 
 */
 struct Arena;
-void InitializeRenderer(Arena* arena);
+namespace Renderer
+{
 
-void RendererDraw();
+TAPI void InitializeRenderer(Arena* arena);
 
-void PushPoint(glm::vec3 point, glm::vec4 color = glm::vec4(1));
-void PushLine(glm::vec3 start, glm::vec3 end, glm::vec4 color = glm::vec4(1));
+TAPI void RendererDraw();
 
+TAPI void PushPoint(const glm::vec3& point, const glm::vec4& color = glm::vec4(1));
+TAPI void PushLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1));
+TAPI void PushTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec4& color);
+
+}
 
 #endif
