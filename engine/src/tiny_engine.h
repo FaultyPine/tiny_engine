@@ -11,7 +11,7 @@ struct GLFWwindow;
 struct Framebuffer;
 
 typedef void(*InitFunction)(Arena* gameMem);
-typedef void(*TickFunction)(Arena* gameMem);
+typedef void(*TickFunction)(Arena* gameMem, f32 deltaTime);
 // render functions should output a texture handle to be rendered
 typedef Framebuffer(*RenderFunction)(const Arena* const gameMem);
 typedef void(*TerminateFunction)(Arena* gameMem);
@@ -74,9 +74,6 @@ TAPI void InitEngine(
     AppRunCallbacks callbacks,
     size_t requestedGameMemSize
 );
-
-/// Game loop should be while(!ShouldCloseWindow())
-TAPI bool ShouldCloseWindow();
 
 TAPI void TerminateGame();
 

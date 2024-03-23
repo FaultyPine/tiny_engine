@@ -95,18 +95,13 @@ struct GameState {
     f32 sunSpeedMultiplier = 0.2f;
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
 
-    inline static GameState* gs = nullptr;
     // sets the static gamestate to a copy of the passed in gamestate
-    static void Initialize(Arena* gameMem)
+    static GameState* Initialize(Arena* gameMem)
     {
         GameState* newGamestate = (GameState*)arena_alloc(gameMem, sizeof(GameState));
         *newGamestate = {}; // default init
         newGamestate->gameMem = gameMem;
-        gs = newGamestate;
-    }
-    static GameState& get() 
-    {
-        return *gs; 
+        return newGamestate;
     }
     void Terminate() {
         for (auto& ent : entities) {
@@ -203,9 +198,8 @@ void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMult
 static bool enableGrassRender = true;
 static f32 ambientLightIntensity = 0.15f;
 
-void drawImGuiDebug() {
+void drawImGuiDebug(GameState& gs) {
     PROFILE_FUNCTION();
-    GameState& gs = GameState::get();
     
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Text("avg tickrate %.3f (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
@@ -282,33 +276,31 @@ void drawImGuiDebug() {
 
 }
 
-void ShadowMapPrePass() {
+void ShadowMapPrePass(const GameState& gs) {
     PROFILE_FUNCTION();
-    GameState& gs = GameState::get();
     const LightingSystem& lighting = *GetEngineCtx().lightsSubsystem;
     const LightDirectional& sunlight = lighting.lights.sunlight;
     const ShadowMap& sunShadows = lighting.directionalShadowMap;
     sunShadows.BeginRender();
-    for (WorldEntity& ent : gs.entities) {
+    for (const WorldEntity& ent : gs.entities) {
         sunShadows.RenderShadowCaster(sunlight, ent.model, ent.transform);
     }
     sunShadows.EndRender();
 }
 
-void DepthAndNormsPrePass() {
+void DepthAndNormsPrePass(const GameState& gs) {
     PROFILE_FUNCTION();
-    GameState& gs = GameState::get();
 
     gs.depthAndNorms.Bind();
     ClearGLBuffers();
     // render entities to a texture where the rgb of each pixel is the normals
     // and the alpha channel is the depth
-    for (WorldEntity& ent : gs.entities) {
+    for (const WorldEntity& ent : gs.entities) {
         // kinda cringe that we need to special case this
         if (ent.hash == GetHash("PondEntity")) {
             gs.pondPrepassShader.setUniform("numActiveWaves", gs.numActiveWaves);
             for (u32 i = 0; i < NUM_WAVES; i++) {
-                Wave& wave = gs.waves[i];
+                const Wave& wave = gs.waves[i];
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
@@ -333,9 +325,8 @@ void DepthAndNormsPrePass() {
     }
 }
 
-void drawGameState() {
+void drawGameState(const GameState& gs) {
     PROFILE_FUNCTION();
-    GameState& gs = GameState::get();
 
     // update Waves
     #ifdef ISLAND_SCENE
@@ -441,6 +432,7 @@ void init_grass(GameState& gs) {
     grassModel.EnableInstancing(grassTransforms.data(), sizeof(glm::mat4), grassTransforms.size());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     gs.grass = WorldEntity(grassTf, grassModel, "grass");
+    PhysicsAddModel(grassModel, grassTf);
     gs.windTexture = LoadTexture(ResPath("other/distortion.png"));
     gs.windStrength = 0.15;
     gs.windFrequency = 1.1;
@@ -457,6 +449,7 @@ void init_main_pond(GameState& gs) {
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
     WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "PondEntity");
     gs.entities.push_back(waterPlaneEnt);
+    PhysicsAddModel(waterPlane, waterPlaneTf);
     gs.waves[0] = Wave(0.2, 8.7, 0.05, glm::vec2(1,1));
     gs.waves[1] = Wave(0.5, 2.0, 0.09, glm::vec2(0,1));
     gs.waves[2] = Wave(0.8, 1.0, 0.1, glm::vec2(1,0.4));
@@ -472,6 +465,7 @@ void init_waterfall(GameState& gs) {
     Transform waterfallTf = Transform({0, 0, 0}, {1.0, 1.0, 1.0});
     WorldEntity waterfallEnt = WorldEntity(waterfallTf, waterfallModel, "Waterfall");
     gs.entities.push_back(waterfallEnt);
+    PhysicsAddModel(waterfallModel, waterfallTf);
     /*
     Shader waterfallParticlesShader = Shader(ResPath("shaders/default_3d.vert"), ResPath("shaders/default_3d.frag"));
     Model waterfallParticleModel = Model(waterfallParticlesShader, {Shapes3D::GenCubeMesh()});
@@ -490,25 +484,27 @@ void init_waterfall(GameState& gs) {
 
 void testbed_init(Arena* gameMem) {
     PROFILE_FUNCTION();
-    
-    {
-        GameState::Initialize(gameMem);
-    }
+    GameState& gs = *GameState::Initialize(gameMem);
 
-    GameState& gs = GameState::get();
     Camera::GetMainCamera().cameraPos.y = 10;
     gs.lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
     Shader& lightingShader = gs.lightingShader;
 
 #ifdef ISLAND_SCENE
     Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
-    gs.entities.emplace_back(WorldEntity(Transform({0,0,0}), testModel, "island"));
+    WorldEntity islandEnt = WorldEntity(Transform({0,0,0}), testModel, "island")
+    gs.entities.push_back(islandEnt);
+    PhysicsAddModel(testModel, islandEnt.transform);
 
     Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
-    gs.entities.emplace_back(WorldEntity(Transform({10,7.5,3}, glm::vec3(0.7)), treeModel, "tree"));
+    WorldEntity treeEnt = WorldEntity(Transform({10,7.5,3}, glm::vec3(0.7)), treeModel, "tree");
+    gs.entities.push_back(treeEnt);
+    PhysicsAddModel(treeModel, treeEnt.transform);
     
     Model bushModel = Model(lightingShader, ResPath("other/island_wip/bush.obj").c_str(), ResPath("other/island_wip/").c_str());
-    gs.entities.emplace_back(WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "bush"));
+    WorldEntity bushEnt = WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "bush");
+    gs.entities.push_back(bushEnt);
+    PhysicsAddModel(bushModel, bushEnt.transform);
 
     // pond
     init_main_pond(gs);
@@ -560,16 +556,17 @@ void testbed_init(Arena* gameMem) {
 
 Framebuffer testbed_render(const Arena* const gameMem) {
     PROFILE_FUNCTION();
-    GameState& gs = GameState::get();
+    // gamestate is the first thing allocated always
+    const GameState& gs =  *(GameState*)gameMem->backing_mem;
 
-    ShadowMapPrePass();
-    DepthAndNormsPrePass();
+    ShadowMapPrePass(gs);
+    DepthAndNormsPrePass(gs);
 
     // draw game to postprocessing framebuffer
     gs.postprocessingFB.Bind();
 
     ClearGLBuffers();
-    drawGameState();
+    drawGameState(gs);
 
 #if 1
     {
@@ -587,7 +584,6 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     }
 #endif
     
-    drawImGuiDebug();
 
     // red is x, green is y, blue is z
     // should put this on the screen in the corner permanently
@@ -610,19 +606,21 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     return gs.postprocessingFB;
 }
 
-void testbed_tick(Arena* gameMem) {
+void testbed_tick(Arena* gameMem, f32 deltaTime) {
     PROFILE_FUNCTION();
-    GameState& gs = GameState::get();
+    GameState& gs = *(GameState*)gameMem->backing_mem;
     testbed_camera_tick();
     // have main directional light orbit
     LightingSystem* lightsSystem = GetEngineCtx().lightsSubsystem;
     LightDirectional& mainLight = lightsSystem->lights.sunlight;
     //testbed_orbit_light(mainLight, gs.sunOrbitRadius, gs.sunSpeedMultiplier, gs.sunTarget);
+    drawImGuiDebug(gs);
 }
 
 void testbed_terminate(Arena* gameMem) {
+    GameState& gs = *(GameState*)gameMem->backing_mem;
     //ImGuiTerminate();
-    GameState::get().Terminate();
+    gs.Terminate();
 }
 
 AppRunCallbacks GetTestbedAppRunCallbacks()
@@ -637,7 +635,7 @@ AppRunCallbacks GetTestbedAppRunCallbacks()
 
 void testbed_standalone_entrypoint(int argc, char *argv[])
 {
-    char* resourceDirectory = "./res/";
+    char* resourceDirectory = "../res/";
     if (argc < 2)
     {
         LOG_WARN("no resource directory passed. Using default ./res/");

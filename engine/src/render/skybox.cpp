@@ -70,7 +70,7 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
 }
 
 
-void Skybox::Draw() 
+void Skybox::Draw() const
 {
     PROFILE_FUNCTION();
     if (!skyboxShader.isValid())

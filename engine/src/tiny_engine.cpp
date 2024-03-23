@@ -163,36 +163,29 @@ u32 HashBytes(u8* data, u32 size)
     return hash;
 }
 
-void EngineLoop() {
+/// Game loop - while(EngineLoop())
+bool EngineLoop() {
     PROFILE_FUNCTION();
+    glfwSwapBuffers(GetMainGLFWWindow());
     if (Keyboard::isKeyDown(TINY_KEY_ESCAPE)) {
         CloseGameWindow();
     }
-    // update deltatime
-    f32 currentTime = GetTime();
+    f32 currentTime = GetTimef();
     globEngineCtx.deltaTime = currentTime - globEngineCtx.lastFrameTime;
     globEngineCtx.lastFrameTime = currentTime;
-    // inc frame
     globEngineCtx.frameCount++;
-    // update cam
     Camera::UpdateCamera();
-
+    ClearGLBuffers();
     { // sleep until we should draw the next frame
+        PROFILE_SCOPE("WaitForNextFrame");
         static f64 lastframe = GetTime();
-        while (GetTime() < lastframe + 1.0/TARGET_FPS) {
+        f64 targetFrametime = 1.0/TARGET_FPS;
+        while (GetTime() < lastframe + targetFrametime) 
+        {
             // zzzzzz
         }
-        lastframe += 1.0/TARGET_FPS;
+        lastframe += targetFrametime;
     }
-    // clear screen after we've waited
-    ClearGLBuffers();
-}
-
-/// Game loop should be while(!ShouldCloseWindow())
-bool ShouldCloseWindow() {
-    PROFILE_FUNCTION();
-    glfwSwapBuffers(GetMainGLFWWindow());
-    EngineLoop();
     glfwPollEvents();
     return glfwWindowShouldClose(GetMainGLFWWindow());
 }
@@ -330,17 +323,17 @@ void InitEngine(
         gameFuncs.initFunc(gameArena);
     }
 
-    // Begin game loop
-    while (!ShouldCloseWindow())
+    // game loop
+    while (!EngineLoop())
     {
         PROFILER_FRAME_MARK();
+        ImGuiBeginFrame();
         PhysicsTick();
         { PROFILE_SCOPE("Game tick");
-            gameFuncs.tickFunc(gameArena);
+            gameFuncs.tickFunc(gameArena, GetDeltaTime());
         }
         JobSystem::Instance().FlushMainThreadJobs();
         { PROFILE_SCOPE("Engine Render");
-            ImGuiBeginFrame();
             ShaderSystemPreDraw();
             Framebuffer screenRenderFb;
             { PROFILE_SCOPE("Game Render");
@@ -355,8 +348,8 @@ void InitEngine(
             {
                 Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
             }
-            ImGuiEndFrame();
         }
+        ImGuiEndFrame();
     }
     gameFuncs.terminateFunc(gameArena);
 

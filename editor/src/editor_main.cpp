@@ -86,9 +86,9 @@ void editor_init(Arena* mem)
     
     editor->editorMainFb = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
 }
-void editor_tick(Arena* mem)
+void editor_tick(Arena* mem, f32 deltaTime)
 {
-    globEditorState->gameCallbacks.tickFunc(mem);
+    globEditorState->gameCallbacks.tickFunc(mem, deltaTime);
 }
 Framebuffer editor_render(const Arena* const mem)
 {
