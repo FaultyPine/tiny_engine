@@ -14,6 +14,13 @@
 #define MEGABYTES_BYTES(mb) (mb*KILOBYTES_BYTES(1024))
 #define GIGABYTES_BYTES(gb) (gb*MEGABYTES_BYTES(1024))
 
+// non-owning
+template <typename T>
+struct BufferView
+{
+    T* data = nullptr;
+    size_t size = 0;
+};
 
 
 #endif

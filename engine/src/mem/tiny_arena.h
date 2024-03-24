@@ -15,6 +15,14 @@ struct Arena {
 
 #define arena_alloc_type(arena, type, num) ((type*)arena_alloc(arena, sizeof(type) * num))
 
+template <typename T>
+T* arena_alloc_and_init(Arena* arena, u32 numElements = 1)
+{
+    T* alloc = arena_alloc_type(arena, T, numElements);
+    new(alloc) T(); // because some c++ types need their ctors called
+    return alloc;
+}
+
 TAPI Arena arena_init(void* backing_buffer, size_t arena_size);
 TAPI Arena arena_init(void* backing_buffer, size_t arena_size, const char* name);
 TAPI void* arena_alloc(Arena* arena, size_t alloc_size);

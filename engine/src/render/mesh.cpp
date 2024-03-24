@@ -39,11 +39,17 @@ void ConfigureVertexAttrib(u32 attributeLoc, u32 numBytesPerComponent, u32 oglTy
 
 void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) {
     PROFILE_FUNCTION();
-    if (instanceVBO != 0) return;
+    if (instanceVBO != 0 || numInstances == numComponents) 
+    {
+        LOG_WARN("Attempted to enable instancing on a mesh that already has instancing enabled");
+        return;
+    }
     this->numInstances = numComponents;
     GLCall(glBindVertexArray(VAO));
     GLCall(glGenBuffers(1, &instanceVBO));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanceVBO));
+    // when we call ConfigureVertexAttrib with this instanceVBO bound, this all gets bound up into the above VAO
+    // thats how the VAO knows about our instance vbo
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanceVBO)); // instance vbo 
     GLCall(glBufferData(GL_ARRAY_BUFFER, sizeofSingleComponent*numComponents, instanceDataBuffer, GL_STATIC_DRAW));
     // set up vertex attribute(s) for instance-specific data
     // if we want float/vec2/vec3/vec4 its not a big deal,
@@ -75,6 +81,8 @@ void Mesh::initMesh() {
     GLCall(glBindVertexArray(VAO));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
     if (!indices.empty()) {
+        // making sure to bind this AFTER the vao is bound
+        // since the EBO (and VBO) actually ends up stored inside the VAO
         GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
     }
 

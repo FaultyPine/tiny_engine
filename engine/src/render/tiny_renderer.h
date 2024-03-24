@@ -65,6 +65,9 @@ Color pass
 
 */
 struct Arena;
+struct Mesh;
+struct Shader;
+struct Transform;
 namespace Renderer
 {
 

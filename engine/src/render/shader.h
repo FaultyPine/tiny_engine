@@ -16,6 +16,8 @@ struct Shader {
     // ID is not the OpenGL shader id!
     // this is to facilitate shader hot reloading - 
     // we can keep this same ID but have it refer to a different ogl shader program
+    // these IDs are deterministically generated, and will not change when this or other shaders are deleted/reloaded/etc. 
+    // so storing references to these IDs is fine
     u32 ID = U32_INVALID_ID;
 
     Shader() = default;

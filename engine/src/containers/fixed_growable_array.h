@@ -18,15 +18,21 @@ struct FixedGrowableArray
     {
         size = arr.size;
         capacity = arr.capacity;
-        TMEMCPY(fixedMem, arr.fixedMem, sizeof(T) * size);
-        elements = (T*)&fixedMem[0];
+        elements = arr.elements;
+        if (arr.elements == &arr.fixedMem[0])
+        { // don't need to copy fixedmem over if we've switched to dynamic mem
+            TMEMCPY(fixedMem, arr.fixedMem, sizeof(T) * size);
+        }
     }
     TAPI FixedGrowableArray& operator=(const FixedGrowableArray& arr)
     {
         size = arr.size;
         capacity = arr.capacity;
-        TMEMCPY(fixedMem, arr.fixedMem, sizeof(T) * size);
-        elements = (T*)&fixedMem[0];
+        elements = arr.elements;
+        if (arr.elements == &arr.fixedMem[0])
+        { // don't need to copy fixedmem over if we've switched to dynamic mem
+            TMEMCPY(fixedMem, arr.fixedMem, sizeof(T) * size);
+        }
         return *this;
     }
     TAPI ~FixedGrowableArray()
@@ -51,7 +57,7 @@ struct FixedGrowableArray
     // sets size to 0 - does not zero out internal memory or do any deallocation
     TAPI void clear();
  
-    TAPI inline T* get_elements() { return static_cast<T*>(elements); }
+    TAPI inline T* get_elements() { return elements; }
 
     // this points to the current array of elements.
     // when size < fixedSize, elements points to fixedMem.
