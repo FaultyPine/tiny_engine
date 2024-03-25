@@ -72,6 +72,16 @@ void* arena_resize(Arena* arena, void* old_mem, size_t old_size, size_t new_size
     }
 }
 
+void arena_pop_latest(Arena* arena)
+{
+    if (arena->offset == arena->prev_offset)
+    {
+        LOG_WARN("Attempted to pop on arena without a valid most recent allocation");
+        return;
+    }
+    arena->offset = arena->prev_offset;
+}
+
 void arena_clear(Arena* arena) {
     arena->offset = 0;
     arena->prev_offset = 0;
@@ -82,18 +92,6 @@ void arena_free_all(Arena* arena)
     arena_clear(arena);
     arena->backing_mem_size = 0;
     TSYSFREE(arena->backing_mem);
-}
-
-ArenaTemp arena_temp_init(Arena* arena) {
-    ArenaTemp tmp;
-    tmp.arena = arena;
-    tmp.offset = arena->offset;
-    tmp.prev_offset = arena->prev_offset;
-    return tmp;
-}
-void arena_temp_end(ArenaTemp tmp_arena) {
-    tmp_arena.arena->offset = tmp_arena.offset;
-    tmp_arena.arena->prev_offset = tmp_arena.prev_offset;
 }
 
 

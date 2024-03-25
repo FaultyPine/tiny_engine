@@ -38,8 +38,7 @@ struct AssimpMaterialKey
 
 MaterialProp GetMaterialFromType(aiMaterial* material, AssimpMaterialKey texture, AssimpMaterialKey fallbackColor, const char* meshMaterialDir) {
     PROFILE_FUNCTION();
-    MaterialProp ret = MaterialProp();
-    //TINY_ASSERT(material->GetTextureCount(type) <= 1); // there shouldn't... (???) be more than 1 of a particular texture type in a material (I.E. cant have 2 diffuse textures)
+    MaterialProp ret = MaterialProp(glm::vec4(0));
     aiString str;
     aiReturn hasTexture = material->Get(texture.pKey, texture.type, texture.idx, str);
     if (hasTexture == aiReturn::aiReturn_SUCCESS) 
@@ -49,13 +48,13 @@ MaterialProp GetMaterialFromType(aiMaterial* material, AssimpMaterialKey texture
         Texture tex = LoadTextureAsync(texturePath.c_str(), TextureProperties::None(), {}, true); // flip vert for opengl
         ret = MaterialProp(tex);
     }
-    if (fallbackColor.pKey)
+    else if (fallbackColor.pKey)
     {
         aiColor4D col;
         aiReturn hasColor = material->Get(fallbackColor.pKey, fallbackColor.type, fallbackColor.idx, col);
         if (hasColor == aiReturn_SUCCESS) 
         {
-            ret.color = glm::vec4(col.r, col.g, col.b, col.a);
+            ret = MaterialProp(glm::vec4(col.r, col.g, col.b, col.a));
         }
     }
     return ret;
@@ -85,16 +84,16 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     OverwriteMaterialProperty(ret, emissive, EMISSION);
     //MaterialProp height = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
     MaterialProp normal = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_NORMALS(0)), AssimpMaterialKey(), meshMaterialDir);
-    if (!normal.hasTexture)
+    if (normal.dataType != MaterialProp::DataType::TEXTURE)
     {
         // the material api is kind of vague in some cases - for obj's, normal maps are often loaded into the heightmap slot.
         MaterialProp normalsFromHeightmap = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_HEIGHT(0)), AssimpMaterialKey(), meshMaterialDir);
-        if (normalsFromHeightmap.hasTexture)
+        if (normalsFromHeightmap.dataType == MaterialProp::DataType::TEXTURE)
         {
             normal = normalsFromHeightmap;
         }
     }
-    OverwriteMaterialProperty(ret, normal, NORMAL);
+    OverwriteMaterialProperty(ret, normal, NORMALS);
     // Usually there is a conversion function defined to map the linear color values in the texture to a suitable exponent
     MaterialProp shininess = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_SHININESS(0)), AssimpMaterialKey(AI_MATKEY_SHININESS), meshMaterialDir);
     OverwriteMaterialProperty(ret, shininess, SHININESS);
@@ -105,10 +104,10 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     
     // if we have a specular coefficient, they are typically in the range [0, 1000]
     // we remap that to something that looks reasonable here
-    if (!shininess.hasTexture)
+    if (shininess.dataType != MaterialProp::DataType::TEXTURE)
     {
         // TODO: make configurable
-        shininess.color.r = Math::Remap(shininess.color.r, 0.0, 1000.0, 0.0, 10.0);
+        shininess.dataVec.r = Math::Remap(shininess.dataVec.r, 0.0, 1000.0, 0.0, 10.0);
     }
     
     return ret;

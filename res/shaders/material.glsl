@@ -1,10 +1,18 @@
 
 
+
+const int MatPropDataTypeUNK = 0;
+const int MatPropDataTypeINT = 1;
+const int MatPropDataTypeFLOAT = 2;
+const int MatPropDataTypeVECTOR = 3;
+const int MatPropDataTypeTEXTURE = 4;
+
 struct MaterialProperty 
 {
     vec4 color;
-    int useSampler;
+    int datai;
     sampler2D tex;
+    int dataType;
 };
 
 struct Material 
@@ -22,13 +30,28 @@ struct Material
 
 uniform Material material;
 
+bool DoesMaterialUseTexture(in MaterialProperty prop)
+{
+    return prop.dataType == MatPropDataTypeTEXTURE;
+}
+
 vec4 GetMaterialColor(MaterialProperty mat, vec2 uv) 
 {
-    int shouldUseSampler = mat.useSampler;
-    vec4 color = (1-shouldUseSampler) * mat.color;
-    vec4 tex =   shouldUseSampler     * texture(mat.tex, uv);
-    // if useSampler is true, color is 0, if it's false, tex is 0
-    return color + tex;
+    switch (mat.dataType)
+    {
+        case MatPropDataTypeVECTOR:
+        {
+            return mat.color;
+        } break;
+        case MatPropDataTypeTEXTURE:
+        {
+            return texture(mat.tex, uv);
+        } break;
+        default:
+        {
+            return vec4(0);
+        } break;
+    }
 }
 vec4 GetDiffuseMaterial(vec2 uv) 
 {
@@ -62,7 +85,7 @@ vec4 GetOpacityMaterial(vec2 uv)
 vec3 GetNormals(vec3 fragNormalOS, vec3 fragTangentOS, vec2 fragTexCoord) 
 {
     vec3 normal = vec3(0);
-    bool shouldUseSampler = material.normalMat.useSampler == 1;
+    bool shouldUseSampler = DoesMaterialUseTexture(material.normalMat);
     if (shouldUseSampler)
     {
         // TODO: put TBN in vert shader

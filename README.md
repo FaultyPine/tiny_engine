@@ -68,6 +68,9 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 - Renderer
     - Centralized system that takes in draw commands. At end of frame draws all requests and can
         do pre-processing on those commands like batching
+    - what I have in mind for this would likely touch nearly every single aspect of the current renderer.
+        when I end up doing this - it would honestly be better to start completely from scratch than try to migrate my current
+        rendering stuff to what i have in mind.
     - deferred renderer
 - HDR/Tonemapping & Bloom
 - PBR

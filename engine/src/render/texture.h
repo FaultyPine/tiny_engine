@@ -30,7 +30,8 @@ struct TextureProperties {
 };
 
 struct Texture {
-    u32 id = U32_INVALID_ID; // this is the actual opengl texture id, the rest of these fields are just extra info for convinience
+    // handle to a TextureInternal owned by the TextureCache
+    u32 id = U32_INVALID_ID; 
 
     Texture() = default;
     Texture(u32 id) { this->id = id; }

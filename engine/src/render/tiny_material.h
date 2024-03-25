@@ -10,24 +10,13 @@ enum TextureMaterialType {
     DIFFUSE = 0,
     AMBIENT,
     SPECULAR,
-    NORMAL,
+    NORMALS,
     SHININESS,
     EMISSION,
     OPACITY,
     OTHER,
 
     NUM_MATERIAL_TYPES,
-};
-
-struct MaterialProp 
-{
-    MaterialProp() = default;
-    TAPI MaterialProp(glm::vec4 col);
-    TAPI MaterialProp(const Texture& tex);
-    TAPI void Delete();
-    glm::vec4 color = glm::vec4(1);
-    Texture texture = {};
-    bool hasTexture = false;
 };
 struct Shader;
 struct Material 
@@ -39,10 +28,35 @@ struct Material
     TAPI void SetShaderUniforms(const Shader& shader) const;
     bool operator==(const Material& p) const { return id == p.id; }
 };
+struct MaterialProp 
+{
+    enum DataType : s32
+    {
+        UNK,
+        INT,
+        FLOAT, 
+        VECTOR,
+        TEXTURE,
+    };
+    MaterialProp() = default;
+    TAPI MaterialProp(glm::vec4 col);
+    TAPI MaterialProp(const Texture& tex);
+    TAPI MaterialProp(s32 datai);
+    TAPI MaterialProp(f32 dataf);
+    TAPI void Delete();
+    DataType dataType = UNK;
+    union
+    {
+        s32 datai;
+        f32 dataf;
+        glm::vec4 dataVec;
+        u32 dataTex; // texture id. B/c Texture has nontrivial ctor, can't use it in union. do Texture(dataTex) to access texture funcs
+    };
+};
 
 struct MaterialInternal
 {
-    MaterialProp properties[TextureMaterialType::NUM_MATERIAL_TYPES] = {};
+    MaterialProp properties[TextureMaterialType::NUM_MATERIAL_TYPES];
     #define MATERIAL_INTERNAL_NAME_MAX_LEN 64
     const char name[MATERIAL_INTERNAL_NAME_MAX_LEN] = "DefaultMat";
 

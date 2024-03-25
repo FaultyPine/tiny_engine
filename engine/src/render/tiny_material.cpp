@@ -18,8 +18,7 @@ void InitializeMaterialSystem(Arena* arena)
 {
     EngineContext& ctx = GetEngineCtx();
     TINY_ASSERT(ctx.textureCache && "Initialize the texture cache before the material system!");
-    MaterialRegistry* reg = (MaterialRegistry*)arena_alloc(arena, sizeof(MaterialRegistry));
-    new(&reg->materialRegistry) MaterialMap();
+    MaterialRegistry* reg = arena_alloc_and_init<MaterialRegistry>(arena);
     ctx.materialRegistry = reg;
 
     Material dummyMaterial = NewMaterial("DummyMaterial");
@@ -53,13 +52,7 @@ Material NewMaterial(const char* name, s32 materialIndex) {
     u32 nameHash = HashBytes((u8*)name, strnlen(name, MATERIAL_INTERNAL_NAME_MAX_LEN));
     newMaterial.id = materialIndex != -1 ? nameHash+materialIndex : nameHash;
     MaterialInternal newMaterialInternal;
-    newMaterialInternal.properties[DIFFUSE] = {};
-    newMaterialInternal.properties[AMBIENT] = {};
-    newMaterialInternal.properties[SPECULAR] = {};
-    newMaterialInternal.properties[NORMAL] = {};
-    newMaterialInternal.properties[SHININESS] = {}; // :/ unify naming
-    newMaterialInternal.properties[EMISSION] = {};
-    newMaterialInternal.properties[OPACITY] = {};
+    TMEMSET(&newMaterialInternal, 0, sizeof(newMaterialInternal));
     u32 materialMaxNameSize = ARRAY_SIZE(newMaterialInternal.name);
     TMEMCPY((void*)&newMaterialInternal.name[0], name, strnlen(name, materialMaxNameSize));
     matRegistry.materialRegistry[newMaterial] = newMaterialInternal;
@@ -84,19 +77,29 @@ void OverwriteMaterialProperty(Material material, const MaterialProp& prop, Text
 
 MaterialProp::MaterialProp(glm::vec4 col) 
 {
-    color = col;
-    hasTexture = false;
+    dataVec = col;
+    dataType = MaterialProp::DataType::VECTOR;
 }
 MaterialProp::MaterialProp(const Texture& tex) 
 {
-    texture = tex;
-    hasTexture = true;
+    dataTex = tex.id;
+    dataType = MaterialProp::DataType::TEXTURE;
+}
+MaterialProp::MaterialProp(s32 datai)
+{
+    this->datai = datai;
+    dataType = MaterialProp::DataType::INT;
+}
+MaterialProp::MaterialProp(f32 dataf)
+{
+    this->dataf = dataf;
+    dataType = MaterialProp::DataType::FLOAT;
 }
 void MaterialProp::Delete()
 { 
-    if (hasTexture)
+    if (dataType == MaterialProp::DataType::TEXTURE)
     {
-        texture.Delete(); 
+        Texture(dataTex).Delete(); 
     }
 }
 
@@ -107,7 +110,7 @@ const char* GetTexMatTypeString(TextureMaterialType type) {
         case DIFFUSE: return "diffuseMat";
         case SPECULAR: return "specularMat";
         case AMBIENT: return "ambientMat";
-        case NORMAL: return "normalMat";
+        case NORMALS: return "normalMat";
         case SHININESS: return "shininessMat";
         case EMISSION: return "emissiveMat";
         case OPACITY: return "opacityMat";
@@ -116,7 +119,33 @@ const char* GetTexMatTypeString(TextureMaterialType type) {
     }
 }
 
-
+static void SetShaderUniformForMatProp(const MaterialProp& prop, const Shader& shader, const char* matVarStr)
+{
+    shader.setUniform(TextFormat("material.%s.dataType", matVarStr), prop.dataType);
+    switch (prop.dataType)
+    {
+        case MaterialProp::DataType::FLOAT:
+        {
+            shader.setUniform(TextFormat("material.%s.color.r", matVarStr), prop.dataf);
+        } break;
+        case MaterialProp::DataType::INT:
+        {
+            shader.setUniform(TextFormat("material.%s.datai", matVarStr), prop.datai);
+        } break;
+        case MaterialProp::DataType::VECTOR:
+        {
+            shader.setUniform(TextFormat("material.%s.color", matVarStr), prop.dataVec);
+        } break;
+        case MaterialProp::DataType::TEXTURE:
+        {
+            shader.TryAddSampler(prop.dataTex, TextFormat("material.%s.tex", matVarStr));
+        } break;
+        default:
+        {
+            LOG_WARN("Unrecognized material property data type! %i", prop.dataType);
+        } break;
+    }
+}
 
 void Material::SetShaderUniforms(const Shader& shader) const
 {
@@ -127,20 +156,15 @@ void Material::SetShaderUniforms(const Shader& shader) const
     { \
         const MaterialProp& matVar = properties[matType]; \
         const char* matVarStr = GetTexMatTypeString(matType); \
-        shader.setUniform(TextFormat("material.%s.useSampler", matVarStr), matVar.hasTexture); \
-        if (matVar.hasTexture) { \
-            shader.TryAddSampler(matVar.texture, TextFormat("material.%s.tex", matVarStr)); \
-        } \
-        shader.setUniform(TextFormat("material.%s.color", matVarStr), matVar.color); \
+        SetShaderUniformForMatProp(matVar, shader, matVarStr); \
     }
-
     SET_MATERIAL_UNIFORMS(DIFFUSE);
     SET_MATERIAL_UNIFORMS(AMBIENT);
     SET_MATERIAL_UNIFORMS(SPECULAR);
-    SET_MATERIAL_UNIFORMS(NORMAL);
+    SET_MATERIAL_UNIFORMS(NORMALS);
     SET_MATERIAL_UNIFORMS(SHININESS);
-    SET_MATERIAL_UNIFORMS(OPACITY);
     SET_MATERIAL_UNIFORMS(EMISSION);
+    SET_MATERIAL_UNIFORMS(OPACITY);
 }
 
 

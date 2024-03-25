@@ -10,6 +10,9 @@
 // The extra elements are meant as a fallback/backup allocation strat - for that reason
 // I won't be allowing those to be allocated with an Arena or things like that
 
+// TODO: when we dip below the fixedSize limit, switch back to using fixed mem
+// as of rn, as soon as we transition to dyn mem, we never switch back
+
 template <typename T, u32 fixedSize>
 struct FixedGrowableArray
 {
