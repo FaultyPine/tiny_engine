@@ -1,4 +1,5 @@
 import os, sys, time
+from colorama import Fore, Back, Style
 PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__)).replace("\\", "/")
 
 # since we don't have a proper pythonic package folder structure, choosing to import our build utils this way
@@ -54,7 +55,7 @@ def generate_types_ninjafile(buildninja_path, build_dir, get_source_files_func, 
     for src in source_files:
         print("Source file: " + src)
         n.build(f"$builddir/{src}.cpp", "compile", f"{TYPES_INPUT_FOLDER}/{src}", variables={"file" : src, "in_dir" : TYPES_INPUT_FOLDER})
-    print("Regenerated ninja build!")
+    print(f"{Fore.GREEN}Regenerated{Style.RESET_ALL} ninja build!")
     buildfile.close()
 
 def build_types_metaprogram():
@@ -85,7 +86,8 @@ def main():
     args = sys.argv[1:]
     if (len(args) > 0):
         if "clean" in args:
-            clean(f"{PYTHON_SCRIPT_PATH}/{GENERATED_TYPES_FOLDER}")
+            clean(f"{PYTHON_SCRIPT_PATH}")
+            #clean(f"{PYTHON_SCRIPT_PATH}/{GENERATED_TYPES_FOLDER}")
             files_to_remove = [f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME}",
                                f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME.replace('exe', 'obj')}",
                                f"{PYTHON_SCRIPT_PATH}/{OUTPUT_EXE_NAME.replace('exe', 'pdb')}",
@@ -95,6 +97,8 @@ def main():
             for filename in files_to_remove:
                 if os.path.exists(filename):
                     os.remove(filename)
+        if "regen" in args:
+            generate_types_ninjafile(TYPES_INPUT_FOLDER, GENERATED_TYPES_FOLDER, get_types_source_files, True)
         if "run" in args:
             run_types_metaprogram()
 

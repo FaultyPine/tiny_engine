@@ -35,8 +35,15 @@ def build_dll_compiler_args():
 def build_dll_linker_args():
     return "/DLL"
 
+def ignored_warnings():
+    return "-Wmicrosoft-include -Wformat-security -Wformat -Wpragma-pack -Wwritable-strings -Wint-to-void-pointer-cast"
+
+def get_deps_file():
+    return "$out.d"
+
 def build_common_compiler_args():
-    return "-MD -MF out.d"
+    # TODO: dont silence warnings
+    return f"-w {ignored_warnings()}"
 
 # ===========================================================================================
 
@@ -46,14 +53,14 @@ def is_linux():
     return platform == "linux" or platform == "linux2"
 def is_macos():
     return platform == "darwin" 
-def get_ninja_command(ninjabuild_dir: str = ""):
+def get_ninja_command(ninjabuild_dir: str = "", extra_ninja_options = ""):
     ninja_exe_dir = UTILS_PYTHON_SCRIPT_PATH
     if is_linux():
-        return f"chmod u+x {ninja_exe_dir}/ninja-linux && {ninja_exe_dir}ninja-linux -C {ninjabuild_dir}"
+        return f"chmod u+x {ninja_exe_dir}/ninja-linux && {ninja_exe_dir}ninja-linux -C {ninjabuild_dir} {extra_ninja_options}"
     elif is_macos():
-        return f"chmod 755 {ninja_exe_dir}/ninja-mac && {ninja_exe_dir}/ninja-mac -C {ninjabuild_dir}"
+        return f"chmod 755 {ninja_exe_dir}/ninja-mac && {ninja_exe_dir}/ninja-mac -C {ninjabuild_dir} {extra_ninja_options}"
     elif is_windows():
-        return f"\"{ninja_exe_dir}/ninja.exe\" -C {ninjabuild_dir}"
+        return f"\"{ninja_exe_dir}/ninja.exe\" -C {ninjabuild_dir} {extra_ninja_options}"
 
 def get_ninja_command_for_ninjafile(ninjabuild_file: str):
     ninja_exe_dir = UTILS_PYTHON_SCRIPT_PATH
@@ -111,10 +118,10 @@ def generate_ninjafile(
     n.rule(
         name="compile", 
         #command="$cxx -showIncludes $compiler_args -c $in -Fo$out",
-        command="$cxx $compiler_args -c $in -o $out -w",
+        command=f"$cxx $compiler_args -c $in -o $out -MD -MF {get_deps_file()}", # need deps here since ninja doesn't properly expand $variables outside rules
         description="BUILD $out",
         deps="gcc",
-        depfile="out.d")
+        depfile=get_deps_file())
     n.rule(
         name="link",
         #command="LINK -OUT:$out $in $linker_args",
@@ -157,13 +164,12 @@ def generic_ninja_build(buildninja_path: str,
         copy_file(src, dst)
 
 def clean(dir: str):
-    # remove generated pch and all files or folders in build/
-    for root, dirs, files in os.walk(dir):
-        for f in files:
-            os.unlink(os.path.join(root, f))
-        for d in dirs:
-            shutil.rmtree(os.path.join(root, d))
-    print(f"{Fore.GREEN}Cleaned!{Style.RESET_ALL}")
+    if not os.path.exists(f"{dir}/build.ninja"):
+        print("Tried to clean folder without build.ninja present!")
+        print(dir)
+    else:
+        command(get_ninja_command(dir, "-t clean"))
+        print(f"{Fore.GREEN}Cleaned!{Style.RESET_ALL}")
 
 
 def copy_file(src, dst):

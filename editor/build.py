@@ -59,7 +59,7 @@ def main():
     args = sys.argv[1:]
     if len(args) > 0:
         if "clean" in args:
-            clean(BUILD_DIR)
+            clean(PYTHON_SCRIPT_PATH)
         elif "regen" in args:
             generate_ninjafile(PYTHON_SCRIPT_PATH, get_compiler_args_clang(), get_linker_args_lld_link(), BUILD_DIR, get_editor_dll_sources, EDITOR_EXE_NAME, True)
         elif "norun" in args:

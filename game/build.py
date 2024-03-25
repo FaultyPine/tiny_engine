@@ -72,7 +72,7 @@ def get_game_standalone_compiler_args_msvc():
     include_root_paths = ["", "engine\\src", "types\\generated"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
-        -ggdb -O0 {include_paths} {cpp_ver_arg()}
+        -gfull -O0 {include_paths} {cpp_ver_arg()}
     """)
 
 def get_game_dll_sources():
@@ -98,7 +98,7 @@ def main():
     standalone_ninjafile_dir = os.path.join(PYTHON_SCRIPT_PATH, BUILD_STANDALONE_DIR) if shouldBuildStandalone else ""
     if len(args) > 0:
         if "clean" in args:
-            clean(BUILD_LIB_DIR)
+            clean(PYTHON_SCRIPT_PATH)
             clean(BUILD_STANDALONE_DIR)
         elif "regen" in args:
             generate_ninjafile(PYTHON_SCRIPT_PATH, get_gamedll_compiler_args_clang(), get_gamedll_linker_args_lld_link(), BUILD_LIB_DIR, get_game_dll_sources, DLL_NAME, True)

@@ -56,7 +56,7 @@ def get_compiler_args_clang():
     include_root_paths = ["", "types\\generated", "external", "engine\\src", "external\\imgui", "external\\bullet\\include"]
     include_paths = include_paths_str(to_root, include_root_paths)
     return clean_string(f"""
-        -ggdb -O0 {build_common_compiler_args()} {build_dll_compiler_args()} {include_paths} {cpp_ver_arg()}
+        -gfull -O0 {build_common_compiler_args()} {build_dll_compiler_args()} {include_paths} {cpp_ver_arg()}
     """)
 
 
@@ -78,7 +78,7 @@ def main():
     args = sys.argv[1:]
     if len(args) > 0:
         if "clean" in args:
-            clean(BUILD_DIR)
+            clean(PYTHON_SCRIPT_PATH)
         elif "regen" in args:
             generate_ninjafile(PYTHON_SCRIPT_PATH, get_compiler_args(), get_linker_args(), BUILD_DIR, get_engine_dll_sources, EXE_NAME, True)
         elif "norun" in args:
