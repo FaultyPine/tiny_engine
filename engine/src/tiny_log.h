@@ -41,7 +41,7 @@ TAPI void LogMessage(LogLevel level, const char* message, ...);
 #ifdef TINY_ASSERTIONS_ENABLED
 #include <intrin.h>
 #define TINY_ASSERT(x) \
-    if (!(x)) { LOG_FATAL("%s | %s:%i", #x, __FILE__, __LINE__); DEBUG_BREAK; *((char*)0)=0; }
+    if (!(x)) { LOG_FATAL("%s | %s:%i", #x, __FILE__, __LINE__); DEBUG_BREAK; }
 #else
 #define TINY_ASSERT(x)
 #endif

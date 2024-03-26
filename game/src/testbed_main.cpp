@@ -635,7 +635,7 @@ AppRunCallbacks GetTestbedAppRunCallbacks()
 
 void testbed_standalone_entrypoint(int argc, char *argv[])
 {
-    char* resourceDirectory = "../res/";
+    const char* resourceDirectory = "../res/";
     if (argc < 2)
     {
         LOG_WARN("no resource directory passed. Using default ./res/");

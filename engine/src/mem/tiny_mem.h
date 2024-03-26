@@ -20,6 +20,7 @@ struct BufferView
 {
     T* data = nullptr;
     size_t size = 0;
+    inline u32 stride() const { return sizeof(T); }
 };
 
 

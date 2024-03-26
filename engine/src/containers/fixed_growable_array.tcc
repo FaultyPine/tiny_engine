@@ -14,9 +14,13 @@ static void CheckArrayResize(FixedGrowableArray<T, fixedSize>& array)
         // moving old buffer (could be our fixed mem or a dyn alloc) to a new allocation
         T* prevAlloc = array.elements == &array.fixedMem[0] ? nullptr : array.elements;
         T* prevElements = array.elements;
-        array.elements = (T*)TSYSREALLOC(prevAlloc, sizeof(T) * array.capacity);
+        array.elements = (T*)TSYSALLOC(sizeof(T) * array.capacity);
+        TMEMMOVE(array.elements, prevElements, sizeof(T) * array.size);
+        if (prevElements != &array.fixedMem[0])
+        {
+            TSYSFREE(prevElements);
+        }
         // move elements from prev buffer to new one
-        TMEMCPY(array.elements, prevElements, sizeof(T) * array.size);
         // notably... this will invalidate pointers to these elements. This is fine, use indices instead
     }
 }

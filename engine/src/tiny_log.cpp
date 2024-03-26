@@ -74,7 +74,7 @@ void SetTerminalColor(LogLevel level)
 
 void LogMessage(LogLevel level, const char* message, ...)
 {
-    if (LOG_LEVELS_ENABLED & (1 << level) == 0)
+    if ((LOG_LEVELS_ENABLED & (1 << level)) == 0)
     {
         return;
     }

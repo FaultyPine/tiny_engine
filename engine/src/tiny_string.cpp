@@ -6,7 +6,7 @@
 TString TStringLit(const char str[])
 {
     TString res = {};
-    res.size = ARRAY_SIZE(str);
+    res.size = strlen(str);
     res.data = (s8*)&str[0];
     return res;
 }

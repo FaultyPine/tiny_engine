@@ -5,6 +5,7 @@ both folders will be in the same directory as the built executable
 */
 
 //~ includes and globals //////////////////////////////////////////////////////
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "md.h"
 #include "type_metadata.h"

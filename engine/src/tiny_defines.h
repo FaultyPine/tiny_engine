@@ -5,6 +5,8 @@
 
 #define TINY_DEBUG
 
+#define _CRT_SECURE_NO_WARNINGS
+
 // assertions only in debug mode
 #ifdef TINY_DEBUG
 #define TINY_ASSERTIONS_ENABLED
@@ -26,7 +28,7 @@
 #define TOGGLE_NTH_BIT(bitfield, n_bit) \
     ( (bitfield) ^ (1 << (n_bit)) )
 
-#define U32_INVALID_ID 0xDEADBEEF
+#define U32_INVALID_ID 999999999U
 
 // exports
 #ifdef TEXPORT

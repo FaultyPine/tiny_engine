@@ -64,7 +64,7 @@ struct EngineContext
 TAPI EngineContext& GetEngineCtx();
 
 TAPI void InitEngine(
-    char* resourceDirectory,
+    const char* resourceDirectory,
     const char* windowName,
     u32 windowWidth,
     u32 windowHeight,
@@ -102,6 +102,7 @@ TAPI void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 
 TAPI void SetWireframeDrawing(bool shouldDrawWireframes);
 
 TAPI u32 HashBytes(u8* data, u32 size);
+TAPI u64 HashBytesL(u8* data, u32 size);
 
 struct GLFWwindow;
 TAPI GLFWwindow* GetMainGLFWWindow();

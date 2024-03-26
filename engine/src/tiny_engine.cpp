@@ -147,12 +147,27 @@ void SetWireframeDrawing(bool shouldDrawWireframes) {
     glPolygonMode(GL_FRONT_AND_BACK, shouldDrawWireframes ? GL_LINE : GL_FILL);
 }
 
+u64 HashBytesL(u8* data, u32 size)
+{
+    // FNV-1 hash
+    // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+    constexpr u64 FNV_offset_basis = 0xcbf29ce484222325;
+    constexpr u64 FNV_prime = 0x100000001b3;
+    u64 hash = FNV_offset_basis;
+    for (u32 i = 0; i < size; i++)
+    {
+        u8 byte_of_data = data[i];
+        hash = hash * FNV_prime;
+        hash = hash ^ byte_of_data;
+    }
+    return hash;
+}
 u32 HashBytes(u8* data, u32 size)
 {
     // FNV-1 hash
     // https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
-    constexpr u32 FNV_offset_basis = 0xcbf29ce484222325;
-    constexpr u32 FNV_prime = 0x100000001b3;
+    constexpr u32 FNV_offset_basis = 0x811c9dc5;
+    constexpr u32 FNV_prime = 0x01000193;
     u32 hash = FNV_offset_basis;
     for (u32 i = 0; i < size; i++)
     {
@@ -191,7 +206,7 @@ bool EngineLoop() {
 }
 
 void InitEngine(
-    char* resourceDirectory,
+    const char* resourceDirectory,
     const char* windowName,
     u32 windowWidth,
     u32 windowHeight,
@@ -205,7 +220,11 @@ void InitEngine(
     globEngineCtx.resourceDirectory = resourceDirectory;
 
     s8 cwd[PATH_MAX];
+    #ifdef _WIN32
+    _getcwd(cwd, PATH_MAX);
+    #else
     getcwd(cwd, PATH_MAX);
+    #endif
     LOG_INFO("CWD: %s", cwd);
 
     glfwInit();
