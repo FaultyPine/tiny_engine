@@ -22,7 +22,8 @@ static BoundingBox GetTightBoundsOnCamFrustum(
     glm::vec3& outLightWorldPos, 
     void* outOrthoProjInfo)
 {
-
+    TINY_ASSERT(false);
+    return BoundingBox();
 }
 
 // TODO: this is hardcoded... ideally this would take a list of transforms and maybe some

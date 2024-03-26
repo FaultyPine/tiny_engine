@@ -60,7 +60,7 @@ struct MaterialInternal
     #define MATERIAL_INTERNAL_NAME_MAX_LEN 64
     const char name[MATERIAL_INTERNAL_NAME_MAX_LEN] = "DefaultMat";
 
-    MaterialInternal& MaterialInternal::operator=(const MaterialInternal &mat);
+    MaterialInternal& operator=(const MaterialInternal &mat);
 };
 
 struct MaterialHasher {
@@ -87,6 +87,8 @@ Material NewMaterial(const char* name, s32 materialIndex = -1);
 void DeleteMaterial(Material material);
 
 void OverwriteMaterialProperty(Material material, const MaterialProp& prop, TextureMaterialType type);
+
+MaterialInternal& GetMaterialInternal(Material material);
 
 bool DoesMaterialIdExist(u32 materialID);
 

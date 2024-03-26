@@ -120,7 +120,7 @@ void editor_main(int argc, char *argv[])
     cb.tickFunc = editor_tick;
     cb.renderFunc = editor_render;
     cb.terminateFunc = editor_terminate;
-    char* resourceDirectory = "./res/";
+    const char* resourceDirectory = "./res/";
     if (argc < 2)
     {
         LOG_WARN("no resource directory passed. Using default ./res/");

@@ -21,3 +21,4 @@ build.ninja
 *.d
 profiler_results.json
 vcpkg_installed/
+*.rdbg
