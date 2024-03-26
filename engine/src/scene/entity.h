@@ -5,8 +5,7 @@
 #include "render/model.h"
 #include "tiny_types.h"
 
-// this isn't meant to be a full ECS system
-// engine "entities" are just renderable positions with a bounding box right now
+// "entities" are just renderable positions with a bounding box right now
 // made this mostly so I could have some engine-side notion of entities for experiments
 // with algorithms like culling, spatial partitioning, etc
 
@@ -19,7 +18,7 @@ enum EntityFlags
 STATIC_ASSERT(NUM_ENTITY_FLAGS < 32);
 
 typedef u32 EntityRef;
-
+#define ENTITY_NAME_MAX_LENGTH 50
 struct Entity
 {
     Transform transform = {};
@@ -27,13 +26,20 @@ struct Entity
     BoundingBox bounds = {};
     EntityRef id = U32_INVALID_ID;
     u32 flags = 0;
+    s8 name[ENTITY_NAME_MAX_LENGTH];
+    
+    operator bool() { return isValid(); }
+    Entity() = default;
+    inline bool isValid() { return id != U32_INVALID_ID; }
 };
 
 struct Arena;
 void InitializeEntitySystem(Arena* arena);
 
-EntityRef CreateBlankEntity();
-Entity& GetEntity(EntityRef ref);
+TAPI EntityRef CreateEntity(const char* name, const Model& model, const Transform& tf, u32 flags = 0);
+TAPI bool DestroyEntity(EntityRef ent);
+TAPI Entity& GetEntity(EntityRef ent);
+TAPI Entity& GetEntity(const char* name);
 
 
 #endif

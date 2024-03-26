@@ -10,9 +10,16 @@ struct Vertex
     glm::vec3 tangent = glm::vec3(0);
     glm::vec2 texCoords = glm::vec3(0);
     glm::vec3 color = glm::vec3(1);
+    u32 objectID = 0;
     inline std::string str() 
     {
-        return "[Pos = " + glm::to_string(position) + "  Normals = " + glm::to_string(normal) + " Tangent = " + glm::to_string(tangent) + "  TexCoords = " + glm::to_string(texCoords) + "  Colors = " + glm::to_string(color) + " ]";
+        return "[Pos = " + glm::to_string(position) + 
+                " Normals = " + glm::to_string(normal) + 
+                " Tangent = " + glm::to_string(tangent) + 
+                " TexCoords = " + glm::to_string(texCoords) + 
+                " Colors = " + glm::to_string(color) + 
+                " obj id = " + std::to_string(objectID) + 
+                " ]";
     }
 };
 struct SimpleVertex

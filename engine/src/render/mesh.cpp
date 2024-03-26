@@ -28,10 +28,10 @@ void Mesh::Delete() {
     //material.Delete();
 }
 
-// Note: numBytesPerComponent must be between [1, 4]
-void ConfigureVertexAttrib(u32 attributeLoc, u32 numBytesPerComponent, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
+// Note: numComponentsInAttribute must be between [1, 4] (component refers to 1 of whatever the oglType is)
+void ConfigureVertexAttrib(u32 attributeLoc, u32 numComponentsInAttribute, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
     // this retrieves the value of GL_ARRAY_BUFFER (VBO) and associates it with the current VAO
-    GLCall(glVertexAttribPointer(attributeLoc, numBytesPerComponent, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+    GLCall(glVertexAttribPointer(attributeLoc, numComponentsInAttribute, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
     // glEnableVertexAttribArray enables vertex attribute for currently bound vertex array object
     // glEnableVertexArrayAttrib ^ but you provide the vertex array obj explicitly
     GLCall(glEnableVertexAttribArray(attributeLoc));
@@ -70,30 +70,10 @@ void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent,
     GLCall(glBindVertexArray(0));
 }
 
-void Mesh::initMesh() {
-    PROFILE_FUNCTION();
-    // create buffers
-    GLCall(glGenVertexArrays(1, &VAO));
-    GLCall(glGenBuffers(1, &VBO));
-    GLCall(glGenBuffers(1, &EBO));
-
-    // bind buffers
-    GLCall(glBindVertexArray(VAO));
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-    if (!indices.empty()) {
-        // making sure to bind this AFTER the vao is bound
-        // since the EBO (and VBO) actually ends up stored inside the VAO
-        GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
-    }
-
-    // put data into VBO
-    GLCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));  
-    if (!indices.empty()) {
-        GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW));
-    }
-
-    // bind vertex attributes to VAO
-    // also stores reference to VBO when glVertexAttribPointer is called
+void ConfigureMeshVertexAttributes(u32& vertexAttributeLocation)
+{
+    // bind vertex attributes to currently bound VAO
+    // also stores reference to currently bound VBO when glVertexAttribPointer is called
     ConfigureVertexAttrib( // vert positions
         vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, position)); // 0
     ConfigureVertexAttrib( // vert normals
@@ -104,11 +84,36 @@ void Mesh::initMesh() {
         vertexAttributeLocation++, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texCoords)); // 3
     ConfigureVertexAttrib( // vert color
         vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color)); // 4
+    ConfigureVertexAttrib(
+        vertexAttributeLocation++, 1, GL_UNSIGNED_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, objectID)); // 5
+}
 
+void Mesh::initMesh() {
+    PROFILE_FUNCTION();
+    // create
+    GLCall(glGenVertexArrays(1, &VAO));
+    GLCall(glGenBuffers(1, &VBO));
+    GLCall(glGenBuffers(1, &EBO));
+    // bind
+    GLCall(glBindVertexArray(VAO));
+    GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
+    if (!indices.empty()) {
+        // making sure to bind this AFTER the vao is bound
+        // since the EBO (and VBO) actually ends up stored inside the VAO
+        GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
+    }
+    // upload data into VBO
+    GLCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));  
+    if (!indices.empty()) {
+        GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW));
+    }
+    // vertex attributes
+    ConfigureMeshVertexAttributes(vertexAttributeLocation);
     // unbind
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
     GLCall(glBindVertexArray(0));
 }
+
 
 void OGLDrawDefault(u32 VAO, u32 indicesSize, u32 verticesSize) {
     // draw mesh = bind vert array -> draw -> unbind

@@ -51,8 +51,7 @@ Material NewMaterial(const char* name, s32 materialIndex) {
     Material newMaterial = {};
     u32 nameHash = HashBytes((u8*)name, strnlen(name, MATERIAL_INTERNAL_NAME_MAX_LEN));
     newMaterial.id = materialIndex != -1 ? nameHash+materialIndex : nameHash;
-    MaterialInternal newMaterialInternal;
-    TMEMSET(&newMaterialInternal, 0, sizeof(newMaterialInternal));
+    MaterialInternal newMaterialInternal = {};
     u32 materialMaxNameSize = ARRAY_SIZE(newMaterialInternal.name);
     TMEMCPY((void*)&newMaterialInternal.name[0], name, strnlen(name, materialMaxNameSize));
     matRegistry.materialRegistry[newMaterial] = newMaterialInternal;
@@ -140,6 +139,10 @@ static void SetShaderUniformForMatProp(const MaterialProp& prop, const Shader& s
         {
             shader.TryAddSampler(prop.dataTex, TextFormat("material.%s.tex", matVarStr));
         } break;
+        case MaterialProp::DataType::UNK:
+        {
+            //LOG_WARN("Blank material used");
+        } break;
         default:
         {
             LOG_WARN("Unrecognized material property data type! %i", prop.dataType);
@@ -150,7 +153,7 @@ static void SetShaderUniformForMatProp(const MaterialProp& prop, const Shader& s
 void Material::SetShaderUniforms(const Shader& shader) const
 {
     PROFILE_FUNCTION();
-    MaterialInternal& matInternal = GetMaterialRegistry().materialRegistry[*this];
+    MaterialInternal& matInternal = GetMaterialInternal(*this);
     MaterialProp* properties = matInternal.properties;
     #define SET_MATERIAL_UNIFORMS(matType) \
     { \

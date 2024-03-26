@@ -20,6 +20,7 @@
 #include "physics/tiny_physics.h"
 #include "job_system.h"
 #include "render/tiny_renderer.h"
+#include "scene/entity.h"
 
 #include "GLFW/glfw3.h"
 
@@ -318,6 +319,7 @@ void InitEngine(
     InitializeTextureCache(engineArena);
     InitializeMaterialSystem(engineArena);
     Renderer::InitializeRenderer(engineArena);
+    InitializeEntitySystem(engineArena);
     InitializePhysics(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
 

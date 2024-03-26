@@ -5,7 +5,8 @@ layout (location = 1) in vec3 vertexNormal;
 layout (location = 2) in vec3 vertexTangent;
 layout (location = 3) in vec2 vertexTexCoord;
 layout (location = 4) in vec4 vertexColor;
-layout (location = 5) in mat4 instanceModelMat;
+layout (location = 5) in uint objectID;
+layout (location = 6) in mat4 instanceModelMat;
 
 #include "globals.glsl"
 #include "common.glsl"

@@ -5,6 +5,7 @@
 
 // light data structures in globals.glsl
 
+// samplers cannot be stored in ubo/ssbo buffers.... :/
 uniform samplerCube pointLightShadowMaps[MAX_NUM_LIGHTS];
 uniform sampler2D directionalLightShadowMap;
 

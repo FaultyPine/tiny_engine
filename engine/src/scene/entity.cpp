@@ -21,24 +21,81 @@ static EntityRegistry& GetRegistry()
     return *GetEngineCtx().entityRegistry;
 }
 
-void InitializeEntitySystem(Arena* arena)
+EntityRef GenerateEntityID(const char* name = nullptr)
 {
-    EntityRegistry* registryMem = (EntityRegistry*)arena_alloc(arena, sizeof(EntityRegistry));
-    GetEngineCtx().entityRegistry = registryMem;
-    TMEMSET(registryMem, 0, sizeof(EntityRegistry));
-    new(&registryMem->entMap) EntityMap();
+    EntityRef result = 0;
+    if (!name)
+    {
+        EntityRegistry& registry = GetRegistry();
+        result = registry.entityCreationIndex++;
+    }
+    else
+    {
+        result = HashBytes((u8*)name, strnlen(name, ENTITY_NAME_MAX_LENGTH));
+    }
+    TINY_ASSERT(result != U32_INVALID_ID); // TODO: handle this gracefully
+    return result;
 }
 
-EntityRef CreateBlankEntity()
+void InitializeEntitySystem(Arena* arena)
+{
+    EntityRegistry* registryMem = arena_alloc_and_init<EntityRegistry>(arena);
+    GetEngineCtx().entityRegistry = registryMem;
+    // dummy entity with bad id so we can return it on failure from methods like GetEntity
+    registryMem->entMap[U32_INVALID_ID] = {};
+}
+
+EntityRef CreateEntity(const char* name, const Model& model, const Transform& tf, u32 flags)
 {
     EntityRegistry& registry = GetRegistry();
     Entity ent = {};
-    ent.id = registry.entityCreationIndex++;
+    ent.model = model;
+    ent.transform = tf;
+    ent.flags = flags;
+    if (name)
+    {
+        TMEMCPY(ent.name, name, strnlen(name, ENTITY_NAME_MAX_LENGTH));
+    }
+    else
+    {
+        TMEMSET(ent.name, 0, ENTITY_NAME_MAX_LENGTH);
+    }
+    ent.id = GenerateEntityID(name);
     registry.entMap[ent.id] = ent;
     return ent.id;
 }
 
+bool DestroyEntity(EntityRef ent)
+{
+    EntityRegistry& registry = GetRegistry();
+    Entity& entity = GetEntity(ent);
+    if (entity.id == U32_INVALID_ID)
+    {
+        return false;
+    }
+    entity.model.Delete();
+    registry.entMap.erase(ent);
+    return true;
+}
+
 Entity& GetEntity(EntityRef ref)
 {
-    return GetRegistry().entMap[ref];
+    EntityRegistry& registry = GetRegistry();
+    if (registry.entMap.count(ref) > 0)
+    {
+        return registry.entMap[ref];
+    }
+    return registry.entMap[U32_INVALID_ID]; // if doesn't exist, return our dummy
+}
+
+Entity& GetEntity(const char* name)
+{
+    u32 namehash = HashBytes((u8*)name, strnlen(name, ENTITY_NAME_MAX_LENGTH));
+    EntityRegistry& registry = GetRegistry();
+    if (registry.entMap.count(namehash) > 0)
+    {
+        return registry.entMap[namehash];
+    }
+    return registry.entMap[U32_INVALID_ID]; // if doesn't exist, return our dummy
+
 }

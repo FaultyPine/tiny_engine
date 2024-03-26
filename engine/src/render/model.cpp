@@ -161,12 +161,8 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
             vertex.texCoords = vec;
         }
         else vertex.texCoords = glm::vec2(0.0f, 0.0f);
-
-        // we -1 here because assimp by default always puts their "DefaultMaterial" as idx 0
-        // and since we don't send that material to our shader, we need to pretend it doesn't
-        // exist
-        //vertex.materialId = mesh->mMaterialIndex - 1;
-
+        //TINY_ASSERT(false);
+        vertex.objectID = 0;
         vertices.push_back(vertex);
     }
     // process indices

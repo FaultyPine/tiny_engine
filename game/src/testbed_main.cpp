@@ -14,33 +14,10 @@
 #include "mem/tiny_arena.h"
 #include "physics/tiny_physics.h"
 #include "render/tiny_renderer.h"
+#include "scene/entity.h"
 
-//#define ISLAND_SCENE
-#define SPONZA_SCENE
-
-struct WorldEntity {
-    Transform transform = {};
-    Model model = {};
-    u32 hash = 0;
-    const char* name = nullptr;
-    bool isVisible = true;
-    WorldEntity(){}
-    WorldEntity(const Transform& tf, const Model& mod, const char* name = "") {
-        transform = tf;
-        model = mod;
-        if (strlen(name) < 1) {
-            hash = std::hash<f64>{}(GetTime());
-        }
-        else {
-            hash = std::hash<std::string>{}(std::string(name));
-        }
-        this->name = name;
-    }
-    void Delete() {
-        model.Delete();
-    }
-    bool isValid() { return hash != 0; }
-};
+#define ISLAND_SCENE
+//#define SPONZA_SCENE
 
 struct Wave {
     f32 waveSpeed = 1.0;
@@ -53,16 +30,15 @@ struct Wave {
 };
 
 inline u32 GetHash(const std::string& str) {
-    return std::hash<std::string>{}(str);
+    return HashBytes((u8*)str.data(), str.size());
 }
 
 struct GameState {
     Arena* gameMem;
 
     // TODO: use hashmap w/int IDs
-    std::vector<WorldEntity> entities = {};
+    std::vector<EntityRef> entities = {};
     Shader lightingShader = {};
-
 
     // Main pond
     #define NUM_WAVES 8
@@ -74,7 +50,7 @@ struct GameState {
     ParticleSystem waterfallParticles = {};
     
     // grass
-    WorldEntity grass = {};
+    EntityRef grass = {};
     Shader grassPrepassShader;
     BoundingBox grassSpawnExclusion = {};
     Texture windTexture = {};
@@ -105,20 +81,10 @@ struct GameState {
     }
     void Terminate() {
         for (auto& ent : entities) {
-            ent.Delete();
+            DestroyEntity(ent);
         }
     }
-    // TODO: return shared_ptr?
-    // TODO: use hashmap
-    WorldEntity* GetEntity(const char* name) {
-        u32 hash = GetHash(std::string(name));
-        for (auto& ent : entities) {
-            if (ent.hash == hash) {
-                return &ent;
-            }
-        }
-        return nullptr;
-    }
+
 };
 // ===========================================================
 
@@ -208,8 +174,9 @@ void drawImGuiDebug(GameState& gs) {
 
     if (ImGui::CollapsingHeader("Entities"))
     {
-        for (WorldEntity& ent : gs.entities)
+        for (EntityRef& entref : gs.entities)
         {
+            Entity& ent = GetEntity(entref);
             const char* entityLabel = TextFormat("Position [%s]", ent.name);
             ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
         }
@@ -228,8 +195,8 @@ void drawImGuiDebug(GameState& gs) {
         ImGui::DragFloat3("Grass ex min", &gs.grassSpawnExclusion.min[0], 0.01f);
         ImGui::DragFloat3("Grass ex max", &gs.grassSpawnExclusion.max[0], 0.01f);
     }
-    if (WorldEntity* waveEntity = gs.GetEntity("PondEntity")) {
-        if (ImGui::CollapsingHeader("Main Pond") && waveEntity->isValid()) {
+    if (Entity& waveEntity = GetEntity("PondEntity")) {
+        if (ImGui::CollapsingHeader("Main Pond") && waveEntity.isValid()) {
             if (ImGui::CollapsingHeader("Wave Plane")) {
                 //ImGui::DragFloat3("Wave pos", &waveEntity.transform.position[0], 0.01f);
                 //ImGui::DragFloat3("Wave scale", &waveEntity.transform.scale[0], 0.01f);
@@ -282,7 +249,9 @@ void ShadowMapPrePass(const GameState& gs) {
     const LightDirectional& sunlight = lighting.lights.sunlight;
     const ShadowMap& sunShadows = lighting.directionalShadowMap;
     sunShadows.BeginRender();
-    for (const WorldEntity& ent : gs.entities) {
+    for (const EntityRef& ref : gs.entities) 
+    {
+        Entity& ent = GetEntity(ref);
         sunShadows.RenderShadowCaster(sunlight, ent.model, ent.transform);
     }
     sunShadows.EndRender();
@@ -295,9 +264,11 @@ void DepthAndNormsPrePass(const GameState& gs) {
     ClearGLBuffers();
     // render entities to a texture where the rgb of each pixel is the normals
     // and the alpha channel is the depth
-    for (const WorldEntity& ent : gs.entities) {
+    for (const EntityRef& ref : gs.entities) 
+    {
+        Entity& ent = GetEntity(ref);
         // kinda cringe that we need to special case this
-        if (ent.hash == GetHash("PondEntity")) {
+        if (ent.id == GetHash("PondEntity")) {
             gs.pondPrepassShader.setUniform("numActiveWaves", gs.numActiveWaves);
             for (u32 i = 0; i < NUM_WAVES; i++) {
                 const Wave& wave = gs.waves[i];
@@ -321,7 +292,8 @@ void DepthAndNormsPrePass(const GameState& gs) {
         gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grassPrepassShader.TryAddSampler(gs.windTexture, "windTexture");
         gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        gs.grass.model.Draw(gs.grassPrepassShader, gs.grass.transform);
+        Entity& grass = GetEntity(gs.grass);
+        grass.model.Draw(gs.grassPrepassShader, grass.transform);
     }
 }
 
@@ -330,12 +302,12 @@ void drawGameState(const GameState& gs) {
 
     // update Waves
     #ifdef ISLAND_SCENE
-    if (WorldEntity* waveEntity = gs.GetEntity("PondEntity")) {
-        Shader& waveShader = waveEntity->model.cachedShader;
-        if (waveEntity->isValid() && waveShader.isValid()) {
+    if (Entity& waveEntity = GetEntity("PondEntity")) {
+        Shader& waveShader = waveEntity.model.cachedShader;
+        if (waveEntity && waveShader.isValid()) {
             waveShader.setUniform("numActiveWaves", gs.numActiveWaves);
             for (u32 i = 0; i < NUM_WAVES; i++) {
-                Wave& wave = gs.waves[i];
+                const Wave& wave = gs.waves[i];
                 waveShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
                 waveShader.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
                 waveShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
@@ -345,19 +317,22 @@ void drawGameState(const GameState& gs) {
     }
 
     // grass
-    if (gs.grass.isValid() && enableGrassRender) {
+    Entity& grass = GetEntity(gs.grass);
+    if (grass && enableGrassRender) {
         PROFILE_SCOPE("GrassInstancing");
-        gs.grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
-        gs.grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
-        gs.grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
-        gs.grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        gs.grass.model.cachedShader.TryAddSampler(gs.windTexture, "windTexture");
-        gs.grass.model.Draw(gs.grass.transform);
+        grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
+        grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
+        grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
+        grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
+        grass.model.cachedShader.TryAddSampler(gs.windTexture, "windTexture");
+        grass.model.Draw(grass.transform);
     }
     #endif
     
     { PROFILE_SCOPE("EntityDrawing");
-        for (const auto& ent : gs.entities) {
+        for (EntityRef ref : gs.entities) 
+        {
+            Entity& ent = GetEntity(ref);
             ent.model.Draw(ent.transform);
         }
     }
@@ -417,9 +392,9 @@ void init_grass(GameState& gs) {
                                          {6.67, 8, 6.9});
     std::vector<glm::mat4> grassTransforms = {};
     //  init grass transforms
-    WorldEntity* islandModel = gs.GetEntity("island");
+    Entity& islandModel = GetEntity("island");
     if (islandModel) {
-        Mesh* grassSpawnMesh = islandModel->model.GetMesh("GrassSpawnPlane_Mesh");
+        Mesh* grassSpawnMesh = islandModel.model.GetMesh("GrassSpawnPlane_Mesh");
         if (grassSpawnMesh) {
             grassSpawnMesh->isVisible = false;
             PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, grassTransforms, 100000);
@@ -431,7 +406,7 @@ void init_grass(GameState& gs) {
     Model grassModel = Model(grassShader, ResPath("other/island_wip/grass_blade.obj").c_str(), ResPath("other/island_wip/").c_str());
     grassModel.EnableInstancing(grassTransforms.data(), sizeof(glm::mat4), grassTransforms.size());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
-    gs.grass = WorldEntity(grassTf, grassModel, "grass");
+    gs.grass = CreateEntity("grass", grassModel, grassTf);
     PhysicsAddModel(grassModel, grassTf);
     gs.windTexture = LoadTexture(ResPath("other/distortion.png"));
     gs.windStrength = 0.15;
@@ -447,7 +422,7 @@ void init_main_pond(GameState& gs) {
     waterShader.TryAddSampler(gs.waterTexture, "waterTexture");
     Model waterPlane = Model(waterShader, {Shapes3D::GenPlaneMesh(30)});
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
-    WorldEntity waterPlaneEnt = WorldEntity(waterPlaneTf, waterPlane, "PondEntity");
+    EntityRef waterPlaneEnt = CreateEntity("PondEntity", waterPlane, waterPlaneTf);
     gs.entities.push_back(waterPlaneEnt);
     PhysicsAddModel(waterPlane, waterPlaneTf);
     gs.waves[0] = Wave(0.2, 8.7, 0.05, glm::vec2(1,1));
@@ -463,7 +438,7 @@ void init_waterfall(GameState& gs) {
 
     Model waterfallModel = Model(waterfallShader, ResPath("other/island_wip/waterfall.obj").c_str(), ResPath("other/island_wip/").c_str());
     Transform waterfallTf = Transform({0, 0, 0}, {1.0, 1.0, 1.0});
-    WorldEntity waterfallEnt = WorldEntity(waterfallTf, waterfallModel, "Waterfall");
+    EntityRef waterfallEnt = CreateEntity("Waterfall", waterfallModel, waterfallTf);
     gs.entities.push_back(waterfallEnt);
     PhysicsAddModel(waterfallModel, waterfallTf);
     /*
@@ -492,18 +467,18 @@ void testbed_init(Arena* gameMem) {
 
 #ifdef ISLAND_SCENE
     Model testModel = Model(lightingShader, ResPath("other/island_wip/island.obj").c_str(), ResPath("other/island_wip/").c_str());
-    WorldEntity islandEnt = WorldEntity(Transform({0,0,0}), testModel, "island")
-    gs.entities.push_back(islandEnt);
+    Entity& islandEnt = GetEntity(CreateEntity("island", testModel, Transform({0,0,0})));
+    gs.entities.push_back(islandEnt.id);
     PhysicsAddModel(testModel, islandEnt.transform);
 
     Model treeModel = Model(lightingShader, ResPath("other/island_wip/tree.obj").c_str(), ResPath("other/island_wip/").c_str());
-    WorldEntity treeEnt = WorldEntity(Transform({10,7.5,3}, glm::vec3(0.7)), treeModel, "tree");
-    gs.entities.push_back(treeEnt);
+    Entity& treeEnt = GetEntity(CreateEntity("tree", treeModel, Transform({10,7.5,3}, glm::vec3(0.7))));
+    gs.entities.push_back(treeEnt.id);
     PhysicsAddModel(treeModel, treeEnt.transform);
     
     Model bushModel = Model(lightingShader, ResPath("other/island_wip/bush.obj").c_str(), ResPath("other/island_wip/").c_str());
-    WorldEntity bushEnt = WorldEntity(Transform({-10,7.5,3}, glm::vec3(0.75)), bushModel, "bush");
-    gs.entities.push_back(bushEnt);
+    Entity& bushEnt = GetEntity(CreateEntity("bush", bushModel, Transform({-10,7.5,3}, glm::vec3(0.75))));
+    gs.entities.push_back(bushEnt.id);
     PhysicsAddModel(bushModel, bushEnt.transform);
 
     // pond
@@ -518,8 +493,10 @@ void testbed_init(Arena* gameMem) {
     
 #ifdef SPONZA_SCENE
     Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
-    WorldEntity& sponzaEnt = gs.entities.emplace_back(WorldEntity(Transform({0,0,0}, glm::vec3(0.1)), sponza, "sponza"));
-    PhysicsAddModel(sponzaEnt.model, sponzaEnt.transform);
+    Transform sponzaTf = Transform({0,0,0}, glm::vec3(0.1));
+    EntityRef sponzaEnt = CreateEntity("sponza", sponza, sponzaTf);
+    gs.entities.push_back(sponzaEnt);
+    PhysicsAddModel(sponza, sponzaTf);
 #endif
 
     // Init lights

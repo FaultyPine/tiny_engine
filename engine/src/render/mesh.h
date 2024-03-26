@@ -44,5 +44,6 @@ private:
     void initMesh();
 };
 
+void ConfigureMeshVertexAttributes(u32& vertexAttributeLocation);
 
 #endif
