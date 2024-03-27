@@ -16,6 +16,7 @@
 #include "tiny_lights.h"
 #include "tiny_profiler.h"
 #include "tiny_material.h"
+#include "shader_buffer.h"
 
 enum UniformDataType : s32
 {
@@ -41,9 +42,7 @@ static const u32 UniformDataTypeSizes[NUM_DATA_TYPES] =
     sizeof(f32) * 16,
 };
 
-// only have 1 big UBO
-#define UBO_BINDING_POINT 0
-#define UBO_NAME "Globals"
+
 
 struct UniformData
 {
@@ -66,77 +65,18 @@ struct ShaderInternal
     std::unordered_map<std::string, UniformData> cachedUniforms = {};
 };
 
-struct UBOGlobals
-{
-    // NOTE: ***MUST*** follow std140 alignment rules (I.E. have no implicit padding).
-    // to keep it simple, imagine the only acceptable data types are scalars and vectors of 2 or 4 size.
-    // matrices must be 4x4 or 2x2, never 3 - same with vectors. 
-    // if you want to use a vec3, make sure there's a 4 byte padding or some other 4 byte value directly after it
-    // although it would be better to pack that scalar into a vec4 with some other vec3
-
-    // NOTE: keep in sync with uniform block (currently) in globals.glsl
-
-    /*
-You never use vec3. Note that this applies to matrices that have 3 columns/rows (depending on your matrix orientation).
-You alignas/_Alignas your vector members properly. vec2 objects must be 8-byte aligned, and vec4 must be 16-byte aligned. Note that this applies to matrix types that have 2 or 4 columns/rows too.
-
-C's _Alignas feature only applies to variable declarations, so you can't apply it to the type. You have to put it on each variable as you use it.
-
-Under std140, you never make arrays of anything that isn't a vec4 or equivalent.
-Under std140, struct members of a block should be aligned to 16-bytes
-    */
-
-    // camera
-    glm::mat4 projection;
-    glm::mat4 view;
-    glm::vec4 camPos;
-    glm::vec4 camFront;
-    //                  16 aligned bytes
-    f32 nearClip;
-    f32 farClip;
-    f32 FOV;
-    // misc
-    f32 time;
-    //                  ----------
-    
-    // lighting
-    struct LightDirectionalUBO
-    {
-        glm::mat4 lightSpaceMatrix;
-        glm::vec4 direction; // intensity in alpha
-        glm::vec4 color;
-    };
-
-    struct LightPointUBO
-    {
-        glm::vec4 position; // unused alpha
-        glm::vec4 color;
-        glm::vec4 attenuationParams; // {constant, linear, quadratic, light intensity}
-    };
-    LightDirectionalUBO sunlight;
-    LightPointUBO lights[MAX_NUM_LIGHTS];
-    s32 numActiveLights;
-    f32 ambientLightIntensity;
-
-    // TODO: materials
-
-};
-
 struct GlobalShaderState
 {
-    // only a single uniform buffer, contain all global shader data
-    u32 uboObject = 0; 
-    UBOGlobals uboGlobals = {};
+    ShaderBufferGlobals globals = {};
     std::unordered_map<u32, ShaderInternal> shaderMap = {};
     Arena globalShaderMem = {};
 };
 
-GlobalShaderState& GetGSS()
+static GlobalShaderState& GetGSS()
 {
     return *GetEngineCtx().shaderSubsystem;
 }
 
-void InitializeUBOs();
 
 void InitializeShaderSystem(Arena* arena, size_t shaderMemBlockSize)
 {
@@ -146,121 +86,14 @@ void InitializeShaderSystem(Arena* arena, size_t shaderMemBlockSize)
 
     void* globalShaderMem = arena_alloc(arena, shaderMemBlockSize);
     gss->globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize);
-    InitializeUBOs();
+    InitializeUBOs(gss->globals);
 }
 
-
-void GetUBOGlobalsCamera(const Camera& cam, UBOGlobals& globs)
-{
-    // populate uniform block structure. Need to convert from cam to this to adhere to 
-    // the uniform block memory layout
-    globs.camFront = glm::vec4(cam.cameraFront, 0.0);
-    globs.camPos = glm::vec4(cam.cameraPos, 0.0);
-    globs.farClip = cam.farClip;
-    globs.nearClip = cam.nearClip;
-    globs.FOV = cam.FOV;
-    globs.projection = cam.GetProjectionMatrix();
-    globs.view = cam.GetViewMatrix();
-}
-
-
-// ----- Updating UBO data... contains camera-specific, lighting specific, etc
-void UpdateGlobalUBOCamera(UBOGlobals& globs)
-{
-    GetUBOGlobalsCamera(Camera::GetMainCamera(), globs);
-}
-
-void UpdateGlobalUBOLighting(UBOGlobals& globs)
-{
-    EngineContext& ctx = GetEngineCtx();
-    GlobalLights& lights = ctx.lightsSubsystem->lights;
-    s32 lightIdx = 0;
-    for (s32 i = 0; i < MAX_NUM_LIGHTS; i++)
-    {
-        if (lights.pointLights->enabled)
-        {
-            const LightPoint& pointLight = lights.pointLights[i];
-            globs.lights[lightIdx].position = glm::vec4(pointLight.position, 0.0);
-            globs.lights[lightIdx].color = pointLight.color;
-            globs.lights[lightIdx].attenuationParams = glm::vec4(pointLight.constant, pointLight.linear, pointLight.quadratic, pointLight.intensity);
-            lightIdx++;
-        }
-    }
-    globs.sunlight.color = lights.sunlight.color;
-    globs.sunlight.direction = glm::vec4(lights.sunlight.direction, lights.sunlight.intensity);
-    globs.sunlight.lightSpaceMatrix = lights.sunlight.GetLightSpacematrix();
-
-    globs.numActiveLights = lights.GetNumActiveLights();
-    globs.ambientLightIntensity = ctx.lightsSubsystem->ambientLightIntensity;
-}
-
-void UpdateGlobalUBOMaterials(UBOGlobals& globs)
-{
-    // TODO:
-    MaterialRegistry& matRegistry = *GetEngineCtx().materialRegistry;
-    
-}
-
-void UpdateGlobalUBOMisc(UBOGlobals& globs)
-{
-    globs.time = GetTimef();
-}
-// -------------------------
-
-void InitializeUBOs()
-{
-    u32& uboObject = GetGSS().uboObject;
-    glGenBuffers(1, &uboObject);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, uboObject);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(UBOGlobals), NULL, GL_DYNAMIC_DRAW); // allocate vmem
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UBO_BINDING_POINT, uboObject); // never binding a different one rn, so this stays bound always
-}
-
-bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 bindingPoint, u32 shaderProgram)
-{
-    //u32 blockIndex = glGetUniformBlockIndex(shaderProgram, uniformBlockName);
-    u32 blockIndex = glGetProgramResourceIndex(shaderProgram, GL_SHADER_STORAGE_BLOCK, uniformBlockName);
-    if (blockIndex == GL_INVALID_INDEX) 
-    {
-        //LOG_ERROR("Failed to get uniform block index!");
-        return false;
-    }
-    else
-    {
-        //GLCall(glUniformBlockBinding(shaderProgram, blockIndex, bindingPoint));
-        GLCall(glShaderStorageBlockBinding (shaderProgram, blockIndex, bindingPoint));
-    }
-    return true;
-}
-
-// called just before the game starts rendering a frame
 void ShaderSystemPreDraw()
 {
-    GlobalShaderState& gss = GetGSS();
-    UBOGlobals& globs = gss.uboGlobals;
-    TMEMSET(&globs, 0, sizeof(UBOGlobals));
-    UpdateGlobalUBOCamera(globs);
-    UpdateGlobalUBOLighting(globs);
-    UpdateGlobalUBOMaterials(globs);
-    UpdateGlobalUBOMisc(globs);
-
-    // update the entire ubo block every frame
-    if (!gss.uboObject) 
-    {
-        LOG_FATAL("UBO's not initialized. Make sure InitializeShaderSystem is being called");
-        return;
-    }
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gss.uboObject);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(UBOGlobals), &gss.uboGlobals);
+    // passes through to shader_buffer impl
+    ShaderSystemPreDraw(GetGSS().globals);
 }
-
-// binds all used UBO indices to the given shader program, called just after shader initialization
-void HandleShaderUBOInit(u32 shaderProgram)
-{
-    // shaders that don't use the ubo won't have it bound
-    bool hasUBO = TryBindUniformBlockToBindingPoint(UBO_NAME, UBO_BINDING_POINT, shaderProgram);
-}
-
 
 
 s32 GetShaderErrorLineNum(s8* infoLog, u32 infoLogSize)
