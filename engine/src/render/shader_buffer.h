@@ -31,6 +31,7 @@ Under std140, struct members of a block should be aligned to 16-bytes
     glm::mat4 view;
     glm::vec4 camPos;
     glm::vec4 camFront;
+
     //                  16 aligned bytes
     f32 nearClip;
     f32 farClip;
@@ -55,8 +56,7 @@ Under std140, struct members of a block should be aligned to 16-bytes
     };
     LightDirectionalUBO sunlight;
     LightPointUBO lights[MAX_NUM_LIGHTS];
-    s32 numActiveLights;
-    f32 ambientLightIntensity;
+    glm::vec4 numActiveLightsAndAmbientIntensity;
 
     // TODO: materials
 

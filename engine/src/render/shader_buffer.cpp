@@ -50,8 +50,8 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
     globs.sunlight.direction = glm::vec4(lights.sunlight.direction, lights.sunlight.intensity);
     globs.sunlight.lightSpaceMatrix = lights.sunlight.GetLightSpacematrix();
 
-    globs.numActiveLights = lights.GetNumActiveLights();
-    globs.ambientLightIntensity = ctx.lightsSubsystem->ambientLightIntensity;
+    globs.numActiveLightsAndAmbientIntensity.x = (f32)lights.GetNumActiveLights();
+    globs.numActiveLightsAndAmbientIntensity = glm::vec4(globs.numActiveLightsAndAmbientIntensity.x, ctx.lightsSubsystem->ambientLightIntensity, 0.0f, 0.0f);
 }
 
 void UpdateGlobalUBOMaterials(UBOGlobals& globs)

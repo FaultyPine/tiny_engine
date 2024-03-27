@@ -78,10 +78,19 @@ layout (std140) buffer Globals
     // lighting
     LightDirectional sunlight;
     LightPoint lights[MAX_NUM_LIGHTS];
-    int numActiveLights;
-    float ambientLightIntensity;
+    vec4 activeLightsAndAmbientIntensity; // x -> numActiveLights (cast this to int), y -> ambientLightIntensity
     // TODO: materials
+
 };
+
+int GetNumActiveLights()
+{
+    return int(activeLightsAndAmbientIntensity.x);
+}
+float GetAmbientLightIntensity()
+{
+    return activeLightsAndAmbientIntensity.y;
+}
 
 vec3 GetViewDir(vec3 fragPosWS) 
 {

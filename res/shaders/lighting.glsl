@@ -153,7 +153,7 @@ vec3 calculateLighting(
     vec3 fragPositionWS)
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
-    vec3 ambientLight = GetAmbientMaterial(fragTexCoord).rgb * ambientLightIntensity;
+    vec3 ambientLight = GetAmbientMaterial(fragTexCoord).rgb * GetAmbientLightIntensity();
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
@@ -171,7 +171,7 @@ vec3 calculateLighting(
         shininess,
         specularMaterial);
     // assumes active lights are at the front of the lights array
-    for (int i = 0; i < numActiveLights; i++) 
+    for (int i = 0; i < GetNumActiveLights(); i++) 
     {
         calculateLightingForPointLight(
             specularLight, 
