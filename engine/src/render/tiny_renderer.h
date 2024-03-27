@@ -86,6 +86,9 @@ TAPI void PushPoint(const glm::vec3& point, const glm::vec4& color = glm::vec4(1
 TAPI void PushLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1));
 TAPI void PushTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec4& color);
 
+
+TAPI void PushDebugRenderMarker(const char* name);
+TAPI void PopDebugRenderMarker();
 }
 
 #endif

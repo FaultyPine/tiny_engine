@@ -245,6 +245,7 @@ void drawImGuiDebug(GameState& gs) {
 
 void ShadowMapPrePass(const GameState& gs) {
     PROFILE_FUNCTION();
+    Renderer::PushDebugRenderMarker("Directional light Shadow Map Prepass");
     const LightingSystem& lighting = *GetEngineCtx().lightsSubsystem;
     const LightDirectional& sunlight = lighting.lights.sunlight;
     const ShadowMap& sunShadows = lighting.directionalShadowMap;
@@ -255,10 +256,12 @@ void ShadowMapPrePass(const GameState& gs) {
         sunShadows.RenderShadowCaster(sunlight, ent.model, ent.transform);
     }
     sunShadows.EndRender();
+    Renderer::PopDebugRenderMarker();
 }
 
 void DepthAndNormsPrePass(const GameState& gs) {
     PROFILE_FUNCTION();
+    Renderer::PushDebugRenderMarker("Depth&norms Prepass");
 
     gs.depthAndNorms.Bind();
     ClearGLBuffers();
@@ -295,10 +298,12 @@ void DepthAndNormsPrePass(const GameState& gs) {
         Entity& grass = GetEntity(gs.grass);
         grass.model.Draw(gs.grassPrepassShader, grass.transform);
     }
+    Renderer::PopDebugRenderMarker();
 }
 
 void drawGameState(const GameState& gs) {
     PROFILE_FUNCTION();
+    Renderer::PushDebugRenderMarker("Draw gamestate");
 
     // update Waves
     #ifdef ISLAND_SCENE
@@ -348,6 +353,7 @@ void drawGameState(const GameState& gs) {
     { PROFILE_SCOPE("Skybox draw");
         gs.skybox.Draw();
     }
+    Renderer::PopDebugRenderMarker();
 }
 
 glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
@@ -441,19 +447,6 @@ void init_waterfall(GameState& gs) {
     EntityRef waterfallEnt = CreateEntity("Waterfall", waterfallModel, waterfallTf);
     gs.entities.push_back(waterfallEnt);
     PhysicsAddModel(waterfallModel, waterfallTf);
-    /*
-    Shader waterfallParticlesShader = Shader(ResPath("shaders/default_3d.vert"), ResPath("shaders/default_3d.frag"));
-    Model waterfallParticleModel = Model(waterfallParticlesShader, {Shapes3D::GenCubeMesh()});
-    gs.waterfallParticles = ParticleSystem(waterfallParticleModel, 10, true);
-    gs.waterfallParticles
-                        .AddBehavior(new ParticleEmitTickInterval(35))
-                        //.AddBehavior(new ParticleEmitBurst(20))
-                        //.AddBehavior(new ParticlesSpreadOut())
-                        .AddBehavior(new ParticleSetVelocity(glm::vec3(0, 0.1, 0)))
-                        .AddBehavior(new ParticleSetSize(glm::vec3(1)))
-                        .AddBehavior(new ParticleDecay(0.01f));
-                        //.AddBehavior(new ParticleAlphaDecay(0.005));
-    */
 }
 
 

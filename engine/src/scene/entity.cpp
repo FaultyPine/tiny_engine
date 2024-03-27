@@ -24,10 +24,11 @@ static EntityRegistry& GetRegistry()
 EntityRef GenerateEntityID(const char* name = nullptr)
 {
     EntityRef result = 0;
+    EntityRegistry& registry = GetRegistry();
     if (!name)
     {
         EntityRegistry& registry = GetRegistry();
-        result = registry.entityCreationIndex++;
+        result = registry.entityCreationIndex;
     }
     else
     {
@@ -52,15 +53,25 @@ EntityRef CreateEntity(const char* name, const Model& model, const Transform& tf
     ent.model = model;
     ent.transform = tf;
     ent.flags = flags;
+    u32 entityID = 0;
     if (name)
     {
-        TMEMCPY(ent.name, name, strnlen(name, ENTITY_NAME_MAX_LENGTH));
+        // if this entity has a name, use the name's hash as the id
+        // this is so we can lookup entities by name
+        size_t strlength = strnlen(name, ENTITY_NAME_MAX_LENGTH);
+        TMEMCPY(ent.name, name, strlength);
+        entityID = HashBytes((u8*)name, strlength);
     }
     else
     {
+        // if no name, the entity id is just a incrementally increasing num
         TMEMSET(ent.name, 0, ENTITY_NAME_MAX_LENGTH);
+        entityID = registry.entityCreationIndex;
     }
-    ent.id = GenerateEntityID(name);
+    TINY_ASSERT(entityID != U32_INVALID_ID); // TODO: handle this gracefully
+    ent.id = entityID;
+    // we increment this every time, even if it's not what we use for the id.
+    registry.entityCreationIndex++;
     registry.entMap[ent.id] = ent;
     return ent.id;
 }
@@ -98,4 +109,27 @@ Entity& GetEntity(const char* name)
     }
     return registry.entMap[U32_INVALID_ID]; // if doesn't exist, return our dummy
 
+}
+
+void GetRenderableEntities(EntityRef* dst, u32* numEntities)
+{
+    EntityRegistry& registry = GetRegistry();
+    if (!dst)
+    {
+        *numEntities = registry.entMap.size();
+        return;
+    }
+    u32 i = 0;
+    for (const auto& [ref, ent] : registry.entMap)
+    {
+        if ((ent.flags & EntityFlags::IS_DISABLED) == 0)
+        {
+            dst[i] = ref;
+        }
+        else
+        {
+            dst[i] = U32_INVALID_ID;
+        }
+        i++;
+    }
 }

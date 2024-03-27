@@ -244,4 +244,13 @@ void PushTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, co
 }
 
 
+void PushDebugRenderMarker(const char* name)
+{
+    glPushDebugGroupKHR(GL_DEBUG_SOURCE_APPLICATION, 0, -1, name);
+}
+void PopDebugRenderMarker()
+{
+    glPopDebugGroupKHR();
+}
+
 } // namespace Renderer

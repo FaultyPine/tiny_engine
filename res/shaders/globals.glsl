@@ -2,6 +2,8 @@
 
 #define MAX_NUM_LIGHTS 4
 
+#include "material.glsl"
+
 struct LightDirectional 
 {
     mat4 lightSpaceMatrix;

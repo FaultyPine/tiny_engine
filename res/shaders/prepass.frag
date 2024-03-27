@@ -1,6 +1,6 @@
  
 
-out vec4 finalColor;
+layout(location = 0) out vec4 finalColor;
 
 in VS_OUT 
 {

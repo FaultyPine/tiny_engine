@@ -1,5 +1,4 @@
 
-#include "material.glsl"
 #include "common.glsl"
 #include "globals.glsl"
 
@@ -150,7 +149,6 @@ void calculateLightingForDirectionalLight (
 }
 
 vec3 calculateLighting(
-    in Material material, 
     vec2 fragTexCoord,
     vec3 fragNormalWS, 
     vec3 viewDir, 

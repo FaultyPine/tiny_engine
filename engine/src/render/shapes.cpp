@@ -78,16 +78,6 @@ const static f32 planeVerticesCentered[] = {
     -1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
     1.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
 };
-const static f32 planeVerticesTopLeft[] = {
-    // positions            // normals         // texcoords
-    1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-    0.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-    0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-
-    1.0f, 0.0f,  1.0f,  0.0f, 1.0f, 0.0f,  1.0f,  0.0f,
-    0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
-    1.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-};
 
 
 Mesh GenCubeMesh() {
@@ -383,16 +373,6 @@ void DrawCircle(
 void DrawShape(const glm::mat4& model, const glm::vec4& color, const Shader& shader) {
     static u32 quadVAO = 0;
     if (quadVAO == 0) { // only need to init vert data once
-        /*static const f32 tex_quad[] = { 
-            // pos      // tex
-            0.0f, 1.0f, 0.0f, 1.0f,
-            1.0f, 0.0f, 1.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, 
-
-            0.0f, 1.0f, 0.0f, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
-            1.0f, 0.0f, 1.0f, 0.0f
-        };*/
         static const f32 tex_quad[] = { 
             // pos      // tex
             -1.0f, 1.0f, 0.0f, 1.0f,

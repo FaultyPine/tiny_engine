@@ -12,7 +12,6 @@ in VS_OUT
 out vec4 finalColor;
 
 #include "globals.glsl"
-#include "material.glsl"
 #include "lighting.glsl"
 
 // =========================================================================
@@ -32,7 +31,6 @@ void main()
 
     // colored lighting
     vec3 lighting = calculateLighting(
-        material,
         texCoord,
         normalWS, 
         viewDir,

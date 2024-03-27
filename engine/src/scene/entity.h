@@ -40,6 +40,8 @@ TAPI EntityRef CreateEntity(const char* name, const Model& model, const Transfor
 TAPI bool DestroyEntity(EntityRef ent);
 TAPI Entity& GetEntity(EntityRef ent);
 TAPI Entity& GetEntity(const char* name);
-
+// if dst is nullptr, this returns the *number* of renderable entities
+// if dst is not nullptr, we fill in the buffer
+TAPI void GetRenderableEntities(EntityRef* dst, u32* numEntities);
 
 #endif

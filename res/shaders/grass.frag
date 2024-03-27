@@ -14,7 +14,6 @@ out vec4 finalColor;
 #include "easings.glsl"
 #include "globals.glsl"
 #include "lighting.glsl"
-#include "material.glsl"
 
 const vec3 grassBaseColor = vec3(0.05, 0.2, 0.01);
 const vec3 grassTipColor = vec3(0.1, 0.5, 0.1);
@@ -29,7 +28,6 @@ void main() {
     vec3 viewDir = GetViewDir(vs_in.fragPositionWS);
     // colored lighting
     vec3 lighting = calculateLighting(
-        material,
         vs_in.fragTexCoord,
         -sunlight.direction.xyz, 
         -sunlight.direction.xyz,
