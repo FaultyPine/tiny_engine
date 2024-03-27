@@ -84,11 +84,11 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     OverwriteMaterialProperty(ret, emissive, EMISSION);
     //MaterialProp height = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
     MaterialProp normal = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_NORMALS(0)), AssimpMaterialKey(), meshMaterialDir);
-    if (normal.dataType != MaterialProp::DataType::TEXTURE)
+    if (normal.GetDataType() != MaterialProp::DataType::TEXTURE)
     {
         // the material api is kind of vague in some cases - for obj's, normal maps are often loaded into the heightmap slot.
         MaterialProp normalsFromHeightmap = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_HEIGHT(0)), AssimpMaterialKey(), meshMaterialDir);
-        if (normalsFromHeightmap.dataType == MaterialProp::DataType::TEXTURE)
+        if (normalsFromHeightmap.GetDataType() == MaterialProp::DataType::TEXTURE)
         {
             normal = normalsFromHeightmap;
         }
@@ -104,10 +104,10 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     
     // if we have a specular coefficient, they are typically in the range [0, 1000]
     // we remap that to something that looks reasonable here
-    if (shininess.dataType != MaterialProp::DataType::TEXTURE)
+    if (shininess.GetDataType() != MaterialProp::DataType::TEXTURE)
     {
         // TODO: make configurable
-        shininess.dataVec.r = Math::Remap(shininess.dataVec.r, 0.0, 1000.0, 0.0, 10.0);
+        shininess.VecData().r = Math::Remap(shininess.VecData().r, 0.0, 1000.0, 0.0, 10.0);
     }
     
     return ret;

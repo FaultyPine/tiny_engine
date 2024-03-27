@@ -58,7 +58,8 @@ Under std140, struct members of a block should be aligned to 16-bytes
     LightPointUBO lights[MAX_NUM_LIGHTS];
     glm::vec4 numActiveLightsAndAmbientIntensity;
 
-    // TODO: materials
+    // materials
+    
 
 };
 

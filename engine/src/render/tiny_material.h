@@ -5,6 +5,7 @@
 #include "tiny_defines.h"
 #include "math/tiny_math.h"
 #include "render/texture.h"
+#include "tiny_log.h"
 
 enum TextureMaterialType {
     DIFFUSE = 0,
@@ -30,7 +31,7 @@ struct Material
 };
 struct MaterialProp 
 {
-    enum DataType : s32
+    enum DataType : u32
     {
         UNK,
         INT,
@@ -41,17 +42,21 @@ struct MaterialProp
     MaterialProp() = default;
     TAPI MaterialProp(glm::vec4 col);
     TAPI MaterialProp(const Texture& tex);
-    TAPI MaterialProp(s32 datai);
+    TAPI MaterialProp(u32 datai);
     TAPI MaterialProp(f32 dataf);
     TAPI void Delete();
-    DataType dataType = UNK;
-    union
-    {
-        s32 datai;
-        f32 dataf;
-        glm::vec4 dataVec;
-        u32 dataTex; // texture id. B/c Texture has nontrivial ctor, can't use it in union. do Texture(dataTex) to access texture funcs
-    };
+    glm::vec4 vec; // float data can be stored in x, color data in full vec4
+    glm::uvec4 dataAndType; // int OR texture data in x, DataType stored in w
+    glm::vec4& VecData() { TINY_ASSERT(GetDataType()==VECTOR); return vec; }
+    f32& FloatData() { TINY_ASSERT(GetDataType()==FLOAT); return vec.x; }
+    u32& IntData() { TINY_ASSERT(GetDataType()==INT); return dataAndType.x; }
+    u32& TextureData() { TINY_ASSERT(GetDataType()==TEXTURE); return dataAndType.x; }
+    const glm::vec4& VecData() const { TINY_ASSERT(GetDataType()==VECTOR); return vec; }
+    const f32& FloatData() const { TINY_ASSERT(GetDataType()==FLOAT); return vec.x; }
+    const u32& IntData() const { TINY_ASSERT(GetDataType()==INT); return dataAndType.x; }
+    const u32& TextureData() const { TINY_ASSERT(GetDataType()==TEXTURE); return dataAndType.x; }
+    DataType& GetDataType() { return *(DataType*)&dataAndType.w; }
+    const DataType& GetDataType() const { return (DataType)dataAndType.w; }
 };
 
 struct MaterialInternal

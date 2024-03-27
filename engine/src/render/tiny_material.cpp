@@ -76,29 +76,29 @@ void OverwriteMaterialProperty(Material material, const MaterialProp& prop, Text
 
 MaterialProp::MaterialProp(glm::vec4 col) 
 {
-    dataVec = col;
-    dataType = MaterialProp::DataType::VECTOR;
+    GetDataType() = MaterialProp::DataType::VECTOR;
+    VecData() = col;
 }
 MaterialProp::MaterialProp(const Texture& tex) 
 {
-    dataTex = tex.id;
-    dataType = MaterialProp::DataType::TEXTURE;
+    GetDataType() = MaterialProp::DataType::TEXTURE;
+    TextureData() = tex.id;
 }
-MaterialProp::MaterialProp(s32 datai)
+MaterialProp::MaterialProp(u32 datai)
 {
-    this->datai = datai;
-    dataType = MaterialProp::DataType::INT;
+    GetDataType() = MaterialProp::DataType::INT;
+    IntData() = datai;
 }
 MaterialProp::MaterialProp(f32 dataf)
 {
-    this->dataf = dataf;
-    dataType = MaterialProp::DataType::FLOAT;
+    GetDataType() = MaterialProp::DataType::FLOAT;
+    FloatData() = dataf;
 }
 void MaterialProp::Delete()
 { 
-    if (dataType == MaterialProp::DataType::TEXTURE)
+    if (GetDataType() == MaterialProp::DataType::TEXTURE)
     {
-        Texture(dataTex).Delete(); 
+        Texture(TextureData()).Delete(); 
     }
 }
 
@@ -120,24 +120,24 @@ const char* GetTexMatTypeString(TextureMaterialType type) {
 
 static void SetShaderUniformForMatProp(const MaterialProp& prop, const Shader& shader, const char* matVarStr)
 {
-    shader.setUniform(TextFormat("material.%s.dataType", matVarStr), prop.dataType);
-    switch (prop.dataType)
+    shader.setUniform(TextFormat("material.%s.dataType", matVarStr), prop.GetDataType());
+    switch (prop.GetDataType())
     {
         case MaterialProp::DataType::FLOAT:
         {
-            shader.setUniform(TextFormat("material.%s.color.r", matVarStr), prop.dataf);
+            shader.setUniform(TextFormat("material.%s.color.r", matVarStr), prop.FloatData());
         } break;
         case MaterialProp::DataType::INT:
         {
-            shader.setUniform(TextFormat("material.%s.datai", matVarStr), prop.datai);
+            shader.setUniform(TextFormat("material.%s.datai", matVarStr), prop.IntData());
         } break;
         case MaterialProp::DataType::VECTOR:
         {
-            shader.setUniform(TextFormat("material.%s.color", matVarStr), prop.dataVec);
+            shader.setUniform(TextFormat("material.%s.color", matVarStr), prop.VecData());
         } break;
         case MaterialProp::DataType::TEXTURE:
         {
-            shader.TryAddSampler(prop.dataTex, TextFormat("material.%s.tex", matVarStr));
+            shader.TryAddSampler(prop.TextureData(), TextFormat("material.%s.tex", matVarStr));
         } break;
         case MaterialProp::DataType::UNK:
         {
@@ -145,7 +145,7 @@ static void SetShaderUniformForMatProp(const MaterialProp& prop, const Shader& s
         } break;
         default:
         {
-            LOG_WARN("Unrecognized material property data type! %i", prop.dataType);
+            LOG_WARN("Unrecognized material property data type! %i", prop.GetDataType());
         } break;
     }
 }

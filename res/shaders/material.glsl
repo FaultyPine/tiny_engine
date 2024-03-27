@@ -1,18 +1,30 @@
 
+// should be included in globals.glsl and nowhere else
 
+// in sync with MaterialProp::DataType enum
+const uint MatPropDataTypeUNK = 0;
+const uint MatPropDataTypeINT = 1;
+const uint MatPropDataTypeFLOAT = 2;
+const uint MatPropDataTypeVECTOR = 3;
+const uint MatPropDataTypeTEXTURE = 4;
 
-const int MatPropDataTypeUNK = 0;
-const int MatPropDataTypeINT = 1;
-const int MatPropDataTypeFLOAT = 2;
-const int MatPropDataTypeVECTOR = 3;
-const int MatPropDataTypeTEXTURE = 4;
+// in sync with TextureMaterialType enum
+const int TexMatTypeDIFFUSE = 0;
+const int TexMatTypeAMBIENT = 1;
+const int TexMatTypeSPECULAR = 2;
+const int TexMatTypeNORMALS = 3;
+const int TexMatTypeSHININESS = 4;
+const int TexMatTypeEMISSION = 5;
+const int TexMatTypeOPACITY = 6;
+const int TexMatTypeOTHER = 7;
+const int NUM_MATERIAL_TYPES = 8;
 
-struct MaterialProperty 
+struct MaterialProperty
 {
     vec4 color;
     int datai;
     sampler2D tex;
-    int dataType;
+    uint dataType;
 };
 
 struct Material 
