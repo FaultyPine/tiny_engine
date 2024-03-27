@@ -1,8 +1,6 @@
 
 #include "common.glsl"
-#include "globals.glsl"
 
-// light data structures in globals.glsl
 
 // samplers cannot be stored in ubo/ssbo buffers.... :/
 uniform samplerCube pointLightShadowMaps[MAX_NUM_LIGHTS];

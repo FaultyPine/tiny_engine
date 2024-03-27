@@ -213,8 +213,7 @@ void InitializeUBOs()
     glGenBuffers(1, &uboObject);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, uboObject);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(UBOGlobals), NULL, GL_DYNAMIC_DRAW); // allocate vmem
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UBO_BINDING_POINT, uboObject); 
-    TINY_ASSERT(sizeof(UBOGlobals) <= KILOBYTES_BYTES(16)); // guarenteed 16kb max UBO size. Usually it's more
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UBO_BINDING_POINT, uboObject); // never binding a different one rn, so this stays bound always
 }
 
 bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 bindingPoint, u32 shaderProgram)
@@ -304,7 +303,7 @@ void LogShaderLinesAroundError(s8* infoLog, u32 infoLogSize, const s8* shaderSou
     }
 }
 
-u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource) 
+bool CreateAndCompileShader(u32 shaderType, const s8* shaderSource, u32& shaderOut) 
 {
     u32 shaderID = glCreateShader(shaderType);
     glShaderSource(shaderID, 1, &shaderSource, NULL);
@@ -317,8 +316,10 @@ u32 CreateAndCompileShader(u32 shaderType, const s8* shaderSource)
         glGetShaderInfoLog(shaderID, infoLogSize, NULL, infoLog);
         LogShaderLinesAroundError(infoLog, infoLogSize, shaderSource);
         LOG_ERROR("%s shader compilation failed. shaderID = %i\n%s", (shaderType == GL_VERTEX_SHADER ? "vertex" : "fragment"), shaderID, infoLog);
+        return false;
     }
-    return shaderID;
+    shaderOut = shaderID;
+    return true;
 }
 
 
@@ -373,12 +374,32 @@ std::string ShaderPreprocessIncludes(
     return fullSourceCode;
 }
 
-std::string ShaderSourcePreprocess(const s8* shaderSource) 
+enum ShaderCompileFlags: u32
+{
+    VERTEX_SHADER =   (1 << 0),
+    FRAGMENT_SHADER = (1 << 1),
+    COMPUTE_SHADER =  (1 << 2),
+};
+
+std::string ShaderSourcePreprocess(const s8* shaderSource, u32 flags) 
 {
     // take in original source code and run some procedure(s) on it and return the "processed" source code
     std::string ret;
 
     ret += "#version 440 core\n";
+
+    if ((flags & ShaderCompileFlags::VERTEX_SHADER) != 0)
+    {
+        ret += "#define VERTEX_SHADER\n";
+    }
+    else if ((flags & ShaderCompileFlags::FRAGMENT_SHADER) != 0)
+    {
+        ret += "#define FRAGMENT_SHADER\n";
+    }
+    else if ((flags & ShaderCompileFlags::COMPUTE_SHADER) != 0)
+    {
+        ret += "#define COMPUTE_SHADER\n";
+    }
 
     std::string includeSearchDir = ResPath("shaders/");
     static const char* includeIdentifier = "#include "; // space after it so #include"hi.bye" is invalid. Must be #include "hi.bye"
@@ -412,11 +433,19 @@ u32 CreateShaderProgramFromStr(
     const std::string& fragPath = "") 
 {
     // preprocess both vert and frag shader source code before compiling
-    std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource);
-    std::string fsSourcePreprocessed = ShaderSourcePreprocess(fsSource);
+    std::string vsSourcePreprocessed = ShaderSourcePreprocess(vsSource, ShaderCompileFlags::VERTEX_SHADER);
+    std::string fsSourcePreprocessed = ShaderSourcePreprocess(fsSource, ShaderCompileFlags::FRAGMENT_SHADER);
 
-    u32 vertexShader = CreateAndCompileShader(GL_VERTEX_SHADER, vsSourcePreprocessed.c_str());
-    u32 fragShader = CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSourcePreprocessed.c_str());
+    u32 vertexShader = 0;
+    if (!CreateAndCompileShader(GL_VERTEX_SHADER, vsSourcePreprocessed.c_str(), vertexShader) && !vertPath.empty())
+    {
+        LOG_ERROR("%s failed to compile", vertPath.c_str());
+    }
+    u32 fragShader = 0;
+    if (!CreateAndCompileShader(GL_FRAGMENT_SHADER, fsSourcePreprocessed.c_str(), fragShader) && !fragPath.empty())
+    {
+        LOG_ERROR("%s failed to compile", fragPath.c_str());
+    }
 
     u32 shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
@@ -431,8 +460,8 @@ u32 CreateShaderProgramFromStr(
         //LOG_ERROR("Vertex shader source: %s\n", vsSourcePreprocessed);
         //LOG_ERROR("Fragment shader source: %s\n", fsSourcePreprocessed);
         LOG_ERROR("shader linking failed. vs = %s fs = %s\n%s", vertPath.c_str(), fragPath.c_str(), infoLog);
+        TINY_ASSERT(false);
         return CreateShaderProgramFromStr(fallbackVertShader, fallbackFragShader, vertPath, fragPath);
-        //TINY_ASSERT(false);
     }
     // delete vert/frag shader after we've linked them to the program object
     glDeleteShader(vertexShader);

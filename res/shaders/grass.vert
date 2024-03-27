@@ -1,30 +1,12 @@
- 
-
-layout (location = 0) in vec3 vertexPosition;
-layout (location = 1) in vec3 vertexNormal;
-layout (location = 2) in vec3 vertexTangent;
-layout (location = 3) in vec2 vertexTexCoord;
-layout (location = 4) in vec4 vertexColor;
-layout (location = 5) in uint objectID;
-layout (location = 6) in mat4 instanceModelMat;
 
 #include "globals.glsl"
+
+#include "lighting.glsl"
 #include "common.glsl"
 #include "noise.glsl"
 #include "hash.glsl"
-#include "lighting.glsl"
 
-out VS_OUT 
-{
-    vec3 fragPositionWS;
-    vec2 fragTexCoord;
-    vec4 fragColor;
-    vec3 fragNormal;
-    vec3 fragTangent;
-    vec3 fragPositionOS;
-} vs_out;
 
-uniform mat3 normalMat;
 vec2 windDirBase = normalize(vec2(0.5, 0.5));
 uniform sampler2D windTexture;
 uniform float _WindStrength;
@@ -113,7 +95,6 @@ void main()
     //vec3 normal = vec3(vec4(vertexNormal,1.0)*instanceModelMat);
     vs_out.fragNormal = vec3(normalMat*vertexNormal);
     vs_out.fragTangent = tangent;
-    vs_out.fragPositionOS = vertPos;
 
     vs_out.fragTexCoord = vertexTexCoord;
 

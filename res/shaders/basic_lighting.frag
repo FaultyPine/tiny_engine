@@ -1,20 +1,7 @@
  
 
-// Input vertex attributes (from vertex shader)
-in VS_OUT
-{
-    vec3 fragPositionWS;
-    vec2 fragTexCoord;
-    vec4 fragColor;
-    vec3 fragNormal;
-    vec3 fragTangent;
-} vs_in;
-out vec4 finalColor;
-
 #include "globals.glsl"
 #include "lighting.glsl"
-
-// =========================================================================
 
 
 void main() 
@@ -39,8 +26,8 @@ void main()
     float alpha = 1.0;
     
     // lighting includes diffuse, specular, and ambient light along with base diffuse color
-    finalColor = vec4(col, alpha);
+    fragColor = vec4(col, alpha);
 
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
-    finalColor = pow(finalColor, vec4(1.0/2.2));
+    fragColor = pow(fragColor, vec4(1.0/2.2));
 }

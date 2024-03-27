@@ -1,6 +1,5 @@
  
-
-out vec4 FragColor;
+#include "globals.glsl"
 
 in vec2 TexCoords;
 
@@ -21,5 +20,5 @@ void main()
     }
 
     if (circle == 0) discard;
-    FragColor = color * circle;
+    fragColor = color * circle;
 }  

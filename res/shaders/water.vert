@@ -1,30 +1,9 @@
  
-
-// Input vertex attributes
-layout (location = 0) in vec3 vertexPosition;
-layout (location = 1) in vec3 vertexNormal;
-layout (location = 2) in vec3 vertexTangent;
-layout (location = 3) in vec2 vertexTexCoord;
-layout (location = 4) in vec4 vertexColor;
-layout (location = 5) in uint objectID;
-
 #include "globals.glsl"
 
 // Input uniform values
-uniform mat4 modelMat;
-uniform mat3 normalMat;
 uniform mat4 lightSpaceMatrix;
 
-// Output vertex attributes (to fragment shader)
-out VS_OUT 
-{
-    vec3 fragPositionWS;
-    vec2 fragTexCoord;
-    vec4 fragColor;
-    vec3 fragNormal;
-    vec3 fragTangent;
-    vec3 fragPositionOS;
-} vs_out;
 out vec4 fragPosLightSpace;
 out float waveHeight;
 
@@ -107,7 +86,7 @@ void main() {
     // world space frag pos to light space
     fragPosLightSpace = lightSpaceMatrix * vec4(vs_out.fragPositionWS, 1.0);
     vs_out.fragTexCoord = vertexTexCoord;
-    vs_out.fragColor = vertexColor;
+    vs_out.fragVertexColor = vertexColor;
 
     gl_Position = projection * view * modelMat *vec4(vertPos, 1.0);
 }

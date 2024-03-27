@@ -1,9 +1,3 @@
- 
-
-out vec4 finalColor;
-
-in vec3 Normal;
-in vec2 texCoord;
 
 #include "globals.glsl"
 
@@ -17,6 +11,7 @@ const float brightness = 3.0;
 const float colorBanding = 5.0;
 
 void main() {
+    vec2 texCoord = vs_in.fragTexCoord;
     float scroll = time * 0.4;
     vec2 uv = vec2(texCoord.x * 10, (texCoord.y-scroll));
     vec3 water = texture(waterfallTex, uv).rgb * 0.7;
@@ -29,5 +24,5 @@ void main() {
 
     
     //col = pow(col, vec3(1.0/2.2)); // gamma correction
-    finalColor = vec4(col, 1.0);
+    fragColor = vec4(col, 1.0);
 }

@@ -1,8 +1,7 @@
  
+#include "globals.glsl"
 
-out vec4 FragColor;
-
-in vec2 TexCoords;
+out vec4 fragColor;
 
 uniform vec4 color;
 uniform int isHollow;
@@ -10,6 +9,7 @@ uniform int isHollow;
 
 void main()
 {
+    float2 TexCoords = vs_in.fragTexCoord;
     if (isHollow == 1) {
         float edges = 0.95;
         float xright = step(edges, TexCoords.x);
@@ -18,9 +18,9 @@ void main()
         float ytop = 1.0-step(1.0-edges, TexCoords.y);
         float square = xright + xleft + ybottom + ytop;
         if (square <= 0) discard;
-        FragColor = color;
+        fragColor = color;
     }
     else {
-        FragColor = color;
+        fragColor = color;
     }
 }  

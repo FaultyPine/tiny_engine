@@ -72,10 +72,10 @@ void main(){
 }
 )",
 R"(
-out vec4 FragColor;
+out vec4 fragColor;
 in vec4 color;
 void main(){
-	FragColor = color;
+	fragColor = color;
 }
 )"
         );

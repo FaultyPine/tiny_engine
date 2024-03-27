@@ -39,10 +39,10 @@ void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec
     glm::mat4 projection = cam.GetOrthographicProjection();
     glm::mat4 view = glm::mat4(1.0f);
 
-    shader.setUniform("model", model);
+    shader.setUniform("spriteModelMat", model);
     shader.setUniform("color", color);
-    shader.setUniform("projection", projection);
-    shader.setUniform("view", view);
+    shader.setUniform("spriteProjectionMat", projection);
+    shader.setUniform("spriteViewMat", view);
     // Texture unit indexes are bound to samplers, not texture objects.
     // https://stackoverflow.com/questions/46122353/opengl-texture-is-all-black-when-rendered-with-shader
     //shader.setUniform("mainTex", 0);

@@ -1,21 +1,9 @@
  
 
-// Input vertex attributes (from vertex shader)
-in VS_OUT
-{
-    vec3 fragPositionWS;
-    vec2 fragTexCoord;
-    vec4 fragColor;
-    vec3 fragNormal;
-    vec3 fragTangent;
-    vec3 fragPositionOS;
-} vs_in;
+#include "globals.glsl"
+
 in vec4 fragPosLightSpace;
 in float waveHeight;
-
-#include "globals.glsl"
-// Output fragment color
-out vec4 finalColor;
 
 const vec3 waterColor = vec3(0.32,0.65,0.97);
 const vec3 waterHighlight = vec3(0.7,1,1);
@@ -49,5 +37,5 @@ void main() {
     col = Waterfall(col);
 
     col = pow(col, vec3(1.0/2.2)); // gamma correction
-    finalColor = vec4(vec3(col), alpha);
+    fragColor = vec4(vec3(col), alpha);
 }

@@ -1,18 +1,8 @@
  
 
-in VS_OUT 
-{
-    vec3 fragPositionWS;
-    vec2 fragTexCoord;
-    vec4 fragColor;
-    vec3 fragNormal;
-    vec3 fragTangent;
-    vec3 fragPositionOS;
-} vs_in;
-out vec4 finalColor;
+#include "globals.glsl"
 
 #include "easings.glsl"
-#include "globals.glsl"
 #include "lighting.glsl"
 
 const vec3 grassBaseColor = vec3(0.05, 0.2, 0.01);
@@ -40,7 +30,7 @@ void main() {
     //vec3 col = diffuse*shadow;
     vec3 col = diffuse * lighting;
 
-    finalColor = vec4(vec3(col), 1.0);
+    fragColor = vec4(vec3(col), 1.0);
 }
 
 

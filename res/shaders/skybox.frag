@@ -1,5 +1,7 @@
  
-out vec4 FragColor;
+#include "globals.glsl"
+
+#include "lighting.glsl"
 
 // TODO:
 // https://www.patreon.com/posts/making-stylized-27402644
@@ -7,7 +9,6 @@ out vec4 FragColor;
 in vec3 TexCoords;
 
 uniform samplerCube skybox;
-#include "lighting.glsl"
 
 uniform vec3 topGradientCol = vec3(1.0, 0.3, 0.2);
 uniform vec3 bottomGradientCol = vec3(0.3, 0.3, 1.0);
@@ -27,5 +28,5 @@ void main()
     vec3 horizonGlow = clamp(horizon * horizonCol, 0.0,1.0);
     col += gradient + horizonGlow;
     
-    FragColor = vec4(col, 1.0);
+    fragColor = vec4(col, 1.0);
 }

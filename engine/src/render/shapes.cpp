@@ -130,7 +130,7 @@ Mesh GenPlaneMesh(u32 resolution) {
 }
 
 void DrawCube(const Transform& tf, const glm::vec4& color) {
-    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
+    SHAPE_SHADER(shader, "shaders/default.vert", "shaders/default.frag");
     static u32 cubeVAO = 0;
     static u32 cubeVBO = 0;
     // initialize (if necessary)
@@ -164,7 +164,7 @@ void DrawCube(const Transform& tf, const glm::vec4& color) {
 
 void DrawSphere(glm::vec3 center, f32 radius, glm::vec4 color)
 {
-    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
+    SHAPE_SHADER(shader, "shaders/default.vert", "shaders/default.frag");
     static Mesh globalSphereMesh;
     if (!globalSphereMesh.isValid())
     {
@@ -296,7 +296,7 @@ void DrawWireCube(BoundingBox box, const glm::vec4& color)
 }
 
 void DrawPlane(const Transform& tf, const glm::vec4& color) {
-    SHAPE_SHADER(shader, "shaders/shapes/shape_3d.vert", "shaders/shapes/default_3d.frag");
+    SHAPE_SHADER(shader, "shaders/default.vert", "shaders/default.frag");
     static u32 planeVAO = 0;
     static u32 planeVBO = 0;
     if (planeVAO == 0) {
@@ -402,7 +402,7 @@ void DrawShape(const glm::mat4& model, const glm::vec4& color, const Shader& sha
 
     glm::mat4 projection = Camera::GetMainCamera().GetProjectionMatrix();
 
-    shader.setUniform("model", model);
+    shader.setUniform("modelMat", model);
     shader.setUniform("projection", projection);
     shader.setUniform("color", color);
     shader.use();
