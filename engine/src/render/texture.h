@@ -34,7 +34,7 @@ struct Texture {
     u32 id = U32_INVALID_ID; 
 
     Texture() = default;
-    Texture(u32 id) { this->id = id; }
+    explicit Texture(u32 id) { this->id = id; }
     bool isValid() const;
     void Delete();
     TAPI u32 OglID() const;

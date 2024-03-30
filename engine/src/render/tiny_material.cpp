@@ -5,11 +5,12 @@
 #include "tiny_profiler.h"
 #include "mem/tiny_arena.h"
 #include "tiny_engine.h"
+#include "shader_buffer.h"
 
 
 MaterialInternal& MaterialInternal::operator=(const MaterialInternal &mat)
 {
-    TMEMCPY(properties, mat.properties, sizeof(properties));
+    TMEMCPY(&properties, &mat.properties, sizeof(properties));
     TMEMCPY((void*)name, mat.name, MATERIAL_INTERNAL_NAME_MAX_LEN);
     return *this;
 }
@@ -48,12 +49,39 @@ bool DoesMaterialIdExist(u32 materialID)
 
 Material NewMaterial(const char* name, s32 materialIndex) {
     MaterialRegistry& matRegistry = GetMaterialRegistry();
-    Material newMaterial = {};
-    u32 nameHash = HashBytes((u8*)name, strnlen(name, MATERIAL_INTERNAL_NAME_MAX_LEN));
-    newMaterial.id = materialIndex != -1 ? nameHash+materialIndex : nameHash;
+    u32 nameSize = strnlen(name, MATERIAL_INTERNAL_NAME_MAX_LEN);
+    u32 materialHash = HashBytes((u8*)name, nameSize);
+    materialHash = materialIndex != -1 ? materialHash+materialIndex : materialHash;
+    Material newMaterial = Material(materialHash);
+    if (matRegistry.materialRegistry.count(newMaterial))
+    {
+        const MaterialInternal& alreadyExistingMat = matRegistry.materialRegistry[newMaterial];
+        bool areNamesSame = strncmp(alreadyExistingMat.name, name, MATERIAL_INTERNAL_NAME_MAX_LEN) == 0;
+        if (areNamesSame)
+        {
+            // if we try to create a material with the same name, just return the already existing one
+            return newMaterial;
+        }
+        else
+        {
+            // two different names hashed the same
+            TINY_ASSERT(false && "Material name hash collision!");
+        }
+    }
+    // on gpu we use this gpu material index to index a list of materials.
+    // if we have collisions with this thats an error state because we don't check hash collisions on gpu
+    u32 gpuMaterialIdx = materialHash % MAX_NUM_MATERIALS;
+    if (matRegistry.materialGPUIdxChecker.count(gpuMaterialIdx))
+    {
+        LOG_ERROR("Material gpu idx collision!");
+    }
+    else
+    {
+        matRegistry.materialGPUIdxChecker.insert(gpuMaterialIdx);
+    }
     MaterialInternal newMaterialInternal = {};
-    u32 materialMaxNameSize = ARRAY_SIZE(newMaterialInternal.name);
-    TMEMCPY((void*)&newMaterialInternal.name[0], name, strnlen(name, materialMaxNameSize));
+    TMEMSET((void*)&newMaterialInternal.name[0], 0, MATERIAL_INTERNAL_NAME_MAX_LEN);
+    TMEMCPY((void*)&newMaterialInternal.name[0], name, nameSize);
     matRegistry.materialRegistry[newMaterial] = newMaterialInternal;
     return newMaterial;
 }
@@ -61,9 +89,13 @@ Material NewMaterial(const char* name, s32 materialIndex) {
 void DeleteMaterial(Material material)
 {
     MaterialInternal& matInternal = GetMaterialInternal(material);
-    for (u32 i = 0; i < TextureMaterialType::NUM_MATERIAL_TYPES; i++)
+    for (u32 i = 0; i < ARRAY_SIZE(matInternal.properties.defaultProperties); i++)
     {
-        matInternal.properties[i].Delete();
+        matInternal.properties.defaultProperties[i].Delete();
+    }
+    for (u32 i = 0; i < ARRAY_SIZE(matInternal.properties.extraProperties); i++)
+    {
+        matInternal.properties.extraProperties[i].Delete();
     }
     GetMaterialRegistry().materialRegistry.erase(material);
 }
@@ -71,7 +103,7 @@ void DeleteMaterial(Material material)
 void OverwriteMaterialProperty(Material material, const MaterialProp& prop, TextureMaterialType type)
 {
     MaterialInternal& matInternal = GetMaterialInternal(material);
-    matInternal.properties[type] = prop;
+    matInternal.properties.defaultProperties[type] = prop;
 }
 
 MaterialProp::MaterialProp(glm::vec4 col) 
@@ -137,7 +169,7 @@ static void SetShaderUniformForMatProp(const MaterialProp& prop, const Shader& s
         } break;
         case MaterialProp::DataType::TEXTURE:
         {
-            shader.TryAddSampler(prop.TextureData(), TextFormat("material.%s.tex", matVarStr));
+            shader.TryAddSampler(Texture(prop.TextureData()), TextFormat("material.%s.tex", matVarStr));
         } break;
         case MaterialProp::DataType::UNK:
         {
@@ -154,7 +186,7 @@ void Material::SetShaderUniforms(const Shader& shader) const
 {
     PROFILE_FUNCTION();
     MaterialInternal& matInternal = GetMaterialInternal(*this);
-    MaterialProp* properties = matInternal.properties;
+    MaterialProp* properties = matInternal.properties.defaultProperties;
     #define SET_MATERIAL_UNIFORMS(matType) \
     { \
         const MaterialProp& matVar = properties[matType]; \

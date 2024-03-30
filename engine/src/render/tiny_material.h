@@ -7,6 +7,8 @@
 #include "render/texture.h"
 #include "tiny_log.h"
 
+#include <set>
+
 enum TextureMaterialType {
     DIFFUSE = 0,
     AMBIENT,
@@ -29,6 +31,8 @@ struct Material
     TAPI void SetShaderUniforms(const Shader& shader) const;
     bool operator==(const Material& p) const { return id == p.id; }
 };
+
+// these are intentionally meant to be 16 byte aligned (2 vec4s) so they can be used in std140 gpu buffers
 struct MaterialProp 
 {
     enum DataType : u32
@@ -45,8 +49,7 @@ struct MaterialProp
     TAPI MaterialProp(u32 datai);
     TAPI MaterialProp(f32 dataf);
     TAPI void Delete();
-    glm::vec4 vec; // float data can be stored in x, color data in full vec4
-    glm::uvec4 dataAndType; // int OR texture data in x, DataType stored in w
+    
     glm::vec4& VecData() { TINY_ASSERT(GetDataType()==VECTOR); return vec; }
     f32& FloatData() { TINY_ASSERT(GetDataType()==FLOAT); return vec.x; }
     u32& IntData() { TINY_ASSERT(GetDataType()==INT); return dataAndType.x; }
@@ -57,11 +60,22 @@ struct MaterialProp
     const u32& TextureData() const { TINY_ASSERT(GetDataType()==TEXTURE); return dataAndType.x; }
     DataType& GetDataType() { return *(DataType*)&dataAndType.w; }
     const DataType& GetDataType() const { return (DataType)dataAndType.w; }
+
+    glm::vec4 vec; // float data can be stored in x, color data in full vec4
+    glm::uvec4 dataAndType; // int OR texture data in x, DataType stored in w
 };
 
+// max properties on any material - including ones for material types (albedo, norms, emission, specular, roughness, etc)
+#define MAX_NUM_MATERIAL_PROPERTIES 15
+struct MaterialPropertiesPacked
+{
+    MaterialProp defaultProperties[TextureMaterialType::NUM_MATERIAL_TYPES];
+    MaterialProp extraProperties[MAX_NUM_MATERIAL_PROPERTIES - TextureMaterialType::NUM_MATERIAL_TYPES];
+};
+ 
 struct MaterialInternal
 {
-    MaterialProp properties[TextureMaterialType::NUM_MATERIAL_TYPES];
+    MaterialPropertiesPacked properties;
     #define MATERIAL_INTERNAL_NAME_MAX_LEN 64
     const char name[MATERIAL_INTERNAL_NAME_MAX_LEN] = "DefaultMat";
 
@@ -82,6 +96,7 @@ struct MaterialRegistry
     u32 currentMaterialId = 0;
     Material dummyMaterial = {};
     MaterialMap materialRegistry = {};
+    std::set<u32> materialGPUIdxChecker = {};
 };
 
 struct Arena;

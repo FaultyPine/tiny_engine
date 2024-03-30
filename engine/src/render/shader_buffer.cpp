@@ -4,6 +4,8 @@
 #include "shader.h"
 #include "tiny_engine.h"
 #include "camera.h"
+#include "scene/entity.h"
+#include "tiny_profiler.h"
 
 // only have 1 big UBO
 #define UBO_BINDING_POINT 0
@@ -56,9 +58,13 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
 
 void UpdateGlobalUBOMaterials(UBOGlobals& globs)
 {
-    // TODO:
     MaterialRegistry& matRegistry = *GetEngineCtx().materialRegistry;
-    
+    const MaterialMap& mats = matRegistry.materialRegistry;
+    for (const auto& [material, materialInternal] : mats)
+    {
+        u32 materialIdx = material.id % MAX_NUM_MATERIALS;
+        globs.materials[materialIdx] = materialInternal.properties;
+    }
 }
 
 void UpdateGlobalUBOMisc(UBOGlobals& globs)
@@ -69,6 +75,7 @@ void UpdateGlobalUBOMisc(UBOGlobals& globs)
 
 void InitializeUBOs(ShaderBufferGlobals& globals)
 {
+    PROFILE_FUNCTION();
     u32& uboObject = globals.uboObject;
     glGenBuffers(1, &uboObject);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, uboObject);
@@ -93,14 +100,37 @@ bool TryBindUniformBlockToBindingPoint(const char* uniformBlockName, u32 binding
     return true;
 }
 
+void UpdateGlobalUBOModelMatrices(UBOGlobals& globs)
+{
+    PROFILE_FUNCTION();
+    EngineContext& ctx = GetEngineCtx();
+    u32 numRenderableEntities = 0;
+    Entity::GetRenderableEntities(nullptr, &numRenderableEntities);
+    EntityRef* renderableEntites = arena_alloc_type(&ctx.engineArena, EntityRef, numRenderableEntities);
+    for (u32 i = 0; i < numRenderableEntities; i++)
+    {
+        EntityRef ent = renderableEntites[i];
+        const EntityData& entityData = Entity::GetEntity(ent);
+        u32 idx = (u32)ent % ARRAY_SIZE(globs.objectData);
+        glm::mat4 model = entityData.transform.ToModelMatrix();
+        glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(model)));
+        UBOGlobals::GPUPerObjectData& objData = globs.objectData[idx];
+        objData.modelMat = model;
+        objData.normalMat = normal;
+    }
+    arena_pop_latest(&ctx.engineArena);
+}
+
 void ShaderSystemPreDraw(ShaderBufferGlobals& globals)
 {
+    PROFILE_FUNCTION();
     UBOGlobals& globs = globals.globals;
     TMEMSET(&globs, 0, sizeof(UBOGlobals));
     UpdateGlobalUBOCamera(globs);
     UpdateGlobalUBOLighting(globs);
     UpdateGlobalUBOMaterials(globs);
     UpdateGlobalUBOMisc(globs);
+    UpdateGlobalUBOModelMatrices(globs);
 
     // update the entire ubo block every frame
     if (!globals.uboObject) 

@@ -72,6 +72,7 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
         when I end up doing this - it would honestly be better to start completely from scratch than try to migrate my current
         rendering stuff to what i have in mind.
     - deferred renderer
+- entity picking
 - HDR/Tonemapping & Bloom
 - PBR
 - ImGuizmo

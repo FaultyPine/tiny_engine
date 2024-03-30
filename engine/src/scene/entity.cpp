@@ -8,13 +8,8 @@
 #include <unordered_map>
 
 
-typedef std::unordered_map<u32, Entity> EntityMap;
-
-struct EntityRegistry
+namespace Entity
 {
-    EntityMap entMap = {};
-    u32 entityCreationIndex = 0;
-};
 
 static EntityRegistry& GetRegistry()
 {
@@ -46,11 +41,13 @@ void InitializeEntitySystem(Arena* arena)
     registryMem->entMap[U32_INVALID_ID] = {};
 }
 
-EntityRef CreateEntity(const char* name, const Model& model, const Transform& tf, u32 flags)
+EntityRef CreateEntity(
+    const char* name, 
+    const Transform& tf, 
+    u32 flags)
 {
     EntityRegistry& registry = GetRegistry();
-    Entity ent = {};
-    ent.model = model;
+    EntityData ent = {};
     ent.transform = tf;
     ent.flags = flags;
     u32 entityID = 0;
@@ -79,7 +76,7 @@ EntityRef CreateEntity(const char* name, const Model& model, const Transform& tf
 bool DestroyEntity(EntityRef ent)
 {
     EntityRegistry& registry = GetRegistry();
-    Entity& entity = GetEntity(ent);
+    EntityData& entity = GetEntity(ent);
     if (entity.id == U32_INVALID_ID)
     {
         return false;
@@ -89,7 +86,7 @@ bool DestroyEntity(EntityRef ent)
     return true;
 }
 
-Entity& GetEntity(EntityRef ref)
+EntityData& GetEntity(EntityRef ref)
 {
     EntityRegistry& registry = GetRegistry();
     if (registry.entMap.count(ref) > 0)
@@ -99,7 +96,7 @@ Entity& GetEntity(EntityRef ref)
     return registry.entMap[U32_INVALID_ID]; // if doesn't exist, return our dummy
 }
 
-Entity& GetEntity(const char* name)
+EntityData& GetEntity(const char* name)
 {
     u32 namehash = HashBytes((u8*)name, strnlen(name, ENTITY_NAME_MAX_LENGTH));
     EntityRegistry& registry = GetRegistry();
@@ -109,6 +106,30 @@ Entity& GetEntity(const char* name)
     }
     return registry.entMap[U32_INVALID_ID]; // if doesn't exist, return our dummy
 
+}
+
+bool HasRenderable(EntityRef ent)
+{
+    const EntityData& entity = GetEntity(ent);
+    return entity.model.isValid();
+}
+
+bool AddRenderable(EntityRef ent, const Model& model)
+{
+    EntityData& entity = GetEntity(ent);
+    // if we already have a model, don't overwrite
+    if (entity.model.isValid())
+    {
+        return false;
+    }
+    entity.model = model;
+    return true;
+}
+
+void OverwriteRenderable(EntityRef ent, const Model& model)
+{
+    EntityData& entity = GetEntity(ent);
+    entity.model = model;
 }
 
 void GetRenderableEntities(EntityRef* dst, u32* numEntities)
@@ -133,3 +154,6 @@ void GetRenderableEntities(EntityRef* dst, u32* numEntities)
         i++;
     }
 }
+
+
+} // namespace Entity

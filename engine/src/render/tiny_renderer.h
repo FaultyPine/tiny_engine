@@ -3,6 +3,10 @@
 
 #include "math/tiny_math.h"
 
+// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDrawElementsInstancedBaseVertexBaseInstance.xhtml
+// or
+// https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
+
 struct Vertex 
 {
     glm::vec3 position = glm::vec3(0);
@@ -10,7 +14,8 @@ struct Vertex
     glm::vec3 tangent = glm::vec3(0);
     glm::vec2 texCoords = glm::vec3(0);
     glm::vec3 color = glm::vec3(1);
-    u32 objectID = 0;
+    u32 objectID = U32_INVALID_ID;
+    u32 materialID = U32_INVALID_ID;
     inline std::string str() 
     {
         return "[Pos = " + glm::to_string(position) + 

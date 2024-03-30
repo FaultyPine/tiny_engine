@@ -19,7 +19,7 @@ STATIC_ASSERT(NUM_ENTITY_FLAGS < 32);
 
 typedef u32 EntityRef;
 #define ENTITY_NAME_MAX_LENGTH 50
-struct Entity
+struct EntityData
 {
     Transform transform = {};
     Model model = {};
@@ -29,19 +29,40 @@ struct Entity
     s8 name[ENTITY_NAME_MAX_LENGTH];
     
     operator bool() { return isValid(); }
-    Entity() = default;
+    EntityData() = default;
     inline bool isValid() { return id != U32_INVALID_ID; }
 };
 
+typedef std::unordered_map<u32, EntityData> EntityMap;
+
+struct EntityRegistry
+{
+    EntityMap entMap = {};
+    u32 entityCreationIndex = 0;
+};
+
 struct Arena;
+namespace Entity
+{
+
 void InitializeEntitySystem(Arena* arena);
 
-TAPI EntityRef CreateEntity(const char* name, const Model& model, const Transform& tf, u32 flags = 0);
+TAPI EntityRef CreateEntity(
+    const char* name, 
+    const Transform& tf = {}, 
+    u32 flags = 0);
 TAPI bool DestroyEntity(EntityRef ent);
-TAPI Entity& GetEntity(EntityRef ent);
-TAPI Entity& GetEntity(const char* name);
+TAPI EntityData& GetEntity(EntityRef ent);
+TAPI EntityData& GetEntity(const char* name);
+
+TAPI bool HasRenderable(EntityRef ent);
+TAPI bool AddRenderable(EntityRef ent, const Model& model);
+TAPI void OverwriteRenderable(EntityRef ent, const Model& model);
 // if dst is nullptr, this returns the *number* of renderable entities
 // if dst is not nullptr, we fill in the buffer
 TAPI void GetRenderableEntities(EntityRef* dst, u32* numEntities);
+
+} // namespace Entity
+
 
 #endif

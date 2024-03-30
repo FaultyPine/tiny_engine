@@ -8,8 +8,8 @@
 
 struct Model {
     Model() = default;
-    TAPI Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir);
-    TAPI Model(const Shader& shader, const std::vector<Mesh>& meshes);
+    TAPI Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir, u32 objectID);
+    TAPI Model(const Shader& shader, const std::vector<Mesh>& meshes, u32 objectID);
 
     BoundingBox CalculateBoundingBox();
 

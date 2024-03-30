@@ -39,7 +39,13 @@ struct Mesh
     // NOTE: this function does *not* call use() on the shader
     TAPI void Draw() const;
     TAPI void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
-   
+    void SetObjectID(u32 objectID)
+    {
+        for (auto& vertex : vertices)
+        {
+            vertex.objectID = objectID;
+        }
+    }
 private:    
     void initMesh();
 };

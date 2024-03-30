@@ -113,7 +113,7 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     return ret;
 }
 
-Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir) {
+Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir, u32 objectID) {
     PROFILE_FUNCTION();
     std::vector<Vertex> vertices;
     vertices.reserve(mesh->mNumVertices);
@@ -161,8 +161,8 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
             vertex.texCoords = vec;
         }
         else vertex.texCoords = glm::vec2(0.0f, 0.0f);
-        //TINY_ASSERT(false);
-        vertex.objectID = 0;
+        vertex.objectID = objectID;
+        vertex.materialID = mesh->mMaterialIndex - 1; // material index 0 is always assimp default material
         vertices.push_back(vertex);
     }
     // process indices
@@ -179,12 +179,12 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
     return m;
 }
 
-void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, const char* meshMaterialDir) {
+void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, const char* meshMaterialDir, u32 objectID) {
     PROFILE_FUNCTION();
     for (u32 i = 0; i < node->mNumMeshes; i++) 
     {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        Mesh converted = processMesh(mesh, scene, meshMaterialDir);
+        Mesh converted = processMesh(mesh, scene, meshMaterialDir, objectID);
         aiString meshName = node->mName;
         converted.name = meshName.C_Str();
         meshes.push_back(converted);
@@ -192,7 +192,7 @@ void processNode(aiNode* node, const aiScene* scene, std::vector<Mesh>& meshes, 
     // process children
     for (u32 i = 0; i < node->mNumChildren; i++) 
     {
-        processNode(node->mChildren[i], scene, meshes, meshMaterialDir);
+        processNode(node->mChildren[i], scene, meshes, meshMaterialDir, objectID);
     }
 }
 
@@ -205,7 +205,11 @@ struct MeshCompare
     }
 };
 
-Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir) 
+// NOTE: idk how i feel about the design decision to embed the objectID into the mesh vertices data
+// having a seperate gpu buffer for these ids might make more sense. Would then need logic in the draw procedure
+// to give the shaders some sort of index into that buffer... so going to go with naive approach for now and refactor later if need be
+
+Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir, u32 objectID) 
 {
     PROFILE_FUNCTION();
     cachedShader = shader;
@@ -225,14 +229,18 @@ Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMate
         LOG_ERROR("[ASSIMP] Error: %s", import.GetErrorString());
         return;
     }
-    processNode(scene->mRootNode, scene, meshes, meshMaterialDir);
+    processNode(scene->mRootNode, scene, meshes, meshMaterialDir, objectID);
     std::sort(meshes.begin(), meshes.end(), MeshCompare()); // when I implement a real renderer, meshes will be inserted in sorted order
     cachedBoundingBox = CalculateBoundingBox();
 }
-Model::Model(const Shader& shader, const std::vector<Mesh>& meshes) 
+Model::Model(const Shader& shader, const std::vector<Mesh>& meshes, u32 objectID) 
 {
     cachedShader = shader;
     this->meshes = meshes;
+    for (Mesh& mesh : this->meshes)
+    {
+        mesh.SetObjectID(objectID);
+    }
     cachedBoundingBox = CalculateBoundingBox();
 }
 

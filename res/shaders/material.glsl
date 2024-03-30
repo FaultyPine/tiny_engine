@@ -27,6 +27,12 @@ struct MaterialProperty
     uint dataType;
 };
 
+struct MaterialPropertyPacked
+{
+    vec4 color; // x holds float data, full vec4 is color <- cannot have float data and color data at same time
+    uvec4 dataAndType; // x holds int data, w holds data type
+};
+
 struct Material 
 {
     MaterialProperty diffuseMat;
@@ -39,6 +45,14 @@ struct Material
     MaterialProperty emissiveMat;
     MaterialProperty opacityMat;
 };
+// in sync with tiny_material
+#define MAX_NUM_MATERIAL_PROPERTIES 15
+struct MaterialPacked
+{
+    MaterialPropertyPacked defaultProperties[NUM_MATERIAL_TYPES];
+    MaterialPropertyPacked extraProperties[MAX_NUM_MATERIAL_PROPERTIES - NUM_MATERIAL_TYPES];
+};
+uniform sampler2D materialSamplers[MAX_NUM_OBJECTS];
 
 uniform Material material;
 

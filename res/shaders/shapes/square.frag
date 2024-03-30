@@ -1,7 +1,6 @@
  
 #include "globals.glsl"
 
-out vec4 fragColor;
 
 uniform vec4 color;
 uniform int isHollow;

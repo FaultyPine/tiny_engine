@@ -319,7 +319,7 @@ void InitEngine(
     InitializeTextureCache(engineArena);
     InitializeMaterialSystem(engineArena);
     Renderer::InitializeRenderer(engineArena);
-    InitializeEntitySystem(engineArena);
+    Entity::InitializeEntitySystem(engineArena);
     InitializePhysics(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
 
@@ -355,13 +355,15 @@ void InitEngine(
         }
         JobSystem::Instance().FlushMainThreadJobs();
         { PROFILE_SCOPE("Engine Render");
-            ShaderSystemPreDraw();
+            // this is before the game render for now because the game can issue render commands
+            // when the renderer rewrite is done, the game won't be issueing any draw commands so this can go in RendererDraw
+            ShaderSystemPreDraw(); 
             Framebuffer screenRenderFb;
             { PROFILE_SCOPE("Game Render");
                 screenRenderFb = gameFuncs.renderFunc(gameArena);
-                screenRenderFb.Bind(); // make super sure our renderer draws to the game framebuffer
-                Renderer::RendererDraw();
             }
+            screenRenderFb.Bind(); // make super sure our renderer draws to the game framebuffer
+            Renderer::RendererDraw();
             Framebuffer::BindDefaultFrameBuffer();
             glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
             // blit the game's rendered frame to default framebuffer

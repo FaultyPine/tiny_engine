@@ -86,6 +86,8 @@ void ConfigureMeshVertexAttributes(u32& vertexAttributeLocation)
         vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color)); // 4
     ConfigureVertexAttrib(
         vertexAttributeLocation++, 1, GL_UNSIGNED_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, objectID)); // 5
+    ConfigureVertexAttrib(
+        vertexAttributeLocation++, 1, GL_UNSIGNED_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialID)); // 6
 }
 
 void Mesh::initMesh() {
