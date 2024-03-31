@@ -5,9 +5,8 @@
 #include "tiny_lights.h" //MAX_NUM_LIGHTS
 #include "tiny_material.h"
 
-// in sync with globals.glsl
-#define MAX_NUM_OBJECTS 1000
-#define MAX_NUM_MATERIALS 500
+#include "res/shaders/shader_defines.glsl"
+
 
 // only included in shader.cpp
 
@@ -64,10 +63,6 @@ Under std140, struct members of a block should be aligned to 16-bytes
     glm::vec4 numActiveLightsAndAmbientIntensity;
 
     // ----- per object data -----
-
-    // materials
-    MaterialPropertiesPacked materials[MAX_NUM_MATERIALS];
-
     struct GPUPerObjectData
     {
         glm::mat4 modelMat;

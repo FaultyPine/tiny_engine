@@ -48,15 +48,18 @@ bool DoesMaterialIdExist(u32 materialID)
 }
 
 Material NewMaterial(const char* name, s32 materialIndex) {
-    MaterialRegistry& matRegistry = GetMaterialRegistry();
     u32 nameSize = strnlen(name, MATERIAL_INTERNAL_NAME_MAX_LEN);
     u32 materialHash = HashBytes((u8*)name, nameSize);
-    materialHash = materialIndex != -1 ? materialHash+materialIndex : materialHash;
+    // combine name hash with material index
+    u64 combinedHash = (u64)materialHash | ((u64)materialIndex << 32);
+    combinedHash = HashBytes((u8*)&combinedHash, sizeof(combinedHash));
+    materialHash = materialIndex != -1 ? combinedHash : materialHash;
     Material newMaterial = Material(materialHash);
+    MaterialRegistry& matRegistry = GetMaterialRegistry();
     if (matRegistry.materialRegistry.count(newMaterial))
     {
         const MaterialInternal& alreadyExistingMat = matRegistry.materialRegistry[newMaterial];
-        bool areNamesSame = strncmp(alreadyExistingMat.name, name, MATERIAL_INTERNAL_NAME_MAX_LEN) == 0;
+        bool areNamesSame = strncmp(alreadyExistingMat.name, name, nameSize) == 0;
         if (areNamesSame)
         {
             // if we try to create a material with the same name, just return the already existing one
@@ -65,19 +68,9 @@ Material NewMaterial(const char* name, s32 materialIndex) {
         else
         {
             // two different names hashed the same
-            TINY_ASSERT(false && "Material name hash collision!");
+            LOG_ERROR("Material name hash collision! %s and %s = %u", alreadyExistingMat.name, name, materialHash);
+            TINY_ASSERT(false);
         }
-    }
-    // on gpu we use this gpu material index to index a list of materials.
-    // if we have collisions with this thats an error state because we don't check hash collisions on gpu
-    u32 gpuMaterialIdx = materialHash % MAX_NUM_MATERIALS;
-    if (matRegistry.materialGPUIdxChecker.count(gpuMaterialIdx))
-    {
-        LOG_ERROR("Material gpu idx collision!");
-    }
-    else
-    {
-        matRegistry.materialGPUIdxChecker.insert(gpuMaterialIdx);
     }
     MaterialInternal newMaterialInternal = {};
     TMEMSET((void*)&newMaterialInternal.name[0], 0, MATERIAL_INTERNAL_NAME_MAX_LEN);
@@ -89,13 +82,9 @@ Material NewMaterial(const char* name, s32 materialIndex) {
 void DeleteMaterial(Material material)
 {
     MaterialInternal& matInternal = GetMaterialInternal(material);
-    for (u32 i = 0; i < ARRAY_SIZE(matInternal.properties.defaultProperties); i++)
+    for (u32 i = 0; i < ARRAY_SIZE(matInternal.properties); i++)
     {
-        matInternal.properties.defaultProperties[i].Delete();
-    }
-    for (u32 i = 0; i < ARRAY_SIZE(matInternal.properties.extraProperties); i++)
-    {
-        matInternal.properties.extraProperties[i].Delete();
+        matInternal.properties[i].Delete();
     }
     GetMaterialRegistry().materialRegistry.erase(material);
 }
@@ -103,7 +92,7 @@ void DeleteMaterial(Material material)
 void OverwriteMaterialProperty(Material material, const MaterialProp& prop, TextureMaterialType type)
 {
     MaterialInternal& matInternal = GetMaterialInternal(material);
-    matInternal.properties.defaultProperties[type] = prop;
+    matInternal.properties[type] = prop;
 }
 
 MaterialProp::MaterialProp(glm::vec4 col) 
@@ -135,41 +124,29 @@ void MaterialProp::Delete()
 }
 
 
-const char* GetTexMatTypeString(TextureMaterialType type) {
-    switch (type) 
-    {
-        case DIFFUSE: return "diffuseMat";
-        case SPECULAR: return "specularMat";
-        case AMBIENT: return "ambientMat";
-        case NORMALS: return "normalMat";
-        case SHININESS: return "shininessMat";
-        case EMISSION: return "emissiveMat";
-        case OPACITY: return "opacityMat";
-        case OTHER: return "otherMat";
-        default: return "unknownMat";
-    }
-}
-
-static void SetShaderUniformForMatProp(const MaterialProp& prop, const Shader& shader, const char* matVarStr)
+static void SetShaderUniformForMatProp(
+    u32 matIdx, // equivalent to TextureMaterialType
+    const MaterialProp& prop, 
+    const Shader& shader)
 {
-    shader.setUniform(TextFormat("material.%s.dataType", matVarStr), prop.GetDataType());
+    shader.setUniform(TextFormat("material.properties[%i].dataType", matIdx), prop.GetDataType());
     switch (prop.GetDataType())
     {
         case MaterialProp::DataType::FLOAT:
         {
-            shader.setUniform(TextFormat("material.%s.color.r", matVarStr), prop.FloatData());
+            shader.setUniform(TextFormat("material.properties[%i].color.r", matIdx), prop.FloatData());
         } break;
         case MaterialProp::DataType::INT:
         {
-            shader.setUniform(TextFormat("material.%s.datai", matVarStr), prop.IntData());
+            shader.setUniform(TextFormat("material.properties[%i].datai", matIdx), prop.IntData());
         } break;
         case MaterialProp::DataType::VECTOR:
         {
-            shader.setUniform(TextFormat("material.%s.color", matVarStr), prop.VecData());
+            shader.setUniform(TextFormat("material.properties[%i].color", matIdx), prop.VecData());
         } break;
         case MaterialProp::DataType::TEXTURE:
         {
-            shader.TryAddSampler(Texture(prop.TextureData()), TextFormat("material.%s.tex", matVarStr));
+            shader.TryAddSampler(Texture(prop.TextureData()), TextFormat("material.properties[%i].tex", matIdx));
         } break;
         case MaterialProp::DataType::UNK:
         {
@@ -186,20 +163,12 @@ void Material::SetShaderUniforms(const Shader& shader) const
 {
     PROFILE_FUNCTION();
     MaterialInternal& matInternal = GetMaterialInternal(*this);
-    MaterialProp* properties = matInternal.properties.defaultProperties;
-    #define SET_MATERIAL_UNIFORMS(matType) \
-    { \
-        const MaterialProp& matVar = properties[matType]; \
-        const char* matVarStr = GetTexMatTypeString(matType); \
-        SetShaderUniformForMatProp(matVar, shader, matVarStr); \
+    MaterialProp* properties = &matInternal.properties[0];
+    for (u32 i = 0; i < NUM_MATERIAL_TYPES; i++)
+    {
+        const MaterialProp& matVar = properties[i];
+        SetShaderUniformForMatProp(i, matVar, shader);
     }
-    SET_MATERIAL_UNIFORMS(DIFFUSE);
-    SET_MATERIAL_UNIFORMS(AMBIENT);
-    SET_MATERIAL_UNIFORMS(SPECULAR);
-    SET_MATERIAL_UNIFORMS(NORMALS);
-    SET_MATERIAL_UNIFORMS(SHININESS);
-    SET_MATERIAL_UNIFORMS(EMISSION);
-    SET_MATERIAL_UNIFORMS(OPACITY);
 }
 
 

@@ -39,6 +39,21 @@ void InitializeEntitySystem(Arena* arena)
     GetEngineCtx().entityRegistry = registryMem;
     // dummy entity with bad id so we can return it on failure from methods like GetEntity
     registryMem->entMap[U32_INVALID_ID] = {};
+    Entity::SetFlag(U32_INVALID_ID, EntityFlags::DISABLED, true);
+}
+
+void SetFlag(EntityRef ent, EntityFlags flag, bool enabled)
+{
+    EntityRegistry& registry = GetRegistry();
+    u32& bitfield = registry.entMap[ent].flags;
+    SET_NTH_BIT(bitfield, flag, enabled);
+}
+bool IsFlag(EntityRef ent, EntityFlags flag)
+{
+    EntityRegistry& registry = GetRegistry();
+    u32& bitfield = registry.entMap[ent].flags;
+    bool result = CHECK_NTH_BIT(bitfield, flag);
+    return result;
 }
 
 EntityRef CreateEntity(
@@ -135,24 +150,24 @@ void OverwriteRenderable(EntityRef ent, const Model& model)
 void GetRenderableEntities(EntityRef* dst, u32* numEntities)
 {
     EntityRegistry& registry = GetRegistry();
-    if (!dst)
-    {
-        *numEntities = registry.entMap.size();
-        return;
-    }
-    u32 i = 0;
+    *numEntities = 0;
     for (const auto& [ref, ent] : registry.entMap)
     {
-        if ((ent.flags & EntityFlags::IS_DISABLED) == 0)
+        if (!Entity::IsFlag(ref, EntityFlags::DISABLED))
         {
-            dst[i] = ref;
+            if (dst)
+            {
+                dst[*numEntities] = ref;
+            }
+            (*numEntities)++;
         }
-        else
-        {
-            dst[i] = U32_INVALID_ID;
-        }
-        i++;
     }
+}
+
+void SetTransform(EntityRef ent, const Transform& tf)
+{
+    EntityRegistry& registry = GetRegistry();
+    registry.entMap[ent].transform = tf;
 }
 
 

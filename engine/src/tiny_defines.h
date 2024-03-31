@@ -28,6 +28,8 @@
 #define TOGGLE_NTH_BIT(bitfield, n_bit) \
     ( (bitfield) ^ (1 << (n_bit)) )
 
+#define CHECK_NTH_BIT(bitfield, n_bit) ((( bitfield >> n_bit ) & 1U) == 1)
+
 #define U32_INVALID_ID 999999999U
 
 // exports

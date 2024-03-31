@@ -16,8 +16,8 @@
 #include "render/tiny_renderer.h"
 #include "scene/entity.h"
 
-#define ISLAND_SCENE
-//#define SPONZA_SCENE
+//#define ISLAND_SCENE
+#define SPONZA_SCENE
 
 struct Wave {
     f32 waveSpeed = 1.0;
@@ -280,7 +280,7 @@ void DepthAndNormsPrePass(const GameState& gs) {
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
             }
-            gs.pondPrepassShader.setUniform("modelMat", ent.transform.ToModelMatrix());
+            //gs.pondPrepassShader.setUniform("modelMat", ent.transform.ToModelMatrix());
             gs.pondPrepassShader.use();
             ent.model.DrawMinimal();
             continue;
@@ -488,15 +488,15 @@ void testbed_init(Arena* gameMem) {
     gs.entities.push_back(treeEntRef);
     PhysicsAddModel(treeModel, treeEnt.transform);
     
-    EntityRef bushEntRef = Entity::CreateEntity("bush", Transform({-10,7.5,3}, glm::vec3(0.75)));
-    EntityData& bushEnt = Entity::GetEntity(bushEntRef);
+    Transform bushTf = Transform({-10,7.5,3}, glm::vec3(0.75));
+    EntityRef bushEntRef = Entity::CreateEntity("bush", bushTf);
     Model bushModel = Model(lightingShader, 
                             ResPath("other/island_wip/bush.obj").c_str(), 
                             ResPath("other/island_wip/").c_str(),
                             bushEntRef);
     Entity::AddRenderable(bushEntRef, bushModel);
     gs.entities.push_back(bushEntRef);
-    PhysicsAddModel(bushModel, bushEnt.transform);
+    PhysicsAddModel(bushModel, bushTf);
 
     // pond
     init_main_pond(gs);
@@ -509,9 +509,10 @@ void testbed_init(Arena* gameMem) {
 #endif
     
 #ifdef SPONZA_SCENE
-    Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str());
     Transform sponzaTf = Transform({0,0,0}, glm::vec3(0.1));
-    EntityRef sponzaEnt = CreateEntity("sponza", sponza, sponzaTf);
+    EntityRef sponzaEnt = Entity::CreateEntity("sponza", sponzaTf);
+    Model sponza = Model(lightingShader, ResPath("Sponza/sponza.obj").c_str(), ResPath("Sponza/").c_str(), sponzaEnt);
+    Entity::AddRenderable(sponzaEnt, sponza);
     gs.entities.push_back(sponzaEnt);
     PhysicsAddModel(sponza, sponzaTf);
 #endif

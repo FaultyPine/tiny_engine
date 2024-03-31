@@ -1,6 +1,6 @@
 
 #include "common.glsl"
-
+#include "material.glsl"
 
 // samplers cannot be stored in ubo/ssbo buffers.... :/
 uniform samplerCube pointLightShadowMaps[MAX_NUM_LIGHTS];

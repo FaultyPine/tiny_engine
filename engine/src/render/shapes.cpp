@@ -8,6 +8,8 @@
 #include "math/tiny_math.h"
 #include "tiny_ogl.h"
 #include "tiny_renderer.h"
+#include "render/model.h"
+#include "scene/entity.h"
 
 #define PAR_SHAPES_IMPLEMENTATION
 #include "par/par_shapes.h"

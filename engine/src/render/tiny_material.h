@@ -9,7 +9,9 @@
 
 #include <set>
 
-enum TextureMaterialType {
+#include "res/shaders/shader_defines.glsl"
+
+enum TextureMaterialType : u32 {
     DIFFUSE = 0,
     AMBIENT,
     SPECULAR,
@@ -32,7 +34,6 @@ struct Material
     bool operator==(const Material& p) const { return id == p.id; }
 };
 
-// these are intentionally meant to be 16 byte aligned (2 vec4s) so they can be used in std140 gpu buffers
 struct MaterialProp 
 {
     enum DataType : u32
@@ -50,32 +51,32 @@ struct MaterialProp
     TAPI MaterialProp(f32 dataf);
     TAPI void Delete();
     
-    glm::vec4& VecData() { TINY_ASSERT(GetDataType()==VECTOR); return vec; }
-    f32& FloatData() { TINY_ASSERT(GetDataType()==FLOAT); return vec.x; }
-    u32& IntData() { TINY_ASSERT(GetDataType()==INT); return dataAndType.x; }
-    u32& TextureData() { TINY_ASSERT(GetDataType()==TEXTURE); return dataAndType.x; }
-    const glm::vec4& VecData() const { TINY_ASSERT(GetDataType()==VECTOR); return vec; }
-    const f32& FloatData() const { TINY_ASSERT(GetDataType()==FLOAT); return vec.x; }
-    const u32& IntData() const { TINY_ASSERT(GetDataType()==INT); return dataAndType.x; }
-    const u32& TextureData() const { TINY_ASSERT(GetDataType()==TEXTURE); return dataAndType.x; }
-    DataType& GetDataType() { return *(DataType*)&dataAndType.w; }
-    const DataType& GetDataType() const { return (DataType)dataAndType.w; }
+    glm::vec4& VecData() { TINY_ASSERT(GetDataType()==VECTOR); return dataVec; }
+    f32& FloatData() { TINY_ASSERT(GetDataType()==FLOAT); return dataf; }
+    u32& IntData() { TINY_ASSERT(GetDataType()==INT); return datai; }
+    u32& TextureData() { TINY_ASSERT(GetDataType()==TEXTURE); return dataTex; }
+    const glm::vec4& VecData() const { TINY_ASSERT(GetDataType()==VECTOR); return dataVec; }
+    const f32& FloatData() const { TINY_ASSERT(GetDataType()==FLOAT); return dataf; }
+    const u32& IntData() const { TINY_ASSERT(GetDataType()==INT); return datai; }
+    const u32& TextureData() const { TINY_ASSERT(GetDataType()==TEXTURE); return dataTex; }
+    DataType& GetDataType() { return dataType; }
+    const DataType& GetDataType() const { return (DataType)dataType; }
 
-    glm::vec4 vec; // float data can be stored in x, color data in full vec4
-    glm::uvec4 dataAndType; // int OR texture data in x, DataType stored in w
+    DataType dataType = UNK;
+    union
+    {
+        u32 datai;
+        f32 dataf;
+        glm::vec4 dataVec;
+        u32 dataTex; // texture id. B/c Texture has nontrivial ctor, can't use it in union. do Texture(dataTex) to access texture funcs
+    };
 };
 
-// max properties on any material - including ones for material types (albedo, norms, emission, specular, roughness, etc)
-#define MAX_NUM_MATERIAL_PROPERTIES 15
-struct MaterialPropertiesPacked
-{
-    MaterialProp defaultProperties[TextureMaterialType::NUM_MATERIAL_TYPES];
-    MaterialProp extraProperties[MAX_NUM_MATERIAL_PROPERTIES - TextureMaterialType::NUM_MATERIAL_TYPES];
-};
  
 struct MaterialInternal
 {
-    MaterialPropertiesPacked properties;
+    MaterialProp properties[MAX_NUM_MATERIAL_PROPERTIES];
+    static_assert(MAX_NUM_MATERIAL_PROPERTIES >= TextureMaterialType::NUM_MATERIAL_TYPES);
     #define MATERIAL_INTERNAL_NAME_MAX_LEN 64
     const char name[MATERIAL_INTERNAL_NAME_MAX_LEN] = "DefaultMat";
 
@@ -96,7 +97,6 @@ struct MaterialRegistry
     u32 currentMaterialId = 0;
     Material dummyMaterial = {};
     MaterialMap materialRegistry = {};
-    std::set<u32> materialGPUIdxChecker = {};
 };
 
 struct Arena;

@@ -28,10 +28,23 @@ void Mesh::Delete() {
     //material.Delete();
 }
 
+static bool IsOglTypeInteger(u32 oglType)
+{
+    return oglType >= GL_BYTE && oglType <= GL_UNSIGNED_INT;
+}
+
 // Note: numComponentsInAttribute must be between [1, 4] (component refers to 1 of whatever the oglType is)
 void ConfigureVertexAttrib(u32 attributeLoc, u32 numComponentsInAttribute, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
     // this retrieves the value of GL_ARRAY_BUFFER (VBO) and associates it with the current VAO
-    GLCall(glVertexAttribPointer(attributeLoc, numComponentsInAttribute, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+    if (IsOglTypeInteger(oglType))
+    {
+        // integer types need the IPointer call
+        GLCall(glVertexAttribIPointer(attributeLoc, numComponentsInAttribute, oglType, stride, offset));
+    }
+    else
+    {
+        GLCall(glVertexAttribPointer(attributeLoc, numComponentsInAttribute, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+    }
     // glEnableVertexAttribArray enables vertex attribute for currently bound vertex array object
     // glEnableVertexArrayAttrib ^ but you provide the vertex array obj explicitly
     GLCall(glEnableVertexAttribArray(attributeLoc));
@@ -83,11 +96,9 @@ void ConfigureMeshVertexAttributes(u32& vertexAttributeLocation)
     ConfigureVertexAttrib( // vert tex coords
         vertexAttributeLocation++, 2, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, texCoords)); // 3
     ConfigureVertexAttrib( // vert color
-        vertexAttributeLocation++, 3, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color)); // 4
-    ConfigureVertexAttrib(
+        vertexAttributeLocation++, 4, GL_FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, color)); // 4
+    ConfigureVertexAttrib( // object id
         vertexAttributeLocation++, 1, GL_UNSIGNED_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, objectID)); // 5
-    ConfigureVertexAttrib(
-        vertexAttributeLocation++, 1, GL_UNSIGNED_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, materialID)); // 6
 }
 
 void Mesh::initMesh() {

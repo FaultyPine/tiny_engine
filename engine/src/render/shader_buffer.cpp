@@ -56,17 +56,6 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
     globs.numActiveLightsAndAmbientIntensity = glm::vec4(globs.numActiveLightsAndAmbientIntensity.x, ctx.lightsSubsystem->ambientLightIntensity, 0.0f, 0.0f);
 }
 
-void UpdateGlobalUBOMaterials(UBOGlobals& globs)
-{
-    MaterialRegistry& matRegistry = *GetEngineCtx().materialRegistry;
-    const MaterialMap& mats = matRegistry.materialRegistry;
-    for (const auto& [material, materialInternal] : mats)
-    {
-        u32 materialIdx = material.id % MAX_NUM_MATERIALS;
-        globs.materials[materialIdx] = materialInternal.properties;
-    }
-}
-
 void UpdateGlobalUBOMisc(UBOGlobals& globs)
 {
     globs.time = GetTimef();
@@ -107,6 +96,7 @@ void UpdateGlobalUBOModelMatrices(UBOGlobals& globs)
     u32 numRenderableEntities = 0;
     Entity::GetRenderableEntities(nullptr, &numRenderableEntities);
     EntityRef* renderableEntites = arena_alloc_type(&ctx.engineArena, EntityRef, numRenderableEntities);
+    Entity::GetRenderableEntities(renderableEntites, &numRenderableEntities);
     for (u32 i = 0; i < numRenderableEntities; i++)
     {
         EntityRef ent = renderableEntites[i];
@@ -128,7 +118,8 @@ void ShaderSystemPreDraw(ShaderBufferGlobals& globals)
     TMEMSET(&globs, 0, sizeof(UBOGlobals));
     UpdateGlobalUBOCamera(globs);
     UpdateGlobalUBOLighting(globs);
-    UpdateGlobalUBOMaterials(globs);
+    // materials set per shader in uniform. uniform samplers cant be sampled by dynamic index, and doing crazy 3d texture hacks doesn't seem worth it rn
+    //UpdateGlobalUBOMaterials(globs); 
     UpdateGlobalUBOMisc(globs);
     UpdateGlobalUBOModelMatrices(globs);
 

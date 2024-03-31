@@ -1,5 +1,5 @@
 
-#include "defines.glsl"
+#include "shader_defines.glsl"
 // https://www.shadertoy.com/view/wtcczf
 
 //Sine

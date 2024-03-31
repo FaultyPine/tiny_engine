@@ -3,7 +3,6 @@
 #include "globals.glsl"
 #include "lighting.glsl"
 
-
 void main() 
 {
     vec2 texCoord = vs_in.fragTexCoord;

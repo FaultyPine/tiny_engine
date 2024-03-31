@@ -79,6 +79,7 @@ vec3 GrassWind(vec3 vertexPosition)
 
 void main()
 {
+    VertexToFrag();
     mat4 modelView = view * instanceModelMat;
     //modelView = Billboard(modelView);
     mat4 mvp = projection * modelView;

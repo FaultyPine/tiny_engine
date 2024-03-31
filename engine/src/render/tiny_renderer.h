@@ -13,9 +13,8 @@ struct Vertex
     glm::vec3 normal = glm::vec3(0);
     glm::vec3 tangent = glm::vec3(0);
     glm::vec2 texCoords = glm::vec3(0);
-    glm::vec3 color = glm::vec3(1);
+    glm::vec4 color = glm::vec4(1);
     u32 objectID = U32_INVALID_ID;
-    u32 materialID = U32_INVALID_ID;
     inline std::string str() 
     {
         return "[Pos = " + glm::to_string(position) + 

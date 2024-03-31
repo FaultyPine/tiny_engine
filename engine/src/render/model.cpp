@@ -123,7 +123,7 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
     {
         Vertex vertex;
         // process vertex attributes
-        glm::vec3 vector;
+        glm::vec4 vector;
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
@@ -147,14 +147,17 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
 
         if (mesh->mColors[0]) 
         {
-            vector.x = mesh->mColors[0][i].r;
-            vector.y = mesh->mColors[0][i].g;
-            vector.z = mesh->mColors[0][i].b;
+            // NOTE: meshes can contain multiple sets of vertex colors... im only handling the first set
+            vector.r = mesh->mColors[0][i].r;
+            vector.g = mesh->mColors[0][i].g;
+            vector.b = mesh->mColors[0][i].b;
+            vector.a = mesh->mColors[0][i].a;
             vertex.color = vector;
         }
 
         if (mesh->mTextureCoords[0]) 
         {
+            // NOTE: meshes can contain multiple sets of uvs... im only handling the first set
             glm::vec2 vec;
             vec.x = mesh->mTextureCoords[0][i].x;
             vec.y = mesh->mTextureCoords[0][i].y;
@@ -162,7 +165,7 @@ Mesh processMesh(aiMesh* mesh, const aiScene* scene, const char* meshMaterialDir
         }
         else vertex.texCoords = glm::vec2(0.0f, 0.0f);
         vertex.objectID = objectID;
-        vertex.materialID = mesh->mMaterialIndex - 1; // material index 0 is always assimp default material
+        //vertex.materialID = mesh->mMaterialIndex - 1; // material index 0 is always assimp default material
         vertices.push_back(vertex);
     }
     // process indices
@@ -204,10 +207,6 @@ struct MeshCompare
         return mesh1.material.id < mesh2.material.id;
     }
 };
-
-// NOTE: idk how i feel about the design decision to embed the objectID into the mesh vertices data
-// having a seperate gpu buffer for these ids might make more sense. Would then need logic in the draw procedure
-// to give the shaders some sort of index into that buffer... so going to go with naive approach for now and refactor later if need be
 
 Model::Model(const Shader& shader, const char* meshObjFile, const char* meshMaterialDir, u32 objectID) 
 {
@@ -311,8 +310,6 @@ void Model::Draw(const Shader& shader, const Transform& tf) const
     Camera& cam = Camera::GetMainCamera();
     glm::mat4 model = tf.ToModelMatrix();
     glm::mat3 matNormal = glm::mat3(glm::transpose(glm::inverse(model)));
-    shader.setUniform("modelMat", model);
-    shader.setUniform("normalMat", matNormal);
     SetLightingUniforms(shader);
     DrawWithMaterials(shader, meshes);
 }

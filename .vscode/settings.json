@@ -92,7 +92,8 @@
         "span": "cpp",
         "shared_mutex": "cpp",
         "string_view": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "*.glsl": "glsl"
     },
     "files.exclude": {
         "**/.git": true,

@@ -16,7 +16,7 @@ struct Wave {
 #define NUM_WAVES 8
 uniform Wave waves[NUM_WAVES];
 uniform int numActiveWaves = 0;
-#include "defines.glsl"
+#include "shader_defines.glsl"
 
 
 vec3 GertsnerWave(vec3 VertexPos, in Wave waveOpts, inout vec3 tangent, inout vec3 binormal) {
@@ -64,7 +64,8 @@ vec3 GertsnerWaves(vec3 VertexPos, inout vec3 normal, inout float waveHeightOffs
 
 
 void main() {
-    vec3 vertexPosWS = vec3(modelMat * vec4(vertexPosition, 1.0));
+    VertexToFrag();
+    vec3 vertexPosWS = vec3(GetModelMatrix() * vec4(vertexPosition, 1.0));
 
     vec3 vertPos = vertexPosWS;
     vec3 normal = vec3(0);
@@ -74,7 +75,7 @@ void main() {
     vertPos = newVertexPos;
 
     
-    vs_out.fragPositionWS = vec3(modelMat * vec4(vertPos, 1.0)); // model space vertex pos -> world space
+    vs_out.fragPositionWS = vec3(GetModelMatrix() * vec4(vertPos, 1.0)); // model space vertex pos -> world space
 
     
     // world space normals
@@ -88,5 +89,5 @@ void main() {
     vs_out.fragTexCoord = vertexTexCoord;
     vs_out.fragVertexColor = vertexColor;
 
-    gl_Position = projection * view * modelMat *vec4(vertPos, 1.0);
+    gl_Position = projection * view * GetModelMatrix() *vec4(vertPos, 1.0);
 }

@@ -10,8 +10,7 @@
 #include "render/shadows.h"
 #include "render/cubemap.h"
 
-#define MAX_NUM_LIGHTS 4
-
+#include "res/shaders/shader_defines.glsl"
 
 struct LightPoint 
 {   

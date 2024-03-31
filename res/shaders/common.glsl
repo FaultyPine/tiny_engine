@@ -1,5 +1,5 @@
 
-#include "defines.glsl"
+#include "shader_defines.glsl"
 
 float clamp01(float x)
 {
