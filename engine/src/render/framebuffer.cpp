@@ -129,7 +129,7 @@ void Framebuffer::DrawToFramebuffer(
     {
         texToDraw = depthTex;
     }
-    visualizationSprite.DrawSprite(texToDraw, dst, glm::vec4(1), true);
+    visualizationSprite.DrawSprite(texToDraw, dst.position, dst.scale, dst.rotation, {0,0,1}, glm::vec4(1), true);
 }
 
 void Framebuffer::Delete() { 
