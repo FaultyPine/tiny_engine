@@ -140,6 +140,6 @@ void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight
     if (sunlight.enabled) 
     {
         ShadowMap& sunlightShadowMap = GetEngineCtx().lightsSubsystem->directionalShadowMap;
-        shader.TryAddSampler(sunlightShadowMap.fb.texture, "directionalLightShadowMap");
+        shader.TryAddSampler(sunlightShadowMap.fb.GetDepthTexture(), "directionalLightShadowMap");
     }
 }

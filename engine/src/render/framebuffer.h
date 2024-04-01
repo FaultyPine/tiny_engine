@@ -6,14 +6,32 @@
 #include "camera.h"
 #include "tiny_types.h"
 #include "render/sprite.h"
+#include "tiny_material.h"
+
+// BOOKMARK:
+// need to support multiple color attachments onto a framebuffer
+// so I can output the SSAO data from our prepass
+// 
+
+enum FramebufferAttachmentType : u32 {
+    COLOR0 = 0,
+    COLOR1,
+    COLOR2,
+    COLOR3,
+    COLOR4,
+    COLOR5,
+    COLOR6,
+    COLOR7, // spec guaranteed
+
+    MAX_NUM_COLOR_ATTACHMENTS,
+    DEPTH,
+};
 
 struct Framebuffer {
-    enum FramebufferAttachmentType {
-        COLOR,
-        DEPTH,
-    };
+    
     Framebuffer() = default;
-    TAPI Framebuffer(f32 width, f32 height, FramebufferAttachmentType type = FramebufferAttachmentType::COLOR);
+    //TAPI Framebuffer(f32 width, f32 height, FramebufferAttachmentType type);
+    TAPI Framebuffer(u32 width, u32 height, u32 numColorAttachments = 1, bool depthAttachment = false);
 
     TAPI bool isValid() const;
     TAPI void Bind() const;
@@ -28,16 +46,17 @@ struct Framebuffer {
                     u32 framebufferDst, 
                     f32 dstX0, f32 dstY0, 
                     f32 dstX1, f32 dstY1,
-                    FramebufferAttachmentType type);
-    TAPI void DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst) const;
+                    bool isDepth = false);
+    TAPI void DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst, FramebufferAttachmentType attachment) const;
 
     TAPI glm::vec2 GetSize() const { return size; }
-    TAPI Texture GetTexture() const { return texture; }
+    TAPI Texture GetColorTexture(u32 i) const { return colorTextures[i]; }
+    TAPI Texture GetDepthTexture() const { return depthTex; }
 
-    FramebufferAttachmentType type = COLOR;
+    Texture depthTex;
+    Texture colorTextures[TextureMaterialType::NUM_MATERIAL_TYPES];
     u32 framebufferID = U32_INVALID_ID;
     u32 renderBufferObjectID = 0;
-    Texture texture = {};
     glm::vec2 size = glm::vec2(0);
     Sprite visualizationSprite;
 };

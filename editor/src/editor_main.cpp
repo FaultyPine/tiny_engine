@@ -22,7 +22,7 @@ static EditorState* globEditorState;
 void* editor_render_game(const Arena* const mem)
 {
     Framebuffer outGameWindow = globEditorState->gameCallbacks.renderFunc(mem);
-    return (void*)outGameWindow.GetTexture().OglID();
+    return (void*)outGameWindow.GetColorTexture(0).OglID();
 }
 
 void editor_render_game_window(void* renderedGameFrameHandle)
@@ -84,7 +84,7 @@ void editor_init(Arena* mem)
     editor->gameCallbacks = GetTestbedAppRunCallbacks();
     editor->gameCallbacks.initFunc(mem);
     
-    editor->editorMainFb = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
+    editor->editorMainFb = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false);
 }
 void editor_tick(Arena* mem, f32 deltaTime)
 {

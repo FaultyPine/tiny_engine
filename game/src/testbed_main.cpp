@@ -543,9 +543,9 @@ void testbed_init(Arena* gameMem) {
         gs.depthAndNorms = CreateDepthAndNormalsFB((f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight());
     }
     if (!gs.postprocessingFB.isValid()) {
-        gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), Framebuffer::FramebufferAttachmentType::COLOR);
+        gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false);
         Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
-        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetTexture(), "depthNormals");
+        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetColorTexture(0), "depthNormals");
     }
 }
 
@@ -568,14 +568,14 @@ Framebuffer testbed_render(const Arena* const gameMem) {
         // render shadowmap tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
         const ShadowMap& sunShadows = GetEngineCtx().lightsSubsystem->directionalShadowMap;
-        sunShadows.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f));
+        sunShadows.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f), FramebufferAttachmentType::DEPTH);
     }
 #endif
-#if 0
+#if 1
     {    
         // render normals+depth tex to screen
         glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-        gs.depthAndNorms.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0, scrn.y / 2.0f), scrn/4.0f));
+        gs.depthAndNorms.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0, scrn.y / 2.0f), scrn/4.0f), FramebufferAttachmentType::COLOR0);
     }
 #endif
     

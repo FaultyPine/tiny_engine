@@ -152,7 +152,11 @@ u32 Texture::OglID() const
 void Texture::Delete() 
 {
     u32 oglid = OglID();
-    GLCall(glDeleteTextures(1, (const GLuint*)&oglid)); 
+    if (oglid != U32_INVALID_ID)
+    {
+        GLCall(glDeleteTextures(1, (const GLuint*)&oglid)); 
+    }
+    id = U32_INVALID_ID;
 }
 
 bool Texture::isValid() const 

@@ -369,7 +369,7 @@ void InitEngine(
             // blit the game's rendered frame to default framebuffer
             if (screenRenderFb.isValid())
             {
-                Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y, Framebuffer::FramebufferAttachmentType::COLOR);
+                Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y);
             }
         }
         ImGuiEndFrame();

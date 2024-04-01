@@ -30,7 +30,31 @@ void Sprite::setShaderUniform(const char* name, T val) const {
 void Sprite::DrawSprite(const Transform2D& tf, glm::vec4 color, bool shouldFlipY) const {
     DrawSprite(tf.position, tf.scale, tf.rotation, {0,0,1}, color, shouldFlipY);
 }
-void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec3 rotationAxis, glm::vec4 color, bool shouldFlipY) const {
+
+void Sprite::DrawSprite(const Texture& tex, const Transform2D& tf, glm::vec4 color, bool shouldFlipY) const
+{
+    DrawSprite(tex, tf.position, tf.scale, tf.rotation, {0,0,1}, color, shouldFlipY);
+}
+
+void Sprite::DrawSprite(const Transform2D& tf, glm::vec4 color = glm::vec4(1.0f), bool shouldFlipY = false) const
+{
+    DrawSprite(mainTex, tf, color, shouldFlipY);
+}
+
+void Sprite::DrawSpriteFullscreen(glm::vec4 color) const
+{
+    DrawSprite(glm::vec2(0), glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight()), false);
+}
+
+void Sprite::DrawSprite(
+    const Texture& texture, 
+    glm::vec2 position, 
+    glm::vec2 size, 
+    f32 rotate, 
+    glm::vec3 rotationAxis, 
+    glm::vec4 color, 
+    bool shouldFlipY) const
+{
     TINY_ASSERT(isValid() && "Tried to draw invalid sprite!");
 
     // set up transform of the actual sprite
@@ -47,17 +71,12 @@ void Sprite::DrawSprite(glm::vec2 position, glm::vec2 size, f32 rotate, glm::vec
     // https://stackoverflow.com/questions/46122353/opengl-texture-is-all-black-when-rendered-with-shader
     //shader.setUniform("mainTex", 0);
     shader.setUniform("shouldFlipY", shouldFlipY);
-    shader.TryAddSampler(mainTex, "mainTex");
+    shader.TryAddSampler(texture, "mainTex");
     shader.use();
 
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
-}
-
-void Sprite::DrawSpriteFullscreen(glm::vec4 color) const
-{
-    DrawSprite(glm::vec2(0), glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight()), false);
 }
 
 void Sprite::initRenderData() {

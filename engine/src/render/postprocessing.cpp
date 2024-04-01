@@ -7,9 +7,9 @@
 
 // by default this framebuffer is just for the whole screen
 PostprocessingFB::PostprocessingFB(Shader shader, glm::vec2 framebufferSize) {
-    fb = Framebuffer(framebufferSize.x, framebufferSize.y, Framebuffer::FramebufferAttachmentType::COLOR);
+    fb = Framebuffer(framebufferSize.x, framebufferSize.y, 1, false);
 
-    fullscreenSprite = Sprite(shader, fb.GetTexture());
+    fullscreenSprite = Sprite(shader, fb.GetColorTexture(0));
 }
 
 void PostprocessingFB::DrawToScreen(const Shader& shader) {

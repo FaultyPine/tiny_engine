@@ -9,7 +9,7 @@
 
 
 ShadowMap::ShadowMap(u32 resolution) {
-    fb = Framebuffer(resolution, resolution, Framebuffer::FramebufferAttachmentType::DEPTH);
+    fb = Framebuffer(resolution, resolution, 0, true);
     // this shader renders our scene from the perspective of a light
     depthShader = Shader(ResPath("shaders/depth.vert"), ResPath("shaders/depth.frag"));
 }
