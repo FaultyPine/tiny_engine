@@ -29,7 +29,7 @@ C's _Alignas feature only applies to variable declarations, so you can't apply i
 Under std140, you never make arrays of anything that isn't a vec4 or equivalent.
 Under std140, struct members of a block should be aligned to 16-bytes
     */
-
+   glm::vec4 screenSize;
     // camera
     glm::mat4 projection;
     glm::mat4 view;

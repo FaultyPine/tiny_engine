@@ -8,11 +8,6 @@
 #include "render/sprite.h"
 #include "tiny_material.h"
 
-// BOOKMARK:
-// need to support multiple color attachments onto a framebuffer
-// so I can output the SSAO data from our prepass
-// 
-
 enum FramebufferAttachmentType : u32 {
     COLOR0 = 0,
     COLOR1,

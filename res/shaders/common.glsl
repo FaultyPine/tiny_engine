@@ -64,3 +64,13 @@ vec2 AngleToDir(float angleRadians)
 float remap(float value, float min1, float max1, float min2, float max2) {
   return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
 }
+
+// we go from ndc -> clip space -> projection -> view space -> world space
+vec3 PositionFromDepth(mat4 viewProjectionMatrix, vec2 uv, float depth) {
+    float far = gl_DepthRange.far;
+    float near = gl_DepthRange.near;
+    vec4 clipSpacePosition = vec4(uv * 2 - 1, (2 * depth - near - far) / (far - near), 1);
+    vec4 position = inverse(viewProjectionMatrix) * clipSpacePosition;
+    position /= position.w;
+    return position.xyz;
+}

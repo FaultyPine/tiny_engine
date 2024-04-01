@@ -94,6 +94,7 @@ struct LightPoint
 
 layout (std140) buffer Globals
 {
+    vec4 screenSize;
     // camera
     mat4 projection;
     mat4 view;

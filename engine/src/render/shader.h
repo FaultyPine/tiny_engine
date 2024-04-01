@@ -24,7 +24,7 @@ struct Shader {
     TAPI Shader(const std::string& vertexPath, const std::string& fragmentPath);
     TAPI static Shader CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr);
 
-    TAPI void Delete() const;
+    TAPI void Delete();
     TAPI bool isValid() const { return ID != U32_INVALID_ID; }
 
     // adds a sampler to this shader

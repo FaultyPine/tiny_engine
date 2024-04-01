@@ -8,7 +8,6 @@
 // by default this framebuffer is just for the whole screen
 PostprocessingFB::PostprocessingFB(Shader shader, glm::vec2 framebufferSize) {
     fb = Framebuffer(framebufferSize.x, framebufferSize.y, 1, false);
-
     fullscreenSprite = Sprite(shader, fb.GetColorTexture(0));
 }
 
@@ -16,7 +15,7 @@ void PostprocessingFB::DrawToScreen(const Shader& shader) {
     // Draws the content of the "fullscreenSprite" to the screen as a 2D quad
     if (!shader.isValid()) {
         LOG_ERROR("Attempted to draw framebuffer with invalid shader!");
-        exit(1);
+        return;
     }
     BindDefaultFrameBuffer();
     ClearGLColorBuffer();
@@ -33,6 +32,7 @@ void PostprocessingFB::DrawToScreen(std::function<void()> drawSceneFunc) {
         postProcessingShader = Shader(ResPath("shaders/screen_texture.vert").c_str(), ResPath("shaders/screen_texture.frag").c_str());
     }
     if (!isValid()) {
+        // TODO: delete first?
         *this = PostprocessingFB(postProcessingShader, {screenDimensions.x, screenDimensions.y});
         glViewport(0, 0, screenDimensions.x, screenDimensions.y);
     }
@@ -42,14 +42,11 @@ void PostprocessingFB::DrawToScreen(std::function<void()> drawSceneFunc) {
         *this = PostprocessingFB(postProcessingShader, screenDimensions);
         // is there a better way to handle window resizing than recreating the fb?
     }
-
     // bind this framebuffer and render scene to it
     // since fullscreenSprite's texture is the same as the texture we render the framebuffer to
     // the fullscreenSprite will hold our scene texture
     Bind();
     ClearGLColorBuffer();
-    
     drawSceneFunc();
-
     DrawToScreen(fullscreenSprite.GetShader());
 }

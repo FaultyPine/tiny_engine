@@ -353,13 +353,13 @@ Shader Shader::CreateShaderFromStr(const s8* vsCodeStr, const s8* fsCodeStr)
     return shader;
 }
 
-void Shader::Delete() const 
+void Shader::Delete() 
 {
-    //TINY_ASSERT(false && "Proper shader deletion is currently unimplemented!");
-    // TODO: properly release shader...
-    // if we erase the shader program from the list
-    // other shaders whose IDs are indexes are now totally invalid
-    
+    TINY_ASSERT(false && "Proper shader deletion is currently unimplemented!");
+    GlobalShaderState& gss = GetGSS();
+    glDeleteShader(this->ID);
+    gss.shaderMap.erase(this->ID);
+    this->ID = U32_INVALID_ID;
 }
 
 void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram)

@@ -28,12 +28,9 @@ struct PostprocessingFB {
 
 private:    
     void DrawToScreen(const Shader& shader);
-    
     Shader postProcessingShader;
     Sprite fullscreenSprite; // also stores the shader we can use for postprocessing
-    
     Framebuffer fb;
-
 };
 
 

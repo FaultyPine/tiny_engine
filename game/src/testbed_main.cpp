@@ -62,8 +62,7 @@ struct GameState {
     Shader depthAndNormsShader;
     Framebuffer depthAndNorms;
 
-    // postprocessing
-    Framebuffer postprocessingFB;
+    Framebuffer gamerenderFB;
 
     Skybox skybox = {};
 
@@ -538,14 +537,17 @@ void testbed_init(Arena* gameMem) {
     }
 
     // init main game framebuffer
-    if (!gs.depthAndNorms.isValid()) {
+    if (!gs.depthAndNorms.isValid()) 
+    {
         gs.depthAndNormsShader = Shader(ResPath("shaders/prepass.vert"), ResPath("shaders/prepass.frag"));
-        gs.depthAndNorms = CreateDepthAndNormalsFB((f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight());
+        gs.depthAndNorms = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 2, false);
     }
-    if (!gs.postprocessingFB.isValid()) {
-        gs.postprocessingFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false);
+    if (!gs.gamerenderFB.isValid()) 
+    {
+        gs.gamerenderFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false);
         Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
         postprocessingShader.TryAddSampler(gs.depthAndNorms.GetColorTexture(0), "depthNormals");
+        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetColorTexture(1), "ssaoTex");
     }
 }
 
@@ -558,24 +560,29 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     DepthAndNormsPrePass(gs);
 
     // draw game to postprocessing framebuffer
-    gs.postprocessingFB.Bind();
+    gs.gamerenderFB.Bind();
 
     ClearGLBuffers();
     drawGameState(gs);
 
+    glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
+    Transform2D debugRenderTf = Transform2D(glm::vec2(0), scrn/4.0f);
 #if 1
     {
         // render shadowmap tex to screen
-        glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
         const ShadowMap& sunShadows = GetEngineCtx().lightsSubsystem->directionalShadowMap;
-        sunShadows.fb.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0), scrn/4.0f), FramebufferAttachmentType::DEPTH);
+        sunShadows.fb.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::DEPTH);
+        debugRenderTf.position.y += debugRenderTf.scale.y;
     }
 #endif
 #if 1
     {    
         // render normals+depth tex to screen
-        glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-        gs.depthAndNorms.DrawToFramebuffer(gs.postprocessingFB, Transform2D(glm::vec2(0, scrn.y / 2.0f), scrn/4.0f), FramebufferAttachmentType::COLOR0);
+        gs.depthAndNorms.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR0);
+        debugRenderTf.position.y += debugRenderTf.scale.y;
+        // AO
+        gs.depthAndNorms.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR1);
+        debugRenderTf.position.y += debugRenderTf.scale.y;
     }
 #endif
     
@@ -598,7 +605,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     Renderer::PushLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
     Renderer::PushLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
     
-    return gs.postprocessingFB;
+    return gs.gamerenderFB;
 }
 
 void testbed_tick(Arena* gameMem, f32 deltaTime) {

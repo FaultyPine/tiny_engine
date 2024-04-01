@@ -59,6 +59,7 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
 void UpdateGlobalUBOMisc(UBOGlobals& globs)
 {
     globs.time = GetTimef();
+    globs.screenSize = glm::vec4(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 0.0f, 0.0f);
 }
 // -------------------------
 

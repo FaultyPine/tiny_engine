@@ -89,6 +89,19 @@ Framebuffer::Framebuffer(u32 width, u32 height, u32 numColorAttachments, bool de
 bool Framebuffer::isValid() const { return framebufferID != U32_INVALID_ID; }
 void Framebuffer::Bind() const {
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, framebufferID)); 
+    GLuint attachments[FramebufferAttachmentType::MAX_NUM_COLOR_ATTACHMENTS] = {};
+    u32 numAttachments = 0;
+    for (u32 i = 0; i < ARRAY_SIZE(colorTextures); i++)
+    {
+        if (colorTextures[i].isValid())
+        {
+            u32 aoTexID = colorTextures[i].OglID();
+            attachments[numAttachments] = GL_COLOR_ATTACHMENT0+i;
+            numAttachments++;
+        }
+    }
+    // extra attachments need manual "activation" before drawing.
+    glDrawBuffers(numAttachments, attachments);
     GLCall(glViewport(0, 0, size.x, size.y));
 }
 void Framebuffer::BindDefaultFrameBuffer() {
