@@ -29,12 +29,13 @@ Run `vcpkg install` in the root directory of this project (same directory as the
 - .obj file parsing/mesh rendering
 - particle system
 - 2d and 3d vector shape drawing (squares, circles, lines, spheres, cubes)
-- .obj loading/rendering (w/material support)
+- 3d model loading/rendering (w/material support)
 - shadow mapping
 - skybox
 - Shader hot reloading & #include parser
-- custom arena allocator
+- custom allocator(s)
 - custom container types
+- custom build system (backed by Ninja)
 - compile-time reflection / type metadata generation system (backed by Metadesk)
 
 

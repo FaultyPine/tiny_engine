@@ -5,6 +5,7 @@
 // samplers cannot be stored in ubo/ssbo buffers.... :/
 uniform samplerCube pointLightShadowMaps[MAX_NUM_LIGHTS];
 uniform sampler2D directionalLightShadowMap;
+uniform sampler2D aoTexture;
 
 // TODO: poisson disk sampling for less bandy smoother shadow edges
 float PCFShadow(
@@ -154,6 +155,7 @@ vec3 calculateLighting(
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
     vec3 ambientLight = GetAmbientMaterial(fragTexCoord).rgb * GetAmbientLightIntensity();
+    ambientLight *= texture(aoTexture, fragTexCoord).rgb;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);

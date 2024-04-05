@@ -5,6 +5,7 @@
 #include "tiny_ogl.h"
 #include "shader.h"
 #include "render/model.h"
+#include "tiny_profiler.h"
 
 
 // colortextures is filled out based on the numColorTextures. depthTexture is nullptr for no depth or points to a u32 to be filled out
@@ -58,6 +59,7 @@ static void GenerateTexturesForFramebuffer(glm::vec2 size, Texture* colorTexture
 
 Framebuffer::Framebuffer(u32 width, u32 height, u32 numColorAttachments, bool depthAttachment)
 {
+    PROFILE_FUNCTION();
     this->size = glm::vec2(width, height);
     // generate and bind a framebuffer object
     GLCall(glGenFramebuffers(1, &framebufferID));
@@ -65,7 +67,7 @@ Framebuffer::Framebuffer(u32 width, u32 height, u32 numColorAttachments, bool de
     Texture newColorTextures[FramebufferAttachmentType::MAX_NUM_COLOR_ATTACHMENTS] = {};
     Texture newDepthTexture = {};
     GenerateTexturesForFramebuffer(this->size, newColorTextures, numColorAttachments, depthAttachment ? &newDepthTexture : nullptr);
-    if (numColorAttachments > 0)
+    if (!depthAttachment)
     {
         // to make sure opengl can do depth (or stencil) testing, gotta add a depth/stencil attachment
         GLCall(glGenRenderbuffers(1, &renderBufferObjectID));
@@ -88,6 +90,7 @@ Framebuffer::Framebuffer(u32 width, u32 height, u32 numColorAttachments, bool de
 
 bool Framebuffer::isValid() const { return framebufferID != U32_INVALID_ID; }
 void Framebuffer::Bind() const {
+    PROFILE_FUNCTION();
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, framebufferID)); 
     GLuint attachments[FramebufferAttachmentType::MAX_NUM_COLOR_ATTACHMENTS] = {};
     u32 numAttachments = 0;
@@ -105,6 +108,7 @@ void Framebuffer::Bind() const {
     GLCall(glViewport(0, 0, size.x, size.y));
 }
 void Framebuffer::BindDefaultFrameBuffer() {
+    PROFILE_FUNCTION();
     GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0)); 
     GLCall(glViewport(0, 0, (f32)Camera::GetScreenWidth(), (f32)Camera::GetScreenHeight()));
 }
@@ -117,6 +121,7 @@ void Framebuffer::Blit(
     f32 dstX1, f32 dstY1,
     bool isDepth)
 {
+    PROFILE_FUNCTION();
     u32 glFbType = GL_COLOR_BUFFER_BIT;
     if (isDepth)
     {
@@ -127,11 +132,32 @@ void Framebuffer::Blit(
     glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, glFbType, GL_NEAREST);
 }
 
+void Framebuffer::AttachTexture(FramebufferAttachmentType type, const Texture& tex)
+{
+    if (type < FramebufferAttachmentType::MAX_NUM_COLOR_ATTACHMENTS)
+    {
+        if (colorTextures[type].isValid())
+        {
+            LOG_WARN("Attempted to attach texture to framebuffer with already existing texture at this location!");
+        }
+        else
+        {
+            colorTextures[type] = tex;
+        }
+    }
+    else
+    {
+        depthTex = tex;
+    }
+}
+
 void Framebuffer::DrawToFramebuffer(
     const Framebuffer& dstFramebuffer, 
     const Transform2D& dst,
-    FramebufferAttachmentType attachment) const
+    FramebufferAttachmentType attachment,
+    const Shader& shader) const
 {
+    PROFILE_FUNCTION();
     dstFramebuffer.Bind();
     Texture texToDraw;
     if (attachment < FramebufferAttachmentType::MAX_NUM_COLOR_ATTACHMENTS)
@@ -142,7 +168,14 @@ void Framebuffer::DrawToFramebuffer(
     {
         texToDraw = depthTex;
     }
-    visualizationSprite.DrawSprite(texToDraw, dst.position, dst.scale, dst.rotation, {0,0,1}, glm::vec4(1), true);
+    if (shader.isValid())
+    {
+        visualizationSprite.DrawSprite(shader, texToDraw, dst.position, dst.scale, dst.rotation, {0,0,1}, glm::vec4(1), true);
+    }
+    else
+    {
+        visualizationSprite.DrawSprite(texToDraw, dst.position, dst.scale, dst.rotation, {0,0,1}, glm::vec4(1), true);
+    }
 }
 
 void Framebuffer::Delete() { 
@@ -160,52 +193,3 @@ void Framebuffer::Delete() {
 }
 void Framebuffer::ClearDepth() { GLCall(glClear(GL_DEPTH_BUFFER_BIT)); }
 void Framebuffer::ClearStencil() { GLCall(glClear(GL_STENCIL_BUFFER_BIT)); }
-
-
-Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height) {
-    Framebuffer fb;
-    fb.size = glm::vec2(width, height);
-    u32 textureID = -1;
-
-    // generate and bind a framebuffer object
-    GLCall(glGenFramebuffers(1, &fb.framebufferID));
-    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, fb.framebufferID));
-
-    // generate our texture that we'll draw to
-    GLCall(glGenTextures(1, &textureID));
-    GLCall(glBindTexture(GL_TEXTURE_2D, textureID));
-
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE));
-
-    // using RGBA32F to ensure our depth values don't lose precision when going from the depth buffer
-    // to our texture. (normally textures might store the values with less precision than the depth buffer would)
-    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL));
-    GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureID, 0));
-
-    // when rendering to this framebuffer, opengl needs a place to store depth values.
-    // it won't store them in the texture so this renderbuffer gives it a place to do depth stuff
-    // using a renderbuffer instead of a depth texture attachment since we won't need to sample these depth values
-    // since they're stored in the color texture attachment anyway and if you don't need to sample from it, renderbuffers are
-    // faster than textures (or so im told)
-    GLCall(glGenRenderbuffers(1, &fb.renderBufferObjectID));
-    GLCall(glBindRenderbuffer(GL_RENDERBUFFER, fb.renderBufferObjectID));
-    GLCall(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height));
-    // attach the renderbuffer object to the depth and stencil attachment of the framebuffer
-    GLCall(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fb.renderBufferObjectID));
-    GLCall(glBindRenderbuffer(GL_RENDERBUFFER, 0));
-    
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        LOG_ERROR("Framebuffer is not complete!");
-    GLCall(glBindTexture(GL_TEXTURE_2D, 0));
-    GLCall(glBindFramebuffer(GL_FRAMEBUFFER, 0));
- 
-    Texture result = Texture::FromGPUTex(textureID, width, height, GL_TEXTURE_2D);
-    fb.colorTextures[0] = result;
-    fb.visualizationSprite = Sprite(fb.GetColorTexture(0));
-    return fb;
-}

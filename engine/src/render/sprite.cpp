@@ -7,23 +7,18 @@
 
 Sprite::Sprite(const Texture& mainTex) {
     this->mainTex = mainTex;
-    this->shader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/default_sprite.frag"));
+    this->mainShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/default_sprite.frag"));
     initRenderData();
 }
 Sprite::Sprite(const Shader& shader, const Texture& mainTex) {
     this->mainTex = mainTex;
-    this->shader = shader;
+    this->mainShader = shader;
     initRenderData();
 }
 void Sprite::Delete() {
     glDeleteVertexArrays(1, &quadVAO);
-    shader.Delete();
+    mainShader.Delete();
     mainTex.Delete();
-}
-
-template<typename T>
-void Sprite::setShaderUniform(const char* name, T val) const {
-    shader.setUniform(name, val);
 }
 
 
@@ -34,6 +29,7 @@ void Sprite::DrawSpriteFullscreen(glm::vec4 color) const
 }
 
 void Sprite::DrawSprite(
+    const Shader& shader,
     const Texture& texture, 
     glm::vec2 position, 
     glm::vec2 size, 

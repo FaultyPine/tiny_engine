@@ -62,46 +62,6 @@ Texture GetDummyTexture()
     return GetTextureCache().dummyTexture;
 }
 
-enum class TextureProperties::TexWrapMode : s32 {
-    CLAMP_TO_EDGE = GL_CLAMP_TO_EDGE,
-    CLAMP_TO_BORDER = GL_CLAMP_TO_BORDER,
-    MIRRORED_REPEAT = GL_MIRRORED_REPEAT,
-    REPEAT = GL_REPEAT,
-    MIRROR_CLAMP_TO_EDGE = GL_MIRROR_CLAMP_TO_EDGE,
-};
-enum class TextureProperties::TexMinFilter : s32 {
-    NEAREST = GL_NEAREST,
-    LINEAR = GL_LINEAR,
-    NEAREST_MIPMAP_NEAREST = GL_NEAREST_MIPMAP_NEAREST,
-    LINEAR_MIPMAP_NEAREST = GL_LINEAR_MIPMAP_NEAREST,
-    NEAREST_MIPMAP_LINEAR = GL_NEAREST_MIPMAP_LINEAR,
-    LINEAR_MIPMAP_LINEAR = GL_LINEAR_MIPMAP_LINEAR,
-};
-enum class TextureProperties::TexMagFilter : s32 {
-    NEAREST = GL_NEAREST,
-    LINEAR = GL_LINEAR,
-};
-enum class TextureProperties::TexFormat : s32 {
-    RGB = GL_RGB,
-    RGBA = GL_RGBA,
-    RG = GL_RG,
-    RED = GL_RED,
-    DEPTH_STENCIL = GL_DEPTH_STENCIL,
-    DEPTH_COMPONENT = GL_DEPTH_COMPONENT,
-};
-enum class TextureProperties::ImageFormat : s32 {
-    RGB = GL_RGB,
-    RGBA = GL_RGBA,
-    RED = GL_RED,
-};
-enum class TextureProperties::ImageDataType : s32 {
-    BYTE = GL_BYTE,
-    UNSIGNED_BYTE = GL_UNSIGNED_BYTE,
-    SHORT = GL_SHORT,
-    UNSIGNED_SHORT = GL_UNSIGNED_SHORT,
-    INT = GL_INT,
-    UNSIGNED_INT = GL_UNSIGNED_INT,
-};
 
 /// DEFAULTS: Wrap = mirrored repeat Min = lin_mip_lin Mag = lin TexFormat = RGBA ImgFormat = RGBA ImgData = UnsignedByte
 TextureProperties TextureProperties::RGBA_LINEAR() {

@@ -80,7 +80,7 @@ void main() {
     
     // world space normals
     //fragNormalWS = normalize(normalMat * vertexNormal);
-    vec3 fragNormalWS = normalize(normalMat*normal); // recalculated normals
+    vec3 fragNormalWS = normalize(GetNormalMatrix()*normal); // recalculated normals
     
     vs_out.fragNormal = vertexNormal;
     

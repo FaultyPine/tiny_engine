@@ -45,6 +45,7 @@ struct Camera {
     TAPI static void UpdateTabbingOut();
     TAPI static u32 GetScreenWidth();
     TAPI static u32 GetScreenHeight();
+    TAPI static glm::vec2 GetScreenDimensions();
     TAPI static Camera& GetMainCamera();
 };
 

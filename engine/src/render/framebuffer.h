@@ -8,7 +8,8 @@
 #include "render/sprite.h"
 #include "tiny_material.h"
 
-enum FramebufferAttachmentType : u32 {
+enum FramebufferAttachmentType : u32 
+{
     COLOR0 = 0,
     COLOR1,
     COLOR2,
@@ -22,10 +23,9 @@ enum FramebufferAttachmentType : u32 {
     DEPTH,
 };
 
-struct Framebuffer {
-    
+struct Framebuffer 
+{
     Framebuffer() = default;
-    //TAPI Framebuffer(f32 width, f32 height, FramebufferAttachmentType type);
     TAPI Framebuffer(u32 width, u32 height, u32 numColorAttachments = 1, bool depthAttachment = false);
 
     TAPI bool isValid() const;
@@ -42,21 +42,28 @@ struct Framebuffer {
                     f32 dstX0, f32 dstY0, 
                     f32 dstX1, f32 dstY1,
                     bool isDepth = false);
-    TAPI void DrawToFramebuffer(const Framebuffer& dstFramebuffer, const Transform2D& dst, FramebufferAttachmentType attachment) const;
+    TAPI void DrawToFramebuffer(
+        const Framebuffer& dstFramebuffer, 
+        const Transform2D& dst, 
+        FramebufferAttachmentType attachment,
+        const Shader& shader) const;
+    void DrawToFramebuffer(
+        const Framebuffer& dstFramebuffer, 
+        FramebufferAttachmentType attachment,
+        const Shader& shader) const
+        { DrawToFramebuffer(dstFramebuffer, Transform2D({0,0}, dstFramebuffer.GetSize()), attachment, shader); }
 
     TAPI glm::vec2 GetSize() const { return size; }
     TAPI Texture GetColorTexture(u32 i) const { return colorTextures[i]; }
     TAPI Texture GetDepthTexture() const { return depthTex; }
+    TAPI void AttachTexture(FramebufferAttachmentType type, const Texture& tex);
 
-    Texture depthTex;
-    Texture colorTextures[TextureMaterialType::NUM_MATERIAL_TYPES];
+    Texture depthTex = {};
+    Texture colorTextures[TextureMaterialType::NUM_MATERIAL_TYPES] = {};
     u32 framebufferID = U32_INVALID_ID;
     u32 renderBufferObjectID = 0;
     glm::vec2 size = glm::vec2(0);
-    Sprite visualizationSprite;
+    Sprite visualizationSprite = {};
 };
-
-
-TAPI Framebuffer CreateDepthAndNormalsFB(f32 width, f32 height);
 
 #endif

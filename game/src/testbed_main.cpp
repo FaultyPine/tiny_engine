@@ -15,6 +15,8 @@
 #include "physics/tiny_physics.h"
 #include "render/tiny_renderer.h"
 #include "scene/entity.h"
+#include "render/tiny_ogl.h"
+#include "render/postprocess.h"
 
 //#define ISLAND_SCENE
 #define SPONZA_SCENE
@@ -186,6 +188,10 @@ void drawImGuiDebug(GameState& gs) {
     ImGui::DragFloat3("Sun target", &gs.sunTarget[0]);
     ImGui::Checkbox("Enable grass render", &enableGrassRender);
 
+    PostprocessSettings& ppSettings = Postprocess::ModifySettings();
+    ImGui::DragFloat("SSAO power", &ppSettings.ssaoSettings.occlusionPower, 0.05, 0.0, 10.0);
+    ImGui::DragFloat("SSAO sample radius", &ppSettings.ssaoSettings.sampleRadius, 0.05);
+
     ImGui::DragFloat("wind str", &gs.windStrength, 0.01f);
     ImGui::DragFloat("wind freq", &gs.windFrequency, 0.01f);
     ImGui::DragFloat("wind uvscale", &gs.windUVScale, 0.01f);
@@ -297,6 +303,7 @@ void DepthAndNormsPrePass(const GameState& gs) {
         EntityData& grass = Entity::GetEntity(gs.grass);
         grass.model.Draw(gs.grassPrepassShader, grass.transform);
     }
+    Postprocess::PostprocessFramebuffer(gs.depthAndNorms);
     Renderer::PopDebugRenderMarker();
 }
 
@@ -540,14 +547,16 @@ void testbed_init(Arena* gameMem) {
     if (!gs.depthAndNorms.isValid()) 
     {
         gs.depthAndNormsShader = Shader(ResPath("shaders/prepass.vert"), ResPath("shaders/prepass.frag"));
-        gs.depthAndNorms = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 2, false);
+        gs.depthAndNorms = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false); // can add more framebuffers here for deferred gbuffers impl
     }
     if (!gs.gamerenderFB.isValid()) 
     {
         gs.gamerenderFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false);
-        Shader postprocessingShader = Shader(ResPath("shaders/screen_texture.vert"), ResPath("shaders/screen_texture.frag"));
+        Shader postprocessingShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/postprocess.frag"));
         postprocessingShader.TryAddSampler(gs.depthAndNorms.GetColorTexture(0), "depthNormals");
-        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetColorTexture(1), "ssaoTex");
+        Postprocess::ApplySSAOUniforms(postprocessingShader);
+        Postprocess::SetPostprocessShader(postprocessingShader);
+        Postprocess::ApplyPostprocessingUniforms(lightingShader);
     }
 }
 
@@ -559,9 +568,7 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     ShadowMapPrePass(gs);
     DepthAndNormsPrePass(gs);
 
-    // draw game to postprocessing framebuffer
     gs.gamerenderFB.Bind();
-
     ClearGLBuffers();
     drawGameState(gs);
 
@@ -571,21 +578,18 @@ Framebuffer testbed_render(const Arena* const gameMem) {
     {
         // render shadowmap tex to screen
         const ShadowMap& sunShadows = GetEngineCtx().lightsSubsystem->directionalShadowMap;
-        sunShadows.fb.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::DEPTH);
+        sunShadows.fb.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::DEPTH, {});
         debugRenderTf.position.y += debugRenderTf.scale.y;
     }
 #endif
 #if 1
     {    
         // render normals+depth tex to screen
-        gs.depthAndNorms.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR0);
+        gs.depthAndNorms.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR0, {});
         debugRenderTf.position.y += debugRenderTf.scale.y;
-        // AO
-        gs.depthAndNorms.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR1);
-        debugRenderTf.position.y += debugRenderTf.scale.y;
+        Postprocess::GetPostprocessingFramebuffer()->DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR0, *Postprocess::GetPostprocessingShader());
     }
 #endif
-    
 
     // red is x, green is y, blue is z
     // should put this on the screen in the corner permanently

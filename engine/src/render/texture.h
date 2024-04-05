@@ -4,14 +4,59 @@
 #include "tiny_defines.h"
 #include <string>
 #include <functional>
+#include "tiny_ogl.h"
 
 struct TextureProperties {
-    enum class TexWrapMode : s32;
-    enum class TexMinFilter : s32;
-    enum class TexMagFilter : s32;
-    enum class TexFormat : s32;
-    enum class ImageFormat : s32;
-    enum class ImageDataType : s32;
+    
+enum class TexWrapMode : s32 {
+    CLAMP_TO_EDGE = GL_CLAMP_TO_EDGE,
+    CLAMP_TO_BORDER = GL_CLAMP_TO_BORDER,
+    MIRRORED_REPEAT = GL_MIRRORED_REPEAT,
+    REPEAT = GL_REPEAT,
+    MIRROR_CLAMP_TO_EDGE = GL_MIRROR_CLAMP_TO_EDGE,
+};
+enum class TexMinFilter : s32 {
+    NEAREST = GL_NEAREST,
+    LINEAR = GL_LINEAR,
+    NEAREST_MIPMAP_NEAREST = GL_NEAREST_MIPMAP_NEAREST,
+    LINEAR_MIPMAP_NEAREST = GL_LINEAR_MIPMAP_NEAREST,
+    NEAREST_MIPMAP_LINEAR = GL_NEAREST_MIPMAP_LINEAR,
+    LINEAR_MIPMAP_LINEAR = GL_LINEAR_MIPMAP_LINEAR,
+};
+enum class TexMagFilter : s32 {
+    NEAREST = GL_NEAREST,
+    LINEAR = GL_LINEAR,
+};
+enum class TexFormat : s32 {
+    RGB = GL_RGB,
+    RGB16F = GL_RGB16F,
+    RGB32F = GL_RGB32F,
+    RGBA = GL_RGBA,
+    RGBA16F = GL_RGBA16F,
+    RGBA32F = GL_RGBA32F,
+    RG = GL_RG,
+    RED = GL_RED,
+    DEPTH_STENCIL = GL_DEPTH_STENCIL,
+    DEPTH_COMPONENT = GL_DEPTH_COMPONENT,
+};
+enum class ImageFormat : s32 {
+    RGB = GL_RGB,
+    RGB16F = GL_RGB16F,
+    RGB32F = GL_RGB32F,
+    RGBA = GL_RGBA,
+    RGBA16F = GL_RGBA16F,
+    RGBA32F = GL_RGBA32F,
+    RED = GL_RED,
+};
+enum class ImageDataType : s32 {
+    BYTE = GL_BYTE,
+    UNSIGNED_BYTE = GL_UNSIGNED_BYTE,
+    SHORT = GL_SHORT,
+    UNSIGNED_SHORT = GL_UNSIGNED_SHORT,
+    INT = GL_INT,
+    UNSIGNED_INT = GL_UNSIGNED_INT,
+    FLOAT = GL_FLOAT,
+};
 
     TexWrapMode texWrapMode;
     TexMinFilter minFilter;

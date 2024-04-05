@@ -94,7 +94,7 @@ void main()
     vec3 normal = cross(tangent, vec3(0,1,0));
     //normal = mix(normal, vec3(0,1,0), displacementAmount);
     //vec3 normal = vec3(vec4(vertexNormal,1.0)*instanceModelMat);
-    vs_out.fragNormal = vec3(normalMat*vertexNormal);
+    vs_out.fragNormal = vec3(GetNormalMatrix()*vertexNormal);
     vs_out.fragTangent = tangent;
 
     vs_out.fragTexCoord = vertexTexCoord;

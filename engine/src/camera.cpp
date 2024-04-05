@@ -91,3 +91,9 @@ u32 Camera::GetScreenHeight()
 { 
     return GetMainCamera().screenHeight; 
 }
+
+glm::vec2 Camera::GetScreenDimensions()
+{
+    Camera& cam = GetMainCamera();
+    return glm::vec2(cam.screenWidth, cam.screenHeight);
+}

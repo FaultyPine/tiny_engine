@@ -31,6 +31,7 @@ struct PhysicsWorld;
 struct MaterialRegistry;
 struct RendererData;
 struct EntityRegistry;
+struct PostprocessingSystem;
 
 struct EngineContext
 {
@@ -59,6 +60,7 @@ struct EngineContext
     MaterialRegistry* materialRegistry = 0;
     RendererData* renderer = 0;
     EntityRegistry* entityRegistry = 0;
+    PostprocessingSystem* postprocessingSystem = 0;
 };
 
 TAPI EngineContext& GetEngineCtx();
@@ -96,8 +98,8 @@ TAPI f32 GetDeltaTime();
 TAPI u32 GetFrameCount();
 
 TAPI void ClearGLBuffers();
-TAPI void ClearGLColorBuffer();
 TAPI void SetMinAndMaxWindowSize(u32 minWidth, u32 minHeight, u32 maxWidth, u32 maxHeight);
+TAPI void ClearGLColorBuffer();
 
 TAPI void SetWireframeDrawing(bool shouldDrawWireframes);
 

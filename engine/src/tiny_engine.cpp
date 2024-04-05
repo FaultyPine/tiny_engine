@@ -21,6 +21,8 @@
 #include "job_system.h"
 #include "render/tiny_renderer.h"
 #include "scene/entity.h"
+#include "tiny_thread.h"
+#include "render/postprocess.h"
 
 #include "GLFW/glfw3.h"
 
@@ -93,8 +95,10 @@ f32 GetRandomf(f32 start, f32 end) {
         globEngineCtx.randomSeed = Math::hash((const char*)&time, sizeof(f64));
         //std::cout << "Initial random seed = " << randomSeed << "";
     }
-    srand(Math::hash((const char*)&globEngineCtx.randomSeed, sizeof(globEngineCtx.randomSeed)));
-    globEngineCtx.randomSeed++; // deterministic random
+    // deterministic random
+    u32 newSeed = Math::hash((const char*)&globEngineCtx.randomSeed, sizeof(globEngineCtx.randomSeed));
+    srand(newSeed);
+    globEngineCtx.randomSeed++; 
     f32 zeroToOneRandom = ((f32)rand()) / RAND_MAX;
     return Math::Lerp(start, end, zeroToOneRandom);
 }
@@ -122,6 +126,7 @@ void SetMode2D() {
 }
 void SetMode3D() {
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
     Camera::GetMainCamera().SetMode3D();
 }
 
@@ -182,7 +187,11 @@ u32 HashBytes(u8* data, u32 size)
 /// Game loop - while(EngineLoop())
 bool EngineLoop() {
     PROFILE_FUNCTION();
-    glfwSwapBuffers(GetMainGLFWWindow());
+    PROFILER_GPU_SCOPE("EngineLoop");
+    { PROFILE_SCOPE("Glfw Swap Buffers");
+        glfwSwapBuffers(GetMainGLFWWindow());
+        PROFILER_GPU_FLUSH();
+    }
     if (Keyboard::isKeyDown(TINY_KEY_ESCAPE)) {
         CloseGameWindow();
     }
@@ -227,6 +236,8 @@ void InitEngine(
     getcwd(cwd, PATH_MAX);
     #endif
     LOG_INFO("CWD: %s", cwd);
+
+    SetThreadName("TinyEngine Main Thread");
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -289,6 +300,7 @@ void InitEngine(
 #ifdef TINY_DEBUG
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(OglDebugMessageCallback, 0);
+    PROFILER_GPU_CONTEXT(); 
 #endif
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); 
@@ -319,6 +331,7 @@ void InitEngine(
     InitializeTextureCache(engineArena);
     InitializeMaterialSystem(engineArena);
     Renderer::InitializeRenderer(engineArena);
+    Postprocess::InitializePostprocessing(engineArena);
     Entity::InitializeEntitySystem(engineArena);
     InitializePhysics(engineArena);
     LOG_INFO("Resource directory: %s", resourceDirectory);
@@ -362,9 +375,8 @@ void InitEngine(
             { PROFILE_SCOPE("Game Render");
                 screenRenderFb = gameFuncs.renderFunc(gameArena);
             }
-            screenRenderFb.Bind(); // make super sure our renderer draws to the game framebuffer
             Renderer::RendererDraw();
-            Framebuffer::BindDefaultFrameBuffer();
+            //Framebuffer* postprocessedFb = Postprocess::PostprocessFramebuffer(screenRenderFb);
             glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
             // blit the game's rendered frame to default framebuffer
             if (screenRenderFb.isValid())

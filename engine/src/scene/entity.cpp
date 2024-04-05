@@ -80,7 +80,12 @@ EntityRef CreateEntity(
         TMEMSET(ent.name, 0, ENTITY_NAME_MAX_LENGTH);
         entityID = registry.entityCreationIndex;
     }
-    TINY_ASSERT(entityID != U32_INVALID_ID); // TODO: handle this gracefully
+    // hash until we don't collide
+    while (registry.entMap.count(entityID))
+    {
+        entityID = HashBytes((u8*)&entityID, sizeof(entityID));
+    }
+    TINY_ASSERT(entityID != U32_INVALID_ID); // make absolutely sure
     ent.id = entityID;
     // we increment this every time, even if it's not what we use for the id.
     registry.entityCreationIndex++;
