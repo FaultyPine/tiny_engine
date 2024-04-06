@@ -26,12 +26,14 @@ enum TextureMaterialType : u32 {
 struct Shader;
 struct Material 
 {
+    const char dbgName[30] = "NoName";
     u32 id = U32_INVALID_ID;
     Material() = default;
     Material(u32 id) { this->id = id; }
-    TAPI bool isValid() const { return id == U32_INVALID_ID; }
+    TAPI bool isValid() const { return id != U32_INVALID_ID; }
     TAPI void SetShaderUniforms(const Shader& shader) const;
     bool operator==(const Material& p) const { return id == p.id; }
+    Material& operator=(const Material& p);
 };
 
 struct MaterialProp 
@@ -72,6 +74,10 @@ struct MaterialProp
     };
 };
 
+struct MaterialPropHasher
+{
+    size_t operator()(const MaterialProp& p) const;
+};
  
 struct MaterialInternal
 {
@@ -102,7 +108,7 @@ struct MaterialRegistry
 struct Arena;
 void InitializeMaterialSystem(Arena* arena);
 
-Material NewMaterial(const char* name, s32 materialIndex = -1);
+Material NewMaterial(const char* name, u32 materialHash);
 
 void DeleteMaterial(Material material);
 

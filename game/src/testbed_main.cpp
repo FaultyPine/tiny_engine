@@ -18,8 +18,8 @@
 #include "render/tiny_ogl.h"
 #include "render/postprocess.h"
 
-//#define ISLAND_SCENE
-#define SPONZA_SCENE
+#define ISLAND_SCENE
+//#define SPONZA_SCENE
 
 struct Wave {
     f32 waveSpeed = 1.0;
@@ -52,7 +52,6 @@ struct GameState {
     ParticleSystem waterfallParticles = {};
     
     // grass
-    EntityRef grass = {};
     Shader grassPrepassShader;
     BoundingBox grassSpawnExclusion = {};
     Texture windTexture = {};
@@ -300,7 +299,7 @@ void DepthAndNormsPrePass(const GameState& gs) {
         gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
         gs.grassPrepassShader.TryAddSampler(gs.windTexture, "windTexture");
         gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        EntityData& grass = Entity::GetEntity(gs.grass);
+        EntityData& grass = Entity::GetEntity("grass");
         grass.model.Draw(gs.grassPrepassShader, grass.transform);
     }
     Postprocess::PostprocessFramebuffer(gs.depthAndNorms);
@@ -328,15 +327,15 @@ void drawGameState(const GameState& gs) {
     }
 
     // grass
-    EntityData& grass = Entity::GetEntity(gs.grass);
-    if (grass && enableGrassRender) {
+    EntityData& grass = Entity::GetEntity("grass");
+    if (grass && enableGrassRender) 
+    {
         PROFILE_SCOPE("GrassInstancing");
         grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
         grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
         grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
         grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
         grass.model.cachedShader.TryAddSampler(gs.windTexture, "windTexture");
-        grass.model.Draw(grass.transform);
     }
     #endif
     
@@ -344,7 +343,8 @@ void drawGameState(const GameState& gs) {
         for (EntityRef ref : gs.entities) 
         {
             EntityData& ent = Entity::GetEntity(ref);
-            ent.model.Draw(ent.transform);
+            Renderer::PushEntity(ref);
+            //ent.model.Draw(ent.transform);
         }
     }
 
@@ -405,9 +405,11 @@ void init_grass(GameState& gs) {
     std::vector<glm::mat4> grassTransforms = {};
     //  init grass transforms
     EntityData& islandModel = Entity::GetEntity("island");
-    if (islandModel) {
+    if (islandModel) 
+    {
         Mesh* grassSpawnMesh = islandModel.model.GetMesh("GrassSpawnPlane_Mesh");
-        if (grassSpawnMesh) {
+        if (grassSpawnMesh) 
+        {
             grassSpawnMesh->isVisible = false;
             PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, grassTransforms, 100000);
         }
@@ -416,13 +418,14 @@ void init_grass(GameState& gs) {
     Shader grassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/grass.frag").c_str());
     gs.grassPrepassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/prepass.frag").c_str());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
-    gs.grass = Entity::CreateEntity("grass", grassTf);
+    EntityRef grass = Entity::CreateEntity("grass", grassTf);
+    gs.entities.push_back(grass);
     Model grassModel = Model(grassShader, 
                             ResPath("other/island_wip/grass_blade.obj").c_str(), 
                             ResPath("other/island_wip/").c_str(), 
-                            gs.grass);
+                            grass);
     grassModel.EnableInstancing(grassTransforms.data(), sizeof(glm::mat4), grassTransforms.size());
-    Entity::AddRenderable(gs.grass, grassModel);
+    Entity::AddRenderable(grass, grassModel);
     PhysicsAddModel(grassModel, grassTf);
     gs.windTexture = LoadTexture(ResPath("other/distortion.png"));
     gs.windStrength = 0.15;
@@ -472,6 +475,12 @@ void testbed_init(Arena* gameMem) {
     Camera::GetMainCamera().cameraPos.y = 10;
     gs.lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
     Shader& lightingShader = gs.lightingShader;
+
+    // TODO: why does this mesh not render in main view?
+    //EntityRef floatingcubes = Entity::CreateEntity("floatingcubes", Transform(glm::vec3(0,10,0), glm::vec3(0.1)));
+    //Model floatingCubesModel = Model(lightingShader, ResPath("SM_Floating_Cubes.fbx").c_str(), ResPath("").c_str(), floatingcubes);
+    //Entity::AddRenderable(floatingcubes, floatingCubesModel);
+    //gs.entities.push_back(floatingcubes);
 
 #ifdef ISLAND_SCENE
     EntityRef islandEntRef = Entity::CreateEntity("island", Transform({0,0,0}));

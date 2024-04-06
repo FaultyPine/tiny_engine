@@ -35,11 +35,11 @@ static const u32 UniformDataTypeSizes[NUM_DATA_TYPES] =
     sizeof(f32),
     sizeof(u32),
     sizeof(s32),
-    sizeof(f32) * 2,
-    sizeof(f32) * 3,
-    sizeof(f32) * 4,
-    sizeof(f32) * 9,
-    sizeof(f32) * 16,
+    sizeof(f32) * 2, // vec2
+    sizeof(f32) * 3, // vec3
+    sizeof(f32) * 4, // vec4
+    sizeof(f32) * 9, // mat3
+    sizeof(f32) * 16, // mat4
 };
 
 
@@ -458,6 +458,8 @@ void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData
     TINY_ASSERT(gss.globalShaderMem.backing_mem_size > 0 && "Make sure to call InitializeShaderSystem before doing any shader calls!");
     std::unordered_map<std::string, UniformData>& cachedUniforms = gss.shaderMap[ID].cachedUniforms;
     // if we already have uniform - simply update cached values. If we don't, allocate more mem in our uniform mem block
+    // NOTE/TODO: would like to be able to free uniform mem. Rn we just arena alloc new mem and never free it up
+    // maybe use our fixed block allocator and have all uniforms be sizeof(mat4) so we can easily free/reuse chunks in the middle
     if (cachedUniforms.count(uniformName)) 
     {
         UniformData& uniform = cachedUniforms[uniformName];

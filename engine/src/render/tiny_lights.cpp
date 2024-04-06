@@ -7,6 +7,7 @@
 #include "shapes.h"
 #include "render/shadows.h"
 #include "mem/tiny_arena.h"
+#include "render/tiny_renderer.h"
 
 void InitializeLightingSystem(Arena* arena)
 {

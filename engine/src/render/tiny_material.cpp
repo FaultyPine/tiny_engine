@@ -8,9 +8,25 @@
 #include "shader_buffer.h"
 
 
+size_t MaterialPropHasher::operator()(const MaterialProp& p) const
+{
+    // MaterialProp is (reasonably small) POD so just hash the whole thing
+    return HashBytesL((u8*)&p, sizeof(MaterialProp));
+}
+
+Material& Material::operator=(const Material& p) 
+{ 
+    this->id = p.id; 
+    TMEMSET((void*)dbgName, 0, 30); 
+    TMEMCPY((void*)dbgName, p.dbgName, 30); 
+    return *this;
+}
+
+
 MaterialInternal& MaterialInternal::operator=(const MaterialInternal &mat)
 {
     TMEMCPY(&properties, &mat.properties, sizeof(properties));
+    TMEMSET((void*)name, 0, MATERIAL_INTERNAL_NAME_MAX_LEN);
     TMEMCPY((void*)name, mat.name, MATERIAL_INTERNAL_NAME_MAX_LEN);
     return *this;
 }
@@ -22,7 +38,7 @@ void InitializeMaterialSystem(Arena* arena)
     MaterialRegistry* reg = arena_alloc_and_init<MaterialRegistry>(arena);
     ctx.materialRegistry = reg;
 
-    Material dummyMaterial = NewMaterial("DummyMaterial");
+    Material dummyMaterial = NewMaterial("DummyMaterial", U32_INVALID_ID);
     OverwriteMaterialProperty(dummyMaterial, MaterialProp(GetDummyTexture()), TextureMaterialType::DIFFUSE);
     ctx.materialRegistry->dummyMaterial = dummyMaterial;
 }
@@ -47,14 +63,11 @@ bool DoesMaterialIdExist(u32 materialID)
     return GetMaterialRegistry().materialRegistry.count(Material(materialID)) > 0;
 }
 
-Material NewMaterial(const char* name, s32 materialIndex) {
+Material NewMaterial(const char* name, u32 materialHash) {
     u32 nameSize = strnlen(name, MATERIAL_INTERNAL_NAME_MAX_LEN);
-    u32 materialHash = HashBytes((u8*)name, nameSize);
-    // combine name hash with material index
-    u64 combinedHash = (u64)materialHash | ((u64)materialIndex << 32);
-    combinedHash = HashBytes((u8*)&combinedHash, sizeof(combinedHash));
-    materialHash = materialIndex != -1 ? combinedHash : materialHash;
     Material newMaterial = Material(materialHash);
+    TMEMSET((void*)newMaterial.dbgName, 0, nameSize);
+    TMEMCPY((void*)newMaterial.dbgName, name, nameSize);
     MaterialRegistry& matRegistry = GetMaterialRegistry();
     if (matRegistry.materialRegistry.count(newMaterial))
     {
@@ -68,13 +81,14 @@ Material NewMaterial(const char* name, s32 materialIndex) {
         else
         {
             // two different names hashed the same
-            LOG_ERROR("Material name hash collision! %s and %s = %u", alreadyExistingMat.name, name, materialHash);
+            LOG_ERROR("Material name hash collision! %s and %s = %u", alreadyExistingMat.name, name, newMaterial.id);
             TINY_ASSERT(false);
         }
     }
     MaterialInternal newMaterialInternal = {};
     TMEMSET((void*)&newMaterialInternal.name[0], 0, MATERIAL_INTERNAL_NAME_MAX_LEN);
     TMEMCPY((void*)&newMaterialInternal.name[0], name, nameSize);
+    LOG_INFO("Registered material with name %s hash %u", newMaterialInternal.name, newMaterial.id);
     matRegistry.materialRegistry[newMaterial] = newMaterialInternal;
     return newMaterial;
 }

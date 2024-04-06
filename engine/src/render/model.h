@@ -1,7 +1,6 @@
 #ifndef TINY_MODEL_H
 #define TINY_MODEL_H
 
-//#include "pch.h"
 #include "render/mesh.h"
 #include "render/tiny_lights.h"
 #include "render/shader.h"

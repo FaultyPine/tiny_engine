@@ -128,34 +128,6 @@ void Mesh::initMesh() {
 }
 
 
-void OGLDrawDefault(u32 VAO, u32 indicesSize, u32 verticesSize) {
-    // draw mesh = bind vert array -> draw -> unbind
-    GLCall(glBindVertexArray(VAO));
-    if (indicesSize) { // if indices is not empty, draw indexed
-        GLCall(glDrawElements(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0));
-    }
-    else { // indices is empty, draw arrays
-        GLCall(glDrawArrays(GL_TRIANGLES, 0, verticesSize));
-    }
-    // clean up
-    GLCall(glBindVertexArray(0)); // unbind vert array
-    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
-}
-void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstances) {
-    // draw mesh = bind vert array -> draw -> unbind
-    GLCall(glBindVertexArray(VAO));
-    if (indicesSize) { // if indices is not empty, draw indexed
-        GLCall(glDrawElementsInstanced(GL_TRIANGLES, indicesSize, GL_UNSIGNED_INT, 0, numInstances));
-    }
-    else { // indices is empty, draw arrays
-        GLCall(glDrawArraysInstanced(GL_TRIANGLES, 0, verticesSize, numInstances));
-    }
-    // clean up
-    GLCall(glBindVertexArray(0)); // unbind vert array
-    GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
-}
-
-
 void Mesh::Draw() const {
     PROFILE_FUNCTION();
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");

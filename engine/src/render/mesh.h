@@ -6,9 +6,33 @@
 #include "texture.h"
 #include "tiny_types.h"
 #include "tiny_material.h"
-#include "tiny_renderer.h"
 #include <vector>
 
+
+struct Vertex 
+{
+    glm::vec3 position = glm::vec3(0);
+    glm::vec3 normal = glm::vec3(0);
+    glm::vec3 tangent = glm::vec3(0);
+    glm::vec2 texCoords = glm::vec3(0);
+    glm::vec4 color = glm::vec4(1);
+    u32 objectID = U32_INVALID_ID;
+    inline std::string str() 
+    {
+        return "[Pos = " + glm::to_string(position) + 
+                " Normals = " + glm::to_string(normal) + 
+                " Tangent = " + glm::to_string(tangent) + 
+                " TexCoords = " + glm::to_string(texCoords) + 
+                " Colors = " + glm::to_string(color) + 
+                " obj id = " + std::to_string(objectID) + 
+                " ]";
+    }
+};
+struct SimpleVertex
+{
+    glm::vec3 position;
+    glm::vec4 color;
+};
 
 struct Mesh 
 {

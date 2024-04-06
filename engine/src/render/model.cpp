@@ -73,15 +73,11 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     {
         str = "UnnamedMaterial";
     }
-    Material ret = NewMaterial(str.C_Str(), meshMaterialIndex);
+
     MaterialProp diffuse = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_DIFFUSE(0)), AssimpMaterialKey(AI_MATKEY_COLOR_DIFFUSE), meshMaterialDir);
-    OverwriteMaterialProperty(ret, diffuse, DIFFUSE);
     MaterialProp ambient = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_AMBIENT(0)), AssimpMaterialKey(AI_MATKEY_COLOR_AMBIENT), meshMaterialDir);
-    OverwriteMaterialProperty(ret, ambient, AMBIENT);
     MaterialProp specular = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_SPECULAR(0)), AssimpMaterialKey(AI_MATKEY_COLOR_SPECULAR), meshMaterialDir);
-    OverwriteMaterialProperty(ret, specular, SPECULAR);
     MaterialProp emissive = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_EMISSIVE(0)), AssimpMaterialKey(AI_MATKEY_COLOR_EMISSIVE), meshMaterialDir);
-    OverwriteMaterialProperty(ret, emissive, EMISSION);
     //MaterialProp height = GetMaterialFromType(material, aiTextureType_HEIGHT, meshMaterialDir);
     MaterialProp normal = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_NORMALS(0)), AssimpMaterialKey(), meshMaterialDir);
     if (normal.GetDataType() != MaterialProp::DataType::TEXTURE)
@@ -93,12 +89,9 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
             normal = normalsFromHeightmap;
         }
     }
-    OverwriteMaterialProperty(ret, normal, NORMALS);
     // Usually there is a conversion function defined to map the linear color values in the texture to a suitable exponent
     MaterialProp shininess = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_SHININESS(0)), AssimpMaterialKey(AI_MATKEY_SHININESS), meshMaterialDir);
-    OverwriteMaterialProperty(ret, shininess, SHININESS);
     MaterialProp opacity = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_OPACITY(0)), AssimpMaterialKey(AI_MATKEY_COLOR_TRANSPARENT), meshMaterialDir);
-    OverwriteMaterialProperty(ret, opacity, OPACITY);
     //MaterialProp displacement = GetMaterialFromType(material, aiTextureType_DISPLACEMENT, meshMaterialDir);
     //MaterialProp lightmap = GetMaterialFromType(material, aiTextureType_LIGHTMAP, meshMaterialDir);
     
@@ -109,6 +102,29 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
         // TODO: make configurable
         shininess.VecData().r = Math::Remap(shininess.VecData().r, 0.0, 1000.0, 0.0, 10.0);
     }
+
+    const char* materialName = str.C_Str();
+    u32 materialHash = HashBytes((u8*)materialName, str.length);
+    u32 combinedHash = (u64)materialHash;
+
+    combinedHash ^= MaterialPropHasher()(diffuse);
+    combinedHash ^= MaterialPropHasher()(ambient);
+    combinedHash ^= MaterialPropHasher()(specular);
+    combinedHash ^= MaterialPropHasher()(emissive);
+    combinedHash ^= MaterialPropHasher()(normal);
+    combinedHash ^= MaterialPropHasher()(shininess);
+    combinedHash ^= MaterialPropHasher()(opacity);
+
+    combinedHash = HashBytes((u8*)&combinedHash, sizeof(combinedHash));
+    materialHash = meshMaterialIndex != -1 ? combinedHash : materialHash;
+    Material ret = NewMaterial(materialName, materialHash);
+    OverwriteMaterialProperty(ret, diffuse, DIFFUSE);
+    OverwriteMaterialProperty(ret, ambient, AMBIENT);
+    OverwriteMaterialProperty(ret, specular, SPECULAR);
+    OverwriteMaterialProperty(ret, emissive, EMISSION);
+    OverwriteMaterialProperty(ret, normal, NORMALS);
+    OverwriteMaterialProperty(ret, shininess, SHININESS);
+    OverwriteMaterialProperty(ret, opacity, OPACITY);
     
     return ret;
 }

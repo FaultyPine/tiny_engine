@@ -62,7 +62,18 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 
 ### TODO:
 
-- Put material data in UBOs so we can batch
+Renderer refactor:
+
+BOOKMARK: Put uniforms in the MODEL, not the shader.
+Uniforms are tied to the ENTITY (or really, the entity's model) not to the shader
+Uniforms are often shared between shaders for things like prepasses
+we should be tracking uniforms and their values on the models so there's 1 place to set them
+and the renderer sets the uniforms from there for each of it's passes
+
+- indexing the ObjectData gpu buffer using entity ids right now. 
+    Need some way of indexing it 
+
+
 - "entities"/serialize objects... 
     - Big refactor - move types to the type reflection system
     - rel pointers to make all entities one big blob?

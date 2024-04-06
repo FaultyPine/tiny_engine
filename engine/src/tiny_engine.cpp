@@ -187,7 +187,6 @@ u32 HashBytes(u8* data, u32 size)
 /// Game loop - while(EngineLoop())
 bool EngineLoop() {
     PROFILE_FUNCTION();
-    PROFILER_GPU_SCOPE("EngineLoop");
     { PROFILE_SCOPE("Glfw Swap Buffers");
         glfwSwapBuffers(GetMainGLFWWindow());
         PROFILER_GPU_FLUSH();
@@ -226,6 +225,7 @@ void InitEngine(
     AppRunCallbacks callbacks,
     size_t requestedGameMemSize
 ) {
+    InitializeLogger();
     TINY_ASSERT(resourceDirectory);
     globEngineCtx.resourceDirectory = resourceDirectory;
 
@@ -236,6 +236,7 @@ void InitEngine(
     getcwd(cwd, PATH_MAX);
     #endif
     LOG_INFO("CWD: %s", cwd);
+    LOG_INFO("Resource directory: %s", resourceDirectory);
 
     SetThreadName("TinyEngine Main Thread");
 
@@ -314,7 +315,7 @@ void InitEngine(
     InitImGui();
 
     // engine memory
-    u32 engineMemorySize = MEGABYTES_BYTES(10);
+    u32 engineMemorySize = MEGABYTES_BYTES(200);
     void* engineMemory = TSYSALLOC(engineMemorySize);
     TMEMSET(engineMemory, 0, engineMemorySize);
     globEngineCtx.engineArena = arena_init(engineMemory, engineMemorySize);
@@ -322,7 +323,6 @@ void InitEngine(
 
     // subsystem initialization
     JobSystem::Instance().Initialize();
-    InitializeLogger();
     size_t uniformsMemBlockSize = MEGABYTES_BYTES(1);
     TINY_ASSERT(uniformsMemBlockSize < engineMemorySize);
     InitializeTinyFilesystem(resourceDirectory);
@@ -334,7 +334,6 @@ void InitEngine(
     Postprocess::InitializePostprocessing(engineArena);
     Entity::InitializeEntitySystem(engineArena);
     InitializePhysics(engineArena);
-    LOG_INFO("Resource directory: %s", resourceDirectory);
 
 
     TINY_ASSERT(globEngineCtx.resourceDirectory);
