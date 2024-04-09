@@ -57,6 +57,7 @@ struct FixedGrowableArray
 
     // returns element at index
     TAPI T& at(u32 index);
+    TAPI const T& at(u32 index) const;
     // sets size to 0 - does not zero out internal memory or do any deallocation
     TAPI void clear();
  

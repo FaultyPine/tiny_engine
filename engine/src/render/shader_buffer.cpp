@@ -7,6 +7,8 @@
 #include "scene/entity.h"
 #include "tiny_profiler.h"
 
+#include <set>
+
 // only have 1 big UBO
 #define UBO_BINDING_POINT 0
 #define UBO_NAME "Globals"
@@ -66,6 +68,7 @@ void UpdateGlobalUBOMisc(UBOGlobals& globs)
 void InitializeUBOs(ShaderBufferGlobals& globals)
 {
     PROFILE_FUNCTION();
+    PROFILE_FUNCTION_GPU();
     u32& uboObject = globals.uboObject;
     glGenBuffers(1, &uboObject);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, uboObject);
@@ -98,23 +101,28 @@ void UpdateGlobalUBOModelMatrices(UBOGlobals& globs)
     Entity::GetRenderableEntities(nullptr, &numRenderableEntities);
     EntityRef* renderableEntites = arena_alloc_type(&ctx.engineArena, EntityRef, numRenderableEntities);
     Entity::GetRenderableEntities(renderableEntites, &numRenderableEntities);
+    std::set<u32> ensureUniqueIdxs = {};
     for (u32 i = 0; i < numRenderableEntities; i++)
     {
         EntityRef ent = renderableEntites[i];
         const EntityData& entityData = Entity::GetEntity(ent);
         u32 idx = (u32)ent % ARRAY_SIZE(globs.objectData);
+        ensureUniqueIdxs.insert(idx);
         glm::mat4 model = entityData.transform.ToModelMatrix();
         glm::mat3 normal = glm::mat3(glm::transpose(glm::inverse(model)));
         UBOGlobals::GPUPerObjectData& objData = globs.objectData[idx];
         objData.modelMat = model;
         objData.normalMat = normal;
     }
-    arena_pop_latest(&ctx.engineArena);
+    // if this hits, we have a hash collision. Each index into our gpu buffer should be unique.
+    TINY_ASSERT(ensureUniqueIdxs.size() == numRenderableEntities);
+    arena_pop_latest(&ctx.engineArena, renderableEntites);
 }
 
 void ShaderSystemPreDraw(ShaderBufferGlobals& globals)
 {
     PROFILE_FUNCTION();
+    PROFILE_FUNCTION_GPU();
     UBOGlobals& globs = globals.globals;
     TMEMSET(&globs, 0, sizeof(UBOGlobals));
     UpdateGlobalUBOCamera(globs);

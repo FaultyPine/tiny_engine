@@ -88,7 +88,6 @@ Material NewMaterial(const char* name, u32 materialHash) {
     MaterialInternal newMaterialInternal = {};
     TMEMSET((void*)&newMaterialInternal.name[0], 0, MATERIAL_INTERNAL_NAME_MAX_LEN);
     TMEMCPY((void*)&newMaterialInternal.name[0], name, nameSize);
-    LOG_INFO("Registered material with name %s hash %u", newMaterialInternal.name, newMaterial.id);
     matRegistry.materialRegistry[newMaterial] = newMaterialInternal;
     return newMaterial;
 }

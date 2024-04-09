@@ -78,12 +78,13 @@ static GlobalShaderState& GetGSS()
 }
 
 
-void InitializeShaderSystem(Arena* arena, size_t shaderMemBlockSize)
+void InitializeShaderSystem(Arena* arena)
 {
     GlobalShaderState*& gss = GetEngineCtx().shaderSubsystem;
     gss = (GlobalShaderState*)arena_alloc(arena, sizeof(GlobalShaderState));
     new(&gss->shaderMap) std::unordered_map<u32, ShaderInternal>();
 
+    u32 shaderMemBlockSize = Math::PercentOf(get_free_space(arena), 10);;
     void* globalShaderMem = arena_alloc(arena, shaderMemBlockSize);
     gss->globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize);
     InitializeUBOs(gss->globals);

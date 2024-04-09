@@ -184,6 +184,16 @@ u32 HashBytes(u8* data, u32 size)
     return hash;
 }
 
+Arena* GetSceneAllocator()
+{
+    return &globEngineCtx.engineSceneAllocator;
+}
+
+Arena* GetFrameAllocator()
+{
+    return &globEngineCtx.engineFrameAllocator;
+}
+
 /// Game loop - while(EngineLoop())
 bool EngineLoop() {
     PROFILE_FUNCTION();
@@ -315,18 +325,24 @@ void InitEngine(
     InitImGui();
 
     // engine memory
-    u32 engineMemorySize = MEGABYTES_BYTES(200);
+    u32 engineMemorySize = MEGABYTES_BYTES(100); // :/
     void* engineMemory = TSYSALLOC(engineMemorySize);
     TMEMSET(engineMemory, 0, engineMemorySize);
     globEngineCtx.engineArena = arena_init(engineMemory, engineMemorySize);
     Arena* engineArena = &globEngineCtx.engineArena;
+    // scene allocator gets some % of engine mem
+    constexpr u32 engineMemoryPercentSceneAllocator = 40;
+    u32 engineSceneAllocatorMemSize = Math::PercentOf(engineMemorySize, engineMemoryPercentSceneAllocator);
+    // frame allocator gets some % of engine mem
+    constexpr u32 engineMemoryPercentFrameAllocator = 40;
+    u32 engineFrameAllocatorMemSize = Math::PercentOf(engineMemorySize, engineMemoryPercentFrameAllocator);
+    globEngineCtx.engineSceneAllocator = arena_init(arena_alloc(engineArena, engineSceneAllocatorMemSize), engineSceneAllocatorMemSize);
+    globEngineCtx.engineFrameAllocator = arena_init(arena_alloc(engineArena, engineFrameAllocatorMemSize), engineFrameAllocatorMemSize);
 
     // subsystem initialization
     JobSystem::Instance().Initialize();
-    size_t uniformsMemBlockSize = MEGABYTES_BYTES(1);
-    TINY_ASSERT(uniformsMemBlockSize < engineMemorySize);
     InitializeTinyFilesystem(resourceDirectory);
-    InitializeShaderSystem(engineArena, uniformsMemBlockSize);
+    InitializeShaderSystem(engineArena);
     InitializeLightingSystem(engineArena);
     InitializeTextureCache(engineArena);
     InitializeMaterialSystem(engineArena);

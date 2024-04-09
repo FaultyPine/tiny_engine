@@ -13,6 +13,8 @@
 // ======================================
 #undef IMGUI_IMPL_OPENGL_LOADER_CUSTOM
 
+#include "tiny_profiler.h"
+
 // because we're calling imgui across DLL bounds, and
 // imgui uses a global ctx pointer, we need to explicitly use our own
 // ctx so that we are always using the one that exists in the engine dll.
@@ -31,6 +33,7 @@ void InitImGui() {
 
 
 void ImGuiBeginFrame() {
+    PROFILE_FUNCTION_GPU();
     ImGui::SetCurrentContext(engine_imgui_ctx);
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();

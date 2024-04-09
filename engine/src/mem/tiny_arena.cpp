@@ -37,6 +37,7 @@ void* arena_alloc(Arena* arena, size_t alloc_size) {
     if (is_out_of_mem) 
     {
         LOG_FATAL("Out of memory in arena %s\n", arena_get_name(arena));
+        TINY_ASSERT(false);
         // maybe we automatically resize here?
         return nullptr;
     }
@@ -72,7 +73,7 @@ void* arena_resize(Arena* arena, void* old_mem, size_t old_size, size_t new_size
     }
 }
 
-void arena_pop_latest(Arena* arena)
+void arena_pop_latest(Arena* arena, void* data)
 {
     if (arena->offset == arena->prev_offset)
     {
@@ -80,6 +81,7 @@ void arena_pop_latest(Arena* arena)
         return;
     }
     arena->offset = arena->prev_offset;
+    TINY_ASSERT(data == nullptr || arena->backing_mem + arena->offset == data);
 }
 
 void arena_clear(Arena* arena) {

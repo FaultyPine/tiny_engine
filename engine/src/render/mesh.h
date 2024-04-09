@@ -34,11 +34,19 @@ struct SimpleVertex
     glm::vec4 color;
 };
 
+struct GPUInstanceData
+{
+    void* instanceData = nullptr; // owning - this mesh's (optional) instance data
+    u32 instanceVBO = 0; // extra vert data for instanced rendering
+    u32 numInstances = 0; // nonzero when this mesh has instancing enabled
+    u32 stride = 0;
+    bool operator==(const GPUInstanceData& o) { return memcmp(this, &o, sizeof(GPUInstanceData)) == 0; }
+};
+
 struct Mesh 
 {
     u32 VAO, VBO, EBO = 0; // vert array obj, vert buf obj, element buf obj
-    u32 instanceVBO = 0; // extra vert data for instanced rendering
-    u32 numInstances = 0; // nonzero when this mesh has instancing enabled
+    GPUInstanceData instanceData = {};
     u32 vertexAttributeLocation = 0;
     std::vector<Vertex> vertices = {};
     std::vector<u32> indices = {};
@@ -62,7 +70,8 @@ struct Mesh
     // draw mesh with specified shader
     // NOTE: this function does *not* call use() on the shader
     TAPI void Draw() const;
-    TAPI void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents);
+    /// owns instanceDataBuffer
+    TAPI void EnableInstancing(void* instanceDataBuffer, u32 stride, u32 numElements);
     void SetObjectID(u32 objectID)
     {
         for (auto& vertex : vertices)

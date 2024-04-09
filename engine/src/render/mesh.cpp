@@ -25,62 +25,17 @@ void Mesh::Delete() {
     GLCall(glDeleteVertexArrays(1, &VAO));
     GLCall(glDeleteBuffers(1, &VBO));
     GLCall(glDeleteBuffers(1, &EBO));
+    glDeleteBuffers(1, &instanceData.instanceVBO);
+    //free(instanceData);
     //material.Delete();
 }
 
-static bool IsOglTypeInteger(u32 oglType)
+
+void Mesh::EnableInstancing(void* instanceDataBuffer, u32 stride, u32 numElements) 
 {
-    return oglType >= GL_BYTE && oglType <= GL_UNSIGNED_INT;
-}
-
-// Note: numComponentsInAttribute must be between [1, 4] (component refers to 1 of whatever the oglType is)
-void ConfigureVertexAttrib(u32 attributeLoc, u32 numComponentsInAttribute, u32 oglType, bool shouldNormalize, u32 stride, void* offset) {
-    // this retrieves the value of GL_ARRAY_BUFFER (VBO) and associates it with the current VAO
-    if (IsOglTypeInteger(oglType))
-    {
-        // integer types need the IPointer call
-        GLCall(glVertexAttribIPointer(attributeLoc, numComponentsInAttribute, oglType, stride, offset));
-    }
-    else
-    {
-        GLCall(glVertexAttribPointer(attributeLoc, numComponentsInAttribute, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
-    }
-    // glEnableVertexAttribArray enables vertex attribute for currently bound vertex array object
-    // glEnableVertexArrayAttrib ^ but you provide the vertex array obj explicitly
-    GLCall(glEnableVertexAttribArray(attributeLoc));
-}
-
-void Mesh::EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) {
-    PROFILE_FUNCTION();
-    if (instanceVBO != 0 || numInstances == numComponents) 
-    {
-        LOG_WARN("Attempted to enable instancing on a mesh that already has instancing enabled");
-        return;
-    }
-    this->numInstances = numComponents;
-    GLCall(glBindVertexArray(VAO));
-    GLCall(glGenBuffers(1, &instanceVBO));
-    // when we call ConfigureVertexAttrib with this instanceVBO bound, this all gets bound up into the above VAO
-    // thats how the VAO knows about our instance vbo
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, instanceVBO)); // instance vbo 
-    GLCall(glBufferData(GL_ARRAY_BUFFER, sizeofSingleComponent*numComponents, instanceDataBuffer, GL_STATIC_DRAW));
-    // set up vertex attribute(s) for instance-specific data
-    // if we want float/vec2/vec3/vec4 its not a big deal,
-    // just send that into a vertex attribute as normal
-    // but if its something like a mat4, it'll take up multiple
-    // vertex attribute slots since we can only pass a max of 4 floats in one attribute
-    // TODO: verify this works for all data types (float, vec2/3/4, mat2/3/4)
-    u32 numFloatsInComponent = sizeofSingleComponent / 4;
-    u64 numVec4sInComponent = std::max(1u, numFloatsInComponent / 4);
-    for (u64 i = 0; i < numVec4sInComponent; i++) {
-        ConfigureVertexAttrib( // instance data
-            vertexAttributeLocation+i, numFloatsInComponent / 4, GL_FLOAT, false, sizeofSingleComponent, (void*)(i*numFloatsInComponent));
-        // update vertex attribute on every new instance of the mesh, not on every vertex (1 is a magic opengl number corresponding to "update-per-instance", rather than update-per-vertex)
-        GLCall(glVertexAttribDivisor(vertexAttributeLocation+i, 1));  
-    }
-    vertexAttributeLocation += numVec4sInComponent;
-    GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    GLCall(glBindVertexArray(0));
+    instanceData.instanceData = instanceDataBuffer;
+    instanceData.numInstances = numElements;
+    instanceData.stride = stride;
 }
 
 void ConfigureMeshVertexAttributes(u32& vertexAttributeLocation)
@@ -101,7 +56,8 @@ void ConfigureMeshVertexAttributes(u32& vertexAttributeLocation)
         vertexAttributeLocation++, 1, GL_UNSIGNED_INT, false, sizeof(Vertex), (void*)offsetof(Vertex, objectID)); // 5
 }
 
-void Mesh::initMesh() {
+void Mesh::initMesh() 
+{
     PROFILE_FUNCTION();
     // create
     GLCall(glGenVertexArrays(1, &VAO));
@@ -110,14 +66,16 @@ void Mesh::initMesh() {
     // bind
     GLCall(glBindVertexArray(VAO));
     GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-    if (!indices.empty()) {
+    if (!indices.empty()) 
+    {
         // making sure to bind this AFTER the vao is bound
         // since the EBO (and VBO) actually ends up stored inside the VAO
         GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO));
     }
     // upload data into VBO
     GLCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW));  
-    if (!indices.empty()) {
+    if (!indices.empty()) 
+    {
         GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW));
     }
     // vertex attributes
@@ -128,15 +86,14 @@ void Mesh::initMesh() {
 }
 
 
-void Mesh::Draw() const {
+void Mesh::Draw() const 
+{
     PROFILE_FUNCTION();
     TINY_ASSERT(isValid() && "[ERR] Tried to draw invalid mesh!");
     if (!isVisible) return;
-    if (numInstances > 0)
+    if (instanceData.numInstances > 0)
     {
-        // instanced render
-        TINY_ASSERT(instanceVBO != 0 && "Tried to instance mesh that has not had EnableInstance called");
-        OGLDrawInstanced(VAO, indices.size(), vertices.size(), numInstances);
+        OGLDrawInstanced(VAO, indices.size(), vertices.size(), instanceData.numInstances);
     }
     else
     {
@@ -146,17 +103,20 @@ void Mesh::Draw() const {
 
 
 
-BoundingBox Mesh::CalculateMeshBoundingBox() {
+BoundingBox Mesh::CalculateMeshBoundingBox() 
+{
     PROFILE_FUNCTION();
     // Get min and max vertex to construct bounds (AABB)
     glm::vec3 minVertex = glm::vec3(0);
     glm::vec3 maxVertex = glm::vec3(0);
 
-    if (!vertices.empty()) {
+    if (!vertices.empty()) 
+    {
         minVertex = glm::vec3(vertices[0].position);
         maxVertex = glm::vec3(vertices[0].position);
 
-        for (s32 i = 1; i < vertices.size(); i++) {
+        for (s32 i = 1; i < vertices.size(); i++) 
+        {
             minVertex = glm::min(minVertex, vertices[i].position);
             maxVertex = glm::max(maxVertex, vertices[i].position);
         }

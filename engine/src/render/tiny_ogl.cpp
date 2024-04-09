@@ -80,3 +80,26 @@ void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstanc
     GLCall(glBindVertexArray(0)); // unbind vert array
     GLCall(glActiveTexture(GL_TEXTURE0)); // reset active tex
 }
+
+static bool IsOglTypeInteger(u32 oglType)
+{
+    return oglType >= GL_BYTE && oglType <= GL_UNSIGNED_INT;
+}
+
+// Note: numComponentsInAttribute must be between [1, 4] (component refers to 1 of whatever the oglType is)
+void ConfigureVertexAttrib(u32 attributeLoc, u32 numComponentsInAttribute, u32 oglType, bool shouldNormalize, u32 stride, void* offset) 
+{
+    // this retrieves the value of GL_ARRAY_BUFFER (VBO) and associates it with the current VAO
+    if (IsOglTypeInteger(oglType))
+    {
+        // integer types need the IPointer call
+        GLCall(glVertexAttribIPointer(attributeLoc, numComponentsInAttribute, oglType, stride, offset));
+    }
+    else
+    {
+        GLCall(glVertexAttribPointer(attributeLoc, numComponentsInAttribute, oglType, shouldNormalize ? GL_TRUE : GL_FALSE, stride, offset));
+    }
+    // glEnableVertexAttribArray enables vertex attribute for currently bound vertex array object
+    // glEnableVertexArrayAttrib ^ but you provide the vertex array obj explicitly
+    GLCall(glEnableVertexAttribArray(attributeLoc));
+}

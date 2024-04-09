@@ -19,6 +19,7 @@ OglDebugMessageCallback( GLenum source,
 
 void OGLDrawDefault(u32 VAO, u32 indicesSize, u32 verticesSize);
 void OGLDrawInstanced(u32 VAO, u32 indicesSize, u32 verticesSize, u32 numInstances);
+void ConfigureVertexAttrib(u32 attributeLoc, u32 numComponentsInAttribute, u32 oglType, bool shouldNormalize, u32 stride, void* offset);
 
 
 #endif

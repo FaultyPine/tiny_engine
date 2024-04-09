@@ -18,8 +18,8 @@
 #include "render/tiny_ogl.h"
 #include "render/postprocess.h"
 
-#define ISLAND_SCENE
-//#define SPONZA_SCENE
+//#define ISLAND_SCENE
+#define SPONZA_SCENE
 
 struct Wave {
     f32 waveSpeed = 1.0;
@@ -163,7 +163,7 @@ void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMult
 
 static bool enableGrassRender = true;
 static f32 ambientLightIntensity = 0.15f;
-
+static bool useNewRenderer = true;
 void drawImGuiDebug(GameState& gs) {
     PROFILE_FUNCTION();
     
@@ -172,6 +172,7 @@ void drawImGuiDebug(GameState& gs) {
     glm::vec3 camPos = Camera::GetMainCamera().cameraPos;
     ImGui::Text(TextFormat("CamPos: %f %f %f", camPos.x, camPos.y, camPos.z));
 
+    ImGui::Checkbox("New renderer enabled", &useNewRenderer);
     if (ImGui::CollapsingHeader("Entities"))
     {
         for (EntityRef& entref : gs.entities)
@@ -343,8 +344,8 @@ void drawGameState(const GameState& gs) {
         for (EntityRef ref : gs.entities) 
         {
             EntityData& ent = Entity::GetEntity(ref);
-            Renderer::PushEntity(ref);
-            //ent.model.Draw(ent.transform);
+            if (useNewRenderer) Renderer::PushEntity(ref);
+            else ent.model.Draw(ent.transform);
         }
     }
 
@@ -377,7 +378,11 @@ glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
     return point;
 }
 
-void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, const std::vector<Vertex>& planeVerts, std::vector<glm::mat4>& grassTransforms, u32 numGrassInstancesToSpawn) {
+void PopulateGrassTransformsFromSpawnPlane(
+    const BoundingBox& spawnExclusion, 
+    const std::vector<Vertex>& planeVerts, 
+    glm::mat4* grassTransforms, 
+    u32 numGrassInstancesToSpawn) {
     PROFILE_FUNCTION();
     constexpr f32 spawnNeighborLeniency = 0.5f;
     constexpr f32 grassSpawnHeight = 7.6; // ew hardcoded
@@ -393,7 +398,7 @@ void PopulateGrassTransformsFromSpawnPlane(const BoundingBox& spawnExclusion, co
         f32 randRotation = GetRandomf(0.0f, 360.0f);
         f32 randScale = GetRandomf(0.3f, 0.7f);
         Transform grassTransform = Transform(glm::vec3(randomPointBetweenVerts.x, grassSpawnHeight, randomPointBetweenVerts.y), glm::vec3(randScale), randRotation);
-        grassTransforms.emplace_back(grassTransform.ToModelMatrix());
+        grassTransforms[i] = grassTransform.ToModelMatrix();
     }
 }
 
@@ -402,7 +407,9 @@ void init_grass(GameState& gs) {
     // area where grass CANNOT spawn
     gs.grassSpawnExclusion = BoundingBox({-5.39, 8, -0.43}, 
                                          {6.67, 8, 6.9});
-    std::vector<glm::mat4> grassTransforms = {};
+    constexpr u32 NUM_GRASS_BLADES = 100000;
+    LOG_INFO("Allocating %llu", sizeof(glm::mat4) * NUM_GRASS_BLADES);
+    glm::mat4* grassTransforms = arena_alloc_type(gs.gameMem, glm::mat4, NUM_GRASS_BLADES);
     //  init grass transforms
     EntityData& islandModel = Entity::GetEntity("island");
     if (islandModel) 
@@ -411,7 +418,7 @@ void init_grass(GameState& gs) {
         if (grassSpawnMesh) 
         {
             grassSpawnMesh->isVisible = false;
-            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, grassTransforms, 100000);
+            PopulateGrassTransformsFromSpawnPlane(gs.grassSpawnExclusion, grassSpawnMesh->vertices, grassTransforms, NUM_GRASS_BLADES);
         }
     }
 
@@ -424,7 +431,7 @@ void init_grass(GameState& gs) {
                             ResPath("other/island_wip/grass_blade.obj").c_str(), 
                             ResPath("other/island_wip/").c_str(), 
                             grass);
-    grassModel.EnableInstancing(grassTransforms.data(), sizeof(glm::mat4), grassTransforms.size());
+    grassModel.EnableInstancing(grassTransforms, sizeof(glm::mat4), NUM_GRASS_BLADES);
     Entity::AddRenderable(grass, grassModel);
     PhysicsAddModel(grassModel, grassTf);
     gs.windTexture = LoadTexture(ResPath("other/distortion.png"));
@@ -666,6 +673,6 @@ void testbed_standalone_entrypoint(int argc, char *argv[])
         16, 9,
         true,
         GetTestbedAppRunCallbacks(), 
-        MEGABYTES_BYTES(5)
+        MEGABYTES_BYTES(10)
     ); 
 }

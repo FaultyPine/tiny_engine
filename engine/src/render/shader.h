@@ -8,7 +8,7 @@ struct Texture;
 struct Cubemap;
 struct Arena;
 
-void InitializeShaderSystem(Arena* arena, size_t shaderUniformDataBlockSize);
+void InitializeShaderSystem(Arena* arena);
 void ShaderSystemPreDraw();
 
 

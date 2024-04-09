@@ -71,6 +71,12 @@ TAPI u32 countLeadingZeroes(u32 n);
 TAPI glm::mat4 Position3DToModelMat(const glm::vec3& position, const glm::vec3& scale = glm::vec3(1), f32 rotation = 0.0, const glm::vec3& rotationAxis = {1,0,0});
 TAPI glm::mat4 Position2DToModelMat(const glm::vec2& position, const glm::vec2& scale = glm::vec3(1), f32 rotation = 0.0, const glm::vec3& rotationAxis = {0,0,1});
 
+template <typename T>
+T PercentOf(T x, u32 percentOutOf100)
+{
+    percentOutOf100 = Math::Clamp(percentOutOf100, 0u, 100u);
+    return (x * percentOutOf100) / 100;
+}
 
 }
 

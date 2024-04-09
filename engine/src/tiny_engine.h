@@ -45,7 +45,11 @@ struct EngineContext
 
     const char* resourceDirectory = nullptr;
     Arena gameArena = {};
-    Arena engineArena = {};
+    Arena engineArena = {}; // persistent
+    // BOOKMARK/TODO: introduce the idea of a frame allocator, scene allocator, persistent allocator
+    Arena engineFrameAllocator = {}; // cleared at the end of each frame
+    Arena engineSceneAllocator = {}; // persistent for a scene
+
     f32 deltaTime = 0.0f;
     f32 lastFrameTime = 0.0f;
     u32 frameCount = 0;
@@ -105,6 +109,9 @@ TAPI void SetWireframeDrawing(bool shouldDrawWireframes);
 
 TAPI u32 HashBytes(u8* data, u32 size);
 TAPI u64 HashBytesL(u8* data, u32 size);
+
+TAPI Arena* GetSceneAllocator();
+TAPI Arena* GetFrameAllocator();
 
 struct GLFWwindow;
 TAPI GLFWwindow* GetMainGLFWWindow();

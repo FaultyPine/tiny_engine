@@ -100,6 +100,12 @@ T& FixedGrowableArray<T, fixedSize>::at(u32 index)
     TINY_ASSERT(index < size);
     return DynArrayGet<T>(elements, index);
 }
+template <typename T, u32 fixedSize>
+const T& FixedGrowableArray<T, fixedSize>::at(u32 index) const
+{
+    TINY_ASSERT(index < size);
+    return DynArrayGet<T>(elements, index);
+}
 
 template <typename T, u32 fixedSize>
 void FixedGrowableArray<T, fixedSize>::clear()

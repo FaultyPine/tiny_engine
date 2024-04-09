@@ -10,7 +10,7 @@
 
 // only included in shader.cpp
 
-struct UBOGlobals
+TALIGN(16) struct UBOGlobals
 {
     // NOTE: ***MUST*** follow std140 alignment rules (I.E. have no implicit padding).
     // to keep it simple, imagine the only acceptable data types are scalars and vectors of 2 or 4 size.

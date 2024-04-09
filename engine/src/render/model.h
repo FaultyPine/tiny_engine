@@ -21,11 +21,11 @@ struct Model {
     TAPI void DrawMinimal() const;
 
     // sends instance data to gpu and "marks" all submeshes as instanced
-    void EnableInstancing(void* instanceDataBuffer, u32 sizeofSingleComponent, u32 numComponents) 
+    void EnableInstancing(void* instanceDataBuffer, u32 stride, u32 numElements) 
     {
         for (Mesh& m : meshes) 
         {
-            m.EnableInstancing(instanceDataBuffer, sizeofSingleComponent, numComponents);
+            m.EnableInstancing(instanceDataBuffer, stride, numElements);
         }
     }
 
