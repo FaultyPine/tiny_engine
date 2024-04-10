@@ -488,29 +488,26 @@ void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData
 }
 
 
-// might need to be able to go from buffer + size, to proper glUniformXXX call
-// store & switch on gl function pointers?
-
-// maybe specialize the template on the ogl function pointer types?
-
-
 void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform);
 
-void Shader::use() const 
+void UseShaderAndSetUniforms(const Shader& shaderIDToReceive, const Shader& shaderIDForUniforms)
 {
     PROFILE_FUNCTION();
     GlobalShaderState& gss = GetGSS();
-    TINY_ASSERT("Invalid shader ID!" && isValid());
-    u32 shaderID = this->ID;
-    u32 oglShaderID = GetOpenGLProgramID(shaderID);
-
+    u32 oglShaderID = GetOpenGLProgramID(shaderIDToReceive.ID);
     glUseProgram(oglShaderID); 
-    ActivateSamplers(shaderID);
-    const auto& uniformMap = gss.shaderMap[shaderID].cachedUniforms;
+    ActivateSamplers(shaderIDForUniforms.ID);
+    const auto& uniformMap = gss.shaderMap[shaderIDForUniforms.ID].cachedUniforms;
     for (const auto& [uniformName, uniformData] : uniformMap)
     {
         SetOglUniformFromBuffer(uniformName.c_str(), uniformData);
     }
+}
+
+void Shader::use() const 
+{
+    TINY_ASSERT("Invalid shader ID!" && isValid());
+    UseShaderAndSetUniforms(*this, *this);
 }
 
 

@@ -41,6 +41,11 @@ struct Model {
 
     TAPI Mesh* GetMesh(const std::string& name);
 
+    template <typename... Args>
+    void setUniform(const s8* uniformName, Args... args) const { cachedShader.setUniform(uniformName, args...); }
+    void TryAddSampler(const Texture& texture, const char* uniformName) const { cachedShader.TryAddSampler(texture, uniformName); }
+    void TryAddSampler(const Cubemap& texture, const char* uniformName) const { cachedShader.TryAddSampler(texture, uniformName); }
+
     BoundingBox cachedBoundingBox = {};
     Shader cachedShader = {};
     std::vector<Mesh> meshes = {};

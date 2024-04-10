@@ -38,7 +38,6 @@ inline u32 GetHash(const std::string& str) {
 struct GameState {
     Arena* gameMem;
 
-    // TODO: use hashmap w/int IDs
     std::vector<EntityRef> entities = {};
     Shader lightingShader = {};
 
@@ -302,22 +301,27 @@ void DepthAndNormsPrePass(const GameState& gs) {
     Renderer::PopDebugRenderMarker();
 }
 
-void drawGameState(const GameState& gs) {
+void drawGameState(const GameState& gs) 
+{
     PROFILE_FUNCTION();
     Renderer::PushDebugRenderMarker("Draw gamestate");
 
     // update Waves
     #ifdef ISLAND_SCENE
-    if (EntityData& waveEntity = Entity::GetEntity("PondEntity")) {
-        Shader& waveShader = waveEntity.model.cachedShader;
-        if (waveEntity && waveShader.isValid()) {
-            waveShader.setUniform("numActiveWaves", gs.numActiveWaves);
-            for (u32 i = 0; i < NUM_WAVES; i++) {
+    if (EntityData& waveEntity = Entity::GetEntity("PondEntity")) 
+    {
+        Model& waveModel = waveEntity.model;
+        if (waveEntity && waveModel.isValid()) 
+        {
+            waveModel.setUniform("numActiveWaves", gs.numActiveWaves);
+            waveModel.setUniform("numActiveWaves", gs.numActiveWaves);
+            for (u32 i = 0; i < NUM_WAVES; i++) 
+            {
                 const Wave& wave = gs.waves[i];
-                waveShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
-                waveShader.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
-                waveShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
-                waveShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
+                waveModel.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
+                waveModel.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
+                waveModel.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
+                waveModel.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
             }
         }
     }
@@ -326,11 +330,11 @@ void drawGameState(const GameState& gs) {
     EntityData& grass = Entity::GetEntity("grass");
     if (grass && enableGrassRender) 
     {
-        grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
-        grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
-        grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
-        grass.model.cachedShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        grass.model.cachedShader.TryAddSampler(gs.windTexture, "windTexture");
+        grass.model.setUniform("_WindStrength", gs.windStrength);
+        grass.model.setUniform("_WindFrequency", gs.windFrequency);
+        grass.model.setUniform("_WindUVScale", gs.windUVScale);
+        grass.model.setUniform("_CurveIntensity", gs.grassCurveIntensity);
+        grass.model.TryAddSampler(gs.windTexture, "windTexture");
     }
     #endif
     
@@ -540,15 +544,6 @@ void testbed_init(Arena* gameMem) {
     CreatePointLight(glm::vec3(0,10,0), glm::vec4(1));
 
     { PROFILE_SCOPE("Skybox Init");
-        /*
-        gs.skybox = Skybox({
-            ResPath("skybox/right.jpg").c_str(),
-            ResPath("skybox/left.jpg").c_str(),
-            ResPath("skybox/top.jpg").c_str(),
-            ResPath("skybox/bottom.jpg").c_str(),
-            ResPath("skybox/front.jpg").c_str(),
-            ResPath("skybox/back.jpg").c_str()}, TextureProperties::RGB_LINEAR());
-        */
         gs.skybox = Skybox({}, TextureProperties::RGB_LINEAR());
     }
 

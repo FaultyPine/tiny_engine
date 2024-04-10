@@ -72,6 +72,13 @@ struct Shader {
     bool operator==(const Shader& p) const { return ID == p.ID; }
 };
 
+// takes in a shader ID that receives uniforms, and a shader ID to supply the uniforms
+// in the typical case, these will both be the same shader. I.E. a shader applies it's own uniforms to itself
+// this also allows us to apply ANOTHER shader's uniforms to some other shader. I.E. for prepasses where 
+// uniforms should be the same for the original shader and the prepass shader
+void UseShaderAndSetUniforms(const Shader& shaderIDToReceive, const Shader& shaderIDForUniforms);
+
+
 struct ShaderHasher {
     size_t operator()(const Shader& p) const
     {
