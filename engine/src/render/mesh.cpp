@@ -6,6 +6,7 @@
 #include "tiny_ogl.h"
 #include "shader.h"
 #include "tiny_profiler.h"
+#include "render/tiny_renderer.h" // TODO: remove when renderer is integrated
 
 Mesh::Mesh(
     const std::vector<Vertex>& verts, 
@@ -33,6 +34,9 @@ void Mesh::Delete() {
 
 void Mesh::EnableInstancing(void* instanceDataBuffer, u32 stride, u32 numElements) 
 {
+    // TODO: remove this line once new renderer is integrated. Need it for instanced meshes that need to go through prepass shader
+    u32 instanceVBO = 0;
+    Renderer::EnableInstancing(VAO, instanceDataBuffer, stride, numElements, vertexAttributeLocation, instanceVBO);
     instanceData.instanceData = instanceDataBuffer;
     instanceData.numInstances = numElements;
     instanceData.stride = stride;

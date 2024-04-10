@@ -48,12 +48,18 @@ void SetFlag(EntityRef ent, EntityFlags flag, bool enabled)
     u32& bitfield = registry.entMap[ent].flags;
     SET_NTH_BIT(bitfield, flag, enabled);
 }
+
+static bool IsFlag(const EntityData& data, EntityFlags flag)
+{
+    const u32& bitfield = data.flags;
+    bool result = CHECK_NTH_BIT(bitfield, flag);
+    return result;
+}
+
 bool IsFlag(EntityRef ent, EntityFlags flag)
 {
     EntityRegistry& registry = GetRegistry();
-    u32& bitfield = registry.entMap[ent].flags;
-    bool result = CHECK_NTH_BIT(bitfield, flag);
-    return result;
+    return IsFlag(registry.entMap[ent], flag);
 }
 
 EntityRef CreateEntity(
@@ -158,7 +164,7 @@ void GetRenderableEntities(EntityRef* dst, u32* numEntities)
     *numEntities = 0;
     for (const auto& [ref, ent] : registry.entMap)
     {
-        if (!Entity::IsFlag(ref, EntityFlags::DISABLED))
+        if (!IsFlag(ent, EntityFlags::DISABLED) && ent.model.isValid())
         {
             if (dst)
             {

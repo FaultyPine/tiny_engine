@@ -47,8 +47,14 @@ void InitializeTextureCache(Arena* arena)
     GetEngineCtx().textureCache = textureCacheMem;
     new(&textureCacheMem->cachedTextures) TextureCacheMap();
 
-    u8 dummyImgData[] = {255,17,250,255};
-    Texture dummyTex = LoadGPUTextureFromImg(dummyImgData, 1, 1, TextureProperties::RGBA_NEAREST(), 0xBEEFEE);
+    u8 dummyImgData[] = 
+    {
+        0,0,0,255, // black
+        255,0,255,255, // hot pink
+        255,0,255,255, // hot pink
+        0,0,0,255, // black
+    };
+    Texture dummyTex = LoadGPUTextureFromImg(dummyImgData, 2, 2, TextureProperties::RGBA_NEAREST(), 0xBEEFEE);
     textureCacheMem->dummyTexture = dummyTex;
 }
 

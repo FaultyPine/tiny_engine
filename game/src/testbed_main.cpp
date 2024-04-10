@@ -18,8 +18,8 @@
 #include "render/tiny_ogl.h"
 #include "render/postprocess.h"
 
-//#define ISLAND_SCENE
-#define SPONZA_SCENE
+#define ISLAND_SCENE
+//#define SPONZA_SCENE
 
 struct Wave {
     f32 waveSpeed = 1.0;
@@ -163,7 +163,6 @@ void testbed_orbit_light(LightDirectional& light, f32 orbitRadius, f32 speedMult
 
 static bool enableGrassRender = true;
 static f32 ambientLightIntensity = 0.15f;
-static bool useNewRenderer = true;
 void drawImGuiDebug(GameState& gs) {
     PROFILE_FUNCTION();
     
@@ -172,7 +171,6 @@ void drawImGuiDebug(GameState& gs) {
     glm::vec3 camPos = Camera::GetMainCamera().cameraPos;
     ImGui::Text(TextFormat("CamPos: %f %f %f", camPos.x, camPos.y, camPos.z));
 
-    ImGui::Checkbox("New renderer enabled", &useNewRenderer);
     if (ImGui::CollapsingHeader("Entities"))
     {
         for (EntityRef& entref : gs.entities)
@@ -274,9 +272,11 @@ void DepthAndNormsPrePass(const GameState& gs) {
     // and the alpha channel is the depth
     for (const EntityRef& ref : gs.entities) 
     {
+        Shader prepassShader = gs.depthAndNormsShader;
         EntityData& ent = Entity::GetEntity(ref);
         // kinda cringe that we need to special case this
-        if (ent.id == GetHash("PondEntity")) {
+        if (ent.id == GetHash("PondEntity")) 
+        {
             gs.pondPrepassShader.setUniform("numActiveWaves", gs.numActiveWaves);
             for (u32 i = 0; i < NUM_WAVES; i++) {
                 const Wave& wave = gs.waves[i];
@@ -285,23 +285,18 @@ void DepthAndNormsPrePass(const GameState& gs) {
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
                 gs.pondPrepassShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
             }
-            //gs.pondPrepassShader.setUniform("modelMat", ent.transform.ToModelMatrix());
-            gs.pondPrepassShader.use();
-            ent.model.DrawMinimal();
-            continue;
+            prepassShader = gs.pondPrepassShader;
         }
-        // draw model to texture
-        ent.model.Draw(gs.depthAndNormsShader, ent.transform);
-    }
-    if (enableGrassRender && gs.grassPrepassShader.isValid())
-    {
-        gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
-        gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
-        gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
-        gs.grassPrepassShader.TryAddSampler(gs.windTexture, "windTexture");
-        gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        EntityData& grass = Entity::GetEntity("grass");
-        grass.model.Draw(gs.grassPrepassShader, grass.transform);
+        else if (ent.id == GetHash("grass"))
+        {
+            gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
+            gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
+            gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
+            gs.grassPrepassShader.TryAddSampler(gs.windTexture, "windTexture");
+            gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
+            prepassShader = gs.grassPrepassShader;
+        }
+        ent.model.Draw(prepassShader, ent.transform);
     }
     Postprocess::PostprocessFramebuffer(gs.depthAndNorms);
     Renderer::PopDebugRenderMarker();
@@ -331,7 +326,6 @@ void drawGameState(const GameState& gs) {
     EntityData& grass = Entity::GetEntity("grass");
     if (grass && enableGrassRender) 
     {
-        PROFILE_SCOPE("GrassInstancing");
         grass.model.cachedShader.setUniform("_WindStrength", gs.windStrength);
         grass.model.cachedShader.setUniform("_WindFrequency", gs.windFrequency);
         grass.model.cachedShader.setUniform("_WindUVScale", gs.windUVScale);
@@ -344,8 +338,7 @@ void drawGameState(const GameState& gs) {
         for (EntityRef ref : gs.entities) 
         {
             EntityData& ent = Entity::GetEntity(ref);
-            if (useNewRenderer) Renderer::PushEntity(ref);
-            else ent.model.Draw(ent.transform);
+            Renderer::PushEntity(ref);
         }
     }
 

@@ -2,7 +2,6 @@
 #define TINY_RENDERER_H
 
 #include "math/tiny_math.h"
-#include "render/mesh.h"
 #include "scene/entity.h"
 
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glDrawElementsInstancedBaseVertexBaseInstance.xhtml
@@ -71,6 +70,16 @@ TAPI void PushEntity(const EntityRef& entity);
 
 TAPI void PushDebugRenderMarker(const char* name);
 TAPI void PopDebugRenderMarker();
+
+
+// TODO: remove this once renderer is fully integrated
+TAPI void EnableInstancing(
+    u32 VAO, 
+    void* instanceDataBuffer,
+    u32 stride, u32 numElements,
+    u32& vertexAttributeLocation, 
+    u32& instanceVBO);
+
 }
 
 #endif

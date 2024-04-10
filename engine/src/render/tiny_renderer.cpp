@@ -15,6 +15,8 @@
 #include "scene/entity.h"
 #include "res/shaders/shader_defines.glsl"
 
+// NOTE: previous renderer:  4118 draw calls, render took ~4ms avg.
+
 // TODO:
 // consolidate shape shaders(?)
 
@@ -41,12 +43,13 @@ struct RMesh
     u32 numInstances = 0;
 };
 
+constexpr u32 MAX_NUM_MESHES_PER_BATCH = 500; // arbitrary
 struct MeshBatch
 {
     // batches must share the same material/shader
     Material material = {};
     Shader shader = {};
-    FixedGrowableArray<RMesh, 100> meshes = {};
+    FixedGrowableArray<RMesh, MAX_NUM_MESHES_PER_BATCH> meshes = {};
     u32 batchVAO, batchVBO, batchEBO = 0;
     u64 verticesMemSize, indicesMemSize = 0;
     GPUInstanceData instanceData = {};
@@ -67,7 +70,7 @@ void ClearMeshBatch(MeshBatch& batch)
     batch.active = false;
 }
 
-// hash required data for a batch. Inputs that hash the same can be batched
+// hash required data for a batch. Inputs that hash the same will be batched
 static u64 MeshBatchHash(const Mesh& mesh, const Shader& shader)
 {
     u64 result = 0;
@@ -85,14 +88,13 @@ static u64 MeshBatchHash(const Mesh& mesh, const Shader& shader)
 
 struct DrawElementsIndirectCommand 
 {
-    u32  count;
+    u32  count; // num indices
     u32  instanceCount;
-    u32  firstIndex;
-    s32  baseVertex;
+    u32  firstIndex; // bytes
+    s32  baseVertex; // vertex idx
     u32  baseInstance;
 };
 
-constexpr u32 MAX_NUM_MESHES_PER_BATCH = 500; // arbitrary
 struct RendererData
 {
     Arena arena = {};
@@ -271,7 +273,7 @@ void DrawTriangles(RendererData& renderer)
 
 
 // numComponents is number of instances
-static void EnableInstancing(
+void EnableInstancing(
     u32 VAO, 
     void* instanceDataBuffer,
     u32 stride, u32 numElements,
@@ -289,7 +291,7 @@ static void EnableInstancing(
     // when we call ConfigureVertexAttrib with this instanceVBO bound, this all gets bound up into the above VAO
     // thats how the VAO knows about our instance vbo
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO); // instance vbo 
-    glBufferData(GL_ARRAY_BUFFER, stride*numElements, instanceDataBuffer, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, stride*numElements, instanceDataBuffer, GL_DYNAMIC_DRAW);
     // set up vertex attribute(s) for instance-specific data
     // if we want float/vec2/vec3/vec4 its not a big deal,
     // just send that into a vertex attribute as normal
@@ -313,22 +315,25 @@ static void EnableInstancing(
 static void GetDrawData(RMesh* meshes, u32 numMeshes, DrawElementsIndirectCommand* dst, u64& verticesMemSize, u64& indicesMemSize)
 {
     size_t currentVertOffset = 0;
+    size_t indexOffset = 0;
     size_t instanceOffset = 0;
     for (u32 i = 0; i < numMeshes; i++)
     {
         const RMesh& mesh = meshes[i];
         u32 numVertices = mesh.vertices.size / mesh.vertices.stride();
+        u32 numIndices = mesh.indices.size / mesh.indices.stride();
 
         DrawElementsIndirectCommand& cmd = dst[i];           
-        cmd.count = mesh.indices.size / mesh.indices.stride(); // elements to render is the number of indices;
+        cmd.count = numIndices; 
         cmd.instanceCount = Math::Max(mesh.numInstances, 1u);
-        cmd.firstIndex = indicesMemSize;
+        cmd.firstIndex = indexOffset;
         cmd.baseVertex = currentVertOffset;
         cmd.baseInstance = instanceOffset;
 
         verticesMemSize += mesh.vertices.size;
         indicesMemSize += mesh.indices.size;
         currentVertOffset += numVertices;
+        indexOffset += numIndices;
         instanceOffset += mesh.numInstances;
     }
 }
@@ -349,7 +354,8 @@ void DrawModels(RendererData& renderer, Arena* arena)
         TINY_ASSERT(numMeshes <= MAX_NUM_MESHES_PER_BATCH && numMeshes > 0);
         DrawElementsIndirectCommand* drawCommands = arena_alloc_type(arena, DrawElementsIndirectCommand, numMeshes);
         TMEMSET(drawCommands, 0, sizeof(DrawElementsIndirectCommand) * numMeshes);
-        u64 verticesMemSize, indicesMemSize = 0;
+        u64 verticesMemSize = 0;
+        u64 indicesMemSize = 0;
         GetDrawData(batch.meshes.get_elements(), numMeshes, drawCommands, verticesMemSize, indicesMemSize);
         // we need to allocate gpu buffers if the number of meshes in our batch increases
         bool shouldRegenerateBuffers = 
@@ -386,10 +392,10 @@ void DrawModels(RendererData& renderer, Arena* arena)
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
             }
             // allocate (not copying over yet)
-            glBufferData(GL_ARRAY_BUFFER, verticesMemSize, NULL, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, verticesMemSize, NULL, GL_DYNAMIC_DRAW);
             if (indicesMemSize > 0)
             {
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesMemSize, NULL, GL_STATIC_DRAW);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesMemSize, NULL, GL_DYNAMIC_DRAW);
             }
             // bind vertex attributes to VAO
             u32 vertexAttributeLocation = 0;
@@ -421,11 +427,12 @@ void DrawModels(RendererData& renderer, Arena* arena)
             for (u32 i = 0; i < batch.meshes.size; i++)
             {
                 const RMesh& mesh = batch.meshes.at(i);
-                size_t vertOffsetBytes = drawCommands[i].baseVertex * sizeof(RMeshVertex);
+                const DrawElementsIndirectCommand& drawCmd = drawCommands[i];
+                size_t vertOffsetBytes = drawCmd.baseVertex * sizeof(RMeshVertex);
                 glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)vertOffsetBytes, mesh.vertices.size, mesh.vertices.data);
                 if (EBO != 0)
                 {
-                    u32 idxOffsetBytes = drawCommands[i].firstIndex;
+                    u32 idxOffsetBytes = drawCmd.firstIndex * sizeof(RMeshIndex);
                     glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, (GLintptr)idxOffsetBytes, mesh.indices.size, mesh.indices.data);
                 }
             }
@@ -439,12 +446,6 @@ void DrawModels(RendererData& renderer, Arena* arena)
         glBindVertexArray(VAO);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, renderer.indirectGPUBuffer);
         glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, numMeshes * sizeof(DrawElementsIndirectCommand), drawCommands);
-        //for (u32 i = 0; i < numMeshes; i++)
-        //{
-        //    glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, numMeshes,
-        //        GL_UNSIGNED_INT, (void*)drawCommands[i].firstIndex, drawCommands[i].instanceCount, drawCommands[i].baseVertex, drawCommands[i].baseInstance
-        //    );
-        //}
         glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, numMeshes, sizeof(DrawElementsIndirectCommand));
         arena_pop_latest(arena, drawCommands);
         ClearMeshBatch(batch);
@@ -500,10 +501,11 @@ void PushModel(const Model& model, const Shader& shader)
         const Mesh& mesh = model.meshes[i];
         if (!mesh.isVisible) continue;
         RMesh rmesh;
+        static_assert(sizeof(RMeshVertex) == sizeof(Vertex));
         rmesh.vertices = {const_cast<RMeshVertex*>(mesh.vertices.data()), mesh.vertices.size() * sizeof(RMeshVertex)};
         rmesh.indices = {const_cast<RMeshIndex*>(mesh.indices.data()), mesh.indices.size() * sizeof(RMeshIndex)};
         rmesh.numInstances = mesh.instanceData.numInstances;
-        // batches are bucketed by hashing their shader and material together
+        // batches are bucketed by hashing properties of their mesh and their shader
         u64 rmeshHash = MeshBatchHash(mesh, shader);
         MeshBatch& batch = renderer.models[rmeshHash];
         TINY_ASSERT(!batch.material.isValid() || batch.material == mesh.material); // either we are adding for the first time or they must be the same
