@@ -89,6 +89,21 @@ void Mesh::initMesh()
     GLCall(glBindVertexArray(0));
 }
 
+void Mesh::ReuploadToGPU()
+{
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    if (!indices.empty()) 
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    }
+    // NOTE: using glBufferData, not glBufferSubData since we may have added more vertices, so we should do a full realloc
+    // would be better to track both cases but this is an edge case anyway
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);  
+    if (!indices.empty()) 
+    {
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(u32), &indices[0], GL_STATIC_DRAW);
+    }
+}
 
 void Mesh::Draw() const 
 {

@@ -255,6 +255,7 @@ Model::Model(const Shader& shader, const std::vector<Mesh>& meshes, u32 objectID
     for (Mesh& mesh : this->meshes)
     {
         mesh.SetObjectID(objectID);
+        mesh.ReuploadToGPU();
     }
     cachedBoundingBox = CalculateBoundingBox();
 }

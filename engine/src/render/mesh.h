@@ -79,6 +79,7 @@ struct Mesh
             vertex.objectID = objectID;
         }
     }
+    TAPI void ReuploadToGPU();
 private:    
     void initMesh();
 };

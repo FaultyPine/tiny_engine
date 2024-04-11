@@ -38,7 +38,9 @@ void InitializeMaterialSystem(Arena* arena)
     MaterialRegistry* reg = arena_alloc_and_init<MaterialRegistry>(arena);
     ctx.materialRegistry = reg;
 
-    Material dummyMaterial = NewMaterial("DummyMaterial", U32_INVALID_ID);
+    const char* dummyMaterialName = "DummyMaterial";
+    u32 dummyMaterialHash = HashBytes((u8*)dummyMaterialName, 13);
+    Material dummyMaterial = NewMaterial(dummyMaterialName, dummyMaterialHash);
     OverwriteMaterialProperty(dummyMaterial, MaterialProp(GetDummyTexture()), TextureMaterialType::DIFFUSE);
     ctx.materialRegistry->dummyMaterial = dummyMaterial;
 }

@@ -92,7 +92,7 @@ Mesh GenCubeMesh() {
         v.texCoords = {vertexData[6], vertexData[7]};
         cubeverts.push_back(v);
     }
-    return Mesh(cubeverts, {}, {});
+    return Mesh(cubeverts, {}, GetDummyMaterial());
 }
 Mesh GenPlaneMesh(u32 resolution) {
     resolution++; // resolution of 1 should really be 2
@@ -266,7 +266,7 @@ Mesh GenSphereMesh(u32 resolution)
     }
     vertices.shrink_to_fit();
     indices.shrink_to_fit();
-    return Mesh(vertices, indices);
+    return Mesh(vertices, indices, GetDummyMaterial());
 }
 
 void DrawWireCube(BoundingBox box, const glm::vec4& color)
