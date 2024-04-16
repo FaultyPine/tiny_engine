@@ -8,7 +8,7 @@ platform = sys.platform
 # ========== Compiler / Linker options generation =============================================
 
 def cpp_ver_arg():
-    return "-std=c++17"
+    return "-std=c++20"
 
 def include_arg(to_root, path):
     return f"-I{to_root}\\{path}"
