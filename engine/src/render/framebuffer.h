@@ -58,6 +58,8 @@ struct Framebuffer
     TAPI Texture GetDepthTexture() const { return depthTex; }
     TAPI void AttachTexture(FramebufferAttachmentType type, const Texture& tex);
 
+    bool operator==(const Framebuffer& fb) const { return framebufferID == fb.framebufferID; }
+
     Texture depthTex = {};
     Texture colorTextures[TextureMaterialType::NUM_MATERIAL_TYPES] = {};
     u32 framebufferID = U32_INVALID_ID;

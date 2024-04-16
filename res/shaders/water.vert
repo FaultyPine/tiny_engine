@@ -65,7 +65,7 @@ vec3 GertsnerWaves(vec3 VertexPos, inout vec3 normal, inout float waveHeightOffs
 
 void main() {
     VertexToFrag();
-    vec3 vertexPosWS = vec3(GetModelMatrix() * vec4(vertexPosition, 1.0));
+    vec3 vertexPosWS = vs_out.fragPositionWS;
 
     vec3 vertPos = vertexPosWS;
     vec3 normal = vec3(0);
@@ -74,20 +74,5 @@ void main() {
     waveHeight = wvh;
     vertPos = newVertexPos;
 
-    
-    vs_out.fragPositionWS = vec3(GetModelMatrix() * vec4(vertPos, 1.0)); // model space vertex pos -> world space
-
-    
-    // world space normals
-    //fragNormalWS = normalize(normalMat * vertexNormal);
-    vec3 fragNormalWS = normalize(GetNormalMatrix()*normal); // recalculated normals
-    
-    vs_out.fragNormal = vertexNormal;
-    
-    // world space frag pos to light space
-    fragPosLightSpace = lightSpaceMatrix * vec4(vs_out.fragPositionWS, 1.0);
-    vs_out.fragTexCoord = vertexTexCoord;
-    vs_out.fragVertexColor = vertexColor;
-
-    gl_Position = projection * view * GetModelMatrix() *vec4(vertPos, 1.0);
+    gl_Position = GetProjectionMatrix() * GetViewMatrix() * GetModelMatrix() *vec4(vertPos, 1.0);
 }

@@ -84,8 +84,9 @@ void LogMessage(LogLevel level, const char* message, ...)
 
     va_list args;
     va_start(args, message);
-    vsnprintf(out_msg, log_message_limit, message, args);
+    s32 bytesWritten = vsnprintf(out_msg, log_message_limit, message, args);
     va_end(args);
+    TINY_ASSERT(bytesWritten < log_message_limit);
 
     // append (optional)color and log level to message
 #if TERMINAL_COLORED_OUTPUT_ENABLED

@@ -52,7 +52,7 @@ void UpdateGlobalUBOLighting(UBOGlobals& globs)
     }
     globs.sunlight.color = lights.sunlight.color;
     globs.sunlight.direction = glm::vec4(lights.sunlight.direction, lights.sunlight.intensity);
-    globs.sunlight.lightSpaceMatrix = lights.sunlight.GetLightSpacematrix();
+    lights.sunlight.GetLightSpacematrix(&globs.sunlight.projection, &globs.sunlight.view);
 
     globs.numActiveLightsAndAmbientIntensity.x = (f32)lights.GetNumActiveLights();
     globs.numActiveLightsAndAmbientIntensity = glm::vec4(globs.numActiveLightsAndAmbientIntensity.x, ctx.lightsSubsystem->ambientLightIntensity, 0.0f, 0.0f);

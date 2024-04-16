@@ -5,5 +5,5 @@
 
 void main() {
     VertexToFrag();
-    gl_Position = projection * view * GetModelMatrix() * vec4(vertexPosition, 1.0);
+    gl_Position = GetProjectionMatrix() * GetViewMatrix() * GetModelMatrix() * vec4(vertexPosition, 1.0);
 }

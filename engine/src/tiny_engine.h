@@ -46,7 +46,6 @@ struct EngineContext
     const char* resourceDirectory = nullptr;
     Arena gameArena = {};
     Arena engineArena = {}; // persistent
-    // BOOKMARK/TODO: introduce the idea of a frame allocator, scene allocator, persistent allocator
     Arena engineFrameAllocator = {}; // cleared at the end of each frame
     Arena engineSceneAllocator = {}; // persistent for a scene
 

@@ -384,22 +384,21 @@ void InitEngine(
         }
         JobSystem::Instance().FlushMainThreadJobs();
         { PROFILE_SCOPE("Engine Render");
-            // this is before the game render for now because the game can issue render commands
-            // when the renderer rewrite is done, the game won't be issueing any draw commands so this can go in RendererDraw
-            ShaderSystemPreDraw(); 
-            Framebuffer screenRenderFb;
             { PROFILE_SCOPE("Game Render");
-                screenRenderFb = gameFuncs.renderFunc(gameArena);
+                gameFuncs.renderFunc(gameArena);
             }
-            Renderer::RendererDraw();
-            //Framebuffer* postprocessedFb = Postprocess::PostprocessFramebuffer(screenRenderFb);
+            Framebuffer* finalpass = Renderer::RendererDraw();
             glm::vec2 screen = glm::vec2(Camera::GetScreenWidth(), Camera::GetScreenHeight());
             // blit the game's rendered frame to default framebuffer
-            if (screenRenderFb.isValid())
+            if (finalpass->isValid())
             {
-                Framebuffer::Blit(screenRenderFb.framebufferID, 0, 0, screen.x, screen.y, 0, 0, 0, screen.x, screen.y);
+                constexpr u32 defaultFramebufferID = 0;
+                Framebuffer::Blit(
+                    finalpass->framebufferID, 0, 0, screen.x, screen.y, 
+                    defaultFramebufferID, 0, 0, screen.x, screen.y);
             }
         }
+        arena_clear(GetFrameAllocator());
         ImGuiEndFrame();
     }
     gameFuncs.terminateFunc(gameArena);

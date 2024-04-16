@@ -47,7 +47,8 @@ Under std140, struct members of a block should be aligned to 16-bytes
     // lighting
     struct LightDirectionalUBO
     {
-        glm::mat4 lightSpaceMatrix;
+        glm::mat4 projection;
+        glm::mat4 view;
         glm::vec4 direction; // intensity in alpha
         glm::vec4 color;
     };

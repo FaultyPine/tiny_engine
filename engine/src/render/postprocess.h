@@ -21,11 +21,11 @@ namespace Postprocess
 
 TAPI void SetPostprocessShader(const Shader& shader);
 TAPI void ApplySSAOUniforms(const Shader& shader);
-TAPI void ApplyPostprocessingUniforms(const Shader& shader);
 TAPI PostprocessSettings& ModifySettings();
 
 void InitializePostprocessing(Arena* arena);
-TAPI Framebuffer* PostprocessFramebuffer(const Framebuffer& fbToProcess);
+TAPI void PostprocessFramebuffer(const Framebuffer& fbToProcess, const Shader& shader);
+TAPI void PostprocessFramebuffer(const Framebuffer& fbToProcess, const Framebuffer& dst, const Shader& shader);
 TAPI Framebuffer* GetPostprocessingFramebuffer();
 TAPI Shader* GetPostprocessingShader();
 

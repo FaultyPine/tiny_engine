@@ -1,7 +1,6 @@
 
 #include "globals.glsl"
 
-#include "lighting.glsl"
 #include "common.glsl"
 #include "noise.glsl"
 #include "hash.glsl"
@@ -80,9 +79,9 @@ vec3 GrassWind(vec3 vertexPosition)
 void main()
 {
     VertexToFrag();
-    mat4 modelView = view * instanceModelMat;
+    mat4 modelView = GetViewMatrix() * instanceModelMat;
     //modelView = Billboard(modelView);
-    mat4 mvp = projection * modelView;
+    mat4 mvp = GetProjectionMatrix() * modelView;
     
     vec3 vertPos = vertexPosition;
     vertPos = GrassWind(vertPos) * scaleFromModelMat(instanceModelMat);

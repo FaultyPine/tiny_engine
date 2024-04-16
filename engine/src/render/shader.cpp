@@ -54,8 +54,6 @@ struct UniformData
     // TODO: dirty flag and only set when we actually change the data
 };
 
-// contains vertex shader path, frag shader path
-typedef std::pair<std::string, std::string> ShaderLocation;
 
 struct ShaderInternal
 {
@@ -88,6 +86,12 @@ void InitializeShaderSystem(Arena* arena)
     void* globalShaderMem = arena_alloc(arena, shaderMemBlockSize);
     gss->globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize);
     InitializeUBOs(gss->globals);
+}
+
+const ShaderLocation& GetShaderPaths(const Shader& shader)
+{
+    GlobalShaderState& gss = GetGSS();
+    return gss.shaderMap.at(shader.ID).filepaths;
 }
 
 void ShaderSystemPreDraw()
@@ -450,9 +454,12 @@ void Shader::TryAddSampler(const Cubemap& texture, const char* uniformName) cons
     this->TryAddSampler(cubemapTex, uniformName);
 }
 
-
-
-void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData, u32 uniformSize, UniformDataType dataType) 
+void updateUniformData(
+    u32 ID, 
+    const std::string& uniformName, 
+    void* uniformData, 
+    u32 uniformSize, 
+    UniformDataType dataType) 
 {
     PROFILE_FUNCTION();
     GlobalShaderState& gss = GetGSS();
@@ -487,6 +494,15 @@ void updateUniformData(u32 ID, const std::string& uniformName, void* uniformData
     }
 }
 
+void TransferUniforms(const Shader& src, const Shader& dst)
+{
+    GlobalShaderState& gss = GetGSS();
+    const auto& uniformMap = gss.shaderMap[src.ID].cachedUniforms;
+    for (const auto& [uniformName, uniformData] : uniformMap)
+    {
+        updateUniformData(dst.ID, uniformName, uniformData.uniformData, uniformData.uniformSize, uniformData.dataType);
+    }
+}
 
 void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform);
 
@@ -496,8 +512,12 @@ void UseShaderAndSetUniforms(const Shader& shaderIDToReceive, const Shader& shad
     GlobalShaderState& gss = GetGSS();
     u32 oglShaderID = GetOpenGLProgramID(shaderIDToReceive.ID);
     glUseProgram(oglShaderID); 
+    if (shaderIDToReceive != shaderIDForUniforms)
+    {
+        TransferUniforms(shaderIDForUniforms, shaderIDToReceive);
+    }
     ActivateSamplers(shaderIDForUniforms.ID);
-    const auto& uniformMap = gss.shaderMap[shaderIDForUniforms.ID].cachedUniforms;
+    const auto& uniformMap = gss.shaderMap[shaderIDToReceive.ID].cachedUniforms;
     for (const auto& [uniformName, uniformData] : uniformMap)
     {
         SetOglUniformFromBuffer(uniformName.c_str(), uniformData);

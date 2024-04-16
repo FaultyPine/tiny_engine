@@ -18,8 +18,8 @@
 #include "render/tiny_ogl.h"
 #include "render/postprocess.h"
 
-#define ISLAND_SCENE
-//#define SPONZA_SCENE
+//#define ISLAND_SCENE
+#define SPONZA_SCENE
 
 struct Wave {
     f32 waveSpeed = 1.0;
@@ -45,24 +45,17 @@ struct GameState {
     #define NUM_WAVES 8
     Wave waves[NUM_WAVES];
     s32 numActiveWaves = 0;
-    Shader pondPrepassShader;
     Texture waterTexture;
     // Waterfall particles
     ParticleSystem waterfallParticles = {};
     
     // grass
-    Shader grassPrepassShader;
     BoundingBox grassSpawnExclusion = {};
     Texture windTexture = {};
     f32 windStrength = 0;
     f32 windFrequency = 0;
     f32 windUVScale = 0;
     f32 grassCurveIntensity = 0;
-
-    Shader depthAndNormsShader;
-    Framebuffer depthAndNorms;
-
-    Framebuffer gamerenderFB;
 
     Skybox skybox = {};
 
@@ -216,7 +209,7 @@ void drawImGuiDebug(GameState& gs) {
         }
     }
 
-    ImGui::DragFloat("Ambient light intensity", &GetEngineCtx().lightsSubsystem->ambientLightIntensity, 0.01f);
+    ImGui::DragFloat("Ambient light intensity", &GetEngineCtx().lightsSubsystem->ambientLightIntensity, 0.001f);
     if (ImGui::CollapsingHeader("Point lights"))
     {
         for (u32 i = 0; i < MAX_NUM_LIGHTS; i++)
@@ -245,120 +238,6 @@ void drawImGuiDebug(GameState& gs) {
 
 }
 
-void ShadowMapPrePass(const GameState& gs) {
-    PROFILE_FUNCTION();
-    Renderer::PushDebugRenderMarker("Directional light Shadow Map Prepass");
-    const LightingSystem& lighting = *GetEngineCtx().lightsSubsystem;
-    const LightDirectional& sunlight = lighting.lights.sunlight;
-    const ShadowMap& sunShadows = lighting.directionalShadowMap;
-    sunShadows.BeginRender();
-    for (const EntityRef& ref : gs.entities) 
-    {
-        EntityData& ent = Entity::GetEntity(ref);
-        sunShadows.RenderShadowCaster(sunlight, ent.model, ent.transform);
-    }
-    sunShadows.EndRender();
-    Renderer::PopDebugRenderMarker();
-}
-
-void DepthAndNormsPrePass(const GameState& gs) {
-    PROFILE_FUNCTION();
-    Renderer::PushDebugRenderMarker("Depth&norms Prepass");
-
-    gs.depthAndNorms.Bind();
-    ClearGLBuffers();
-    // render entities to a texture where the rgb of each pixel is the normals
-    // and the alpha channel is the depth
-    for (const EntityRef& ref : gs.entities) 
-    {
-        Shader prepassShader = gs.depthAndNormsShader;
-        EntityData& ent = Entity::GetEntity(ref);
-        // kinda cringe that we need to special case this
-        if (ent.id == GetHash("PondEntity")) 
-        {
-            gs.pondPrepassShader.setUniform("numActiveWaves", gs.numActiveWaves);
-            for (u32 i = 0; i < NUM_WAVES; i++) {
-                const Wave& wave = gs.waves[i];
-                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
-                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
-                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
-                gs.pondPrepassShader.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
-            }
-            prepassShader = gs.pondPrepassShader;
-        }
-        else if (ent.id == GetHash("grass"))
-        {
-            gs.grassPrepassShader.setUniform("_WindStrength", gs.windStrength);
-            gs.grassPrepassShader.setUniform("_WindFrequency", gs.windFrequency);
-            gs.grassPrepassShader.setUniform("_WindUVScale", gs.windUVScale);
-            gs.grassPrepassShader.TryAddSampler(gs.windTexture, "windTexture");
-            gs.grassPrepassShader.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-            prepassShader = gs.grassPrepassShader;
-        }
-        ent.model.Draw(prepassShader, ent.transform);
-    }
-    Postprocess::PostprocessFramebuffer(gs.depthAndNorms);
-    Renderer::PopDebugRenderMarker();
-}
-
-void drawGameState(const GameState& gs) 
-{
-    PROFILE_FUNCTION();
-    Renderer::PushDebugRenderMarker("Draw gamestate");
-
-    // update Waves
-    #ifdef ISLAND_SCENE
-    if (EntityData& waveEntity = Entity::GetEntity("PondEntity")) 
-    {
-        Model& waveModel = waveEntity.model;
-        if (waveEntity && waveModel.isValid()) 
-        {
-            waveModel.setUniform("numActiveWaves", gs.numActiveWaves);
-            waveModel.setUniform("numActiveWaves", gs.numActiveWaves);
-            for (u32 i = 0; i < NUM_WAVES; i++) 
-            {
-                const Wave& wave = gs.waves[i];
-                waveModel.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
-                waveModel.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
-                waveModel.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
-                waveModel.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
-            }
-        }
-    }
-
-    // grass
-    EntityData& grass = Entity::GetEntity("grass");
-    if (grass && enableGrassRender) 
-    {
-        grass.model.setUniform("_WindStrength", gs.windStrength);
-        grass.model.setUniform("_WindFrequency", gs.windFrequency);
-        grass.model.setUniform("_WindUVScale", gs.windUVScale);
-        grass.model.setUniform("_CurveIntensity", gs.grassCurveIntensity);
-        grass.model.TryAddSampler(gs.windTexture, "windTexture");
-    }
-    #endif
-    
-    { PROFILE_SCOPE("EntityDrawing");
-        for (EntityRef ref : gs.entities) 
-        {
-            EntityData& ent = Entity::GetEntity(ref);
-            Renderer::PushEntity(ref);
-        }
-    }
-
-    PhysicsDebugRender();
-
-    for (LightPoint& pointLight : GetEngineCtx().lightsSubsystem->lights.pointLights)
-    {
-        pointLight.Visualize();
-    }
-    GetEngineCtx().lightsSubsystem->lights.sunlight.Visualize();
-    
-    { PROFILE_SCOPE("Skybox draw");
-        gs.skybox.Draw();
-    }
-    Renderer::PopDebugRenderMarker();
-}
 
 glm::vec3 RandomPointBetweenVertices(const std::vector<Vertex>& planeVerts) {
     // pick two verts and pick a random spot between those two points to spawn it in
@@ -420,7 +299,6 @@ void init_grass(GameState& gs) {
     }
 
     Shader grassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/grass.frag").c_str());
-    gs.grassPrepassShader = Shader(ResPath("shaders/grass.vert").c_str(), ResPath("shaders/prepass.frag").c_str());
     Transform grassTf = Transform({0,0,0}, {1,1,1});
     EntityRef grass = Entity::CreateEntity("grass", grassTf);
     gs.entities.push_back(grass);
@@ -440,7 +318,6 @@ void init_grass(GameState& gs) {
 
 void init_main_pond(GameState& gs) {
     Shader waterShader = Shader(ResPath("shaders/water.vert").c_str(), ResPath("shaders/water.frag").c_str());
-    gs.pondPrepassShader = Shader(ResPath("shaders/water.vert").c_str(), ResPath("shaders/prepass.frag").c_str());
     gs.waterTexture = LoadTexture(ResPath("other/water.png"));
     waterShader.TryAddSampler(gs.waterTexture, "waterTexture");
     Transform waterPlaneTf = Transform({0.35, 3.64, 1.1}, {3.68, 1.0, 3.44});
@@ -541,79 +418,61 @@ void testbed_init(Arena* gameMem) {
     glm::vec3 sunTarget = glm::vec3(0, 0, 0);
     glm::vec3 sunDir = glm::normalize(sunTarget - sunPos);
     CreateDirectionalLight(sunDir, sunPos, glm::vec4(1), 1.0);
-    CreatePointLight(glm::vec3(0,10,0), glm::vec4(1));
+    CreatePointLight(glm::vec3(0,0.2,0), glm::vec4(1));
 
     { PROFILE_SCOPE("Skybox Init");
         gs.skybox = Skybox({}, TextureProperties::RGB_LINEAR());
     }
 
-    // init main game framebuffer
-    if (!gs.depthAndNorms.isValid()) 
-    {
-        gs.depthAndNormsShader = Shader(ResPath("shaders/prepass.vert"), ResPath("shaders/prepass.frag"));
-        gs.depthAndNorms = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false); // can add more framebuffers here for deferred gbuffers impl
-    }
-    if (!gs.gamerenderFB.isValid()) 
-    {
-        gs.gamerenderFB = Framebuffer(Camera::GetScreenWidth(), Camera::GetScreenHeight(), 1, false);
-        Shader postprocessingShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/postprocess.frag"));
-        postprocessingShader.TryAddSampler(gs.depthAndNorms.GetColorTexture(0), "depthNormals");
-        Postprocess::ApplySSAOUniforms(postprocessingShader);
-        Postprocess::SetPostprocessShader(postprocessingShader);
-        Postprocess::ApplyPostprocessingUniforms(lightingShader);
-    }
 }
 
+// TODO: now that renderer is seperate, make render functions not return Framebuffer
 Framebuffer testbed_render(const Arena* const gameMem) {
     PROFILE_FUNCTION();
     // gamestate is the first thing allocated always
     const GameState& gs =  *(GameState*)gameMem->backing_mem;
 
-    ShadowMapPrePass(gs);
-    DepthAndNormsPrePass(gs);
-
-    gs.gamerenderFB.Bind();
-    ClearGLBuffers();
-    drawGameState(gs);
-
-    glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-    Transform2D debugRenderTf = Transform2D(glm::vec2(0), scrn/4.0f);
-#if 1
+    // update Waves
+    #ifdef ISLAND_SCENE
+    if (EntityData& waveEntity = Entity::GetEntity("PondEntity")) 
     {
-        // render shadowmap tex to screen
-        const ShadowMap& sunShadows = GetEngineCtx().lightsSubsystem->directionalShadowMap;
-        sunShadows.fb.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::DEPTH, {});
-        debugRenderTf.position.y += debugRenderTf.scale.y;
+        Model& waveModel = waveEntity.model;
+        if (waveEntity && waveModel.isValid()) 
+        {
+            waveModel.setUniform("numActiveWaves", gs.numActiveWaves);
+            waveModel.setUniform("numActiveWaves", gs.numActiveWaves);
+            for (u32 i = 0; i < NUM_WAVES; i++) 
+            {
+                const Wave& wave = gs.waves[i];
+                waveModel.setUniform(TextFormat("waves[%i].waveSpeed", i), wave.waveSpeed);
+                waveModel.setUniform(TextFormat("waves[%i].wavelength", i), wave.wavelength);
+                waveModel.setUniform(TextFormat("waves[%i].steepness", i), wave.steepness);
+                waveModel.setUniform(TextFormat("waves[%i].direction", i), wave.direction);
+            }
+        }
     }
-#endif
-#if 1
-    {    
-        // render normals+depth tex to screen
-        gs.depthAndNorms.DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR0, {});
-        debugRenderTf.position.y += debugRenderTf.scale.y;
-        Postprocess::GetPostprocessingFramebuffer()->DrawToFramebuffer(gs.gamerenderFB, debugRenderTf, FramebufferAttachmentType::COLOR0, *Postprocess::GetPostprocessingShader());
-    }
-#endif
 
-    // red is x, green is y, blue is z
-    // should put this on the screen in the corner permanently
-    f32 axisGizmoScale = 0.03f;
-    static glm::vec3 offset = glm::vec3(0);
-    ImGui::DragFloat3("Gizmo offset", &offset[0], 0.01f);
-    glm::vec3 camFront = Camera::GetMainCamera().cameraFront;
-    glm::vec3 camUp = Camera::GetMainCamera().cameraUp;
-    glm::vec3 cameraRight = glm::normalize(glm::cross(camFront, camUp));
-    camUp = glm::normalize(glm::cross(camFront, cameraRight));
-    ImGui::Text("cam front: %f %f %f", camFront.x, camFront.y, camFront.z);
-    ImGui::Text("cam up: %f %f %f", camUp.x, camUp.y, camUp.z);
-    ImGui::Text("cam right: %f %f %f", cameraRight.x, cameraRight.y, cameraRight.z);
-    glm::vec3 axisGizmoOffsetWS = cameraRight * offset;
-    glm::vec3 camRel = Camera::GetMainCamera().cameraPos + camFront + axisGizmoOffsetWS;
-    Renderer::PushLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
-    Renderer::PushLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
-    Renderer::PushLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
+    // grass
+    EntityData& grass = Entity::GetEntity("grass");
+    if (grass && enableGrassRender) 
+    {
+        grass.model.setUniform("_WindStrength", gs.windStrength);
+        grass.model.setUniform("_WindFrequency", gs.windFrequency);
+        grass.model.setUniform("_WindUVScale", gs.windUVScale);
+        grass.model.setUniform("_CurveIntensity", gs.grassCurveIntensity);
+        grass.model.TryAddSampler(gs.windTexture, "windTexture");
+    }
+    #endif
     
-    return gs.gamerenderFB;
+    { PROFILE_SCOPE("EntityDrawing");
+        for (EntityRef ref : gs.entities) 
+        {
+            EntityData& ent = Entity::GetEntity(ref);
+            Renderer::PushEntity(ref);
+        }
+    }
+
+    return {};
 }
 
 void testbed_tick(Arena* gameMem, f32 deltaTime) {

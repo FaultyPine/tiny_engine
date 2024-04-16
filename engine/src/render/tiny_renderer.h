@@ -55,12 +55,13 @@ Color pass
 struct Arena;
 struct Model;
 struct Shader;
+struct Framebuffer;
 namespace Renderer
 {
 
 TAPI void InitializeRenderer(Arena* arena);
 
-TAPI void RendererDraw();
+TAPI Framebuffer* RendererDraw();
 
 TAPI void PushPoint(const glm::vec3& point, const glm::vec4& color = glm::vec4(1));
 TAPI void PushLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color = glm::vec4(1));

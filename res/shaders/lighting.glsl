@@ -29,6 +29,11 @@ float PCFShadow(
     return shadow;
 }
 
+mat4 GetDirectionalLightspaceMatrix()
+{
+    return sunlight.projection * sunlight.view;
+}
+
 float GetDirectionalShadow(
     vec3 fragPosWS, 
     vec3 fragNormalWS) 
@@ -36,7 +41,7 @@ float GetDirectionalShadow(
     vec3 lightDir = -sunlight.direction.xyz; // points towards pixel from light, so reverse it to get pixel to light
     // the light space matrix contains the view and projection matrices 
     // for our light (view representing where our light is "looking") and projection representing the shadow frustum
-    vec4 fragPosLS = sunlight.lightSpaceMatrix * vec4(fragPosWS, 1.0);
+    vec4 fragPosLS = GetDirectionalLightspaceMatrix() * vec4(fragPosWS, 1.0);
 
     //const float shadowBias = 0.005;
     // bias based on the surface's normal and light direction
@@ -155,7 +160,7 @@ vec3 calculateLighting(
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
     vec3 ambientLight = GetAmbientMaterial(fragTexCoord).rgb * GetAmbientLightIntensity();
-    ambientLight *= texture(aoTexture, fragTexCoord).rgb;
+    ambientLight *= texture(aoTexture, GetScreenUVs()).rgb;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);

@@ -80,7 +80,8 @@ uint GetObjectID()
 
 struct LightDirectional 
 {
-    mat4 lightSpaceMatrix;
+    mat4 projection;
+    mat4 view;
     vec4 direction; // intensity in alpha
     vec4 color;
 };
@@ -115,6 +116,17 @@ layout (std140) buffer Globals
     ObjectData objectData[MAX_NUM_OBJECTS];
 };
 
+uniform bool isDirectionalShadowPass = false;
+
+mat4 GetProjectionMatrix()
+{
+    return isDirectionalShadowPass ? sunlight.projection : projection;
+}
+
+mat4 GetViewMatrix()
+{
+    return isDirectionalShadowPass ? sunlight.view : view;
+}
 
 mat4 GetModelMatrix()
 {
@@ -137,6 +149,14 @@ float GetAmbientLightIntensity()
 {
     return activeLightsAndAmbientIntensity.y;
 }
+
+#ifdef FRAGMENT_SHADER
+vec2 GetScreenUVs()
+{
+    vec2 screenUV = gl_FragCoord.xy/screenSize.xy;
+    return screenUV;
+}
+#endif
 
 vec3 GetViewDir(vec3 fragPosWS) 
 {

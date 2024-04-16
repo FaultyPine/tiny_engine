@@ -27,17 +27,6 @@ static BoundingBox GetTightBoundsOnCamFrustum(
     return BoundingBox();
 }
 
-// TODO: this is hardcoded... ideally this would take a list of transforms and maybe some
-// camera frustum info and calculate the optimal size of the projection matrix
-static glm::mat4 GetDirectionalLightViewProjMatrix(glm::vec3 position, glm::vec3 target) 
-{
-    const f32 boxScale = 100.0f;
-    glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, 0.01f, 500.0f);
-    glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
-    glm::mat4 lightMat = lightProj * lightView;
-    return lightMat;
-}
-
 void LightPoint::Visualize()
 {
     if (!this->enabled) return;
@@ -86,9 +75,15 @@ LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position
     return lights.sunlight;
 }
 
-glm::mat4 LightDirectional::GetLightSpacematrix() const
+glm::mat4 LightDirectional::GetLightSpacematrix(glm::mat4* outProj, glm::mat4* outView) const
 {
-    return GetDirectionalLightViewProjMatrix(position, position + direction);
+    glm::vec3 target = position + direction;
+    glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
+    const f32 boxScale = 100.0f;
+    glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, 0.01f, 500.0f);
+    if (outProj) *outProj = lightProj;
+    if (outView) *outView = lightView;
+    return lightProj * lightView;
 }
 
 bool ActiveLightsInFront(LightPoint lights[MAX_NUM_LIGHTS]) {

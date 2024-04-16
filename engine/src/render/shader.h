@@ -70,14 +70,20 @@ struct Shader {
     TAPI void setUniform(const s8* uniformName, glm::mat3 mat3, bool transpose = false) const;
 
     bool operator==(const Shader& p) const { return ID == p.ID; }
+    bool operator!=(const Shader& p) const { return ID != p.ID; }
 };
+
+
+// contains vertex shader path, frag shader path
+typedef std::pair<std::string, std::string> ShaderLocation;
 
 // takes in a shader ID that receives uniforms, and a shader ID to supply the uniforms
 // in the typical case, these will both be the same shader. I.E. a shader applies it's own uniforms to itself
 // this also allows us to apply ANOTHER shader's uniforms to some other shader. I.E. for prepasses where 
 // uniforms should be the same for the original shader and the prepass shader
 void UseShaderAndSetUniforms(const Shader& shaderIDToReceive, const Shader& shaderIDForUniforms);
-
+void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram);
+const ShaderLocation& GetShaderPaths(const Shader& shader);
 
 struct ShaderHasher {
     size_t operator()(const Shader& p) const

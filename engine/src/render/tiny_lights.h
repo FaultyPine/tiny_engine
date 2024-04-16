@@ -37,7 +37,7 @@ struct LightDirectional
     glm::vec4 color = glm::vec4(1);
 
     TAPI void Visualize();
-    TAPI glm::mat4 GetLightSpacematrix() const;
+    TAPI glm::mat4 GetLightSpacematrix(glm::mat4* outProj = nullptr, glm::mat4* outView = nullptr) const;
 };
 
 struct GlobalLights

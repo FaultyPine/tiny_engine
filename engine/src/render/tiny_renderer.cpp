@@ -13,9 +13,17 @@
 #include "render/model.h"
 #include "render/tiny_lights.h"
 #include "scene/entity.h"
+#include "tiny_fs.h"
+#include "render/skybox.h"
+#include "tiny_imgui.h"
+#include "render/postprocess.h"
+#include "physics/tiny_physics.h"
 #include "res/shaders/shader_defines.glsl"
 
-// NOTE: previous renderer:  4118 draw calls, render took ~4ms avg.
+// TODO: when renderer is fully done, compare against old renderer. (draw calls & actual timings)
+
+constexpr u32 MAX_NUM_RENDER_PASSES = 10;
+constexpr u32 MAX_NUM_MESHES_PER_BATCH = 500; // arbitrary
 
 // TODO:
 // consolidate shape shaders(?)
@@ -43,7 +51,6 @@ struct RMesh
     u32 numInstances = 0;
 };
 
-constexpr u32 MAX_NUM_MESHES_PER_BATCH = 500; // arbitrary
 struct MeshBatch
 {
     // batches must share the same material/shader
@@ -59,6 +66,7 @@ struct MeshBatch
     // additionally, the batch is ONLY rendered if this is set. 
     // With this, to draw a mesh every frame you must "push" that mesh to the renderer every frame (through a model or entity or whatever)
     bool active = true;
+    Shader prepassShaders[MAX_NUM_RENDER_PASSES] = {};
 };
 
 void ClearMeshBatch(MeshBatch& batch)
@@ -71,16 +79,16 @@ void ClearMeshBatch(MeshBatch& batch)
 }
 
 // hash required data for a batch. Inputs that hash the same will be batched
-static u64 MeshBatchHash(const Mesh& mesh, const Shader& shader)
+static u64 MeshBatchHash(const Material& material, const Shader& shader, const GPUInstanceData& instanceData)
 {
     u64 result = 0;
     // bottom 32 bits are material id, top 32 bits are shader id
-    result |= MaterialHasher()(mesh.material);
+    result |= MaterialHasher()(material);
     result |= ShaderHasher()(shader) << 32;
-    if (mesh.instanceData.numInstances > 0)
+    if (instanceData.numInstances > 0)
     {
         // cannot batch instanced draws with non-instanced draws. Additionally instance data should be the same for two instanced meshes to be batched
-        result ^= HashBytes((u8*)&mesh.instanceData, sizeof(mesh.instanceData)); 
+        result ^= HashBytes((u8*)&instanceData, sizeof(instanceData)); 
     }
     result = HashBytesL((u8*)&result, sizeof(result));
     return result;
@@ -95,6 +103,17 @@ struct DrawElementsIndirectCommand
     u32  baseInstance;
 };
 
+struct RenderPass;
+typedef void (*SetUniformsFunc)(const RenderPass&, const MeshBatch&, const Shader&);
+typedef void (*RenderPassPostProcessFunc)(const RenderPass&, u32 passIndex);
+struct RenderPass
+{
+    Framebuffer output = {};
+    const char* fragShader = {};
+    SetUniformsFunc setUniformsFunc = nullptr;
+    RenderPassPostProcessFunc postprocessFunc = nullptr;
+};
+
 struct RendererData
 {
     Arena arena = {};
@@ -107,6 +126,62 @@ struct RendererData
     typedef std::unordered_map<u64, MeshBatch> MeshMap;
     MeshMap models = {};
     u32 indirectGPUBuffer = 0;
+    RenderPass outputPasses[MAX_NUM_RENDER_PASSES] = {};
+    Framebuffer finalOutput = {};
+    Skybox skybox = {};
+    Shader SSAOShader = {};
+    Framebuffer SSAOOutputFramebuffer = {};
+    bool needsSetup = true;
+};
+
+RendererData& GetRenderer()
+{
+    return *GetEngineCtx().renderer;
+}
+
+enum PremadeRenderPassType
+{
+    SHADOWS,
+    DEPTHNORMS,
+    POSTPROCESS,
+
+    NUM_PREMADE_RENDER_PASSES,
+};
+
+void PrepassSetUniformsDirectionalShadows(
+    const RenderPass& pass, 
+    const MeshBatch& batch, 
+    const Shader& shader)
+{
+    shader.setUniform("isDirectionalShadowPass", true);
+}
+
+void PrepassDepthNormsPostprocess(
+    const RenderPass& pass,
+    u32 passIndex)
+{
+    RendererData& renderer = GetRenderer();
+    switch (passIndex)
+    {
+        case PremadeRenderPassType::DEPTHNORMS:
+        {
+            // after rendering depth & norms, we want to postprocess that (and then blur) for SSAO
+            const Framebuffer& depthnorms = pass.output;
+            Postprocess::PostprocessFramebuffer(depthnorms, renderer.SSAOOutputFramebuffer, renderer.SSAOShader);
+        } break;
+    }
+}
+
+static RenderPass premadeRenderPrepasses[] = 
+{
+    {
+        .fragShader = "shaders/depth.frag",
+        .setUniformsFunc = PrepassSetUniformsDirectionalShadows,
+    },
+    {
+        .fragShader = "shaders/prepass.frag",
+        .postprocessFunc = PrepassDepthNormsPostprocess,
+    }
 };
 
 namespace Renderer
@@ -146,11 +221,6 @@ void main(){
 )"
         );
     }
-}
-
-RendererData& GetRenderer()
-{
-    return *GetEngineCtx().renderer;
 }
 
 static void DrawPoints(RendererData& renderer, f32 pointSize)
@@ -338,131 +408,359 @@ static void GetDrawData(RMesh* meshes, u32 numMeshes, DrawElementsIndirectComman
     }
 }
 
-void DrawModels(RendererData& renderer, Arena* arena)
+static void CheckRegenerateGPUBuffers(
+    MeshBatch& batch, 
+    DrawElementsIndirectCommand* drawCommands, 
+    u64 verticesMemSize, 
+    u64 indicesMemSize)
 {
-    PROFILE_FUNCTION_GPU();
-    // TODO: when we call PushEntity - increment some "generation" variable. Have another for the renderer data
-    // if we call RendererDraw and the two generations are different, we know we've pushed a different set of entities and (possibly) need to regenerate our boofers
-    Camera& cam = Camera::GetMainCamera();
-    // each batch shares the *exact* same material, shader, and instance params/data
+    // collect data about this batch
+    u32 numMeshes = batch.meshes.size;
+    TINY_ASSERT(numMeshes <= MAX_NUM_MESHES_PER_BATCH && numMeshes > 0);
+    // we need to allocate gpu buffers if the number of meshes in our batch increases
+    bool shouldRegenerateBuffers = 
+        batch.batchVAO == 0 || batch.verticesMemSize < verticesMemSize || batch.indicesMemSize < indicesMemSize;
+    batch.verticesMemSize = verticesMemSize;
+    batch.indicesMemSize = indicesMemSize;
+    u32& VAO = batch.batchVAO;
+    u32& VBO = batch.batchVBO;
+    u32& EBO = batch.batchEBO;
+    u32& instanceVBO = batch.instanceData.instanceVBO;
+    if (shouldRegenerateBuffers)
+    {
+        batch.dirty = true;
+        LOG_INFO("allocating %f vertices mb  and %f indices kb", (f64)verticesMemSize / 1000.0 / 1000.0, (f64)indicesMemSize / 1000.0);
+        if (VAO != 0 || VBO != 0 || EBO != 0 || instanceVBO != 0)
+        {
+            // delete buffers
+            glDeleteBuffers(1, &VAO);
+            glDeleteBuffers(1, &VBO);
+            glDeleteBuffers(1, &EBO);
+            glDeleteBuffers(1, &instanceVBO);
+            VAO = 0;
+            VBO = 0;
+            EBO = 0;
+            instanceVBO = 0;
+        }
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO);
+        glGenBuffers(1, &EBO);
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        if (indicesMemSize > 0) 
+        {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        }
+        // allocate (not copying over yet)
+        glBufferData(GL_ARRAY_BUFFER, verticesMemSize, NULL, GL_DYNAMIC_DRAW);
+        if (indicesMemSize > 0)
+        {
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesMemSize, NULL, GL_DYNAMIC_DRAW);
+        }
+        // bind vertex attributes to VAO
+        u32 vertexAttributeLocation = 0;
+        ConfigureMeshVertexAttributes(vertexAttributeLocation);
+        if (batch.isInstanced)
+        {
+            EnableInstancing(
+                VAO, 
+                batch.instanceData.instanceData, 
+                batch.instanceData.stride, 
+                batch.instanceData.numInstances, 
+                vertexAttributeLocation, 
+                instanceVBO);
+        }
+    }
+    
+    if (batch.dirty)
+    {
+        // dirty means we need to upload to gpu
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        if (EBO != 0)
+        {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        }
+        // here's the meat and potatoes of batching
+        // we've allocated a sufficiently sized gpu buffer for all our verts & idxs
+        // now we need to copy them to that buffer. They are spread around in host mem, need to collect them each
+        // and upload with proper offsets. In the future this should only re-upload "dirty" meshes
+        for (u32 i = 0; i < batch.meshes.size; i++)
+        {
+            const RMesh& mesh = batch.meshes.at(i);
+            const DrawElementsIndirectCommand& drawCmd = drawCommands[i];
+            size_t vertOffsetBytes = drawCmd.baseVertex * sizeof(RMeshVertex);
+            glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)vertOffsetBytes, mesh.vertices.size, mesh.vertices.data);
+            if (EBO != 0)
+            {
+                u32 idxOffsetBytes = drawCmd.firstIndex * sizeof(RMeshIndex);
+                glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, (GLintptr)idxOffsetBytes, mesh.indices.size, mesh.indices.data);
+            }
+        }
+        batch.dirty = false;
+    }
+}
 
+// if shader is blank, we use batch shader. Shader can be overridden for use with prepasses
+void DrawBatch(
+    const RendererData& renderer,
+    Arena* arena,
+    MeshBatch& batch, 
+    const RenderPass& pass = {},
+    const Shader& shaderOverride = {})
+{
+    u32 numMeshes = batch.meshes.size;
+    DrawElementsIndirectCommand* drawCommands = arena_alloc_type(arena, DrawElementsIndirectCommand, numMeshes);
+    TMEMSET(drawCommands, 0, sizeof(DrawElementsIndirectCommand) * numMeshes);
+    u64 verticesMemSize = 0;
+    u64 indicesMemSize = 0;
+    GetDrawData(batch.meshes.get_elements(), numMeshes, drawCommands, verticesMemSize, indicesMemSize);
+    glBindBuffer(GL_DRAW_INDIRECT_BUFFER, renderer.indirectGPUBuffer);
+    glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, numMeshes * sizeof(DrawElementsIndirectCommand), drawCommands);
+    arena_pop_latest(arena, drawCommands);
+    // draw this batch
+    Shader selectedShader = batch.shader;
+    if (shaderOverride.isValid())
+    {
+        selectedShader = shaderOverride;
+    }
+    else
+    { // non-prepass
+        // don't need to do lighting/material stuff for prepasses (atm)
+        const Material& material = batch.material;
+        SetLightingUniforms(selectedShader);
+        material.SetShaderUniforms(selectedShader); 
+        selectedShader.TryAddSampler(renderer.SSAOOutputFramebuffer.GetColorTexture(0), "aoTexture");
+    }
+    if (pass.setUniformsFunc)
+    {
+        pass.setUniformsFunc(pass, batch, selectedShader);
+    }
+    // for prepasses, where we pass in a valid shaderOverride,
+    // the selectedShader will not be the same as the batch's shader.
+    // the batch shader's uniforms will be transferred to the prepass shader
+    // this is to facilitate custom vertex shaders in conjunction with this automatic prepass system
+    UseShaderAndSetUniforms(selectedShader, batch.shader);
+    glBindVertexArray(batch.batchVAO);
+    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, numMeshes, sizeof(DrawElementsIndirectCommand));
+}
+
+void BatchPreprocessing(
+    RendererData& renderer, 
+    Arena* arena)
+{
+    // Checking if we need to resize GPU buffers, compiling prepass shaders if need be....
     for (auto& [batchHash, batch] : renderer.models)
     {
         if (!batch.active) continue;
         // collect data about this batch
         u32 numMeshes = batch.meshes.size;
         TINY_ASSERT(numMeshes <= MAX_NUM_MESHES_PER_BATCH && numMeshes > 0);
+        // get draw commands and check if we need to resize gpu buffers
         DrawElementsIndirectCommand* drawCommands = arena_alloc_type(arena, DrawElementsIndirectCommand, numMeshes);
         TMEMSET(drawCommands, 0, sizeof(DrawElementsIndirectCommand) * numMeshes);
         u64 verticesMemSize = 0;
         u64 indicesMemSize = 0;
         GetDrawData(batch.meshes.get_elements(), numMeshes, drawCommands, verticesMemSize, indicesMemSize);
-        // we need to allocate gpu buffers if the number of meshes in our batch increases
-        bool shouldRegenerateBuffers = 
-            batch.batchVAO == 0 || batch.verticesMemSize < verticesMemSize || batch.indicesMemSize < indicesMemSize;
-        batch.verticesMemSize = verticesMemSize;
-        batch.indicesMemSize = indicesMemSize;
-        u32& VAO = batch.batchVAO;
-        u32& VBO = batch.batchVBO;
-        u32& EBO = batch.batchEBO;
-        u32& instanceVBO = batch.instanceData.instanceVBO;
-        if (shouldRegenerateBuffers)
-        {
-            batch.dirty = true;
-            LOG_INFO("allocating %f vertices mb  and %f indices kb", (f64)verticesMemSize / 1000.0 / 1000.0, (f64)indicesMemSize / 1000.0);
-            if (VAO != 0 || VBO != 0 || EBO != 0 || instanceVBO != 0)
-            {
-                // delete buffers
-                glDeleteBuffers(1, &VAO);
-                glDeleteBuffers(1, &VBO);
-                glDeleteBuffers(1, &EBO);
-                glDeleteBuffers(1, &instanceVBO);
-                VAO = 0;
-                VBO = 0;
-                EBO = 0;
-                instanceVBO = 0;
-            }
-            glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
-            glGenBuffers(1, &EBO);
-            glBindVertexArray(VAO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            if (indicesMemSize > 0) 
-            {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            }
-            // allocate (not copying over yet)
-            glBufferData(GL_ARRAY_BUFFER, verticesMemSize, NULL, GL_DYNAMIC_DRAW);
-            if (indicesMemSize > 0)
-            {
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesMemSize, NULL, GL_DYNAMIC_DRAW);
-            }
-            // bind vertex attributes to VAO
-            u32 vertexAttributeLocation = 0;
-            ConfigureMeshVertexAttributes(vertexAttributeLocation);
-            if (batch.isInstanced)
-            {
-                EnableInstancing(
-                    VAO, 
-                    batch.instanceData.instanceData, 
-                    batch.instanceData.stride, 
-                    batch.instanceData.numInstances, 
-                    vertexAttributeLocation, 
-                    instanceVBO);
-            }
-        }
-        
-        if (batch.dirty)
-        {
-            // dirty means we need to upload to gpu
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            if (EBO != 0)
-            {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            }
-            // here's the meat and potatoes of batching
-            // we've allocated a sufficiently sized gpu buffer for all our verts & idxs
-            // now we need to copy them to that buffer. They are spread around in host mem, need to collect them each
-            // and upload with proper offsets. In the future this should only re-upload "dirty" meshes
-            for (u32 i = 0; i < batch.meshes.size; i++)
-            {
-                const RMesh& mesh = batch.meshes.at(i);
-                const DrawElementsIndirectCommand& drawCmd = drawCommands[i];
-                size_t vertOffsetBytes = drawCmd.baseVertex * sizeof(RMeshVertex);
-                glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)vertOffsetBytes, mesh.vertices.size, mesh.vertices.data);
-                if (EBO != 0)
-                {
-                    u32 idxOffsetBytes = drawCmd.firstIndex * sizeof(RMeshIndex);
-                    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, (GLintptr)idxOffsetBytes, mesh.indices.size, mesh.indices.data);
-                }
-            }
-            batch.dirty = false;
-        }
-        const Shader& shader = batch.shader;
-        const Material& material = batch.material;
-        SetLightingUniforms(shader);
-        material.SetShaderUniforms(shader);
-        shader.use();
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, renderer.indirectGPUBuffer);
-        glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, numMeshes * sizeof(DrawElementsIndirectCommand), drawCommands);
-        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, numMeshes, sizeof(DrawElementsIndirectCommand));
+        CheckRegenerateGPUBuffers(batch, drawCommands, verticesMemSize, indicesMemSize);
         arena_pop_latest(arena, drawCommands);
-        ClearMeshBatch(batch);
     }
 }
 
-void RendererDraw()
+void DrawModels(RendererData& renderer, Arena* arena)
+{
+    PROFILE_FUNCTION();
+    PROFILE_FUNCTION_GPU();
+    // TODO: when we call PushEntity - increment some "generation" variable. Have another for the renderer data
+    // if we call RendererDraw and the two generations are different, we know we've pushed a different set of entities and (possibly) need to regenerate our boofers
+    // each batch shares the *exact* same material, shader, and instance params/data
+    BatchPreprocessing(renderer, arena);
+
+    // start prepasses
+    for (u32 i = 0; i < MAX_NUM_RENDER_PASSES; i++)
+    {
+        RenderPass& pass = renderer.outputPasses[i];
+        if (!pass.output.isValid()) continue;
+        Renderer::PushDebugRenderMarker(TextFormat("Render pass %i", i));
+        pass.output.Bind();
+        ClearGLBuffers();
+        for (auto& [batchHash, batch] : renderer.models)
+        {
+            DrawBatch(renderer, arena, batch, pass, batch.prepassShaders[i]);
+        }
+        if (pass.postprocessFunc)
+        {
+            pass.postprocessFunc(pass, i);
+        }
+        Renderer::PopDebugRenderMarker();
+    }
+
+    Renderer::PushDebugRenderMarker("Scene Draw");
+    renderer.finalOutput.Bind();
+    ClearGLBuffers();
+    // actual scene draw
+    for (auto& [batchHash, batch] : renderer.models)
+    {
+        DrawBatch(renderer, arena, batch, {});
+        ClearMeshBatch(batch);
+    }
+    Renderer::PopDebugRenderMarker();
+}
+
+glm::vec2 GetRendererDimensions()
+{
+    // TMP
+    return Camera::GetScreenDimensions();
+}
+
+void SetupRenderPasses(
+    RendererData& renderer)
+{
+    glm::vec2 outputFramebufferDimensions = GetRendererDimensions();
+    renderer.finalOutput = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
+    renderer.skybox = Skybox();
+    for (u32 i = 0; i < ARRAY_SIZE(premadeRenderPrepasses); i++)
+    {
+        u32 numColorAttachments = 1;
+        bool isDepth = false;
+        if (i == PremadeRenderPassType::SHADOWS)
+        {
+            numColorAttachments = 0;
+            isDepth = true;
+        }
+        renderer.outputPasses[i] = premadeRenderPrepasses[i];
+        renderer.outputPasses[i].output = Framebuffer(
+                        outputFramebufferDimensions.x, 
+                        outputFramebufferDimensions.y,
+                        numColorAttachments, isDepth);
+    }
+    for (auto& [batchHash, batch] : renderer.models)
+    {
+        const Shader& batchShader = batch.shader;
+        // set up premade render passes (shadows, depth/norms, postprocessing, etc)
+        for (u32 i = 0; i < ARRAY_SIZE(premadeRenderPrepasses); i++)
+        {
+            RenderPass& premadePass = premadeRenderPrepasses[i];
+            ShaderLocation batchShaderLocations = GetShaderPaths(batchShader);
+            // for each batch's shader, we need variations of it for our prepasses.
+            // shaders with custom vertex shaders will keep their behavior during prepasses and have their fragment shaders overridden
+            Shader prepassShader = Shader(batchShaderLocations.first, ResPath(premadePass.fragShader));
+            batch.prepassShaders[i] = prepassShader;
+        }
+    }
+    Shader postprocessingShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/postprocess.frag"));
+    Postprocess::SetPostprocessShader(postprocessingShader);
+    renderer.SSAOShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/ao.frag"));
+    Postprocess::ApplySSAOUniforms(renderer.SSAOShader);
+    Framebuffer* depthnorms = &renderer.outputPasses[PremadeRenderPassType::DEPTHNORMS].output;
+    renderer.SSAOShader.TryAddSampler(depthnorms->GetColorTexture(0), "depthNormals");
+    renderer.SSAOOutputFramebuffer = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
+}
+
+void DebugPreDraw()
+{
+    // collision shapes
+    PhysicsDebugRender();
+    // red is x, green is y, blue is z
+    // should put this on the screen in the corner permanently
+    f32 axisGizmoScale = 0.03f;
+    glm::vec3 camFront = Camera::GetMainCamera().cameraFront;
+    glm::vec3 camUp = Camera::GetMainCamera().cameraUp;
+    glm::vec3 cameraRight = glm::normalize(glm::cross(camFront, camUp));
+    camUp = glm::normalize(glm::cross(camFront, cameraRight));
+    ImGui::Text("cam front: %f %f %f", camFront.x, camFront.y, camFront.z);
+    ImGui::Text("cam up: %f %f %f", camUp.x, camUp.y, camUp.z);
+    ImGui::Text("cam right: %f %f %f", cameraRight.x, cameraRight.y, cameraRight.z);
+    glm::vec3 camRel = Camera::GetMainCamera().cameraPos + camFront;
+    Renderer::PushLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
+    Renderer::PushLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
+    Renderer::PushLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
+    // lights visualization
+    for (LightPoint& pointLight : GetEngineCtx().lightsSubsystem->lights.pointLights)
+    {
+        pointLight.Visualize();
+    }
+    GetEngineCtx().lightsSubsystem->lights.sunlight.Visualize();
+}
+
+Framebuffer* RendererDraw()
 {
     PROFILE_FUNCTION();
     RendererData& renderer = GetRenderer();
+    Renderer::PushDebugRenderMarker("debug render");
+    DebugPreDraw();
+    Renderer::PopDebugRenderMarker();
+    if (renderer.needsSetup)
+    {
+        SetupRenderPasses(renderer);
+        renderer.needsSetup = false;
+    }
+    ShaderSystemPreDraw(); 
+    Framebuffer* framebuffer = &renderer.finalOutput;
+    framebuffer->Bind();
+    ClearGLBuffers();
+    Renderer::PushDebugRenderMarker("Points");
     DrawPoints(renderer, 10.0f);
     renderer.points.clear();
+    Renderer::PopDebugRenderMarker();
+    Renderer::PushDebugRenderMarker("Lines");
     DrawLines(renderer);
     renderer.lines.clear();
+    Renderer::PopDebugRenderMarker();
+    Renderer::PushDebugRenderMarker("Triangles");
     DrawTriangles(renderer);
     renderer.triangles.clear();
+    Renderer::PopDebugRenderMarker();
     DrawModels(renderer, &renderer.arena);
+    {
+        Renderer::PushDebugRenderMarker("Skybox");
+        renderer.skybox.Draw();
+        Renderer::PopDebugRenderMarker();
+    }
+    Renderer::PushDebugRenderMarker("Postprocessing");
+    Shader* postprocessShader = Postprocess::GetPostprocessingShader();
+    if (postprocessShader->isValid())
+    {
+        Postprocess::PostprocessFramebuffer(*framebuffer, *postprocessShader);
+    }
+    Renderer::PopDebugRenderMarker();
+    glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
+    Transform2D debugRenderTf = Transform2D(glm::vec2(0), scrn/4.0f);
+    for (u32 i = 0; i < MAX_NUM_RENDER_PASSES; i++)
+    {
+        RenderPass& pass = renderer.outputPasses[i];
+        Framebuffer& output = pass.output;
+        if (!output.isValid()) break;
+        for (u32 textureIdx = 0; textureIdx < ARRAY_SIZE(output.colorTextures); textureIdx++)
+        {
+            if (output.colorTextures[textureIdx].isValid())
+            {
+                output.DrawToFramebuffer(
+                    *framebuffer, 
+                    debugRenderTf, 
+                    (FramebufferAttachmentType)(FramebufferAttachmentType::COLOR0 + textureIdx), 
+                    {});
+                debugRenderTf.position.y += debugRenderTf.scale.y;
+            }
+        }
+        Texture depth = output.GetDepthTexture();
+        if (depth.isValid())
+        {
+            output.DrawToFramebuffer(
+                    *framebuffer, 
+                    debugRenderTf, 
+                    FramebufferAttachmentType::DEPTH, 
+                    {});
+            debugRenderTf.position.y += debugRenderTf.scale.y;
+        }
+    }
+    renderer.SSAOOutputFramebuffer.DrawToFramebuffer(
+                    *framebuffer, 
+                    debugRenderTf, 
+                    FramebufferAttachmentType::COLOR0, 
+                    {});
+    
+    
+    return framebuffer;
 }
 
 void PushPoint(const glm::vec3& point, const glm::vec4& color)
@@ -493,31 +791,41 @@ void PushTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, co
     renderer.triangles.push_back(tri);
 }
 
-void PushModel(const Model& model, const Shader& shader)
+static void AddToBatch(
+    const RMesh& mesh, 
+    const Shader& shader, 
+    const Material& material,
+    const GPUInstanceData& instanceData)
 {
     RendererData& renderer = GetRenderer();
+    // batches are bucketed by hashing properties of their mesh and their shader
+    u64 rmeshHash = MeshBatchHash(material, shader, instanceData);
+    MeshBatch& batch = renderer.models[rmeshHash];
+    TINY_ASSERT(!batch.material.isValid() || batch.material == material); // either we are adding for the first time or they must be the same
+    TINY_ASSERT(!batch.shader.isValid() || batch.shader == shader); // either we are adding for the first time or they must be the same
+    batch.material = material;
+    batch.shader = shader;
+    batch.active = true;
+    batch.isInstanced = instanceData.numInstances > 0;
+    // instanced meshes that are being batched together *should* have the same pointer to the same instance data
+    TINY_ASSERT(batch.instanceData.instanceData == nullptr || batch.instanceData.instanceData == instanceData.instanceData);
+    batch.instanceData = instanceData;
+    batch.meshes.push_back(mesh);
+}
+
+void PushModel(const Model& model, const Shader& shader)
+{
     for (u32 i = 0; i < model.meshes.size(); i++)
     {
         const Mesh& mesh = model.meshes[i];
         if (!mesh.isVisible) continue;
         RMesh rmesh;
         static_assert(sizeof(RMeshVertex) == sizeof(Vertex));
+        static_assert(sizeof(RMeshIndex) == sizeof(u32));
         rmesh.vertices = {const_cast<RMeshVertex*>(mesh.vertices.data()), mesh.vertices.size() * sizeof(RMeshVertex)};
         rmesh.indices = {const_cast<RMeshIndex*>(mesh.indices.data()), mesh.indices.size() * sizeof(RMeshIndex)};
         rmesh.numInstances = mesh.instanceData.numInstances;
-        // batches are bucketed by hashing properties of their mesh and their shader
-        u64 rmeshHash = MeshBatchHash(mesh, shader);
-        MeshBatch& batch = renderer.models[rmeshHash];
-        TINY_ASSERT(!batch.material.isValid() || batch.material == mesh.material); // either we are adding for the first time or they must be the same
-        TINY_ASSERT(!batch.shader.isValid() || batch.shader == shader); // either we are adding for the first time or they must be the same
-        batch.material = mesh.material;
-        batch.shader = shader;
-        batch.active = true;
-        batch.isInstanced = mesh.instanceData.numInstances > 0;
-        // instanced meshes that are being batched together *should* have the same pointer to the same instance data
-        TINY_ASSERT(batch.instanceData.instanceData == nullptr || batch.instanceData.instanceData == mesh.instanceData.instanceData);
-        batch.instanceData = mesh.instanceData;
-        batch.meshes.push_back(rmesh);
+        AddToBatch(rmesh, shader, mesh.material, mesh.instanceData);
     }
 }
 
