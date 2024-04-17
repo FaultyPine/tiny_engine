@@ -23,7 +23,7 @@
 #endif
 
 #define SET_NTH_BIT(bitfield, n_bit, onoff) \
-    ( (onoff) ? ( (bitfield) |= ((onoff) << (n_bit)) ) : ( (bitfield) &= ~((onoff) << (n_bit)) ) )
+    (bitfield = (bitfield & ~((u32)1 << n_bit)) | ((u32)onoff << n_bit) )
 
 #define TOGGLE_NTH_BIT(bitfield, n_bit) \
     ( (bitfield) ^ (1 << (n_bit)) )

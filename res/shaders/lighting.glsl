@@ -38,15 +38,12 @@ float GetDirectionalShadow(
     vec3 fragPosWS, 
     vec3 fragNormalWS) 
 {
-    vec3 lightDir = -sunlight.direction.xyz; // points towards pixel from light, so reverse it to get pixel to light
-    // the light space matrix contains the view and projection matrices 
+    vec3 lightDir = -sunlight.direction.xyz; // points towards-pixel-from-light, so reverse it to get from-pixel-to-light
+    // the light space matrix contains the view and projection matrices     
     // for our light (view representing where our light is "looking") and projection representing the shadow frustum
     vec4 fragPosLS = GetDirectionalLightspaceMatrix() * vec4(fragPosWS, 1.0);
-
-    //const float shadowBias = 0.005;
     // bias based on the surface's normal and light direction
-    //float shadowBias = max(0.01 * (1.0 - dot(fragNormalWS, -light.direction)), 0.005);  
-    float shadowBias = mix(0.005, 0.0, dot(fragNormalWS, lightDir));  
+    float shadowBias = max(0.065 * (1.0 - dot(fragNormalWS, lightDir)), 0.005);
     // manual perspective divide - now we're in NDC
     // range [-1,1]
     vec3 projCoords = fragPosLS.xyz / fragPosLS.w;
@@ -54,19 +51,11 @@ float GetDirectionalShadow(
     projCoords = projCoords * 0.5 + 0.5;
     if (projCoords.z > 1.0) // if fragment in light space is outside the frustum, it should be fully lit
         return 1.0;
-
-
-    // depth value from shadow map
-    //float shadowMapDepth = texture(directionalLightShadowMap, projCoords.xy).r;
     // [0,1] current depth of this fragment
     float currentDepth = projCoords.z;
-
     // 1.0 is in shadow, 0 is out of shadow
-    float shadow = PCFShadow(projCoords.xy, currentDepth - shadowBias, 2, directionalLightShadowMap);
-
-    // - bias   gets rid of shadow acne
-    //float shadow = currentDepth-shadowBias > shadowMapDepth ? 1.0 : 0.0;
-    
+    float shadow = PCFShadow(projCoords.xy, currentDepth - shadowBias, 6, directionalLightShadowMap);
+    // reverse the above so when we multiply with lighting, more shadows darkens the color
     return 1.0-shadow;
 }
 
@@ -159,7 +148,7 @@ vec3 calculateLighting(
     vec3 fragPositionWS)
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
-    vec3 ambientLight = GetAmbientMaterial(fragTexCoord).rgb * GetAmbientLightIntensity();
+    vec3 ambientLight = GetDiffuseMaterial(fragTexCoord).rgb * GetAmbientLightIntensity();
     ambientLight *= texture(aoTexture, GetScreenUVs()).rgb;
 
     vec3 diffuseLight = vec3(0);

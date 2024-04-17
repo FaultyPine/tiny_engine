@@ -3,6 +3,8 @@
 
 #include <string.h>
 
+// TODO: profile allocations
+
 #define TSYSALLOC(size) malloc(size)
 #define TSYSREALLOC(ptr, size) realloc(ptr, size)
 #define TSYSFREE(ptr) { free(ptr); (ptr)=0; }

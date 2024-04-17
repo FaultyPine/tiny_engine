@@ -18,18 +18,30 @@
 #define PROFILING 1
 
 #if PROFILING
+#define MEM_PROFILING 0
     #define PROFILE_GPU_SCOPE(name) TracyGpuZone(name)
     #define PROFILE_SCOPE(name) ZoneScopedN(name)
     #define PROFILER_FRAME_MARK() FrameMark
     #define PROFILER_GPU_CONTEXT() TracyGpuContext
     // should be used after the swap buffers func call
     #define PROFILER_GPU_FLUSH() TracyGpuCollect
-#else
+#if MEM_PROFILING
+    #define PROFILE_ALLOC(ptr, size, name) TracyAllocN(ptr, size, name)
+    #define PROFILE_FREE(ptr, name) TracyFreeN(ptr, name)
+#else 
+    #define PROFILE_ALLOC(ptr, size, name) 
+    #define PROFILE_FREE(ptr, name) 
+#endif
+
+#else // #if PROFILING
+
     #define PROFILE_SCOPE(name)
     #define PROFILER_FRAME_MARK()
     #define PROFILER_GPU_CONTEXT(name, nameSize)
     #define PROFILE_GPU_SCOPE(name)
     #define PROFILER_GPU_FLUSH() 
+    #define PROFILE_ALLOC(ptr, size, name)
+    #define PROFILE_FREE(ptr, name)
 #endif
 #define PROFILE_FUNCTION()  PROFILE_SCOPE(__FUNCTION__)
 #define PROFILE_FUNCTION_GPU() PROFILE_GPU_SCOPE(__FUNCTION__)

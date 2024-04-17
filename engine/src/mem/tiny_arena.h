@@ -11,6 +11,7 @@ struct Arena {
     size_t backing_mem_size = 0;
     size_t offset = 0;
     size_t prev_offset = 0;
+    const char* name = "UNNAMED_ARENA";
 };
 
 #define arena_alloc_type(arena, type, num) ((type*)arena_alloc(arena, sizeof(type) * num))
@@ -24,7 +25,7 @@ T* arena_alloc_and_init(Arena* arena, u32 numElements = 1)
 }
 
 TAPI Arena arena_init(void* backing_buffer, size_t arena_size);
-TAPI Arena arena_init(void* backing_buffer, size_t arena_size, const char* name);
+TAPI Arena arena_init(void* backing_buffer, size_t arena_size, const char* name); // name should be owning. arena takes a cpy of the ptr
 TAPI void* arena_alloc(Arena* arena, size_t alloc_size);
 TAPI void* arena_resize(Arena* arena, void* old_mem, size_t old_size, size_t new_size);
 // pops the latest allocation off. Forcing user to pass that allocation to ensure we're popping the right thing

@@ -4,6 +4,7 @@
 #include "mem/tiny_arena.h"
 #include "shader.h"
 #include "framebuffer.h"
+#include "tiny_profiler.h"
 #include <random>
 
 
@@ -51,6 +52,7 @@ void PostprocessFramebuffer(
 
 void PostprocessFramebuffer(const Framebuffer& fbToProcess, const Framebuffer& dst, const Shader& shader)
 {
+    PROFILE_FUNCTION_GPU();
     PostprocessingSystem& pp = GetPP();
     if (!shader.isValid() || !dst.isValid())
     {

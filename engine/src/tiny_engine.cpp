@@ -329,7 +329,7 @@ void InitEngine(
     u32 engineMemorySize = MEGABYTES_BYTES(100); // :/
     void* engineMemory = TSYSALLOC(engineMemorySize);
     TMEMSET(engineMemory, 0, engineMemorySize);
-    globEngineCtx.engineArena = arena_init(engineMemory, engineMemorySize);
+    globEngineCtx.engineArena = arena_init(engineMemory, engineMemorySize, "Engine");
     Arena* engineArena = &globEngineCtx.engineArena;
     // scene allocator gets some % of engine mem
     constexpr u32 engineMemoryPercentSceneAllocator = 40;
@@ -337,8 +337,8 @@ void InitEngine(
     // frame allocator gets some % of engine mem
     constexpr u32 engineMemoryPercentFrameAllocator = 40;
     u32 engineFrameAllocatorMemSize = Math::PercentOf(engineMemorySize, engineMemoryPercentFrameAllocator);
-    globEngineCtx.engineSceneAllocator = arena_init(arena_alloc(engineArena, engineSceneAllocatorMemSize), engineSceneAllocatorMemSize);
-    globEngineCtx.engineFrameAllocator = arena_init(arena_alloc(engineArena, engineFrameAllocatorMemSize), engineFrameAllocatorMemSize);
+    globEngineCtx.engineSceneAllocator = arena_init(arena_alloc(engineArena, engineSceneAllocatorMemSize), engineSceneAllocatorMemSize, "Engine Scene");
+    globEngineCtx.engineFrameAllocator = arena_init(arena_alloc(engineArena, engineFrameAllocatorMemSize), engineFrameAllocatorMemSize, "Engine Frame");
 
     // subsystem initialization
     JobSystem::Instance().Initialize();
@@ -366,7 +366,7 @@ void InitEngine(
     // give a big memory pool to the game. Game shouldn't allocate outside this pool
     void* gameMemory = TSYSALLOC(requestedGameMemSize);
     TMEMSET(gameMemory, 0, requestedGameMemSize);
-    globEngineCtx.gameArena = arena_init(gameMemory, requestedGameMemSize);
+    globEngineCtx.gameArena = arena_init(gameMemory, requestedGameMemSize, "Game");
     Arena* gameArena = &globEngineCtx.gameArena;
 
     { PROFILE_SCOPE("Game Initialize");

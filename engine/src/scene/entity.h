@@ -56,7 +56,9 @@ TAPI EntityData& GetEntity(EntityRef ent);
 TAPI EntityData& GetEntity(const char* name);
 
 TAPI void SetFlag(EntityRef ent, EntityFlags flag, bool enabled);
+TAPI void SetFlag(EntityData& ent, EntityFlags flag, bool enabled);
 TAPI bool IsFlag(EntityRef ent, EntityFlags flag);
+TAPI bool IsFlag(const EntityData& ent, EntityFlags flag);
 TAPI void SetTransform(EntityRef ent, const Transform& tf);
 TAPI bool HasRenderable(EntityRef ent);
 TAPI bool AddRenderable(EntityRef ent, const Model& model);

@@ -163,5 +163,9 @@ vec3 GetViewDir(vec3 fragPosWS)
     return normalize(camPos.xyz - fragPosWS);
 }
 
+vec2 GetTexelSize(in sampler2D tex)
+{
+    return 1.0 / textureSize(tex, 0);
+}
 
 //#endif

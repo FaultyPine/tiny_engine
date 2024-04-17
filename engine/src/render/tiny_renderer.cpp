@@ -20,7 +20,6 @@
 #include "physics/tiny_physics.h"
 #include "res/shaders/shader_defines.glsl"
 
-// TODO: when renderer is fully done, compare against old renderer. (draw calls & actual timings)
 
 constexpr u32 MAX_NUM_RENDER_PASSES = 10;
 constexpr u32 MAX_NUM_MESHES_PER_BATCH = 500; // arbitrary
@@ -117,14 +116,14 @@ struct RenderPass
 struct RendererData
 {
     Arena arena = {};
-    FixedGrowableArray<RPoint, 300> points = {};
+    FixedGrowableArray<RPoint, Renderer::MAX_NUM_PRIMITIVE_DRAWS> points = {};
     u32 pointsVAO, pointsVBO = 0;
-    FixedGrowableArray<RLine, 300> lines = {};
+    FixedGrowableArray<RLine, Renderer::MAX_NUM_PRIMITIVE_DRAWS> lines = {};
     u32 linesVAO, linesVBO = 0;
-    FixedGrowableArray<RTriangle, 300> triangles = {};
+    FixedGrowableArray<RTriangle, Renderer::MAX_NUM_PRIMITIVE_DRAWS> triangles = {};
     u32 trianglesVAO, trianglesVBO = 0;
-    typedef std::unordered_map<u64, MeshBatch> MeshMap;
-    MeshMap models = {};
+    typedef std::unordered_map<u64, MeshBatch> BatchMap;
+    BatchMap meshesToRender = {};
     u32 indirectGPUBuffer = 0;
     RenderPass outputPasses[MAX_NUM_RENDER_PASSES] = {};
     Framebuffer finalOutput = {};
@@ -161,15 +160,17 @@ void PrepassDepthNormsPostprocess(
     u32 passIndex)
 {
     RendererData& renderer = GetRenderer();
-    switch (passIndex)
-    {
-        case PremadeRenderPassType::DEPTHNORMS:
-        {
-            // after rendering depth & norms, we want to postprocess that (and then blur) for SSAO
-            const Framebuffer& depthnorms = pass.output;
-            Postprocess::PostprocessFramebuffer(depthnorms, renderer.SSAOOutputFramebuffer, renderer.SSAOShader);
-        } break;
-    }
+    // after rendering depth & norms, we want to postprocess that (and then blur) for SSAO
+    const Framebuffer& depthnorms = pass.output;
+    Postprocess::PostprocessFramebuffer(depthnorms, renderer.SSAOOutputFramebuffer, renderer.SSAOShader);
+}
+
+void PrepassShadowsPostprocess(
+    const RenderPass& pass,
+    u32 passIndex)
+{
+    RendererData& renderer = GetRenderer();
+    GetEngineCtx().lightsSubsystem->directionalShadowMap = pass.output;
 }
 
 static RenderPass premadeRenderPrepasses[] = 
@@ -177,6 +178,7 @@ static RenderPass premadeRenderPrepasses[] =
     {
         .fragShader = "shaders/depth.frag",
         .setUniformsFunc = PrepassSetUniformsDirectionalShadows,
+        .postprocessFunc = PrepassShadowsPostprocess,
     },
     {
         .fragShader = "shaders/prepass.frag",
@@ -237,7 +239,7 @@ static void DrawPoints(RendererData& renderer, f32 pointSize)
         GLCall(glGenBuffers(1, &VBO));
         GLCall(glBindVertexArray(VAO));
         GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(RPoint) * numPoints, points, GL_DYNAMIC_DRAW));
+        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(RPoint) * MAX_NUM_PRIMITIVE_DRAWS, points, GL_DYNAMIC_DRAW));
         // vec3 vertPos vec4 vertColor
         GLCall(glEnableVertexAttribArray(0));
         GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (void*)offsetof(SimpleVertex, position)));
@@ -277,7 +279,7 @@ void DrawLines(RendererData& renderer)
         GLCall(glGenBuffers(1, &VBO));
         GLCall(glBindVertexArray(VAO));
         GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(RLine) * numLines, lines, GL_DYNAMIC_DRAW));
+        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(RLine) * MAX_NUM_PRIMITIVE_DRAWS, lines, GL_DYNAMIC_DRAW));
         // this shader has vert attributes: vec3 vertPos vec4 vertColor
         GLCall(glEnableVertexAttribArray(0));
         GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (void*)offsetof(SimpleVertex, position)));
@@ -316,7 +318,7 @@ void DrawTriangles(RendererData& renderer)
         GLCall(glGenBuffers(1, &VBO));
         GLCall(glBindVertexArray(quadVAO));
         GLCall(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(RTriangle) * numTriangles, triangles, GL_DYNAMIC_DRAW));
+        GLCall(glBufferData(GL_ARRAY_BUFFER, sizeof(RTriangle) * MAX_NUM_PRIMITIVE_DRAWS, triangles, GL_DYNAMIC_DRAW));
         // this shader has vert attributes: vec3 vertPos vec4 vertColor
         GLCall(glEnableVertexAttribArray(0));
         GLCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SimpleVertex), (void*)offsetof(SimpleVertex, position)));
@@ -339,6 +341,33 @@ void DrawTriangles(RendererData& renderer)
     defaultShapeShader.use();
     GLCall(glBindVertexArray(quadVAO));
     GLCall(glDrawArrays(GL_TRIANGLES, 0, numTriangles*3));
+}
+
+
+void DebugPreDraw()
+{
+    // collision shapes
+    PhysicsDebugRender();
+    // red is x, green is y, blue is z
+    // should put this on the screen in the corner permanently
+    f32 axisGizmoScale = 0.03f;
+    glm::vec3 camFront = Camera::GetMainCamera().cameraFront;
+    glm::vec3 camUp = Camera::GetMainCamera().cameraUp;
+    glm::vec3 cameraRight = glm::normalize(glm::cross(camFront, camUp));
+    camUp = glm::normalize(glm::cross(camFront, cameraRight));
+    ImGui::Text("cam front: %f %f %f", camFront.x, camFront.y, camFront.z);
+    ImGui::Text("cam up: %f %f %f", camUp.x, camUp.y, camUp.z);
+    ImGui::Text("cam right: %f %f %f", cameraRight.x, cameraRight.y, cameraRight.z);
+    glm::vec3 camRel = Camera::GetMainCamera().cameraPos + camFront;
+    Renderer::PushLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
+    Renderer::PushLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
+    Renderer::PushLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
+    // lights visualization
+    for (LightPoint& pointLight : GetEngineCtx().lightsSubsystem->lights.pointLights)
+    {
+        pointLight.Visualize();
+    }
+    GetEngineCtx().lightsSubsystem->lights.sunlight.Visualize();
 }
 
 
@@ -508,7 +537,9 @@ void DrawBatch(
     const RenderPass& pass = {},
     const Shader& shaderOverride = {})
 {
+    PROFILE_FUNCTION_GPU();
     u32 numMeshes = batch.meshes.size;
+    if (numMeshes < 1) return;
     DrawElementsIndirectCommand* drawCommands = arena_alloc_type(arena, DrawElementsIndirectCommand, numMeshes);
     TMEMSET(drawCommands, 0, sizeof(DrawElementsIndirectCommand) * numMeshes);
     u64 verticesMemSize = 0;
@@ -549,7 +580,7 @@ void BatchPreprocessing(
     Arena* arena)
 {
     // Checking if we need to resize GPU buffers, compiling prepass shaders if need be....
-    for (auto& [batchHash, batch] : renderer.models)
+    for (auto& [batchHash, batch] : renderer.meshesToRender)
     {
         if (!batch.active) continue;
         // collect data about this batch
@@ -566,7 +597,7 @@ void BatchPreprocessing(
     }
 }
 
-void DrawModels(RendererData& renderer, Arena* arena)
+void DrawScene(RendererData& renderer, Arena* arena)
 {
     PROFILE_FUNCTION();
     PROFILE_FUNCTION_GPU();
@@ -583,26 +614,28 @@ void DrawModels(RendererData& renderer, Arena* arena)
         Renderer::PushDebugRenderMarker(TextFormat("Render pass %i", i));
         pass.output.Bind();
         ClearGLBuffers();
-        for (auto& [batchHash, batch] : renderer.models)
+        for (auto& [batchHash, batch] : renderer.meshesToRender)
         {
             DrawBatch(renderer, arena, batch, pass, batch.prepassShaders[i]);
         }
         if (pass.postprocessFunc)
         {
+            Renderer::PushDebugRenderMarker(TextFormat("Render pass %i postprocess", i));
             pass.postprocessFunc(pass, i);
+            Renderer::PopDebugRenderMarker();
         }
         Renderer::PopDebugRenderMarker();
     }
 
     Renderer::PushDebugRenderMarker("Scene Draw");
     renderer.finalOutput.Bind();
-    ClearGLBuffers();
     // actual scene draw
-    for (auto& [batchHash, batch] : renderer.models)
+    for (auto& [batchHash, batch] : renderer.meshesToRender)
     {
         DrawBatch(renderer, arena, batch, {});
         ClearMeshBatch(batch);
     }
+    renderer.skybox.Draw();
     Renderer::PopDebugRenderMarker();
 }
 
@@ -620,20 +653,22 @@ void SetupRenderPasses(
     renderer.skybox = Skybox();
     for (u32 i = 0; i < ARRAY_SIZE(premadeRenderPrepasses); i++)
     {
+        glm::vec2 framebufferDimensions = outputFramebufferDimensions;
         u32 numColorAttachments = 1;
         bool isDepth = false;
         if (i == PremadeRenderPassType::SHADOWS)
         {
             numColorAttachments = 0;
             isDepth = true;
+            framebufferDimensions = glm::vec2(2048);
         }
         renderer.outputPasses[i] = premadeRenderPrepasses[i];
         renderer.outputPasses[i].output = Framebuffer(
-                        outputFramebufferDimensions.x, 
-                        outputFramebufferDimensions.y,
+                        framebufferDimensions.x, 
+                        framebufferDimensions.y,
                         numColorAttachments, isDepth);
     }
-    for (auto& [batchHash, batch] : renderer.models)
+    for (auto& [batchHash, batch] : renderer.meshesToRender)
     {
         const Shader& batchShader = batch.shader;
         // set up premade render passes (shadows, depth/norms, postprocessing, etc)
@@ -656,38 +691,13 @@ void SetupRenderPasses(
     renderer.SSAOOutputFramebuffer = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
 }
 
-void DebugPreDraw()
-{
-    // collision shapes
-    PhysicsDebugRender();
-    // red is x, green is y, blue is z
-    // should put this on the screen in the corner permanently
-    f32 axisGizmoScale = 0.03f;
-    glm::vec3 camFront = Camera::GetMainCamera().cameraFront;
-    glm::vec3 camUp = Camera::GetMainCamera().cameraUp;
-    glm::vec3 cameraRight = glm::normalize(glm::cross(camFront, camUp));
-    camUp = glm::normalize(glm::cross(camFront, cameraRight));
-    ImGui::Text("cam front: %f %f %f", camFront.x, camFront.y, camFront.z);
-    ImGui::Text("cam up: %f %f %f", camUp.x, camUp.y, camUp.z);
-    ImGui::Text("cam right: %f %f %f", cameraRight.x, cameraRight.y, cameraRight.z);
-    glm::vec3 camRel = Camera::GetMainCamera().cameraPos + camFront;
-    Renderer::PushLine(camRel, glm::vec3(axisGizmoScale,0,0) + camRel, {1,0,0,1});
-    Renderer::PushLine(camRel, glm::vec3(0,axisGizmoScale,0) + camRel, {0,1,0,1});
-    Renderer::PushLine(camRel, glm::vec3(0,0,axisGizmoScale) + camRel, {0,0,1,1});
-    // lights visualization
-    for (LightPoint& pointLight : GetEngineCtx().lightsSubsystem->lights.pointLights)
-    {
-        pointLight.Visualize();
-    }
-    GetEngineCtx().lightsSubsystem->lights.sunlight.Visualize();
-}
-
 Framebuffer* RendererDraw()
 {
     PROFILE_FUNCTION();
+    PROFILE_FUNCTION_GPU();
+    DebugPreDraw();
     RendererData& renderer = GetRenderer();
     Renderer::PushDebugRenderMarker("debug render");
-    DebugPreDraw();
     Renderer::PopDebugRenderMarker();
     if (renderer.needsSetup)
     {
@@ -698,6 +708,7 @@ Framebuffer* RendererDraw()
     Framebuffer* framebuffer = &renderer.finalOutput;
     framebuffer->Bind();
     ClearGLBuffers();
+    
     Renderer::PushDebugRenderMarker("Points");
     DrawPoints(renderer, 10.0f);
     renderer.points.clear();
@@ -710,12 +721,8 @@ Framebuffer* RendererDraw()
     DrawTriangles(renderer);
     renderer.triangles.clear();
     Renderer::PopDebugRenderMarker();
-    DrawModels(renderer, &renderer.arena);
-    {
-        Renderer::PushDebugRenderMarker("Skybox");
-        renderer.skybox.Draw();
-        Renderer::PopDebugRenderMarker();
-    }
+    DrawScene(renderer, &renderer.arena);
+
     Renderer::PushDebugRenderMarker("Postprocessing");
     Shader* postprocessShader = Postprocess::GetPostprocessingShader();
     if (postprocessShader->isValid())
@@ -791,6 +798,30 @@ void PushTriangle(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, co
     renderer.triangles.push_back(tri);
 }
 
+void PushFrustum(const glm::mat4& projection, const glm::mat4& view, glm::vec4 color)
+{
+    glm::mat4 m = glm::inverse(projection * view);
+    static glm::vec3 _cameraFrustumCornerVertices[8] =
+    {
+        // near
+        {-1, -1, -1}, { 1, -1, -1}, { 1,  1, -1},  {-1,  1, -1},
+        // far
+        {-1, -1, 1},	{ 1, -1, 1},	{ 1,  1, 1},  {-1,  1, 1}
+    };
+    static u32 frustumIndices[] = {0,1 , 1,2, 2,3, 3,0, 4,5, 5,6, 6,7, 7,4, 0,4, 1,5, 2,6, 3,7};
+    glm::vec3 camFrustumVerts[8];
+    for (u32 i = 0; i < 8; i++)
+    {
+        glm::vec3 defaultVert = _cameraFrustumCornerVertices[i];
+        glm::vec4 vert = m * glm::vec4(defaultVert, 1.0);
+        camFrustumVerts[i] = glm::vec3(vert) / vert.w;
+    }
+    for (u32 i = 0; i < ARRAY_SIZE(frustumIndices); i+=2)
+    {
+        Renderer::PushLine(camFrustumVerts[frustumIndices[i]], camFrustumVerts[frustumIndices[i+1]], color);
+    }
+}
+
 static void AddToBatch(
     const RMesh& mesh, 
     const Shader& shader, 
@@ -800,7 +831,7 @@ static void AddToBatch(
     RendererData& renderer = GetRenderer();
     // batches are bucketed by hashing properties of their mesh and their shader
     u64 rmeshHash = MeshBatchHash(material, shader, instanceData);
-    MeshBatch& batch = renderer.models[rmeshHash];
+    MeshBatch& batch = renderer.meshesToRender[rmeshHash];
     TINY_ASSERT(!batch.material.isValid() || batch.material == material); // either we are adding for the first time or they must be the same
     TINY_ASSERT(!batch.shader.isValid() || batch.shader == shader); // either we are adding for the first time or they must be the same
     batch.material = material;
@@ -832,6 +863,7 @@ void PushModel(const Model& model, const Shader& shader)
 void PushEntity(const EntityRef& entity)
 {
     EntityData& entityData = Entity::GetEntity(entity);
+    if (Entity::IsFlag(entityData, EntityFlags::DISABLED)) return;
     const Model& model = entityData.model;
     const Shader& entityShader = model.cachedShader;
     PushModel(model, entityShader);

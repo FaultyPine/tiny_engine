@@ -6,9 +6,8 @@
 #include "input.h"
 #include "tiny_engine.h"
 
-// press this button to unlock the cursor from the window
-
-struct Camera {
+struct Camera 
+{
     f32 speed = 10.0f;
     glm::vec3 cameraPos = glm::vec3(0);
     glm::vec3 cameraFront = glm::vec3(1.0f, 0.0f, 0.0f);

@@ -7,7 +7,6 @@
 #include "shader.h"
 #include "texture.h"
 #include "render/framebuffer.h"
-#include "render/shadows.h"
 #include "render/cubemap.h"
 
 #include "res/shaders/shader_defines.glsl"
@@ -52,7 +51,7 @@ struct LightingSystem
     s32 pointLightIndex = 0;
     GlobalLights lights = {};
     f32 ambientLightIntensity = 0.2f;
-    ShadowMap directionalShadowMap = {};
+    Framebuffer directionalShadowMap = {};
     Cubemap pointLightShadowMaps[MAX_NUM_LIGHTS] = {};
 };
 

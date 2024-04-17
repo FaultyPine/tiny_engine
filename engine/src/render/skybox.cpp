@@ -73,6 +73,7 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
 void Skybox::Draw() const
 {
     PROFILE_FUNCTION();
+    PROFILE_FUNCTION_GPU();
     if (!skyboxShader.isValid())
     {
         LOG_WARN("Skybox shader invalid while drawing");

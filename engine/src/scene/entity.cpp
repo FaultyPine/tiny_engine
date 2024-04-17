@@ -42,14 +42,19 @@ void InitializeEntitySystem(Arena* arena)
     Entity::SetFlag(U32_INVALID_ID, EntityFlags::DISABLED, true);
 }
 
-void SetFlag(EntityRef ent, EntityFlags flag, bool enabled)
+void SetFlag(EntityData& ent, EntityFlags flag, bool enabled)
 {
-    EntityRegistry& registry = GetRegistry();
-    u32& bitfield = registry.entMap[ent].flags;
+    u32& bitfield = ent.flags;
     SET_NTH_BIT(bitfield, flag, enabled);
 }
 
-static bool IsFlag(const EntityData& data, EntityFlags flag)
+void SetFlag(EntityRef ent, EntityFlags flag, bool enabled)
+{
+    EntityRegistry& registry = GetRegistry();
+    SetFlag(registry.entMap[ent], flag, enabled);
+}
+
+bool IsFlag(const EntityData& data, EntityFlags flag)
 {
     const u32& bitfield = data.flags;
     bool result = CHECK_NTH_BIT(bitfield, flag);

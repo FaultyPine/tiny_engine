@@ -5,7 +5,6 @@
 #include "camera.h"
 #include "shader.h"
 #include "shapes.h"
-#include "render/shadows.h"
 #include "mem/tiny_arena.h"
 #include "render/tiny_renderer.h"
 
@@ -30,12 +29,12 @@ static BoundingBox GetTightBoundsOnCamFrustum(
 void LightPoint::Visualize()
 {
     if (!this->enabled) return;
-    Shapes3D::DrawWireSphere(this->position, 0.1, this->color);
+    Renderer::PushPoint(this->position, this->color);
 }
 
 void LightDirectional::Visualize()
 {
-    Shapes3D::DrawWireSphere(this->position, 5.0f, this->color);
+    Renderer::PushPoint(this->position, this->color);
     Renderer::PushLine(this->position, this->position + (this->direction * 10.0f), this->color);
 }
 
@@ -69,7 +68,7 @@ LightDirectional& CreateDirectionalLight(glm::vec3 direction, glm::vec3 position
     light.position = position;
     light.intensity = intensity;
     light.enabled = true;
-    lightingSystem.directionalShadowMap = ShadowMap(2048);
+    lightingSystem.directionalShadowMap = {}; // this gets assigned to during our shadows prepass renderer stage
 
     lights.sunlight = light;
     return lights.sunlight;
@@ -79,8 +78,10 @@ glm::mat4 LightDirectional::GetLightSpacematrix(glm::mat4* outProj, glm::mat4* o
 {
     glm::vec3 target = position + direction;
     glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
-    const f32 boxScale = 100.0f;
-    glm::mat4 lightProj = glm::ortho(-boxScale, boxScale, -boxScale, boxScale, 0.01f, 500.0f);
+    const f32 width = 25.0f;
+    const f32 height = 25.0f;
+    const f32 depth = 50.0f;
+    glm::mat4 lightProj = glm::ortho(-width, width, -height, height, 0.01f, depth);
     if (outProj) *outProj = lightProj;
     if (outView) *outView = lightView;
     return lightProj * lightView;
@@ -135,7 +136,7 @@ void UpdateSunlightValues(const Shader& shader, const LightDirectional& sunlight
 {
     if (sunlight.enabled) 
     {
-        ShadowMap& sunlightShadowMap = GetEngineCtx().lightsSubsystem->directionalShadowMap;
-        shader.TryAddSampler(sunlightShadowMap.fb.GetDepthTexture(), "directionalLightShadowMap");
+        Framebuffer& sunlightShadowMap = GetEngineCtx().lightsSubsystem->directionalShadowMap;
+        shader.TryAddSampler(sunlightShadowMap.GetDepthTexture(), "directionalLightShadowMap");
     }
 }

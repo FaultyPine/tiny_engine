@@ -84,7 +84,7 @@ void InitializeShaderSystem(Arena* arena)
 
     u32 shaderMemBlockSize = Math::PercentOf(get_free_space(arena), 10);;
     void* globalShaderMem = arena_alloc(arena, shaderMemBlockSize);
-    gss->globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize);
+    gss->globalShaderMem = arena_init(globalShaderMem, shaderMemBlockSize, "Shader System");
     InitializeUBOs(gss->globals);
 }
 
@@ -509,6 +509,7 @@ void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform
 void UseShaderAndSetUniforms(const Shader& shaderIDToReceive, const Shader& shaderIDForUniforms)
 {
     PROFILE_FUNCTION();
+    PROFILE_FUNCTION_GPU();
     GlobalShaderState& gss = GetGSS();
     u32 oglShaderID = GetOpenGLProgramID(shaderIDToReceive.ID);
     glUseProgram(oglShaderID); 

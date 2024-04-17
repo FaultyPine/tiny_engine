@@ -1,6 +1,7 @@
 //#include "pch.h"
 #include "mem/tiny_arena.h"
 #include "tiny_log.h"
+#include "tiny_profiler.h"
 
 #define MAX_ARENA_NAME_LEN 30
 
@@ -14,21 +15,14 @@ Arena arena_init(void* backing_buffer, size_t arena_size) {
     return a;
 }
 
-Arena arena_init(void* backing_buffer, size_t arena_size, const char* name) {
+Arena arena_init(void* backing_buffer, size_t arena_size, const char* name_owning) {
     Arena a = arena_init(backing_buffer, arena_size);
-    char* name_mem = (char*)arena_alloc(&a, strnlen(name, MAX_ARENA_NAME_LEN)); 
-    strcpy(name_mem, (char*)name);
+    a.name = name_owning;
     return a;
 }
 
 const char* arena_get_name(Arena* arena) {
-    const char* possible_string = (const char*)arena->backing_mem;
-    for (int i = 0; i < MAX_ARENA_NAME_LEN; i++) {
-        if (possible_string[i] == '\0') {
-            return possible_string;
-        }
-    }
-    return "UNNAMED_ARENA";
+    return arena->name;
 }
 
 void* arena_alloc(Arena* arena, size_t alloc_size) {
@@ -45,6 +39,7 @@ void* arena_alloc(Arena* arena, size_t alloc_size) {
     void* new_alloc = arena->backing_mem + offset;
     arena->prev_offset = offset;
     offset += alloc_size;
+    PROFILE_ALLOC(new_alloc, alloc_size, arena_get_name(arena));
     return new_alloc;
 }
 
@@ -80,11 +75,18 @@ void arena_pop_latest(Arena* arena, void* data)
         LOG_WARN("Attempted to pop on arena without a valid most recent allocation");
         return;
     }
+    PROFILE_FREE(data, arena_get_name(arena));
     arena->offset = arena->prev_offset;
     TINY_ASSERT(data == nullptr || arena->backing_mem + arena->offset == data);
 }
 
 void arena_clear(Arena* arena) {
+    #ifdef PROFILING
+    if (arena->offset != 0)
+    {
+        PROFILE_FREE(arena->backing_mem, arena_get_name(arena));
+    }
+    #endif
     arena->offset = 0;
     arena->prev_offset = 0;
 }

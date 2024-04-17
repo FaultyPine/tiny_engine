@@ -18,8 +18,9 @@
 #include "render/tiny_ogl.h"
 #include "render/postprocess.h"
 
-//#define ISLAND_SCENE
-#define SPONZA_SCENE
+#define ISLAND_SCENE
+//#define SPONZA_SCENE
+
 
 struct Wave {
     f32 waveSpeed = 1.0;
@@ -93,7 +94,6 @@ struct GameState {
 #include "tiny_profiler.h"
 #include "particles/particle_behaviors.h"
 #include "tiny_log.h"
-#include "render/shadows.h"
 
 
 void testbed_camera_tick() {
@@ -172,11 +172,10 @@ void drawImGuiDebug(GameState& gs) {
             ImGui::DragFloat3(entityLabel, &ent.transform.position[0]);
         }
     }
-
-    ImGui::DragFloat("Sun Orbit radius", &gs.sunOrbitRadius);
-    ImGui::DragFloat("Sun orbit speed", &gs.sunSpeedMultiplier, 0.01f);
-    ImGui::DragFloat3("Sun target", &gs.sunTarget[0]);
-    ImGui::Checkbox("Enable grass render", &enableGrassRender);
+    if (ImGui::Checkbox("Enable grass render", &enableGrassRender))
+    {
+        Entity::SetFlag(GetHash("grass"), EntityFlags::DISABLED, !enableGrassRender);
+    }
 
     PostprocessSettings& ppSettings = Postprocess::ModifySettings();
     ImGui::DragFloat("SSAO power", &ppSettings.ssaoSettings.occlusionPower, 0.05, 0.0, 10.0);
@@ -229,11 +228,25 @@ void drawImGuiDebug(GameState& gs) {
     LightDirectional& sunlight = GetEngineCtx().lightsSubsystem->lights.sunlight;
     if (ImGui::CollapsingHeader("Sunlight"))
     {
+        if (ImGui::Button("Teleport to sun"))
+        {
+            Camera& cam = Camera::GetMainCamera();
+            cam.cameraPos = sunlight.position;
+            cam.LookAt(sunlight.position + sunlight.direction);
+        }
         ImGui::ColorEdit4("sunlight Color", &sunlight.color[0]);
         ImGui::DragFloat3("sunlight direction", &sunlight.direction[0], 0.1f);
+        sunlight.direction = glm::normalize(sunlight.direction);
         ImGui::DragFloat3("sunlight position", &sunlight.position[0], 0.1f);
         ImGui::DragFloat("sunlight intensity", &sunlight.intensity, 0.01f);
-        ImGui::Checkbox("sunlight Enabled", (bool*)&sunlight.enabled);
+        ImGui::Checkbox("sunlight Enabled", (bool*)&sunlight.enabled);     
+        ImGui::DragFloat("Sun Orbit radius", &gs.sunOrbitRadius);
+        ImGui::DragFloat("Sun orbit speed", &gs.sunSpeedMultiplier, 0.01f);
+        ImGui::DragFloat3("Sun target", &gs.sunTarget[0]);
+
+        glm::mat4 proj, view;
+        sunlight.GetLightSpacematrix(&proj, &view);
+        Renderer::PushFrustum(proj, view);
     }
 
 }
