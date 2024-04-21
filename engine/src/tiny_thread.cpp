@@ -3,8 +3,7 @@
 
 #include "tiny_defines.h"
 
-
-
+#include "tiny_profiler.h"
 
 // set thread name. TODO: seperate this into Thread engine module
 
@@ -25,15 +24,14 @@ typedef struct tagTHREADNAME_INFO
 
 void SetThreadName(uint32_t dwThreadID, const char* threadName)
 {
-
-  // DWORD dwThreadID = ::GetThreadId( static_cast<HANDLE>( t.native_handle() ) );
-
+   #if PROFILING
+   tracy::SetThreadName(threadName);
+   #else
    THREADNAME_INFO info;
    info.dwType = 0x1000;
    info.szName = threadName;
    info.dwThreadID = dwThreadID;
    info.dwFlags = 0;
-
    __try
    {
       RaiseException( MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(ULONG_PTR), (ULONG_PTR*)&info );
@@ -41,6 +39,7 @@ void SetThreadName(uint32_t dwThreadID, const char* threadName)
    __except(EXCEPTION_EXECUTE_HANDLER)
    {
    }
+   #endif
 }
 void SetThreadName(const char* threadName)
 {

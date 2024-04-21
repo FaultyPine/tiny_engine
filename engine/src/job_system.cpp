@@ -2,6 +2,7 @@
 #include "job_system.h"
 #include "tiny_log.h"
 #include "tiny_thread.h"
+#include "tiny_profiler.h"
 
 #include <string>
 
@@ -49,6 +50,7 @@ void JobSystem::ExecuteOnMainThread(const std::function<void()>& job)
 
 void JobSystem::FlushMainThreadJobs()
 {
+    PROFILE_FUNCTION();
     mainThreadJobPool.lock.lock();
     u32 mainThreadJobs = mainThreadJobPool.size();
     for (u32 i = 0; i < mainThreadJobs; i++)

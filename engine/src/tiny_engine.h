@@ -12,7 +12,11 @@ struct Framebuffer;
 
 typedef void(*InitFunction)(Arena* gameMem);
 typedef void(*TickFunction)(Arena* gameMem, f32 deltaTime);
-// render functions should output a texture handle to be rendered
+// TODO: how to architect the interplay between the editor and game.
+// editor needs the game's callbacks, game needs to render using engine renderer
+// editor doesn't really need to render with engine renderer.....
+// should the game call the editor and supply it's callbacks that way?
+// render functions 
 typedef Framebuffer(*RenderFunction)(const Arena* const gameMem);
 typedef void(*TerminateFunction)(Arena* gameMem);
 

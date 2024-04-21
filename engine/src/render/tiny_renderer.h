@@ -5,6 +5,11 @@
 #include "scene/entity.h"
 
 /*
+// new renderer:
+// island: 21 draw calls
+// sponza: 84 draw calls
+// old renderer:
+
 -- TODO:
 - allow entities to set rendering flags on themselves like "should I render?" and "enable cast shadows" and "enable receive shadows"
 - transfer Shapes2D and Shapes3D funcs to the renderer

@@ -18,8 +18,8 @@
 #include "render/tiny_ogl.h"
 #include "render/postprocess.h"
 
-#define ISLAND_SCENE
-//#define SPONZA_SCENE
+//#define ISLAND_SCENE
+#define SPONZA_SCENE
 
 
 struct Wave {
@@ -378,23 +378,23 @@ void testbed_init(Arena* gameMem) {
 
 #ifdef ISLAND_SCENE
     EntityRef islandEntRef = Entity::CreateEntity("island", Transform({0,0,0}));
-    EntityData& islandEnt = Entity::GetEntity(islandEntRef);
     Model testModel = Model(lightingShader, 
                             ResPath("other/island_wip/island.obj").c_str(), 
                             ResPath("other/island_wip/").c_str(), 
                             islandEntRef);
     Entity::AddRenderable(islandEntRef, testModel);
     gs.entities.push_back(islandEntRef);
+    EntityData& islandEnt = Entity::GetEntity(islandEntRef);
     PhysicsAddModel(testModel, islandEnt.transform);
 
     EntityRef treeEntRef = Entity::CreateEntity("tree", Transform({10,7.5,3}, glm::vec3(0.7)));
-    EntityData& treeEnt = Entity::GetEntity(treeEntRef);
     Model treeModel = Model(lightingShader, 
                             ResPath("other/island_wip/tree.obj").c_str(), 
                             ResPath("other/island_wip/").c_str(), 
                             treeEntRef);
     Entity::AddRenderable(treeEntRef, treeModel);
     gs.entities.push_back(treeEntRef);
+    EntityData& treeEnt = Entity::GetEntity(treeEntRef);
     PhysicsAddModel(treeModel, treeEnt.transform);
     
     Transform bushTf = Transform({-10,7.5,3}, glm::vec3(0.75));

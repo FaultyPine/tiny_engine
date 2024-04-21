@@ -62,30 +62,13 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 
 ### TODO:
 
-Renderer refactor:
-
-BOOKMARK: Put uniforms in the MODEL, not the shader.
-Uniforms are tied to the ENTITY (or really, the entity's model) not to the shader
-Uniforms are often shared between shaders for things like prepasses
-we should be tracking uniforms and their values on the models so there's 1 place to set them
-and the renderer sets the uniforms from there for each of it's passes
-
-- indexing the ObjectData gpu buffer using entity ids right now. 
-    Need some way of indexing it 
-
-
 - "entities"/serialize objects... 
     - Big refactor - move types to the type reflection system
     - rel pointers to make all entities one big blob?
-- Renderer
-    - Centralized system that takes in draw commands. At end of frame draws all requests and can
-        do pre-processing on those commands like batching
-    - what I have in mind for this would likely touch nearly every single aspect of the current renderer.
-        when I end up doing this - it would honestly be better to start completely from scratch than try to migrate my current
-        rendering stuff to what i have in mind.
-    - deferred renderer
 - entity picking
 - HDR/Tonemapping & Bloom
+- Texel-perfect pixel art sampling/scene
+    - https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/
 - PBR
 - ImGuizmo
 - Resource system
