@@ -23,6 +23,7 @@
 
 constexpr u32 MAX_NUM_RENDER_PASSES = 10;
 constexpr u32 MAX_NUM_MESHES_PER_BATCH = 500; // arbitrary
+constexpr u32 MAX_NUM_PRIMITIVE_DRAWS = 5000; // TODO: strechy gpu buffer
 
 // TODO:
 // consolidate shape shaders(?)
@@ -116,11 +117,11 @@ struct RenderPass
 struct RendererData
 {
     Arena arena = {};
-    FixedGrowableArray<RPoint, Renderer::MAX_NUM_PRIMITIVE_DRAWS> points = {};
+    FixedGrowableArray<RPoint, MAX_NUM_PRIMITIVE_DRAWS> points = {};
     u32 pointsVAO, pointsVBO = 0;
-    FixedGrowableArray<RLine, Renderer::MAX_NUM_PRIMITIVE_DRAWS> lines = {};
+    FixedGrowableArray<RLine, MAX_NUM_PRIMITIVE_DRAWS> lines = {};
     u32 linesVAO, linesVBO = 0;
-    FixedGrowableArray<RTriangle, Renderer::MAX_NUM_PRIMITIVE_DRAWS> triangles = {};
+    FixedGrowableArray<RTriangle, MAX_NUM_PRIMITIVE_DRAWS> triangles = {};
     u32 trianglesVAO, trianglesVBO = 0;
     typedef std::unordered_map<u64, MeshBatch> BatchMap;
     BatchMap meshesToRender = {};
@@ -231,6 +232,7 @@ static void DrawPoints(RendererData& renderer, f32 pointSize)
     u32 numPoints = renderer.points.size;
     RPoint* points = renderer.points.get_elements();
     if (numPoints == 0) return;
+    TINY_ASSERT(numPoints < MAX_NUM_PRIMITIVE_DRAWS);
     u32& VAO = renderer.pointsVAO;
     u32& VBO = renderer.pointsVBO;
     if (VAO == 0) 
@@ -271,6 +273,7 @@ void DrawLines(RendererData& renderer)
     u32 numLines = renderer.lines.size;
     RLine* lines = renderer.lines.get_elements();
     if (numLines == 0) return;
+    TINY_ASSERT(numLines < MAX_NUM_PRIMITIVE_DRAWS);
     u32& VAO = renderer.linesVAO;
     u32& VBO = renderer.linesVBO;
     if (VAO == 0) 
@@ -310,6 +313,7 @@ void DrawTriangles(RendererData& renderer)
     u32 numTriangles = renderer.triangles.size;
     RTriangle* triangles = renderer.triangles.get_elements();
     if (numTriangles == 0) return;
+    TINY_ASSERT(numTriangles < MAX_NUM_PRIMITIVE_DRAWS);
     u32& quadVAO = renderer.trianglesVAO;
     u32& VBO = renderer.trianglesVBO;
     if (quadVAO == 0) 
@@ -609,6 +613,7 @@ void DrawScene(RendererData& renderer, Arena* arena)
     // start prepasses
     for (u32 i = 0; i < MAX_NUM_RENDER_PASSES; i++)
     {
+        PROFILE_GPU_SCOPE("Prepass");
         RenderPass& pass = renderer.outputPasses[i];
         if (!pass.output.isValid()) continue;
         Renderer::PushDebugRenderMarker(TextFormat("Render pass %i", i));
@@ -628,6 +633,7 @@ void DrawScene(RendererData& renderer, Arena* arena)
     }
 
     Renderer::PushDebugRenderMarker("Scene Draw");
+    PROFILE_GPU_SCOPE("Scene Draw");
     renderer.finalOutput.Bind();
     // actual scene draw
     for (auto& [batchHash, batch] : renderer.meshesToRender)

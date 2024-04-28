@@ -218,6 +218,7 @@ bool EngineLoop() {
         while (GetTime() < lastframe + targetFrametime) 
         {
             // zzzzzz
+            std::this_thread::yield();
         }
         lastframe += targetFrametime;
     }

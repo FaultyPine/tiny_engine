@@ -22,7 +22,6 @@ struct Shader;
 struct Framebuffer;
 namespace Renderer
 {
-constexpr u32 MAX_NUM_PRIMITIVE_DRAWS = 300;
 
 TAPI void InitializeRenderer(Arena* arena);
 

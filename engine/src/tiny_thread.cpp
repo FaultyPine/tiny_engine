@@ -1,11 +1,7 @@
 
 #include "tiny_thread.h"
-
 #include "tiny_defines.h"
-
 #include "tiny_profiler.h"
-
-// set thread name. TODO: seperate this into Thread engine module
 
 #ifdef _WIN32
 #include <windows.h>
