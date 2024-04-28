@@ -604,7 +604,6 @@ void BatchPreprocessing(
 void DrawScene(RendererData& renderer, Arena* arena)
 {
     PROFILE_FUNCTION();
-    PROFILE_FUNCTION_GPU();
     // TODO: when we call PushEntity - increment some "generation" variable. Have another for the renderer data
     // if we call RendererDraw and the two generations are different, we know we've pushed a different set of entities and (possibly) need to regenerate our boofers
     // each batch shares the *exact* same material, shader, and instance params/data
