@@ -5,7 +5,6 @@
 #include "shader.h"
 #include "framebuffer.h"
 #include "tiny_profiler.h"
-#include <random>
 
 
 struct SSAOData
@@ -72,26 +71,16 @@ void ApplySSAOUniforms(const Shader& shader)
 {
     PostprocessingSystem& pp = GetPP();
 
-    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // random floats between [0.0, 1.0]
-    std::default_random_engine generator;
-    #define SSAO_KERNEL_SIZE 64
+    #define SSAO_KERNEL_SIZE 16
     for (u32 i = 0; i < SSAO_KERNEL_SIZE; ++i)
     {
-        /*
         glm::vec3 sample(
             GetRandomf(-1.0f, 1.0f),
             GetRandomf(-1.0f, 1.0f),
             GetRandomf(0.0f, 1.0f) // this gives samples in a unit hemisphere facing positive Z
         );
-        */
-        glm::vec3 sample(
-            randomFloats(generator) * 2.0 - 1.0, 
-            randomFloats(generator) * 2.0 - 1.0, 
-            randomFloats(generator)
-        );
         sample  = glm::normalize(sample);
-        //sample *= GetRandomf(0.0f, 1.0f);
-        sample *= randomFloats(generator);
+        sample *= GetRandomf(0.0f, 1.0f);
         // weight samples to be closer to the origin
         f32 scale = (f32)i / (f32)SSAO_KERNEL_SIZE; 
         scale   = Math::Lerp(0.1f, 1.0f, scale * scale);
@@ -106,10 +95,8 @@ void ApplySSAOUniforms(const Shader& shader)
         for (u32 i = 0; i < SSAO_NOISE_SIZE; i++)
         {
             glm::vec3 noise(
-                //GetRandomf(-1.0f, 1.0f),
-                //GetRandomf(-1.0f, 1.0f),
-                randomFloats(generator) * 2.0 - 1.0,
-                randomFloats(generator) * 2.0 - 1.0,
+                GetRandomf(-1.0f, 1.0f),
+                GetRandomf(-1.0f, 1.0f),
                 0.0f); 
             noiseData[i] = noise;
         }

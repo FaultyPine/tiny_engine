@@ -104,13 +104,19 @@ struct DrawElementsIndirectCommand
 };
 
 struct RenderPass;
-typedef void (*SetUniformsFunc)(const RenderPass&, const MeshBatch&, const Shader&);
+// returns true to trigger a draw call. Returning false = don't draw the batch
+// called for every batch in a render pass
+typedef bool (*RenderPassPreDrawFunc)(const RenderPass&, const MeshBatch&, const Shader&);
+// called once before any batches are rendered
+typedef bool (*RenderPassPreProcessFunc)(const RenderPass&, u32 passIndex);
+// called once after all batches in a pass are rendered
 typedef void (*RenderPassPostProcessFunc)(const RenderPass&, u32 passIndex);
 struct RenderPass
 {
     Framebuffer output = {};
     const char* fragShader = {};
-    SetUniformsFunc setUniformsFunc = nullptr;
+    RenderPassPreDrawFunc preDrawFunc = nullptr;
+    RenderPassPreProcessFunc preprocessFunc = nullptr;
     RenderPassPostProcessFunc postprocessFunc = nullptr;
     #define RENDERPASS_MAX_NAME_LENGTH 30
     const char* passName = "Unnamed Pass";
@@ -130,10 +136,10 @@ struct RendererData
     BatchMap meshesToRender = {};
     u32 indirectGPUBuffer = 0;
     RenderPass outputPasses[MAX_NUM_RENDER_PASSES] = {};
-    Framebuffer finalOutput = {};
+    RenderPass finalOutput = {};
     Skybox skybox = {};
     Shader SSAOShader = {};
-    Framebuffer SSAOOutputFramebuffer = {};
+    Shader SSAOBlurShader = {};
     bool needsSetup = true;
     s32 debugRenderPassVisIdx = -1;
 };
@@ -147,28 +153,21 @@ enum PremadeRenderPassType
 {
     SHADOWS,
     DEPTHNORMS,
-    POSTPROCESS,
+    SSAO,
+    SSAO_BLUR,
 
     NUM_PREMADE_RENDER_PASSES,
 };
 
-void PrepassSetUniformsDirectionalShadows(
+bool PrepassSetUniformsDirectionalShadows(
     const RenderPass& pass, 
     const MeshBatch& batch, 
     const Shader& shader)
 {
     shader.setUniform("isDirectionalShadowPass", true);
+    return true;
 }
 
-void PrepassDepthNormsPostprocess(
-    const RenderPass& pass,
-    u32 passIndex)
-{
-    RendererData& renderer = GetRenderer();
-    // after rendering depth & norms, we want to postprocess that (and then blur) for SSAO
-    const Framebuffer& depthnorms = pass.output;
-    Postprocess::PostprocessFramebuffer(depthnorms, renderer.SSAOOutputFramebuffer, renderer.SSAOShader);
-}
 
 void PrepassShadowsPostprocess(
     const RenderPass& pass,
@@ -178,19 +177,62 @@ void PrepassShadowsPostprocess(
     GetEngineCtx().lightsSubsystem->directionalShadowMap = pass.output;
 }
 
+void SSAOPass(
+    const RenderPass& pass,
+    u32 passIndex)
+{
+    RendererData& renderer = GetRenderer();
+    const Framebuffer& depthnorms = renderer.outputPasses[PremadeRenderPassType::DEPTHNORMS].output;
+    if (depthnorms.isValid())
+    {
+        Postprocess::PostprocessFramebuffer(depthnorms, pass.output, renderer.SSAOShader);
+    }
+}
+
+void SSAOBlurPass(
+    const RenderPass& pass,
+    u32 passIndex)
+{
+    RendererData& renderer = GetRenderer();
+    const Framebuffer& ssao = renderer.outputPasses[PremadeRenderPassType::SSAO].output;
+    if (ssao.isValid())
+    {
+        Postprocess::PostprocessFramebuffer(ssao, pass.output, renderer.SSAOBlurShader);
+    }
+}
+
+
+
+bool NoDraw(
+    const RenderPass& pass, 
+    const MeshBatch& batch, 
+    const Shader& shader)
+{
+    return false;
+}
+
 static RenderPass premadeRenderPrepasses[] = 
 {
     {
         .fragShader = "shaders/depth.frag",
-        .setUniformsFunc = PrepassSetUniformsDirectionalShadows,
+        .preDrawFunc = PrepassSetUniformsDirectionalShadows,
         .postprocessFunc = PrepassShadowsPostprocess,
         .passName = "Directional Shadows",
     },
     {
         .fragShader = "shaders/prepass.frag",
-        .postprocessFunc = PrepassDepthNormsPostprocess,
         .passName = "Depth & Normals",
-    }
+    },
+    { // SSAO needs to be after depth&normals (FUTURE: rendergraph)
+        .preDrawFunc = NoDraw, // don't draw any geometry, we're just postprocessing the depth&norms framebuffer
+        .postprocessFunc = SSAOPass,
+        .passName = "SSAO",
+    },
+    {
+        .preDrawFunc = NoDraw,
+        .postprocessFunc = SSAOBlurPass,
+        .passName = "SSAO Blur",
+    },
 };
 
 namespace Renderer
@@ -573,29 +615,35 @@ void DrawBatch(
     arena_pop_latest(arena, drawCommands);
     // draw this batch
     Shader selectedShader = batch.shader;
-    if (shaderOverride.isValid())
+    if (shaderOverride.isValid()) // prepass (i.e. shadows, depthnorms, etc)
     {
         selectedShader = shaderOverride;
     }
     else
     { // non-prepass
-        // don't need to do lighting/material stuff for prepasses (atm)
+        // don't need to do lighting/material stuff for prepasses
         const Material& material = batch.material;
         SetLightingUniforms(selectedShader);
         material.SetShaderUniforms(selectedShader); 
-        selectedShader.TryAddSampler(renderer.SSAOOutputFramebuffer.GetColorTexture(0), "aoTexture");
     }
-    if (pass.setUniformsFunc)
+    bool shouldDraw = true;
+    if (pass.preDrawFunc)
     {
-        pass.setUniformsFunc(pass, batch, selectedShader);
+        PROFILE_GPU_SCOPE("Predraw");
+        // the predraw function can dictate if we should draw the batch or not.
+        // this is to allow for render passes to do some manual processing and not trigger a draw (I.E. postprocessing of other render passes)
+        shouldDraw = pass.preDrawFunc(pass, batch, selectedShader);
     }
-    // for prepasses, where we pass in a valid shaderOverride,
-    // the selectedShader will not be the same as the batch's shader.
-    // the batch shader's uniforms will be transferred to the prepass shader
-    // this is to facilitate custom vertex shaders in conjunction with this automatic prepass system
-    UseShaderAndSetUniforms(selectedShader, batch.shader);
-    glBindVertexArray(batch.batchVAO);
-    glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, numMeshes, sizeof(DrawElementsIndirectCommand));
+    if (shouldDraw)
+    {
+        // for prepasses, where we pass in a valid shaderOverride,
+        // the selectedShader will not be the same as the batch's shader.
+        // the batch shader's uniforms will be transferred to the prepass shader
+        // this is to facilitate custom vertex shaders in conjunction with this automatic prepass system
+        UseShaderAndSetUniforms(selectedShader, batch.shader);
+        glBindVertexArray(batch.batchVAO);
+        glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (void*)0, numMeshes, sizeof(DrawElementsIndirectCommand));
+    }
 }
 
 void BatchPreprocessing(
@@ -629,35 +677,56 @@ void DrawScene(RendererData& renderer, Arena* arena)
     BatchPreprocessing(renderer, arena);
 
     // start prepasses
-    for (u32 i = 0; i < MAX_NUM_RENDER_PASSES; i++)
+    u32 passIndex = 0;
+    for (;passIndex < MAX_NUM_RENDER_PASSES; passIndex++)
     {
         PROFILE_GPU_SCOPE("Prepass");
-        RenderPass& pass = renderer.outputPasses[i];
+        RenderPass& pass = renderer.outputPasses[passIndex];
         if (!pass.output.isValid() || !pass.active) continue;
-        Renderer::PushDebugRenderMarker(TextFormat("Render pass %i", i));
-        pass.output.Bind();
-        ClearGLBuffers();
-        for (auto& [batchHash, batch] : renderer.meshesToRender)
+        Renderer::PushDebugRenderMarker(TextFormat("Render pass %i", passIndex));
+        bool shouldDraw = true;
+        if (pass.preprocessFunc)
         {
-            DrawBatch(renderer, arena, batch, pass, batch.prepassShaders[i]);
+            PROFILE_GPU_SCOPE("Preprocess");
+            shouldDraw = pass.preprocessFunc(pass, passIndex);
+        }
+        if (shouldDraw)
+        {
+            pass.output.Bind();
+            ClearGLBuffers();
+            for (auto& [batchHash, batch] : renderer.meshesToRender)
+            {
+                DrawBatch(renderer, arena, batch, pass, batch.prepassShaders[passIndex]);
+            }
         }
         if (pass.postprocessFunc)
         {
-            Renderer::PushDebugRenderMarker(TextFormat("Render pass %i postprocess", i));
-            pass.postprocessFunc(pass, i);
-            Renderer::PopDebugRenderMarker();
+            PROFILE_GPU_SCOPE("Postprocess");
+            pass.postprocessFunc(pass, passIndex);
         }
         Renderer::PopDebugRenderMarker();
     }
 
     Renderer::PushDebugRenderMarker("Scene Draw");
     PROFILE_GPU_SCOPE("Scene Draw");
-    renderer.finalOutput.Bind();
-    // actual scene draw
-    for (auto& [batchHash, batch] : renderer.meshesToRender)
+    bool shouldDraw = true;
+    if (renderer.finalOutput.preprocessFunc)
     {
-        DrawBatch(renderer, arena, batch, {});
-        ClearMeshBatch(batch);
+        shouldDraw = renderer.finalOutput.preprocessFunc(renderer.finalOutput, passIndex);
+    }
+    if (shouldDraw)
+    {
+        renderer.finalOutput.output.Bind();
+        // actual scene draw
+        for (auto& [batchHash, batch] : renderer.meshesToRender)
+        {
+            DrawBatch(renderer, arena, batch, renderer.finalOutput);
+            ClearMeshBatch(batch);
+        }
+    }
+    if (renderer.finalOutput.postprocessFunc)
+    {
+        renderer.finalOutput.postprocessFunc(renderer.finalOutput, passIndex);
     }
     renderer.skybox.Draw();
     Renderer::PopDebugRenderMarker();
@@ -669,11 +738,37 @@ glm::vec2 GetRendererDimensions()
     return Camera::GetScreenDimensions();
 }
 
+bool RenderPassScenePreDraw(
+    const RenderPass& pass, 
+    const MeshBatch& batch, 
+    const Shader& shader)
+{
+    RendererData& renderer = GetRenderer();
+    const Framebuffer& ssaoOutput = renderer.outputPasses[PremadeRenderPassType::SSAO_BLUR].output; 
+    shader.TryAddSampler(ssaoOutput.GetColorTexture(0), "aoTexture");
+    return true;
+}
+
+void RenderPassScenePostProcess(
+    const RenderPass& pass,
+    u32 passIndex)
+{
+
+}
+
 void SetupRenderPasses(
     RendererData& renderer)
 {
     glm::vec2 outputFramebufferDimensions = GetRendererDimensions();
-    renderer.finalOutput = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
+    // scene renderpass
+    RenderPass scenePass = {};
+    scenePass.active = true;
+    scenePass.passName = "Scene";
+    scenePass.preDrawFunc = RenderPassScenePreDraw;
+    scenePass.postprocessFunc = RenderPassScenePostProcess;
+    scenePass.output = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
+    renderer.finalOutput = scenePass;
+
     renderer.skybox = Skybox();
     for (u32 i = 0; i < ARRAY_SIZE(premadeRenderPrepasses); i++)
     {
@@ -693,27 +788,31 @@ void SetupRenderPasses(
                         numColorAttachments, isDepth);
         renderer.outputPasses[i].active = true;
     }
-    for (auto& [batchHash, batch] : renderer.meshesToRender)
+    for (u32 i = 0; i < ARRAY_SIZE(premadeRenderPrepasses); i++)
     {
-        const Shader& batchShader = batch.shader;
-        // set up premade render passes (shadows, depth/norms, postprocessing, etc)
-        for (u32 i = 0; i < ARRAY_SIZE(premadeRenderPrepasses); i++)
+        RenderPass& premadePass = premadeRenderPrepasses[i];
+        // some passes may not have frag shaders
+        if (premadePass.fragShader)
         {
-            RenderPass& premadePass = premadeRenderPrepasses[i];
-            ShaderLocation batchShaderLocations = GetShaderPaths(batchShader);
-            // for each batch's shader, we need variations of it for our prepasses.
-            // shaders with custom vertex shaders will keep their behavior during prepasses and have their fragment shaders overridden
-            Shader prepassShader = Shader(batchShaderLocations.first, ResPath(premadePass.fragShader));
-            batch.prepassShaders[i] = prepassShader;
+            for (auto& [batchHash, batch] : renderer.meshesToRender)
+            {
+                const Shader& batchShader = batch.shader;
+                // set up premade render passes (shadows, depth/norms, postprocessing, etc)
+                ShaderLocation batchShaderLocations = GetShaderPaths(batchShader);
+                // for each batch's shader, we need variations of it for our prepasses.
+                // shaders with custom vertex shaders will keep their behavior during prepasses and have their fragment shaders overridden
+                Shader prepassShader = Shader(batchShaderLocations.first, ResPath(premadePass.fragShader));
+                batch.prepassShaders[i] = prepassShader;
+            }
         }
     }
     Shader postprocessingShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/postprocess.frag"));
     Postprocess::SetPostprocessShader(postprocessingShader);
     renderer.SSAOShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/ao.frag"));
+    renderer.SSAOBlurShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/simple_blur.frag"));
     Postprocess::ApplySSAOUniforms(renderer.SSAOShader);
     Framebuffer* depthnorms = &renderer.outputPasses[PremadeRenderPassType::DEPTHNORMS].output;
     renderer.SSAOShader.TryAddSampler(depthnorms->GetColorTexture(0), "depthNormals");
-    renderer.SSAOOutputFramebuffer = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
 }
 
 void SetDebugOutputRenderPass(u32 renderpassIdx)
@@ -734,7 +833,7 @@ const char** GetRenderPassNames(Arena* arena, u32& numNames)
         {
             const char* name = renderer.outputPasses[i].passName;
             const char* nameDst = (const char*)arena_alloc(arena, RENDERPASS_MAX_NAME_LENGTH);
-            TMEMCPY((void*)nameDst, (void*)name, RENDERPASS_MAX_NAME_LENGTH);
+            TMEMCPY((void*)nameDst, (void*)name, RENDERPASS_MAX_NAME_LENGTH); // NOTE: this touches memory outside the string   :/
             result[numNames++] = nameDst;
         }
     }
@@ -755,7 +854,7 @@ Framebuffer* RendererDraw()
         renderer.needsSetup = false;
     }
     ShaderSystemPreDraw(); 
-    Framebuffer* framebuffer = &renderer.finalOutput;
+    Framebuffer* framebuffer = &renderer.finalOutput.output;
     framebuffer->Bind();
     ClearGLBuffers();
     
@@ -782,7 +881,6 @@ Framebuffer* RendererDraw()
     Renderer::PopDebugRenderMarker();
     glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
     Transform2D debugRenderTf = Transform2D(glm::vec2(0), scrn);
-    // BOOKMARK: properly draw depth texture on entire screen for debugging with dbgRenderpassVisIdx
     if (renderer.debugRenderPassVisIdx != -1)
     {
         RenderPass& pass = renderer.outputPasses[renderer.debugRenderPassVisIdx];

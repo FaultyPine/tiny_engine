@@ -30,6 +30,16 @@
 
 #define CHECK_NTH_BIT(bitfield, n_bit) ((( bitfield >> n_bit ) & 1U) == 1)
 
+// concat tokens without expanding macro definitions
+#define TMACRO_CONCAT(a,b) a##b
+// concat tokens after macro expanding them
+#define TMACRO_CONCAT_EX(a,b) TMACRO_CONCAT(a,b)
+
+// stringize token without macro expanding A
+#define TMACRO_STRINGIZE(A) #A
+// stringize token after macro expanding A
+#define TMACRO_STRINGIZE_EX(A) TMACRO_STRINGIZE(A)
+
 #define U32_INVALID_ID 999999999U
 
 // exports

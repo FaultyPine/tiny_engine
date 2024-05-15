@@ -179,7 +179,7 @@ void drawImGuiDebug(GameState& gs) {
 
     PostprocessSettings& ppSettings = Postprocess::ModifySettings();
     ImGui::DragFloat("SSAO power", &ppSettings.ssaoSettings.occlusionPower, 0.05, 0.0, 10.0);
-    ImGui::DragFloat("SSAO sample radius", &ppSettings.ssaoSettings.sampleRadius, 0.05);
+    ImGui::DragFloat("SSAO sample radius", &ppSettings.ssaoSettings.sampleRadius, 0.05, 0.0, 1.0);
 
     ImGui::DragFloat("wind str", &gs.windStrength, 0.01f);
     ImGui::DragFloat("wind freq", &gs.windFrequency, 0.01f);

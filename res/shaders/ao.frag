@@ -31,7 +31,7 @@ void main()
 
 #include "common.glsl"
 // sync with postprocess.cpp
-#define SSAO_KERNEL_SIZE 64
+#define SSAO_KERNEL_SIZE 16
 #define SSAO_NOISE_SIZE 16
 uniform vec3 ssaoKernel[SSAO_KERNEL_SIZE];
 uniform sampler2D ssaoNoise;

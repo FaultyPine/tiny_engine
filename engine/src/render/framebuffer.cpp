@@ -21,7 +21,7 @@ static void GenerateTexturesForFramebuffer(glm::vec2 size, Texture* colorTexture
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)); 
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)); 
-        s32 component = GL_RGB;
+        s32 component = GL_RGB; // TODO: make configurable
         s32 dataType = GL_UNSIGNED_BYTE;
         // generate texture to attach to framebuffer (alloc vid mem)
         GLCall(glTexImage2D(GL_TEXTURE_2D, 0, component, size.x, size.y, 0, component, dataType, NULL));

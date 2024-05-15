@@ -34,3 +34,11 @@ TAPI void arena_clear(Arena* arena);
 TAPI void arena_free_all(Arena* arena);
 TAPI const char* arena_get_name(Arena* arena);
 inline size_t get_free_space(Arena* arena) { return arena->backing_mem_size - arena->offset; }
+
+
+
+#define _arena_init_stack_scratch(arena_name, line, size) \
+    u8 TMACRO_CONCAT(arena_name, line) [size]; \
+    Arena arena_name = arena_init(&TMACRO_CONCAT(arena_name, line), size); \
+
+#define arena_init_stack_scratch(arena_name, size) _arena_init_stack_scratch(arena_name, __LINE__, size)
