@@ -5,11 +5,6 @@
 #include "scene/entity.h"
 
 /*
-// new renderer:
-// island: 21 draw calls
-// sponza: 84 draw calls
-// old renderer:
-
 -- TODO:
 - allow entities to set rendering flags on themselves like "should I render?" and "enable cast shadows" and "enable receive shadows"
 - transfer Shapes2D and Shapes3D funcs to the renderer
@@ -34,18 +29,20 @@ TAPI void PushFrustum(const glm::mat4& projection, const glm::mat4& view, glm::v
 TAPI void PushModel(const Model& model, const Shader& shader);
 TAPI void PushEntity(const EntityRef& entity);
 
-TAPI void PushDebugRenderMarker(const char* name);
-TAPI void PopDebugRenderMarker();
+TAPI void SetDebugOutputRenderPass(u32 renderpassIdx);
+TAPI const char** GetRenderPassNames(Arena* arena, u32& numNames);
 
-
-// TODO: remove this once renderer is fully integrated
-TAPI void EnableInstancing(
+void EnableInstancing(
     u32 VAO, 
     void* instanceDataBuffer,
     u32 stride, u32 numElements,
     u32& vertexAttributeLocation, 
     u32& instanceVBO);
 
-}
+TAPI void PushDebugRenderMarker(const char* name);
+TAPI void PopDebugRenderMarker();
+
+
+} // namespace Renderer
 
 #endif

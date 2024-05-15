@@ -112,6 +112,9 @@ struct RenderPass
     const char* fragShader = {};
     SetUniformsFunc setUniformsFunc = nullptr;
     RenderPassPostProcessFunc postprocessFunc = nullptr;
+    #define RENDERPASS_MAX_NAME_LENGTH 30
+    const char* passName = "Unnamed Pass";
+    bool active = false;
 };
 
 struct RendererData
@@ -132,6 +135,7 @@ struct RendererData
     Shader SSAOShader = {};
     Framebuffer SSAOOutputFramebuffer = {};
     bool needsSetup = true;
+    s32 debugRenderPassVisIdx = -1;
 };
 
 RendererData& GetRenderer()
@@ -180,10 +184,12 @@ static RenderPass premadeRenderPrepasses[] =
         .fragShader = "shaders/depth.frag",
         .setUniformsFunc = PrepassSetUniformsDirectionalShadows,
         .postprocessFunc = PrepassShadowsPostprocess,
+        .passName = "Directional Shadows",
     },
     {
         .fragShader = "shaders/prepass.frag",
         .postprocessFunc = PrepassDepthNormsPostprocess,
+        .passName = "Depth & Normals",
     }
 };
 
@@ -352,6 +358,19 @@ void DebugPreDraw()
 {
     // collision shapes
     PhysicsDebugRender();
+    RendererData& renderer = GetRenderer();
+    if (ImGui::CollapsingHeader("Render passes"))
+    {
+        u32 numRenderpassNames;
+        const char** renderpassNames = Renderer::GetRenderPassNames(GetFrameAllocator(), numRenderpassNames);
+        for (u32 i = 0; i < numRenderpassNames; i++)
+        {
+            if (ImGui::RadioButton(renderpassNames[i], renderer.debugRenderPassVisIdx == i))
+            {
+                renderer.debugRenderPassVisIdx = renderer.debugRenderPassVisIdx == i ? -1 : i;
+            }
+        }
+    }
     // red is x, green is y, blue is z
     // should put this on the screen in the corner permanently
     f32 axisGizmoScale = 0.03f;
@@ -614,7 +633,7 @@ void DrawScene(RendererData& renderer, Arena* arena)
     {
         PROFILE_GPU_SCOPE("Prepass");
         RenderPass& pass = renderer.outputPasses[i];
-        if (!pass.output.isValid()) continue;
+        if (!pass.output.isValid() || !pass.active) continue;
         Renderer::PushDebugRenderMarker(TextFormat("Render pass %i", i));
         pass.output.Bind();
         ClearGLBuffers();
@@ -672,6 +691,7 @@ void SetupRenderPasses(
                         framebufferDimensions.x, 
                         framebufferDimensions.y,
                         numColorAttachments, isDepth);
+        renderer.outputPasses[i].active = true;
     }
     for (auto& [batchHash, batch] : renderer.meshesToRender)
     {
@@ -694,6 +714,31 @@ void SetupRenderPasses(
     Framebuffer* depthnorms = &renderer.outputPasses[PremadeRenderPassType::DEPTHNORMS].output;
     renderer.SSAOShader.TryAddSampler(depthnorms->GetColorTexture(0), "depthNormals");
     renderer.SSAOOutputFramebuffer = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
+}
+
+void SetDebugOutputRenderPass(u32 renderpassIdx)
+{
+    RendererData& renderer = GetRenderer();
+    renderpassIdx = Math::Clamp(renderpassIdx, 0u, MAX_NUM_RENDER_PASSES);
+    renderer.debugRenderPassVisIdx = renderpassIdx;
+}
+
+const char** GetRenderPassNames(Arena* arena, u32& numNames)
+{
+    numNames = 0;
+    RendererData& renderer = GetRenderer();
+    const char** result = (const char**)arena_alloc(arena, MAX_NUM_RENDER_PASSES * sizeof(char*));
+    for (u32 i = 0; i < MAX_NUM_RENDER_PASSES; i++)
+    {
+        if (renderer.outputPasses[i].active && renderer.outputPasses[i].output.isValid())
+        {
+            const char* name = renderer.outputPasses[i].passName;
+            const char* nameDst = (const char*)arena_alloc(arena, RENDERPASS_MAX_NAME_LENGTH);
+            TMEMCPY((void*)nameDst, (void*)name, RENDERPASS_MAX_NAME_LENGTH);
+            result[numNames++] = nameDst;
+        }
+    }
+    return result;
 }
 
 Framebuffer* RendererDraw()
@@ -736,24 +781,13 @@ Framebuffer* RendererDraw()
     }
     Renderer::PopDebugRenderMarker();
     glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
-    Transform2D debugRenderTf = Transform2D(glm::vec2(0), scrn/4.0f);
-    for (u32 i = 0; i < MAX_NUM_RENDER_PASSES; i++)
+    Transform2D debugRenderTf = Transform2D(glm::vec2(0), scrn);
+    // BOOKMARK: properly draw depth texture on entire screen for debugging with dbgRenderpassVisIdx
+    if (renderer.debugRenderPassVisIdx != -1)
     {
-        RenderPass& pass = renderer.outputPasses[i];
+        RenderPass& pass = renderer.outputPasses[renderer.debugRenderPassVisIdx];
         Framebuffer& output = pass.output;
-        if (!output.isValid()) break;
-        for (u32 textureIdx = 0; textureIdx < ARRAY_SIZE(output.colorTextures); textureIdx++)
-        {
-            if (output.colorTextures[textureIdx].isValid())
-            {
-                output.DrawToFramebuffer(
-                    *framebuffer, 
-                    debugRenderTf, 
-                    (FramebufferAttachmentType)(FramebufferAttachmentType::COLOR0 + textureIdx), 
-                    {});
-                debugRenderTf.position.y += debugRenderTf.scale.y;
-            }
-        }
+        // prioritize depth, this typically is only for shadow maps
         Texture depth = output.GetDepthTexture();
         if (depth.isValid())
         {
@@ -762,15 +796,16 @@ Framebuffer* RendererDraw()
                     debugRenderTf, 
                     FramebufferAttachmentType::DEPTH, 
                     {});
-            debugRenderTf.position.y += debugRenderTf.scale.y;
+        }
+        else if (output.isValid()) 
+        {
+            output.DrawToFramebuffer(
+                        *framebuffer, 
+                        debugRenderTf, 
+                        (FramebufferAttachmentType)(FramebufferAttachmentType::COLOR0), 
+                        {});
         }
     }
-    renderer.SSAOOutputFramebuffer.DrawToFramebuffer(
-                    *framebuffer, 
-                    debugRenderTf, 
-                    FramebufferAttachmentType::COLOR0, 
-                    {});
-    
     
     return framebuffer;
 }
