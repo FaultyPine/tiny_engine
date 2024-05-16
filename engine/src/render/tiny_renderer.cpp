@@ -876,7 +876,9 @@ Framebuffer* RendererDraw()
     Shader* postprocessShader = Postprocess::GetPostprocessingShader();
     if (postprocessShader->isValid())
     {
-        Postprocess::PostprocessFramebuffer(*framebuffer, *postprocessShader);
+        Framebuffer* intermediatePPFramebuffer = Postprocess::GetPostprocessingFramebuffer();
+        Postprocess::PostprocessFramebuffer(*framebuffer, *intermediatePPFramebuffer, *postprocessShader);
+        Framebuffer::Blit(intermediatePPFramebuffer, framebuffer);
     }
     Renderer::PopDebugRenderMarker();
     glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};

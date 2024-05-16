@@ -17,12 +17,9 @@ void main() {
     vec3 water = texture(waterfallTex, uv).rgb * 0.7;
     water = round(water * colorBanding) / colorBanding;
 
-
     float mask = (water.r - offset) * contrast;
     vec3 col = mix(waterColor, waterHighlight, mask) * brightness;
     col *= water;
-
     
-    //col = pow(col, vec3(1.0/2.2)); // gamma correction
     fragColor = vec4(col, 1.0);
 }

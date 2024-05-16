@@ -36,6 +36,5 @@ void main() {
     col *= waterTextureCol;
     col = Waterfall(col);
 
-    col = pow(col, vec3(1.0/2.2)); // gamma correction
     fragColor = vec4(vec3(col), alpha);
 }

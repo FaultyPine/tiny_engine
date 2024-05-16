@@ -21,10 +21,9 @@ static void GenerateTexturesForFramebuffer(glm::vec2 size, Texture* colorTexture
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)); 
         GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)); 
-        s32 component = GL_RGB; // TODO: make configurable
-        s32 dataType = GL_UNSIGNED_BYTE;
         // generate texture to attach to framebuffer (alloc vid mem)
-        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, component, size.x, size.y, 0, component, dataType, NULL));
+        // TODO: make configurable
+        GLCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, size.x, size.y, 0, GL_RGBA, GL_FLOAT, NULL));
         // attach texture to framebuffer
         s32 oglFramebufferAttachment = GL_COLOR_ATTACHMENT0 + i;
         GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, oglFramebufferAttachment, GL_TEXTURE_2D, colorTextureID, 0));
@@ -130,6 +129,21 @@ void Framebuffer::Blit(
     glBindFramebuffer(GL_READ_FRAMEBUFFER, framebufferSrc);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebufferDst);
     glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, glFbType, GL_NEAREST);
+}
+
+void Framebuffer::Blit(Framebuffer* src, Framebuffer* dst)
+{
+    if (dst->size.x < src->size.x || dst->size.y < src->size.y)
+    {
+        return;
+    }
+    Framebuffer::Blit(
+        src->framebufferID, 
+        0, 0,
+        src->size.x, src->size.y,
+        dst->framebufferID,
+        0, 0,
+        dst->size.x, dst->size.y);
 }
 
 void Framebuffer::AttachTexture(FramebufferAttachmentType type, const Texture& tex)

@@ -62,13 +62,12 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 
 ### TODO:
 - strechy gpu buffer
-- Fix/finish SSAO
+- Bloom
 - PBR
     - proper brdf
     - proper hdri/skybox
     - irradience map (is this just a skybox?)
 - screen space reflections
-- HDR/Tonemapping & Bloom
 
 - "entities"/serialize objects... 
     - Big refactor - move types to the type reflection system

@@ -26,7 +26,4 @@ void main()
     
     // lighting includes diffuse, specular, and ambient light along with base diffuse color
     fragColor = vec4(col, alpha);
-
-    // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
-    fragColor = pow(fragColor, vec4(1.0/2.2));
 }
