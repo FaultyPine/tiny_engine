@@ -394,10 +394,38 @@ void DrawTriangles(RendererData& renderer)
     GLCall(glBindVertexArray(quadVAO));
     GLCall(glDrawArrays(GL_TRIANGLES, 0, numTriangles*3));
 }
+void posterizationEffectImGui()
+{
+    if (ImGui::CollapsingHeader("Posterization Effect"))
+    {
+        Shader* postprocessShader = Postprocess::GetPostprocessingShader();
+        if (!postprocessShader->isValid()) return;
 
+        #define floatimgui(varname, f_default) \
+            static float varname = f_default; \
+            ImGui::DragFloat(#varname, &varname, 0.01f); \
+            postprocessShader->setUniform(#varname, varname);
+        #define colorimgui(varname, v_default) \
+            static glm::vec3 varname = v_default; \
+            ImGui::ColorEdit3(#varname, &varname.x); \
+            postprocessShader->setUniform(#varname, varname);
+
+        floatimgui(exposure, 1.0);
+        floatimgui(palette_scene_weight, 0.0);
+        floatimgui(palette_hue, 5.1);
+        floatimgui(palette_sat, 0.64);
+        floatimgui(palette_val, 8.8);
+        floatimgui(palette_brightness, 1.6);
+        floatimgui(palette_darkness, 0.51);
+        floatimgui(palette_tint, 0.18);
+        floatimgui(palette_saturation, 0.24);
+        colorimgui(palette_base, glm::vec3(1));
+    }
+}
 
 void DebugPreDraw()
 {
+    posterizationEffectImGui();
     // collision shapes
     PhysicsDebugRender();
     RendererData& renderer = GetRenderer();
