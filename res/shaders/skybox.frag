@@ -1,8 +1,6 @@
  
 #include "globals.glsl"
 
-#include "lighting.glsl"
-
 // TODO:
 // https://www.patreon.com/posts/making-stylized-27402644
 

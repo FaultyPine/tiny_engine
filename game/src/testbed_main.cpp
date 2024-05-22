@@ -367,7 +367,7 @@ void testbed_init(Arena* gameMem) {
     GameState& gs = *GameState::Initialize(gameMem);
 
     Camera::GetMainCamera().cameraPos.y = 10;
-    gs.lightingShader = Shader(ResPath("shaders/basic_lighting.vert"), ResPath("shaders/basic_lighting.frag"));
+    gs.lightingShader = Shader(ResPath("shaders/default.vert"), ResPath("shaders/basic_lighting.frag"));
     Shader& lightingShader = gs.lightingShader;
 
     // TODO: why does this mesh not render in main view?

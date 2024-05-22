@@ -140,11 +140,13 @@ void MaterialProp::Delete()
 
 
 static void SetShaderUniformForMatProp(
+    u32 materialID,
     u32 matIdx, // equivalent to TextureMaterialType
     const MaterialProp& prop, 
     const Shader& shader)
 {
     shader.setUniform(TextFormat("material.properties[%i].dataType", matIdx), prop.GetDataType());
+    shader.setUniform("material.id", materialID);
     switch (prop.GetDataType())
     {
         case MaterialProp::DataType::FLOAT:
@@ -182,7 +184,7 @@ void Material::SetShaderUniforms(const Shader& shader) const
     for (u32 i = 0; i < NUM_MATERIAL_TYPES; i++)
     {
         const MaterialProp& matVar = properties[i];
-        SetShaderUniformForMatProp(i, matVar, shader);
+        SetShaderUniformForMatProp(this->id, i, matVar, shader);
     }
 }
 

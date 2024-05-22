@@ -16,7 +16,8 @@ void main()
     vec2 uv = vec2(TexCoords.x, uvY);
     //vec2 uv = TexCoords;
     fragColor = color * texture(mainTex, uv);
-    if (fragColor.a < 0.0001) {
-        discard;
+    if (fragColor.a < EPSILON) 
+    {
+        //discard;
     }
 }  

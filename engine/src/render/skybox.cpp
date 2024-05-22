@@ -4,7 +4,8 @@
 #include "tiny_log.h"
 #include "tiny_profiler.h"
 
-static f32 skyboxVertices[] = {
+static constexpr f32 skyboxVertices[] = 
+{
     // positions          
     -1.0f,  1.0f, -1.0f,
     -1.0f, -1.0f, -1.0f,
@@ -49,16 +50,16 @@ static f32 skyboxVertices[] = {
     1.0f, -1.0f,  1.0f
 };
 
-static Shader skyboxShader;
 static Mesh skyboxCube;
 
-Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties props) 
+void InitSkybox(Skybox* skybox)
 {
-    PROFILE_FUNCTION();
-    cubemap = LoadCubemap(facesPaths, props);
-    if (!skyboxShader.isValid() && !skyboxCube.isValid()) {
-        skyboxShader = Shader(ResPath("shaders/skybox.vert"), ResPath("shaders/skybox.frag"));
-        skyboxShader.TryAddSampler(cubemap, "skybox");
+    if (!skybox->skyboxShader.isValid()) {
+        skybox->skyboxShader = Shader(ResPath("shaders/skybox.vert"), ResPath("shaders/skybox.frag"));
+        skybox->skyboxShader.TryAddSampler(skybox->cubemap, "skybox");
+    }
+    if (!skyboxCube.isValid())
+    {
         std::vector<Vertex> vertices = {};
         for (u32 i = 0; i < ARRAY_SIZE(skyboxVertices); i+=3) {
             Vertex v = {};
@@ -67,6 +68,18 @@ Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties pro
         }
         skyboxCube = Mesh(vertices, {}, {}, "Skybox");
     }
+}
+
+Skybox::Skybox()
+{
+    InitSkybox(this);
+}
+
+Skybox::Skybox(const std::vector<const char*>& facesPaths, TextureProperties props) 
+{
+    PROFILE_FUNCTION();
+    cubemap = LoadCubemap(facesPaths, props);
+    InitSkybox(this);
 }
 
 
@@ -81,8 +94,8 @@ void Skybox::Draw() const
     }
     LightDirectional& sun = GetEngineCtx().lightsSubsystem->lights.sunlight;
     UpdateSunlightValues(skyboxShader, sun);
-    GLCall(glDepthFunc(GL_LEQUAL));
+    glDepthFunc(GL_LEQUAL);
     skyboxShader.use();
     skyboxCube.Draw();
-    GLCall(glDepthFunc(GL_LESS));
+    glDepthFunc(GL_LESS);
 }

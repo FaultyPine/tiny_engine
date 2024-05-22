@@ -61,7 +61,9 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 
 
 ### TODO:
-- strechy gpu buffer
+- deferred renderer
+    - get gbuffer pass working
+    - refactor lighting shader to operate on textures as a postprocessing effect
 - Bloom
 - PBR
     - proper brdf
@@ -73,6 +75,7 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
     - Big refactor - move types to the type reflection system
     - rel pointers to make all entities one big blob?
 - entity picking
+- shader reflection (spriv-cross or sokol's sdhc?)
 - Texel-perfect pixel art sampling/scene
     - https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/
 - ImGuizmo

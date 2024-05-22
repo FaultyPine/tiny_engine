@@ -82,7 +82,7 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     MaterialProp normal = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_NORMALS(0)), AssimpMaterialKey(), meshMaterialDir);
     if (normal.GetDataType() != MaterialProp::DataType::TEXTURE)
     {
-        // the material api is kind of vague in some cases - for obj's, normal maps are often loaded into the heightmap slot.
+        // the material api is kind of vague in some cases - for obj's, normal maps are often loaded into the heightmap slot (despite not being a heightmap).
         MaterialProp normalsFromHeightmap = GetMaterialFromType(material, AssimpMaterialKey(AI_MATKEY_TEXTURE_HEIGHT(0)), AssimpMaterialKey(), meshMaterialDir);
         if (normalsFromHeightmap.GetDataType() == MaterialProp::DataType::TEXTURE)
         {

@@ -23,7 +23,7 @@ vec3 Tonemap(vec3 col)
 {
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     const float gamma = 2.2;
-    // reinhard tone mapping
+    // reinhard tone mapping (simple HDR -> LDR)
     //scene.rgb = scene.rgb / (scene.rgb + vec3(1.0));
     // exposure tone mapping
     col = vec3(1.0) - exp(-col * exposure);

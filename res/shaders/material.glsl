@@ -31,9 +31,15 @@ struct MaterialProperty
 struct Material
 {
     MaterialProperty properties[MAX_NUM_MATERIAL_PROPERTIES];
+    uint id;
 };
 
 uniform Material material;
+
+uint GetMaterialID()
+{
+    return material.id;
+}
 
 uint GetMaterialPropertyDataType(uint matIdx)
 {

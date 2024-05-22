@@ -506,29 +506,20 @@ void TransferUniforms(const Shader& src, const Shader& dst)
 
 void SetOglUniformFromBuffer(const char* uniformName, const UniformData& uniform);
 
-void UseShaderAndSetUniforms(const Shader& shaderIDToReceive, const Shader& shaderIDForUniforms)
+void Shader::use() const 
 {
+    TINY_ASSERT("Invalid shader ID!" && isValid());
     PROFILE_FUNCTION();
     PROFILE_FUNCTION_GPU();
     GlobalShaderState& gss = GetGSS();
-    u32 oglShaderID = GetOpenGLProgramID(shaderIDToReceive.ID);
+    u32 oglShaderID = GetOpenGLProgramID(ID);
     glUseProgram(oglShaderID); 
-    if (shaderIDToReceive != shaderIDForUniforms)
-    {
-        TransferUniforms(shaderIDForUniforms, shaderIDToReceive);
-    }
-    ActivateSamplers(shaderIDForUniforms.ID);
-    const auto& uniformMap = gss.shaderMap[shaderIDToReceive.ID].cachedUniforms;
+    ActivateSamplers(ID);
+    const auto& uniformMap = gss.shaderMap[ID].cachedUniforms;
     for (const auto& [uniformName, uniformData] : uniformMap)
     {
         SetOglUniformFromBuffer(uniformName.c_str(), uniformData);
     }
-}
-
-void Shader::use() const 
-{
-    TINY_ASSERT("Invalid shader ID!" && isValid());
-    UseShaderAndSetUniforms(*this, *this);
 }
 
 
