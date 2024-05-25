@@ -42,11 +42,12 @@ PostprocessSettings& ModifySettings()
     return GetPP().settings;
 }
 
-void PostprocessFramebuffer(
-    const Framebuffer& fbToProcess, 
-    const Shader& shader)
+void PostprocessFramebufferInPlace(const Framebuffer& fbToProcess, const Shader& shader)
 {
-    Postprocess::PostprocessFramebuffer(fbToProcess, GetPP().postprocessFramebuffer, shader);
+    PostprocessingSystem& pp = GetPP();
+    const Framebuffer& intermediatePPFramebuffer = pp.postprocessFramebuffer;
+    Postprocess::PostprocessFramebuffer(fbToProcess, intermediatePPFramebuffer, shader);
+    Framebuffer::Blit(&intermediatePPFramebuffer, &fbToProcess);
 }
 
 void PostprocessFramebuffer(const Framebuffer& fbToProcess, const Framebuffer& dst, const Shader& shader)

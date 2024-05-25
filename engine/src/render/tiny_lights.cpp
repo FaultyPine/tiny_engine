@@ -78,9 +78,9 @@ glm::mat4 LightDirectional::GetLightSpacematrix(glm::mat4* outProj, glm::mat4* o
 {
     glm::vec3 target = position + direction;
     glm::mat4 lightView = glm::lookAt(position, target, {0,1,0});
-    const f32 width = 25.0f;
-    const f32 height = 25.0f;
-    const f32 depth = 50.0f;
+    const f32 width = 100.0f;
+    const f32 height = 100.0f;
+    const f32 depth = 250.0f;
     glm::mat4 lightProj = glm::ortho(-width, width, -height, height, 0.01f, depth);
     if (outProj) *outProj = lightProj;
     if (outView) *outView = lightView;

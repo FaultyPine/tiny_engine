@@ -50,7 +50,7 @@ float SSAO(vec2 uv, float depth, vec3 normal)
     mat4 projMatrix = GetProjectionMatrix();
     mat4 viewMatrix = GetViewMatrix();
     vec2 screenUV = uv / screenSize.xy;
-    vec3 worldPos = PositionFromDepth(projMatrix * viewMatrix, screenUV, depth);
+    vec3 worldPos = PositionFromDepth(projMatrix * viewMatrix, screenUV, depth, farClip, nearClip);
     vec3 posVS = vec3(viewMatrix * vec4(worldPos, 1));
 
     vec2 noiseUV = uv * GetNoiseScale();
@@ -73,7 +73,7 @@ float SSAO(vec2 uv, float depth, vec3 normal)
         offset.xyz = offset.xyz * 0.5 + 0.5;
         vec3 offsetPosition = PositionFromDepth(
             projMatrix * viewMatrix,
-            offset.xy, depth
+            offset.xy, depth, farClip, nearClip
         );
         float sampleDepth = (viewMatrix * vec4(offsetPosition, 1)).z;
 

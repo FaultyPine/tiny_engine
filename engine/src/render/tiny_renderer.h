@@ -7,7 +7,14 @@
 /*
 -- TODO:
 - allow entities to set rendering flags on themselves like "should I render?" and "enable cast shadows" and "enable receive shadows"
-- transfer Shapes2D and Shapes3D funcs to the renderer
+- transfer Sprite and Shapes2D and Shapes3D funcs to the renderer
+    // still really hate that sprites aren't integrated with the new renderer
+    // sprite batching is omega basic stuff that we can absolutely do rn
+    // i'd be pretty happy with making our current PushModel (which is really just pushing a mesh + shader combo)
+    // a general case for meshes, and our sprites be a special case of that - being we just push a Model with 
+    // a single quad mesh
+    // FIXME!!!!!
+
 - when renderer is fully done, compare against old renderer. (draw calls & actual timings)
 */
 

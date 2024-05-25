@@ -117,7 +117,10 @@ struct RenderPass
 {
     Framebuffer output = {};
     Framebuffer::FramebufferProperties outputProperties = {};
-    const char* fragShader = {};
+    // if only frag is specified, vertex will be pulled from the batch's shader (user-authored)
+    const char* fragShader = nullptr;
+    const char* vertShader = nullptr;
+    Shader passShader = {};
     RenderPassPreDrawFunc preDrawFunc = nullptr;
     RenderPassPreProcessFunc preprocessFunc = nullptr;
     RenderPassPostProcessFunc postprocessFunc = nullptr;
@@ -141,9 +144,8 @@ struct RendererData
     BatchMap meshesToRender = {};
     u32 indirectGPUBuffer = 0;
     RenderPass outputPasses[MAX_NUM_RENDER_PASSES] = {};
+    //Framebuffer finalOutput = {};
     Skybox skybox = {};
-    Shader SSAOShader = {};
-    Shader SSAOBlurShader = {};
     bool needsSetup = true;
     s32 debugRenderPassVisIdx = -1;
     s32 debugRenderPassAttachmentIdx = 0;
@@ -171,6 +173,7 @@ enum GbufferAttachments
     NORMS_DEPTH,
     ALBEDO_SPEC,
     OBJ_MAT_ID,
+    POSITIONWS,
 
     NUM_GBUFFER_ATTACHMENTS,
 };
@@ -183,6 +186,8 @@ void SetGbufferUniforms(const RenderPass& gbufferPass, const Shader& shader)
     shader.TryAddSampler(albedoSpec, "albedoSpec");
     Texture objMatId = gbufferPass.output.GetColorTexture(GbufferAttachments::OBJ_MAT_ID);
     shader.TryAddSampler(objMatId, "objMatId");
+    Texture gbuf_positionWS = gbufferPass.output.GetColorTexture(GbufferAttachments::POSITIONWS);
+    shader.TryAddSampler(gbuf_positionWS, "gbuf_positionWS");
 }
 
 bool PrepassSetUniformsDirectionalShadows(
@@ -211,8 +216,17 @@ void SSAOPass(
     const Framebuffer& gbuffer = renderer.outputPasses[PremadeRenderPassType::GBUFFER].output;
     if (gbuffer.isValid())
     {
-        Postprocess::PostprocessFramebuffer(gbuffer, pass.output, renderer.SSAOShader);
+        Postprocess::PostprocessFramebuffer(gbuffer, pass.output, pass.passShader);
     }
+}
+
+void SSAOInit(RenderPass& pass)
+{
+    RendererData& renderer = GetRenderer();
+    pass.passShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/ao.frag"));
+    Postprocess::ApplySSAOUniforms(pass.passShader);
+    Framebuffer* depthnorms = &renderer.outputPasses[PremadeRenderPassType::GBUFFER].output;
+    pass.passShader.TryAddSampler(depthnorms->GetColorTexture(GbufferAttachments::NORMS_DEPTH), "depthNormals");
 }
 
 void SSAOBlurPass(
@@ -223,36 +237,42 @@ void SSAOBlurPass(
     const Framebuffer& ssao = renderer.outputPasses[PremadeRenderPassType::SSAO].output;
     if (ssao.isValid())
     {
-        Postprocess::PostprocessFramebuffer(ssao, pass.output, renderer.SSAOBlurShader);
+        Postprocess::PostprocessFramebuffer(ssao, pass.output, pass.passShader);
     }
 }
 
-bool LightingPassScenePreDraw(
-    const RenderPass& pass, 
-    const MeshBatch& batch, 
-    const Shader& shader)
+void SSAOBlurInit(RenderPass& pass)
+{
+    pass.passShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/simple_blur.frag"));
+}
+
+void LightingPassInit(RenderPass& pass)
+{
+    // "lighting" is really just a postprocessing effect, so we draw it as a sprite
+    pass.passShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/basic_lighting.frag"));
+}
+
+void LightingPassPostProcess(
+    const RenderPass& pass,
+    u32 passIndex)
 {
     RendererData& renderer = GetRenderer();
+    const Shader& shader = pass.passShader;
     const RenderPass& gbufferPass = renderer.outputPasses[PremadeRenderPassType::GBUFFER];
     SetGbufferUniforms(gbufferPass, shader);
     const Framebuffer& ssaoOutput = renderer.outputPasses[PremadeRenderPassType::SSAO_BLUR].output; 
     shader.TryAddSampler(ssaoOutput.GetColorTexture(0), "aoTexture");
     shader.TryAddSampler(renderer.skybox.cubemap, "skybox");
-    return false;
-}
-
-void LightingPassScenePostProcess(
-    const RenderPass& pass,
-    u32 passIndex)
-{
-
+    SetLightingUniforms(shader);
+    Framebuffer::Blit(&gbufferPass.output, &pass.output, true); // need depth in our lighting framebuffer (should we blit stencil too?)
+    Postprocess::PostprocessFramebufferInPlace(pass.output, shader);
 }
 
 bool GbufferPreprocess(
     const RenderPass& pass, 
     u32 passIndex)
 {
-    // don't blend during gbuffer pass since
+    // don't blend during gbuffer pass since we're just outputting raw values to our color attachments
     glDisable(GL_BLEND);
     return true;
 }
@@ -310,6 +330,13 @@ static RenderPass premadeRenderPrepasses[] =
                     .dataType = Framebuffer::FramebufferProperties::PixelDataType::UNSIGNED_INT,
                     .attachmentName = "Object & Material ID",
                 },
+                {
+                    // TODO: can't visualize this attachment b/c can't sample an integer texture with a normal sampler2d
+                    .internalFormat = Framebuffer::FramebufferProperties::FramebufferInternalFormat::RGB16F,
+                    .format = Framebuffer::FramebufferProperties::FramebufferFormat::RGB,
+                    .dataType = Framebuffer::FramebufferProperties::PixelDataType::FLOAT,
+                    .attachmentName = "Worldspace Position",
+                },
             },
             .numColorAttachments = GbufferAttachments::NUM_GBUFFER_ATTACHMENTS,
         },
@@ -322,19 +349,21 @@ static RenderPass premadeRenderPrepasses[] =
     { // SSAO needs to be after depth&normals (FUTURE: rendergraph)
         .preprocessFunc = NoDraw, // don't draw any geometry, we're just postprocessing the depth&norms framebuffer
         .postprocessFunc = SSAOPass,
+        .initializeFunc = SSAOInit,
         .passName = "SSAO",
     },
     {
         .preprocessFunc = NoDraw,
         .postprocessFunc = SSAOBlurPass,
+        .initializeFunc = SSAOBlurInit,
         .passName = "SSAO Blur",
     },
     {
         // lighting renderpass
-        .preDrawFunc = LightingPassScenePreDraw,
-        .postprocessFunc = LightingPassScenePostProcess,
+        .preprocessFunc = NoDraw,
+        .postprocessFunc = LightingPassPostProcess,
+        .initializeFunc = LightingPassInit,
         .passName = "Lighting",
-        .needsLightingMaterialUniforms = true,
     },
 };
 
@@ -513,7 +542,6 @@ void posterizationEffectImGui()
             ImGui::ColorEdit3(#varname, &varname.x); \
             postprocessShader->setUniform(#varname, varname);
 
-        floatimgui(exposure, 1.0);
         floatimgui(palette_scene_weight, 0.0);
         floatimgui(palette_hue, 5.1);
         floatimgui(palette_sat, 0.64);
@@ -764,7 +792,7 @@ void DrawBatch(
         // use shader & manage automatic uniforms
         if (batch.shader != selectedShader)
         {
-            TransferUniforms(batch.shader, selectedShader);
+            TransferUniforms(batch.shader, selectedShader, true);
         }
         if (pass.needsLightingMaterialUniforms)
         {
@@ -813,7 +841,7 @@ void DrawScene(RendererData& renderer, Arena* arena)
     // each batch shares the *exact* same material, shader, and instance params/data
     BatchPreprocessing(renderer, arena);
 
-    // start prepasses
+    // render passes
     u32 passIndex = 0;
     for (;passIndex < MAX_NUM_RENDER_PASSES; passIndex++)
     {
@@ -847,8 +875,9 @@ void DrawScene(RendererData& renderer, Arena* arena)
     for (auto& [batchHash, batch] :  renderer.meshesToRender)
     {
         ClearMeshBatch(batch);
-    }   
+    }
 
+    //renderer.finalOutput.Bind();
     // basic shape drawing
     Renderer::PushDebugRenderMarker("Points");
     DrawPoints(renderer, 10.0f);
@@ -877,6 +906,7 @@ void SetupRenderPasses(
 {
     renderer.skybox = Skybox();
     glm::vec2 outputFramebufferDimensions = GetRendererDimensions();
+    //renderer.finalOutput = Framebuffer(outputFramebufferDimensions.x, outputFramebufferDimensions.y);
     for (u32 i = 0; i < ARRAY_SIZE(premadeRenderPrepasses); i++)
     {
         RenderPass& renderPass = renderer.outputPasses[i];
@@ -913,11 +943,6 @@ void SetupRenderPasses(
     }
     Shader postprocessingShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/postprocess.frag"));
     Postprocess::SetPostprocessShader(postprocessingShader);
-    renderer.SSAOShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/ao.frag"));
-    renderer.SSAOBlurShader = Shader(ResPath("shaders/default_sprite.vert"), ResPath("shaders/simple_blur.frag"));
-    Postprocess::ApplySSAOUniforms(renderer.SSAOShader);
-    Framebuffer* depthnorms = &renderer.outputPasses[PremadeRenderPassType::GBUFFER].output;
-    renderer.SSAOShader.TryAddSampler(depthnorms->GetColorTexture(GbufferAttachments::NORMS_DEPTH), "depthNormals");
 }
 
 void SetDebugOutputRenderPass(u32 renderpassIdx)
@@ -967,15 +992,15 @@ Framebuffer* RendererDraw()
     Shader* postprocessShader = Postprocess::GetPostprocessingShader();
     if (postprocessShader->isValid())
     {
-        Framebuffer* intermediatePPFramebuffer = Postprocess::GetPostprocessingFramebuffer();
-        Postprocess::PostprocessFramebuffer(*framebuffer, *intermediatePPFramebuffer, *postprocessShader);
-        Framebuffer::Blit(intermediatePPFramebuffer, framebuffer);
+        Postprocess::PostprocessFramebufferInPlace(*framebuffer, *postprocessShader);
     }
     Renderer::PopDebugRenderMarker();
     glm::vec2 scrn = {Camera::GetScreenWidth(), Camera::GetScreenHeight()};
     Transform2D debugRenderTf = Transform2D(glm::vec2(0), scrn);
     if (renderer.debugRenderPassVisIdx != -1)
     {
+        framebuffer->Bind();
+        glClear(GL_DEPTH_BUFFER_BIT); // get rid of (depth of) final render so we can draw debug stuff on top
         RenderPass& pass = renderer.outputPasses[renderer.debugRenderPassVisIdx];
         Framebuffer& output = pass.output;
         // prioritize depth, this typically is only for shadow maps

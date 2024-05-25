@@ -2,6 +2,29 @@
 #include "common.glsl"
 #include "material.glsl"
 
+// Gbuffer
+uniform sampler2D depthNormals;
+uniform sampler2D albedoSpec;
+uniform usampler2D objMatId;
+uniform sampler2D gbuf_positionWS;
+
+vec4 GetDepthNormals(vec2 uv)
+{
+    return texture(depthNormals, uv);
+}
+vec4 GetAlbedoSpec(vec2 uv)
+{
+    return texture(albedoSpec, uv);
+}
+uvec2 GetObjMatId(vec2 uv)
+{
+    return texture(objMatId, uv).rg;
+}
+vec3 GetPositionWS(vec2 uv)
+{
+    return texture(gbuf_positionWS, uv).rgb;
+}
+
 // samplers cannot be stored in ubo/ssbo buffers.... :/
 uniform samplerCube pointLightShadowMaps[MAX_NUM_LIGHTS];
 uniform sampler2D directionalLightShadowMap;
@@ -51,7 +74,7 @@ float GetDirectionalShadow(
     // transform to [0,1]
     projCoords = projCoords * 0.5 + 0.5;
     if (projCoords.z > 1.0) // if fragment in light space is outside the frustum, it should be fully lit
-        return 1.0;
+        return 0.0;
     // [0,1] current depth of this fragment
     float currentDepth = projCoords.z;
     // 1.0 is in shadow, 0 is out of shadow
@@ -67,8 +90,7 @@ void calculateLightingForPointLight (
     vec3 fragNormalWS,
     vec3 fragPositionWS,
     vec3 viewDir,
-    float shininess,
-    vec3 specularMaterial) 
+    float shininess) 
 {
     float lightIntensity = light.attenuationParams.a;
     vec3 lightColor = light.color.rgb * lightIntensity;
@@ -90,7 +112,7 @@ void calculateLightingForPointLight (
         float specularFactor = dot(fragNormalWS, halfwayDir);
         specCo = pow(max(0.0, specularFactor), max(EPSILON, shininess));
     }
-    vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
+    vec3 currentLightSpecular = specCo * lightColor; //* specularMaterial;
 
     // dist from current fragment to light source
     // TODO: https://lisyarus.github.io/blog/graphics/2022/07/30/point-light-attenuation.html
@@ -114,8 +136,7 @@ void calculateLightingForDirectionalLight (
     vec3 fragNormalWS,
     vec3 fragPositionWS,
     vec3 viewDir,
-    float shininess,
-    vec3 specularMaterial) 
+    float shininess) 
 {
     float lightIntensity = light.direction.a; // intensity is in alpha of direction
     // target - position is direction from target pointing towards the light, inverse that to get proper lit parts of mesh
@@ -136,7 +157,7 @@ void calculateLightingForDirectionalLight (
         float specularFactor = max(0.0, dot(fragNormalWS, halfwayDir));
         specCo = pow(max(0.0, specularFactor), max(EPSILON, shininess));
     }
-    vec3 currentLightSpecular = specCo * lightColor * specularMaterial;
+    vec3 currentLightSpecular = specCo * lightColor; // * specularMaterial; // tint specular color?
     float shadow = GetDirectionalShadow(fragPositionWS, fragNormalWS);
 
     diffuseLight += currentLightDiffuse * shadow;
@@ -147,16 +168,16 @@ vec3 calculateLighting(
     vec2 fragTexCoord,
     vec3 fragNormalWS, 
     vec3 viewDir, 
-    vec3 fragPositionWS)
+    vec3 fragPositionWS,
+    vec3 diffuseMaterial,
+    float shininess)
 {
     // ambient: if there's a material, tint that material the color of the diffuse and dim it down a lot
-    vec3 ambientLight = GetDiffuseMaterial(fragTexCoord).rgb * GetAmbientLightIntensity();
-    ambientLight *= texture(aoTexture, GetScreenUVs()).rgb; //* texture(skybox, normalize(fragPositionWS)).rgb;
+    vec3 ambientLight = diffuseMaterial * GetAmbientLightIntensity();
+    ambientLight *= texture(aoTexture, GetScreenUVs()).rgb;
 
     vec3 diffuseLight = vec3(0);
     vec3 specularLight = vec3(0);
-    float shininess = GetShininessMaterial(fragTexCoord).r;
-    vec3 specularMaterial = GetSpecularMaterial(fragTexCoord).rgb;
 
     // sunlight is seperate from other lights
     calculateLightingForDirectionalLight(
@@ -166,8 +187,7 @@ vec3 calculateLighting(
         fragNormalWS,
         fragPositionWS,
         viewDir,
-        shininess,
-        specularMaterial);
+        shininess);
     // assumes active lights are at the front of the lights array
     for (int i = 0; i < GetNumActiveLights(); i++) 
     {
@@ -178,8 +198,7 @@ vec3 calculateLighting(
             fragNormalWS,
             fragPositionWS,
             viewDir,
-            shininess,
-            specularMaterial);
+            shininess);
     }
 
     vec3 lighting = diffuseLight + specularLight + ambientLight;

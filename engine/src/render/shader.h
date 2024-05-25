@@ -85,7 +85,7 @@ void UseShaderAndSetUniforms(const Shader& shaderIDToReceive, const Shader& shad
 void RefreshShaderUniformLocations(u32 shaderID, u32 oglShaderProgram);
 const ShaderLocation& GetShaderPaths(const Shader& shader);
 // writes all the uniforms cached by src into dst
-void TransferUniforms(const Shader& src, const Shader& dst);
+void TransferUniforms(const Shader& src, const Shader& dst, bool overwrite);
 
 struct ShaderHasher {
     size_t operator()(const Shader& p) const

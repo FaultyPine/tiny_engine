@@ -17,6 +17,7 @@ layout (location = 5) in uint objectID;
 layout (location = 6) in mat4 instanceModelMat;
 #endif
 
+#ifndef NO_VS_OUT
 // Output vertex attributes (to fragment shader)
 out VS_OUT
 {
@@ -27,6 +28,7 @@ out VS_OUT
     vec3 fragTangent; // OS
     flat uint objectID;
 } vs_out;
+#endif
 
 mat4 GetModelMatrix();
 mat3 GetNormalMatrix();
@@ -44,6 +46,7 @@ void VertexToFrag()
 
 #ifdef FRAGMENT_SHADER
 
+#ifndef NO_VS_OUT
 // Input vertex attributes (from vertex shader)
 in VS_OUT
 {
@@ -54,6 +57,7 @@ in VS_OUT
     vec3 fragTangent;
     flat uint objectID;
 } vs_in;
+#endif
 
 layout (location = 0) out vec4 fragColor;
 
@@ -72,7 +76,7 @@ uint GetObjectID()
     #ifdef VERTEX_SHADER
     result = objectID;
     #endif
-    #ifdef FRAGMENT_SHADER
+    #if defined(FRAGMENT_SHADER) && !defined(NO_VS_OUT)
     result = vs_in.objectID;
     #endif
     return result;

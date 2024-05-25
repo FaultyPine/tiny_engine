@@ -111,6 +111,7 @@ void Framebuffer::Bind() const {
     glBindFramebuffer(GL_FRAMEBUFFER, framebufferID); 
     GLuint attachments[FramebufferAttachmentType::MAX_NUM_COLOR_ATTACHMENTS] = {};
     u32 numAttachments = 0;
+    // bind all color attachments. I don't think we'll ever be writing to one individual attachment and not the others
     for (u32 i = 0; i < ARRAY_SIZE(colorTextures); i++)
     {
         if (colorTextures[i].isValid())
@@ -121,6 +122,7 @@ void Framebuffer::Bind() const {
     }
     // extra attachments need to be specified before drawing
     glDrawBuffers(numAttachments, attachments);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebufferID);
     glViewport(0, 0, properties.size.x, properties.size.y);
 }
 void Framebuffer::BindDefaultFrameBuffer() {
@@ -148,7 +150,7 @@ void Framebuffer::Blit(
     glBlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, glFbType, GL_NEAREST);
 }
 
-void Framebuffer::Blit(Framebuffer* src, Framebuffer* dst)
+void Framebuffer::Blit(const Framebuffer* src, const Framebuffer* dst, bool isDepth)
 {
     if (dst->properties.size.x < src->properties.size.x || dst->properties.size.y < src->properties.size.y)
     {
@@ -160,7 +162,7 @@ void Framebuffer::Blit(Framebuffer* src, Framebuffer* dst)
         src->properties.size.x, src->properties.size.y,
         dst->framebufferID,
         0, 0,
-        dst->properties.size.x, dst->properties.size.y);
+        dst->properties.size.x, dst->properties.size.y, isDepth);
 }
 
 void Framebuffer::AttachTexture(FramebufferAttachmentType type, const Texture& tex)

@@ -1,9 +1,7 @@
- 
-out vec4 fragColor;
 
-uniform vec4 color = vec4(1);
+#include "globals.glsl"
 
 void main()
 {
-	fragColor = color;
+	fragColor = vs_in.fragVertexColor;
 }

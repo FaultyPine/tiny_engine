@@ -22,7 +22,7 @@ typedef u32 EntityRef;
 struct EntityData
 {
     Transform transform = {};
-    Model model = {};
+    Model model = {}; // TODO: "renderable" shouldn't hardcoded to Model... Sprites too? this is getting into ECS territory
     BoundingBox bounds = {};
     EntityRef id = U32_INVALID_ID;
     u32 flags = 0;

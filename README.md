@@ -62,15 +62,21 @@ https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a28
 
 ### TODO:
 - deferred renderer
-    - get gbuffer pass working
-    - refactor lighting shader to operate on textures as a postprocessing effect
+    - proper deferred lights. Cluster? Light volumes(outdated....)? 
+- Now that we have a centralized renderer, passing in raw shaders to be draw into Model is a design bug
+    - user-authored shaders need to be additive to the default shaders the engine uses.
+        user shader code would be injected into prebuilt engine shaders
+        this leads us to the question of a custom shading language for user shaders.... 
+        honestly tho that would be kinda overscoping. If that's really necessary in the future im super down,
+        but I just am not at a scale where that kind of thing would be useful. I'd rather user shaders be something like normal glsl where they just provide a main function and we pass in all the inputs in a struct and call that user function 
 - Bloom
 - PBR
     - proper brdf
     - proper hdri/skybox
     - irradience map (is this just a skybox?)
-- screen space reflections
-
+    - screen space reflections
+- weird idea: splines through colorspace. Imagine using control points on a 2d color wheel visualization to define a palette
+    - number of segments on the spline defines the steps in the palette
 - "entities"/serialize objects... 
     - Big refactor - move types to the type reflection system
     - rel pointers to make all entities one big blob?

@@ -76,7 +76,7 @@ struct Framebuffer
                     f32 dstX1, f32 dstY1,
                     bool isDepth = false);
     // blit to (0,0) (ensures dst is bigger than src)
-    TAPI static void Blit(Framebuffer* src, Framebuffer* dst);
+    TAPI static void Blit(const Framebuffer* src, const Framebuffer* dst, bool isDepth = false);
     TAPI void DrawToFramebuffer(
         const Framebuffer& dstFramebuffer, 
         const Transform2D& dst, 

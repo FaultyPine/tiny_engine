@@ -100,7 +100,7 @@ Material aiMaterialConvert(aiMaterial** materials, u32 meshMaterialIndex, const 
     if (shininess.GetDataType() != MaterialProp::DataType::TEXTURE)
     {
         // TODO: make configurable
-        shininess.VecData().r = Math::Remap(shininess.VecData().r, 0.0, 1000.0, 0.0, 10.0);
+        //shininess.VecData().r = Math::Remap(shininess.VecData().r, 0.0, 1000.0, 0.0, 10.0);
     }
 
     const char* materialName = str.C_Str();

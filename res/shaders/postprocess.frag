@@ -7,8 +7,6 @@ uniform vec4 color;
 // 0 for no flip, 1 for flip
 uniform int shouldFlipY;
 
-uniform float exposure = 1.0;
-
 uniform float palette_hue = 1.0;
 uniform float palette_sat = 1.0;
 uniform float palette_val = 1.0;
@@ -24,9 +22,7 @@ vec3 Tonemap(vec3 col)
     // Gamma correction   can also just glEnable(GL_FRAMEBUFFER_SRGB); before doing final mesh render
     const float gamma = 2.2;
     // reinhard tone mapping (simple HDR -> LDR)
-    //scene.rgb = scene.rgb / (scene.rgb + vec3(1.0));
-    // exposure tone mapping
-    col = vec3(1.0) - exp(-col * exposure);
+    col = col / (col + vec3(1.0));
     // gamma correction 
     col = pow(col, vec3(1.0 / gamma));
     return col;

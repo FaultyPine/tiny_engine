@@ -367,8 +367,12 @@ void testbed_init(Arena* gameMem) {
     GameState& gs = *GameState::Initialize(gameMem);
 
     Camera::GetMainCamera().cameraPos.y = 10;
-    gs.lightingShader = Shader(ResPath("shaders/default.vert"), ResPath("shaders/basic_lighting.frag"));
-    Shader& lightingShader = gs.lightingShader;
+    // lol this should go away. Since renderer handles lit shader stuff, we should only give models a shader
+    // if we want some custom behavior. No shader = reasonable default = standard lit.
+    // can specify custom shader & flags like lit or unlit 
+    // lit would only mean your custom shader is passed some lighting/material data
+    gs.lightingShader = Shader(ResPath("shaders/default.vert"), ResPath("shaders/default.frag"));
+    Shader lightingShader = gs.lightingShader;
 
     // TODO: why does this mesh not render in main view?
     //EntityRef floatingcubes = Entity::CreateEntity("floatingcubes", Transform(glm::vec3(0,10,0), glm::vec3(0.1)));

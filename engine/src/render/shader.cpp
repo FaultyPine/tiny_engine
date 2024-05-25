@@ -459,7 +459,8 @@ void updateUniformData(
     const std::string& uniformName, 
     void* uniformData, 
     u32 uniformSize, 
-    UniformDataType dataType) 
+    UniformDataType dataType,
+    bool overwrite = true) 
 {
     PROFILE_FUNCTION();
     GlobalShaderState& gss = GetGSS();
@@ -468,7 +469,7 @@ void updateUniformData(
     // if we already have uniform - simply update cached values. If we don't, allocate more mem in our uniform mem block
     // NOTE/TODO: would like to be able to free uniform mem. Rn we just arena alloc new mem and never free it up
     // maybe use our fixed block allocator and have all uniforms be sizeof(mat4) so we can easily free/reuse chunks in the middle
-    if (cachedUniforms.count(uniformName)) 
+    if (cachedUniforms.count(uniformName) && overwrite) 
     {
         UniformData& uniform = cachedUniforms[uniformName];
         TINY_ASSERT(dataType == uniform.dataType && uniformSize == uniform.uniformSize);
@@ -494,13 +495,13 @@ void updateUniformData(
     }
 }
 
-void TransferUniforms(const Shader& src, const Shader& dst)
+void TransferUniforms(const Shader& src, const Shader& dst, bool overwrite)
 {
     GlobalShaderState& gss = GetGSS();
     const auto& uniformMap = gss.shaderMap[src.ID].cachedUniforms;
     for (const auto& [uniformName, uniformData] : uniformMap)
     {
-        updateUniformData(dst.ID, uniformName, uniformData.uniformData, uniformData.uniformSize, uniformData.dataType);
+        updateUniformData(dst.ID, uniformName, uniformData.uniformData, uniformData.uniformSize, uniformData.dataType, overwrite);
     }
 }
 

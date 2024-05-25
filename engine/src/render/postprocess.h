@@ -24,9 +24,9 @@ TAPI void ApplySSAOUniforms(const Shader& shader);
 TAPI PostprocessSettings& ModifySettings();
 
 void InitializePostprocessing(Arena* arena);
-TAPI void PostprocessFramebuffer(const Framebuffer& fbToProcess, const Shader& shader);
+// applies a shader to a given framebuffer
+TAPI void PostprocessFramebufferInPlace(const Framebuffer& fbToProcess, const Shader& shader);
 TAPI void PostprocessFramebuffer(const Framebuffer& fbToProcess, const Framebuffer& dst, const Shader& shader);
-TAPI Framebuffer* GetPostprocessingFramebuffer();
 TAPI Shader* GetPostprocessingShader();
 
 } // namespace Postprocess
