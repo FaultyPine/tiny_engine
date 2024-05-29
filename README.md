@@ -58,6 +58,11 @@ Simple physics
 
 https://github.com/FaultyPine/tiny_engine/assets/53064235/a390abcf-4f2c-4d48-a282-06d47cd22cef
 
+Lethal Company inspired posterization effect:
+
+
+https://github.com/FaultyPine/tiny_engine/assets/53064235/b123ae44-4220-4da7-9f94-cf849fe183f8
+
 
 
 ### TODO:
