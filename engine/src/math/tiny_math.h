@@ -64,6 +64,11 @@ template <typename T> bool isInRange(T x, T min, T max) {
     return min <= x && x <= max;
 }
 
+f32 ExpoDecay(f32 a, f32 b, f32 decay, f32 deltaTimeSeconds)
+{
+    return b + (a - b) * exp(-decay * deltaTimeSeconds);
+}
+
 TAPI uint32_t hash(const char* message, size_t message_length);
 
 TAPI u32 countLeadingZeroes(u32 n);
