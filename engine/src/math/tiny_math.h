@@ -64,7 +64,8 @@ template <typename T> bool isInRange(T x, T min, T max) {
     return min <= x && x <= max;
 }
 
-f32 ExpoDecay(f32 a, f32 b, f32 decay, f32 deltaTimeSeconds)
+// https://www.youtube.com/watch?v=LSNQuFEDOyQ
+inline f32 ExpoDecay(f32 a, f32 b, f32 decay, f32 deltaTimeSeconds)
 {
     return b + (a - b) * exp(-decay * deltaTimeSeconds);
 }
