@@ -9,19 +9,29 @@ const vec3 grassBaseColor = vec3(0.05, 0.2, 0.01);
 const vec3 grassTipColor = vec3(0.1, 0.5, 0.1);
 
 void main() {
+    vec2 texCoord = vs_in.fragTexCoord;
     float height = vs_in.fragTexCoord.y; // 0 at bottom, 1 at tip
     // TODO: blend between dark green at base and more yellowish green at tip
     height = EaseInOutSine(height);
     vec3 diffuse = mix(grassBaseColor, grassTipColor, height);
 
-    vec3 normalWS = GetNormals(vs_in.fragNormal, vs_in.fragTangent, vs_in.fragTexCoord);
-    vec3 viewDir = GetViewDir(vs_in.fragPositionWS);
+    vec4 albedoSpec = GetAlbedoSpec(texCoord);
+    vec3 diffuseMaterial = albedoSpec.rgb;
+    float shininess = albedoSpec.a;
+    vec4 depthNormals = GetDepthNormals(texCoord);
+    vec3 normalWS = depthNormals.rgb;
+    float depth = depthNormals.a;
+    vec3 fragPositionWS = GetPositionWS(texCoord);
+    vec3 viewDir = GetViewDir(fragPositionWS);
+
     // colored lighting
     vec3 lighting = calculateLighting(
-        vs_in.fragTexCoord,
+        texCoord,
         -sunlight.direction.xyz, 
         -sunlight.direction.xyz,
-        vs_in.fragPositionWS);
+        vs_in.fragPositionWS,
+        diffuse,
+        shininess);
 
     //float shadow = GetDirectionalShadow(
     //    vs_in.fragPositionWS.xyz,

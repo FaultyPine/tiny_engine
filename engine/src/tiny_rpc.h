@@ -9,6 +9,14 @@
 #include <windows.h>
 
 // WIP. Not done
+// this is supposed to be a dope implementation of a cool technique from Game Programming Gems
+// where you can register and call arbitrary functions with arbitrary parameters given a function id and payload
+// the payload contains the packed data that in actuality is the data for the function parameters, and you
+// set up the function stack when calling the function with some asm 
+// the idea being that you could do something like  call_rpc(my_function, arbitrary_param_1, arbitrary_data_2);
+// and those params would be packed up into a buffer, sent to a remote client, and the client could recognize a function id
+// or something and then call that function with the args sent
+
 
 // thanks Live++
 

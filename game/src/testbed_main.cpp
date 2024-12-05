@@ -94,6 +94,7 @@ struct GameState {
 #include "tiny_profiler.h"
 #include "particles/particle_behaviors.h"
 #include "tiny_log.h"
+#include "xatlas/xatlas.h"
 
 
 void testbed_camera_tick() {
@@ -374,12 +375,6 @@ void testbed_init(Arena* gameMem) {
     gs.lightingShader = Shader(ResPath("shaders/default.vert"), ResPath("shaders/default.frag"));
     Shader lightingShader = gs.lightingShader;
 
-    // TODO: why does this mesh not render in main view?
-    //EntityRef floatingcubes = Entity::CreateEntity("floatingcubes", Transform(glm::vec3(0,10,0), glm::vec3(0.1)));
-    //Model floatingCubesModel = Model(lightingShader, ResPath("SM_Floating_Cubes.fbx").c_str(), ResPath("").c_str(), floatingcubes);
-    //Entity::AddRenderable(floatingcubes, floatingCubesModel);
-    //gs.entities.push_back(floatingcubes);
-
 #ifdef ISLAND_SCENE
     EntityRef islandEntRef = Entity::CreateEntity("island", Transform({0,0,0}));
     Model testModel = Model(lightingShader, 
@@ -530,6 +525,7 @@ void testbed_standalone_entrypoint(int argc, char *argv[])
     {
         resourceDirectory = argv[1];
     }
+    LOG_INFO("hi no extras");
     InitEngine(
         resourceDirectory,
         "Testbed",
