@@ -1,5 +1,10 @@
 import os, sys, time
-from colorama import Fore, Back, Style
+has_colorama = True
+try:
+    from colorama import Fore, Style
+except ModuleNotFoundError:
+    print("No colorama module found, terminal output won't be colored :(   run python -m pip install colorama")
+    has_colorama = False
 PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__)).replace("\\", "/")
 
 # since we don't have a proper pythonic package folder structure, choosing to import our build utils this way
@@ -55,7 +60,11 @@ def generate_types_ninjafile(buildninja_path, build_dir, get_source_files_func, 
     for src in source_files:
         print("Source file: " + src)
         n.build(f"$builddir/{src}.cpp", "compile", f"{TYPES_INPUT_FOLDER}/{src}", variables={"file" : src, "in_dir" : TYPES_INPUT_FOLDER})
-    print(f"{Fore.GREEN}Regenerated{Style.RESET_ALL} ninja build!")
+    if has_colorama:
+        print(f"{Fore.GREEN}Regenerated{Style.RESET_ALL} ninja build!")
+    else:
+        print("Regenerated ninja build!")
+
     buildfile.close()
 
 def build_types_metaprogram():

@@ -1,5 +1,10 @@
 import sys, os, glob, shutil, time
-from colorama import Fore, Back, Style
+has_colorama = True
+try:
+    from colorama import Fore, Style
+except ModuleNotFoundError:
+    print("No colorama module found, terminal output won't be colored :(")
+    has_colorama = False
 from ninja_syntax import Writer
 
 UTILS_PYTHON_SCRIPT_PATH = os.path.realpath(os.path.dirname(__file__))
@@ -139,7 +144,7 @@ def generate_ninjafile(
         link_files.append(f"$builddir/{get_obj_from_src_file(src_cpp)}")
     # link
     n.build(f"$builddir/{output_exe_name}", "link", link_files)
-    print(f"{Fore.GREEN}Regenerated{Style.RESET_ALL} ninja build!")
+    print(f"{Fore.GREEN if has_colorama else ""}Regenerated{Style.RESET_ALL if has_colorama else ""} ninja build!")
     buildfile.close()
 
 
@@ -156,7 +161,7 @@ def generic_ninja_build(buildninja_path: str,
     start_time = time.time()
     command(get_ninja_command(buildninja_path)) # actual build
     elapsed = round(time.time() - start_time, 3)
-    print(f"{Fore.GREEN}{output_exe_name}{Style.RESET_ALL} build took {elapsed} seconds")
+    print(f"{Fore.GREEN if has_colorama else ""}{output_exe_name}{Style.RESET_ALL if has_colorama else ""} build took {elapsed} seconds")
 
     src = os.path.join(build_dir, output_exe_name)
     dst = os.path.join(output_dir, output_exe_name)
@@ -169,11 +174,11 @@ def clean(dir: str):
         print(dir)
     else:
         command(get_ninja_command(dir, "-t clean"))
-        print(f"{Fore.GREEN}Cleaned!{Style.RESET_ALL}")
+        print(f"{Fore.GREEN if has_colorama else ""}Cleaned!{Style.RESET_ALL if has_colorama else ""}")
 
 
 def copy_file(src, dst):
     if os.path.exists(src):
         shutil.copy(src, dst)
     else:
-        print(f"{Fore.RED}{src} doesn't exist, didn't copy.{Style.RESET_ALL}")
+        print(f"{Fore.RED if has_colorama else ""}{src} doesn't exist, didn't copy.{Style.RESET_ALL if has_colorama else ""}")
